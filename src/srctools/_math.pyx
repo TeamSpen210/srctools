@@ -2468,6 +2468,93 @@ cdef class MatrixBase:
 
         return rot
 
+
+    def inverse(self):
+        """Return the inverse of this matrix."""
+
+	    # Transpose from column major to row major and augment in b
+        omat: Tuple[List[Vec], List[Vec]] = (
+            [
+                Vec(self.mat[0][0], self.mat[1][0], self.mat[2][0]),
+                Vec(self.mat[0][1], self.mat[1][1], self.mat[2][1]),
+                Vec(self.mat[0][2], self.mat[1][2], self.mat[2][2]),
+            ],
+            [
+                Vec(1, 0, 0),
+                Vec(0, 1, 0),
+                Vec(0, 0, 1),
+            ]
+        )
+
+        # Keep the matrix as references so we can swap rows without damaging our matrix
+        mat: Tuple[List[Vec], List[Vec]] = ( 
+            [omat[0][0], omat[0][1], omat[0][2]],
+            [omat[1][0], omat[1][1], omat[1][2]],
+        )
+
+        # Get it into row echelon form
+        for n in range(0, 2):
+            # Find pivots
+            la: float = 0;
+            pivrow: int = -1;
+            for m in range(n, 3):
+                va: float = abs(mat[0][m][n])
+
+                if va > la:
+                    pivrow = m
+                    la = va
+
+            # No pivot? No solution!
+            if pivrow == -1:
+                return None
+
+            # Swap pivot to highest
+            pivot = mat[0][pivrow]
+            mat[0][pivrow] = mat[0][n]
+            mat[0][n] = pivot
+
+            # Apply our pivot row to the rows below 
+            for m in range(n+1, 3):
+                # Get the multiplier
+                v = mat[0][m][n] / pivot[n]
+                
+                # Eliminate
+                mat[0][m] = mat[0][m] - mat[0][pivrow] * v
+                mat[1][m] = mat[1][m] - mat[1][pivrow] * v
+
+
+        # Get it into reduced row echelon form
+        for n in range(2, 0, -1):
+            for m in range(n - 1, -1, -1):
+                # Get the multiplier
+                v = mat[0][m][n] / mat[0][n][n]
+                
+                # Eliminate
+                mat[0][m] = mat[0][m] - mat[0][pivrow] * v
+                mat[1][m] = mat[1][m] - mat[1][pivrow] * v
+
+        # Clean up our diagonal
+        for n in range(0, 3):
+            v = mat[0][n][n]
+
+            # Check for zeros along the diagonal
+            if abs(v) <= 0.00001:
+                return None
+
+            mat[0][n] = mat[0][n] / v
+            mat[1][n] = mat[1][n] / v
+
+        cdef MatrixBase out = _matrix(type(self))
+
+        out.mat[0] = omat[1][0][0], omat[1][0][1], omat[1][0][2]
+        out.mat[1] = omat[1][1][0], omat[1][1][1], omat[1][1][2]
+        out.mat[2] = omat[1][2][0], omat[1][2][1], omat[1][2][2]
+
+        return out
+        
+
+
+
     @classmethod
     def from_basis(
         cls, *,

@@ -201,3 +201,29 @@ def test_thaw_freezing(py_c_vec: PyCVec) -> None:
     # Test calling it on a temporary, in case this is optimised.
     assert_rot(Matrix.from_angle(ang).freeze(), Matrix.from_angle(ang), type=FrozenMatrix)
     assert_rot(FrozenMatrix.from_angle(ang).thaw(), Matrix.from_angle(ang), type=Matrix)
+
+
+
+def test_matrix_inverse(py_c_vec: PyCVec) -> None:
+    """Test the matrix inverse() method. """
+    Matrix = vec_mod.Matrix
+
+    mat = Matrix()
+    mat[0, 0], mat[0, 1], mat[0, 2] = ( 1, -3,  7)
+    mat[1, 0], mat[1, 1], mat[1, 2] = (-1,  4, -7)
+    mat[2, 0], mat[2, 1], mat[2, 2] = (-1,  3, -6)
+
+    correct = Matrix()
+    mat[0, 0], mat[0, 1], mat[0, 2] = (-3,  3, -7)
+    mat[1, 0], mat[1, 1], mat[1, 2] = ( 1,  1,  0)
+    mat[2, 0], mat[2, 1], mat[2, 2] = ( 1,  0,  1)
+
+    mat = mat.inverse()
+
+    assert mat is not None
+
+    for x, y in itertools.product(range(3), range(3)):
+        assert abs(mat[x, y] - correct[x, y]) < 0.001
+
+
+    
