@@ -11,6 +11,9 @@ on:
   workflow_dispatch:
     # Allow triggering manually whenever it's useful.
 
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
   build_wheels:

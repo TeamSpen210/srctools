@@ -8,6 +8,10 @@ on:
   workflow_dispatch:
     # Allow triggering manually on other branches.
 
+permissions:
+  contents: read
+  pull-requests: read
+
 # This is for non-version-specific checks.
 jobs:
   run-tools:
