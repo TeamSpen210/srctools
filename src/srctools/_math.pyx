@@ -140,7 +140,7 @@ cdef inline object _make_tuple(object x, object y, object z):
             return tuple_new(Vec_tuple, tup)
 
 
-cdef inline double norm_ang(double val):
+cdef inline double norm_ang(double val) except? NAN:
     """Normalise an angle to 0-360."""
     # We have to double-modulus because -1e-14 % 360.0 = 360.0.
     val = val % 360.0 % 360.0
@@ -218,7 +218,7 @@ cdef str _join_triple(const vec_t *values, str joiner):
         PyMem_Free(zbuf)
         PyMem_Free(buf)
 
-cdef _format_vec_wspec(const vec_t *values, str spec):
+cdef object _format_vec_wspec(const vec_t *values, str spec):
     """Format a vector with the specified format spec."""
     cdef str x_str, y_str, z_str
     cdef const char *x_buf = NULL
@@ -299,15 +299,15 @@ cdef MatrixBase pick_mat_type(type left, type right):
     else:
         return <MatrixBase>Matrix.__new__(Matrix)
 
-cdef bint vec_check(obj):
+cdef bint vec_check(obj) except -1:
     # Check if this is a vector instance.
     return type(obj) is Vec or type(obj) is FrozenVec
 
-cdef bint angle_check(obj):
+cdef bint angle_check(obj) except -1:
     # Check if this is an angle instance.
     return type(obj) is Angle or type(obj) is FrozenAngle
 
-cdef bint mat_check(obj):
+cdef bint mat_check(obj) except -1:
     # Check if this is a matrix instance.
     return type(obj) is Matrix or type(obj) is FrozenMatrix
 
@@ -500,7 +500,7 @@ def format_float(x: float, places: int=6) -> str:
 
 
 
-cdef inline unsigned char conv_vec(
+cdef inline bint conv_vec(
     vec_t *result,
     object vec,
     bint scalar,
@@ -530,7 +530,7 @@ cdef inline unsigned char conv_vec(
             raise TypeError(f'{type(vec)} is not a Vec-like object!')
     return True
 
-cdef inline unsigned char conv_angles(vec_t *result, object ang) except False:
+cdef inline bint conv_angles(vec_t *result, object ang) except False:
     """Convert some object to a unified Angle struct. 
     
     If scalar is True, allow int/float to set all axes.
@@ -556,29 +556,30 @@ cdef inline unsigned char conv_angles(vec_t *result, object ang) except False:
             raise TypeError(f'{type(ang)} is not an Angle-like object!')
     return True
 
-cdef inline double _vec_mag_sq(vec_t *vec):
+cdef inline double _vec_mag_sq(vec_t *vec) except? NAN:
     # This is faster if you just need to compare.
     return vec.x**2 + vec.y**2 + vec.z**2
 
-cdef inline double _vec_mag(vec_t *vec):
+cdef inline double _vec_mag(vec_t *vec) except? NAN:
     return math.sqrt(_vec_mag_sq(vec))
 
-cdef inline void _vec_normalise(vec_t *out, vec_t *inp):
+cdef inline bint _vec_normalise(vec_t *out, vec_t *inp) except False:
     """Normalise the vector, writing to out. inp and out may be the same."""
     cdef double mag = _vec_mag(inp)
 
     if mag == 0:
         # Vec(0, 0, 0).norm = Vec(0, 0, 0), as a special case.
-        out.x = out.y = out.z = 0
+        out.x = out.y = out.z = 0.0
     else:
         # Disable ZeroDivisionError check, we just checked that.
         with cython.cdivision(True):
             out.x = inp.x / mag
             out.y = inp.y / mag
             out.z = inp.z / mag
+    return True
 
 
-cdef inline void mat_mul(mat_t targ, mat_t rot):
+cdef inline bint mat_mul(mat_t targ, mat_t rot) except False:
     """Rotate target by the rotator matrix."""
     cdef double a, b, c
     cdef int i
@@ -591,9 +592,10 @@ cdef inline void mat_mul(mat_t targ, mat_t rot):
         targ[i][0] = a * rot[0][0] + b * rot[1][0] + c * rot[2][0]
         targ[i][1] = a * rot[0][1] + b * rot[1][1] + c * rot[2][1]
         targ[i][2] = a * rot[0][2] + b * rot[1][2] + c * rot[2][2]
+    return True
 
 
-cdef inline void vec_rot(vec_t *vec, mat_t mat):
+cdef inline bint vec_rot(vec_t *vec, mat_t mat) except False:
     """Rotate a vector by our value."""
     cdef double x = vec.x
     cdef double y = vec.y
@@ -601,16 +603,18 @@ cdef inline void vec_rot(vec_t *vec, mat_t mat):
     vec.x = (x * mat[0][0]) + (y * mat[1][0]) + (z * mat[2][0])
     vec.y = (x * mat[0][1]) + (y * mat[1][1]) + (z * mat[2][1])
     vec.z = (x * mat[0][2]) + (y * mat[1][2]) + (z * mat[2][2])
+    return True
 
 
-cdef inline void _vec_cross(vec_t *res, vec_t *a, vec_t *b):
+cdef inline bint _vec_cross(vec_t *res, vec_t *a, vec_t *b) except False:
     """Compute the cross product of A x B. """
     res.x = a.y * b.z - a.z * b.y
     res.y = a.z * b.x - a.x * b.z
     res.z = a.x * b.y - a.y * b.x
+    return True
 
 
-cdef void _mat_from_angle(mat_t res, vec_t *angle):
+cdef bint _mat_from_angle(mat_t res, vec_t *angle) except False:
     cdef double p = deg_2_rad(angle.x)
     cdef double y = deg_2_rad(angle.y)
     cdef double r = deg_2_rad(angle.z)
@@ -626,9 +630,10 @@ cdef void _mat_from_angle(mat_t res, vec_t *angle):
     res[2][0] = sin(p) * cos(r) * cos(y) + sin(r) * sin(y)
     res[2][1] = sin(p) * cos(r) * sin(y) - sin(r) * cos(y)
     res[2][2] = cos(r) * cos(p)
+    return True
 
 
-cdef inline void _mat_to_angle(vec_t *ang, mat_t mat):
+cdef inline bint _mat_to_angle(vec_t *ang, mat_t mat) except False:
     # https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/mathlib/mathlib_base.cpp#L208
     cdef double horiz_dist = math.sqrt(mat[0][0]**2 + mat[0][1]**2)
     if horiz_dist > 0.001:
@@ -640,9 +645,10 @@ cdef inline void _mat_to_angle(vec_t *ang, mat_t mat):
         ang.x = norm_ang(rad_2_deg(math.atan2(-mat[0][2], horiz_dist)))
         ang.y = norm_ang(rad_2_deg(math.atan2(-mat[1][0], mat[1][1])))
         ang.z = 0.0  # Can't produce.
+    return True
 
 
-cdef bint _mat_from_basis(mat_t mat, VecBase x, VecBase y, VecBase z) except True:
+cdef bint _mat_from_basis(mat_t mat, VecBase x, VecBase y, VecBase z) except False:
     """Implement the shared parts of Matrix/Angle .from_basis()."""
     cdef vec_t res
 
@@ -678,18 +684,19 @@ cdef bint _mat_from_basis(mat_t mat, VecBase x, VecBase y, VecBase z) except Tru
 
     _vec_normalise(&res, &res)
     mat[2] = res.x, res.y, res.z
-    return False
+    return True
 
 
-cdef inline void _mat_identity(mat_t matrix):
+cdef inline bint _mat_identity(mat_t matrix) except False:
     """Set the matrix to the identity transform."""
     memset(matrix, 0, sizeof(mat_t))
     matrix[0][0] = 1.0
     matrix[1][1] = 1.0
     matrix[2][2] = 1.0
+    return True
 
 
-cdef bint _conv_matrix(mat_t result, object value) except True:
+cdef bint _conv_matrix(mat_t result, object value) except False:
     """Convert various values to a rotation matrix.
 
     Vectors will be treated as angles, and None as the identity.
@@ -706,7 +713,7 @@ cdef bint _conv_matrix(mat_t result, object value) except True:
     else:
         [ang.x, ang.y, ang.z] = value
         _mat_from_angle(result, &ang)
-    return False
+    return True
 
 
 def to_matrix(value) -> Matrix:

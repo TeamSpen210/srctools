@@ -527,10 +527,11 @@ cdef class Tokenizer(BaseTokenizer):
         """Set if : characters are treated as a COLON token, or part of strings."""
         self.flags.colon_operator = value
 
-    cdef inline void buf_reset(self):
+    cdef inline bint buf_reset(self) except False:
         """Reset the temporary buffer."""
         # Don't bother resizing or clearing, the next append will overwrite.
         self.buf_pos = 0
+        return True
 
     cdef inline int buf_add_char(self, char new_char) except -1:
         """Add a character to the temporary buffer, reallocating if needed."""

@@ -16,11 +16,11 @@ ctypedef double[3][3] mat_t
 # -1: Exception.
 cdef int _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except -1
 
-cdef unsigned char conv_vec(vec_t *result, object vec, bint scalar) except False
-cdef unsigned char conv_angles(vec_t *result, object ang) except False
+cdef bint conv_vec(vec_t *result, object vec, bint scalar) except False
+cdef bint conv_angles(vec_t *result, object ang) except False
 
-cdef void mat_mul(mat_t targ, mat_t rot)
-cdef void vec_rot(vec_t *vec, mat_t mat)
+cdef bint mat_mul(mat_t targ, mat_t rot) except False
+cdef bint vec_rot(vec_t *vec, mat_t mat) except False
 
 @cython.internal
 cdef class VecBase:
