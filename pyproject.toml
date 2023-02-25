@@ -2,7 +2,7 @@
 requires = [
 	"setuptools >= 61",
 	"wheel >= 0.37.0",
-	"cython >= 3.0.0a11",
+	"cython >= 3.0.0b0",
 	"versioningit >= 2.1.0"
 	]
 build-backend = "setuptools.build_meta"
