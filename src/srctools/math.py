@@ -1789,24 +1789,20 @@ class MatrixBase:
         """
 
         # Transpose from column major to row major and augment in b
-        omat: Tuple[List[Vec], List[Vec]] = (
-            [
-                Vec(self._aa, self._ba, self._ca),
-                Vec(self._ab, self._bb, self._cb),
-                Vec(self._ac, self._bc, self._cc),
-            ],
-            [
-                Vec(1, 0, 0),
-                Vec(0, 1, 0),
-                Vec(0, 0, 1),
-            ]
-        )
+        omat_l: List[Vec] = [
+            Vec(self._aa, self._ba, self._ca),
+            Vec(self._ab, self._bb, self._cb),
+            Vec(self._ac, self._bc, self._cc),
+        ]
+        omat_r: List[Vec] = [
+            Vec(1, 0, 0),
+            Vec(0, 1, 0),
+            Vec(0, 0, 1),
+        ]
 
         # Keep the matrix as references, so we can swap rows without damaging our matrix
-        mat: Tuple[List[Vec], List[Vec]] = ( 
-            [omat[0][0], omat[0][1], omat[0][2]],
-            [omat[1][0], omat[1][1], omat[1][2]],
-        )
+        mat_l: List[Vec] = [omat_l[0], omat_l[1], omat_l[2]]
+        mat_r: List[Vec] = [omat_r[0], omat_r[1], omat_r[2]]
 
         # Get it into row echelon form
         pivrow = -1
@@ -1815,7 +1811,7 @@ class MatrixBase:
             la = 0.0
             pivrow = -1
             for m in range(n, 3):
-                va: float = abs(mat[0][m][n])
+                va: float = abs(mat_l[m][n])
 
                 if va > la:
                     pivrow = m
@@ -1826,46 +1822,46 @@ class MatrixBase:
                 raise ArithmeticError(f'Matrix has no inverse: {self!r}')
 
             # Swap pivot to highest
-            pivot = mat[0][pivrow]
-            mat[0][pivrow] = mat[0][n]
-            mat[0][n] = pivot
+            pivot = mat_l[pivrow]
+            mat_l[pivrow] = mat_l[n]
+            mat_l[n] = pivot
 
             # Apply our pivot row to the rows below 
             for m in range(n+1, 3):
                 # Get the multiplier
-                v = mat[0][m][n] / pivot[n]
+                v = mat_l[m][n] / pivot[n]
                 
                 # Eliminate
-                mat[0][m] = mat[0][m] - mat[0][pivrow] * v
-                mat[1][m] = mat[1][m] - mat[1][pivrow] * v
+                mat_l[m] = mat_l[m] - mat_l[pivrow] * v
+                mat_r[m] = mat_r[m] - mat_r[pivrow] * v
 
         # Get it into reduced row echelon form
         for n in range(2, 0, -1):
             for m in range(n - 1, -1, -1):
                 # Get the multiplier
-                v = mat[0][m][n] / mat[0][n][n]
+                v = mat_l[m][n] / mat_l[n][n]
                 
                 # Eliminate
-                mat[0][m] = mat[0][m] - mat[0][pivrow] * v
-                mat[1][m] = mat[1][m] - mat[1][pivrow] * v
+                mat_l[m] = mat_l[m] - mat_l[pivrow] * v
+                mat_r[m] = mat_r[m] - mat_r[pivrow] * v
 
         # Clean up our diagonal
         for n in range(0, 3):
-            v = mat[0][n][n]
+            v = mat_l[n][n]
 
             # Check for zeros along the diagonal
             if abs(v) <= 0.00001:
                 raise ArithmeticError(f'Matrix has no inverse: {self!r}')
 
-            mat[0][n] = mat[0][n] / v
-            mat[1][n] = mat[1][n] / v
+            mat_l[n] = mat_l[n] / v
+            mat_r[n] = mat_r[n] / v
 
         cls: Type[MatrixT] = type(self)
         out = cls.__new__(cls)
 
-        out._aa, out._ab, out._ac = omat[1][0][0], omat[1][0][1], omat[1][0][2]
-        out._ba, out._bb, out._bc = omat[1][1][0], omat[1][1][1], omat[1][1][2]
-        out._ca, out._cb, out._cc = omat[1][2][0], omat[1][2][1], omat[1][2][2]
+        out._aa, out._ab, out._ac = omat_r[0][0], omat_r[0][1], omat_r[0][2]
+        out._ba, out._bb, out._bc = omat_r[1][0], omat_r[1][1], omat_r[1][2]
+        out._ca, out._cb, out._cc = omat_r[2][0], omat_r[2][1], omat_r[2][2]
 
         return out
 
