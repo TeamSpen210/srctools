@@ -583,7 +583,7 @@ class Mesh:
         mdl: 'Mesh',
         rotation: Union[Angle, Matrix, Vec, None] = None,
         offset: Optional[Vec] = None,
-        scale: Union[float, Vec, None] = None
+        scale: Union[float, Vec] = 1.0,
     ) -> None:
         """Append another model's geometry onto this one.
 
@@ -606,9 +606,9 @@ class Mesh:
         matrix = Matrix()
         
         # Set the scale
-        matrix[0,0] = scaling[0]
-        matrix[2,2] = scaling[1]
-        matrix[2,2] = scaling[2]
+        matrix[0, 0] = scaling[0]
+        matrix[1, 1] = scaling[1]
+        matrix[2, 2] = scaling[2]
 
         # Rotate the matrix
         matrix @= to_matrix(rotation)
