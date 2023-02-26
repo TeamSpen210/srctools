@@ -2493,12 +2493,15 @@ cdef class MatrixBase:
         )
 
         # Get it into row echelon form
+        cdef double la, v, va
+        cdef int pivrow, n, m
+        pivrow = -1
         for n in range(0, 2):
             # Find pivots
-            la: float = 0;
-            pivrow: int = -1;
+            la = 0
+            pivrow = -1
             for m in range(n, 3):
-                va: float = abs(mat[0][m][n])
+                va = abs(mat[0][m][n])
 
                 if va > la:
                     pivrow = m

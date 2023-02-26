@@ -1802,17 +1802,18 @@ class MatrixBase:
             ]
         )
 
-        # Keep the matrix as references so we can swap rows without damaging our matrix
+        # Keep the matrix as references, so we can swap rows without damaging our matrix
         mat: Tuple[List[Vec], List[Vec]] = ( 
             [omat[0][0], omat[0][1], omat[0][2]],
             [omat[1][0], omat[1][1], omat[1][2]],
         )
 
         # Get it into row echelon form
+        pivrow = -1
         for n in range(0, 2):
             # Find pivots
-            la: float = 0;
-            pivrow: int = -1;
+            la = 0.0
+            pivrow = -1
             for m in range(n, 3):
                 va: float = abs(mat[0][m][n])
 
