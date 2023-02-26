@@ -2506,7 +2506,7 @@ cdef class MatrixBase:
 
             # No pivot? No solution!
             if pivrow == -1:
-                return None
+                raise ArithmeticError(f'Matrix has no inverse: {self!r}')
 
             # Swap pivot to highest
             pivot = mat[0][pivrow]
@@ -2539,7 +2539,7 @@ cdef class MatrixBase:
 
             # Check for zeros along the diagonal
             if abs(v) <= 0.00001:
-                return None
+                raise ArithmeticError(f'Matrix has no inverse: {self!r}')
 
             mat[0][n] = mat[0][n] / v
             mat[1][n] = mat[1][n] / v

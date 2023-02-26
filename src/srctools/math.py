@@ -1782,10 +1782,13 @@ class MatrixBase:
 
         return rot
 
-    def inverse(self: MatrixT) -> Optional[MatrixT]:
-        """Return the inverse of this matrix."""
+    def inverse(self: MatrixT) -> MatrixT:
+        """Return the inverse of this matrix.
 
-	    # Transpose from column major to row major and augment in b
+        :raises ArithmeticError: If the matrix does not have an inverse.
+        """
+
+        # Transpose from column major to row major and augment in b
         omat: Tuple[List[Vec], List[Vec]] = (
             [
                 Vec(self._aa, self._ba, self._ca),
@@ -1819,7 +1822,7 @@ class MatrixBase:
 
             # No pivot? No solution!
             if pivrow == -1:
-                return None
+                raise ArithmeticError(f'Matrix has no inverse: {self!r}')
 
             # Swap pivot to highest
             pivot = mat[0][pivrow]
@@ -1834,7 +1837,6 @@ class MatrixBase:
                 # Eliminate
                 mat[0][m] = mat[0][m] - mat[0][pivrow] * v
                 mat[1][m] = mat[1][m] - mat[1][pivrow] * v
-
 
         # Get it into reduced row echelon form
         for n in range(2, 0, -1):
@@ -1852,7 +1854,7 @@ class MatrixBase:
 
             # Check for zeros along the diagonal
             if abs(v) <= 0.00001:
-                return None
+                raise ArithmeticError(f'Matrix has no inverse: {self!r}')
 
             mat[0][n] = mat[0][n] / v
             mat[1][n] = mat[1][n] / v
@@ -1865,8 +1867,6 @@ class MatrixBase:
         out._ca, out._cb, out._cc = omat[1][2][0], omat[1][2][1], omat[1][2][2]
 
         return out
-        
-
 
     @classmethod
     @overload

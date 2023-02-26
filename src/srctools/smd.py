@@ -615,8 +615,6 @@ class Mesh:
 
         # Secondary matrix for the normals
         inv = matrix.inverse()
-        if not isinstance(inv, Matrix):
-            raise ArithmeticError('Unable to calculate inverse matrix!')
         itm = inv.transpose()
 
         for orig_tri in mdl.triangles:
