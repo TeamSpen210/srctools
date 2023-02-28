@@ -232,9 +232,9 @@ def test_matrix_inverse_fail(py_c_vec: PyCVec) -> None:
 
     # Test for expected failure
     mat = Matrix()
-    mat[0, 0], mat[0, 1], mat[0, 2] = (1, 2, 3)
-    mat[1, 0], mat[1, 1], mat[1, 2] = (0, 0, 0)
-    mat[2, 0], mat[2, 1], mat[2, 2] = (2, 4, 6)
+    mat[0, 0], mat[0, 1], mat[0, 2] = (1.0, 2.0, 3.0)
+    mat[1, 0], mat[1, 1], mat[1, 2] = (0.0, 0.0, 0.0)
+    mat[2, 0], mat[2, 1], mat[2, 2] = (2.0, 4.0, 6.0)
 
     with pytest.raises(ArithmeticError):
         mat.inverse()
