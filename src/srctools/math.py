@@ -1782,6 +1782,90 @@ class MatrixBase:
 
         return rot
 
+    def inverse(self: MatrixT) -> MatrixT:
+        """Return the inverse of this matrix.
+
+        :raises ArithmeticError: If the matrix does not have an inverse.
+        """
+
+        # We're already in row major
+        # Augment in an identity matrix
+        omat_l: List[Vec] = [
+            Vec(self._aa, self._ab, self._ac),
+            Vec(self._ba, self._bb, self._bc),
+            Vec(self._ca, self._cb, self._cc),
+        ]
+        omat_r: List[Vec] = [
+            Vec(1, 0, 0),
+            Vec(0, 1, 0),
+            Vec(0, 0, 1),
+        ]
+
+        # Keep the matrix as references, so we can swap rows without damaging our matrix
+        mat_l: List[Vec] = [omat_l[0], omat_l[1], omat_l[2]]
+        mat_r: List[Vec] = [omat_r[0], omat_r[1], omat_r[2]]
+
+        # Get it into row echelon form
+        for n in range(0, 2):
+            # Find pivots
+            la = 0.0
+            pivrow = -1
+            for m in range(n, 3):
+                va: float = abs(mat_l[m][n])
+
+                if va > la:
+                    pivrow = m
+                    la = va
+
+            # No pivot? No solution!
+            if pivrow == -1:
+                raise ArithmeticError(f'Matrix has no inverse: {self!r}')
+
+            # Swap the pivot to highest, if not already
+            if pivrow != n:
+                mat_l[n], mat_l[pivrow] = mat_l[pivrow], mat_l[n]
+                mat_r[n], mat_r[pivrow] = mat_r[pivrow], mat_r[n]
+                pivrow = n
+            
+            # Apply our pivot row to the rows below 
+            for m in range(n+1, 3):
+                # Get the multiplier
+                v = mat_l[m][n] / mat_l[pivrow][n]
+                
+                # Eliminate
+                mat_l[m] -= mat_l[pivrow] * v
+                mat_r[m] -= mat_r[pivrow] * v
+
+        # Get it into reduced row echelon form
+        for n in range(2, 0, -1):
+            for m in range(n - 1, -1, -1):
+                # Get the multiplier
+                v = mat_l[m][n] / mat_l[n][n]
+                
+                # Eliminate
+                mat_l[m] -= mat_l[n] * v
+                mat_r[m] -= mat_r[n] * v
+
+        # Clean up our diagonal
+        for n in range(0, 3):
+            v = mat_l[n][n]
+
+            # Check for zeros along the diagonal
+            if abs(v) <= 0.00001:
+                raise ArithmeticError(f'Matrix has no inverse: {self!r}')
+
+            mat_l[n] /= v
+            mat_r[n] /= v
+
+        cls: Type[MatrixT] = type(self)
+        out = cls.__new__(cls)
+
+        out._aa, out._ab, out._ac = omat_r[0][0], omat_r[0][1], omat_r[0][2]
+        out._ba, out._bb, out._bc = omat_r[1][0], omat_r[1][1], omat_r[1][2]
+        out._ca, out._cb, out._cc = omat_r[2][0], omat_r[2][1], omat_r[2][2]
+
+        return out
+
     @classmethod
     @overload
     def from_basis(cls: Type[MatrixT], *, x: VecUnion, y: VecUnion, z: VecUnion) -> MatrixT: ...

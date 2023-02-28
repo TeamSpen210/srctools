@@ -583,7 +583,7 @@ class Mesh:
         mdl: 'Mesh',
         rotation: Union[Angle, Matrix, Vec, None] = None,
         offset: Optional[Vec] = None,
-        scale: float=1.0,
+        scale: Union[float, Vec] = 1.0,
     ) -> None:
         """Append another model's geometry onto this one.
 
@@ -595,17 +595,38 @@ class Mesh:
         if offset is None:
             offset = Vec()
 
+        scaling: Vec = Vec(1,1,1)
+        if isinstance(scale, float):
+            scaling = Vec(scale, scale, scale)
+        elif isinstance(scale, Vec):
+            scaling = scale
+        
         bone_link = [(self.root_bone(), 1.0)]
-        matrix = to_matrix(rotation)
+        
+        matrix = Matrix()
+        
+        # Set the scale
+        matrix[0, 0] = scaling[0]
+        matrix[1, 1] = scaling[1]
+        matrix[2, 2] = scaling[2]
+
+        # Rotate the matrix
+        matrix @= to_matrix(rotation)
+
+        # Secondary matrix for the normals
+        inv = matrix.inverse()
+        itm = inv.transpose()
 
         for orig_tri in mdl.triangles:
             new_tri = orig_tri.copy()
             for vert in new_tri:
                 vert.links[:] = bone_link
 
-                vert.norm @= matrix
-                vert.pos *= scale
-                vert.pos.localise(offset, matrix)
+                # Transform the vertex
+                vert.norm @= itm
+                vert.norm = vert.norm.norm()
+                vert.pos @= matrix
+                vert.pos += offset
 
             self.triangles.append(new_tri)
 

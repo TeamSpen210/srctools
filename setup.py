@@ -53,7 +53,7 @@ extensions = [
         include_dirs=[os.path.abspath(os.path.join(root, "src", "quickhull/"))],
         language='c++',
         optional=optional_ext,
-        sources=["src/srctools/_math.pyx", "src/quickhull/QuickHull.cpp"],
+        sources=["src/srctools/_math.pyx", "src/srctools/_math_matrix.cpp", "src/quickhull/QuickHull.cpp"],
         extra_compile_args=[
             # '/FAs',  # MS ASM dump
         ] if WIN else [

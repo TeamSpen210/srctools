@@ -11,6 +11,7 @@ from libc.stdint cimport uint_fast8_t
 from libc.stdio cimport snprintf, sscanf
 from libc.string cimport memcmp, memcpy, memset
 from libcpp.vector cimport vector
+from libcpp cimport bool
 cimport cython.operator
 
 from srctools cimport quickhull
@@ -2474,6 +2475,22 @@ cdef class MatrixBase:
         rot.mat[2] = self.mat[0][2], self.mat[1][2], self.mat[2][2]
 
         return rot
+
+
+    def inverse(self):
+        """Return the inverse of this matrix."""
+
+        cdef extern from "_math_matrix.h":
+            cdef bool mat3_inverse(mat_t*, mat_t*)
+
+        cdef MatrixBase out = _matrix(type(self))
+        gotinverse = mat3_inverse(&self.mat, &out.mat)
+
+        if gotinverse == False:
+            raise ArithmeticError(f'Matrix has no inverse: {self!r}')
+
+        return out
+
 
     @classmethod
     def from_basis(
