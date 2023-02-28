@@ -236,12 +236,5 @@ def test_matrix_inverse_fail(py_c_vec: PyCVec) -> None:
     mat[1, 0], mat[1, 1], mat[1, 2] = (0, 0, 0)
     mat[2, 0], mat[2, 1], mat[2, 2] = (2, 4, 6)
 
-    try:
+    with pytest.raises(ArithmeticError):
         mat.inverse()
-        assert False
-    except:
-        assert True
-    
-
-
-    
