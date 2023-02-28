@@ -1788,11 +1788,12 @@ class MatrixBase:
         :raises ArithmeticError: If the matrix does not have an inverse.
         """
 
-        # Transpose from column major to row major and augment in b
+        # We're already in row major
+        # Augment in an identity matrix
         omat_l: List[Vec] = [
-            Vec(self._aa, self._ba, self._ca),
-            Vec(self._ab, self._bb, self._cb),
-            Vec(self._ac, self._bc, self._cc),
+            Vec(self._aa, self._ab, self._ac),
+            Vec(self._ba, self._bb, self._bc),
+            Vec(self._ca, self._cb, self._cc),
         ]
         omat_r: List[Vec] = [
             Vec(1, 0, 0),
@@ -1805,7 +1806,6 @@ class MatrixBase:
         mat_r: List[Vec] = [omat_r[0], omat_r[1], omat_r[2]]
 
         # Get it into row echelon form
-        pivrow = -1
         for n in range(0, 2):
             # Find pivots
             la = 0.0
@@ -1821,19 +1821,20 @@ class MatrixBase:
             if pivrow == -1:
                 raise ArithmeticError(f'Matrix has no inverse: {self!r}')
 
-            # Swap pivot to highest
-            pivot = mat_l[pivrow]
-            mat_l[pivrow] = mat_l[n]
-            mat_l[n] = pivot
-
+            # Swap the pivot to highest, if not already
+            if pivrow != n:
+                mat_l[n], mat_l[pivrow] = mat_l[pivrow], mat_l[n]
+                mat_r[n], mat_r[pivrow] = mat_r[pivrow], mat_r[n]
+                pivrow = n
+            
             # Apply our pivot row to the rows below 
             for m in range(n+1, 3):
                 # Get the multiplier
-                v = mat_l[m][n] / pivot[n]
+                v = mat_l[m][n] / mat_l[pivrow][n]
                 
                 # Eliminate
-                mat_l[m] = mat_l[m] - mat_l[pivrow] * v
-                mat_r[m] = mat_r[m] - mat_r[pivrow] * v
+                mat_l[m] -= mat_l[pivrow] * v
+                mat_r[m] -= mat_r[pivrow] * v
 
         # Get it into reduced row echelon form
         for n in range(2, 0, -1):
@@ -1842,8 +1843,8 @@ class MatrixBase:
                 v = mat_l[m][n] / mat_l[n][n]
                 
                 # Eliminate
-                mat_l[m] = mat_l[m] - mat_l[pivrow] * v
-                mat_r[m] = mat_r[m] - mat_r[pivrow] * v
+                mat_l[m] -= mat_l[n] * v
+                mat_r[m] -= mat_r[n] * v
 
         # Clean up our diagonal
         for n in range(0, 3):
@@ -1853,8 +1854,8 @@ class MatrixBase:
             if abs(v) <= 0.00001:
                 raise ArithmeticError(f'Matrix has no inverse: {self!r}')
 
-            mat_l[n] = mat_l[n] / v
-            mat_r[n] = mat_r[n] / v
+            mat_l[n] /= v
+            mat_r[n] /= v
 
         cls: Type[MatrixT] = type(self)
         out = cls.__new__(cls)
