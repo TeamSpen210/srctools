@@ -23,7 +23,7 @@ from srctools.fgd import FGD, EntityDef, EntityTypes, ResourceCtx, ValueTypes as
 from srctools.filesys import (
     CACHE_KEY_INVALID, File, FileSystem, FileSystemChain, VirtualFileSystem, VPKFileSystem,
 )
-from srctools.keyvalues import KeyValError, Keyvalues
+from srctools.keyvalues import KeyValError, Keyvalues, NoKeyError
 from srctools.mdl import MDL_EXTS, AnimEvents, Model
 from srctools.particles import FORMAT_NAME as PARTICLE_FORMAT_NAME, Particle
 from srctools.sndscript import SND_CHARS, Sound
@@ -1125,9 +1125,18 @@ class PackList:
                                 self.pack_file(hdr_tex, optional=True)
                     elif file.type is FileType.VSCRIPT_SQUIRREL:
                         self._get_vscript_files(file)
+                    elif file.type is FileType.WEAPON_SCRIPT:
+                        # Black Mesa Source uses DMX files instead of KV1.
+                        if file.filename.endswith('.dmx'):
+                            self._get_weaponscript_dmx_files(file)
+                        else:
+                            self._get_weaponscript_kv1_files(file)
                 except Exception as exc:
                     # Skip errors in the file format - means we can't find the dependencies.
-                    LOGGER.warning('Bad file "{}"!', file.filename, exc_info=exc)
+                    LOGGER.warning(
+                        'Could not evaluate dependencies for file "{}"!',
+                        file.filename, exc_info=exc,
+                    )
 
     def _get_model_files(self, file: PackFile) -> None:
         """Find any needed files for a model."""
@@ -1274,6 +1283,86 @@ class PackList:
                 LOGGER.warning("Can't read filename in VScript:", exc_info=True)
                 continue
             self.pack_file(filename, param_type, optional=file.optional)
+
+    def _get_weaponscript_kv1_files(self, file: PackFile) -> None:
+        """Find any dependencies in a Keyvalues1 weapon script."""
+        try:
+            data = self.fsys.read_kv1(file.filename).find_key('WeaponData')
+        except FileNotFoundError:
+            extensionless = strip_extension(file.filename)
+            try:
+                encrypted_file = self.fsys[extensionless + '.ctx']
+            except FileNotFoundError:
+                LOGGER.warning(
+                    'Weapon script "{}.txt"/.ctx does not exist!',
+                    extensionless,
+                )
+            else:
+                # TODO: Implement parsing ICE scripts, or provide an alt location?
+                LOGGER.error(
+                    'Cannot parse ICE-encrypted weapon script "{}"',
+                    encrypted_file.path,
+                )
+            return
+        except (TokenSyntaxError, NoKeyError) as exc:
+            LOGGER.warning(
+                'Weapon script "{}" cannot be parsed:\n{}',
+                file.filename,
+                exc,
+            )
+            return
+        for kv in data.find_children('SoundData'):
+            self.pack_file(kv.value, FileType.GAME_SOUND)
+        for mdl_name in [
+            'viewmodel', 'playermodel',
+            'vrmodel', 'vrmodel_l',  # HL2 VR Mod
+            'addonmodel',  # L4D2
+            'displaymodel',  # ASW
+        ]:
+            try:
+                mdl_value = data[mdl_name]
+            except LookupError:
+                pass
+            else:
+                self.pack_file(mdl_value, FileType.MODEL)
+
+    def _get_weaponscript_dmx_files(self, file: PackFile) -> None:
+        """Find any dependencies in a DMX weapon script.
+
+        This is used in Black Mesa Source.
+        """
+        try:
+            with self.fsys[file.filename].open_bin() as f:
+                data, fmt_name, fmt_ver = Element.parse(f)
+        except FileNotFoundError:
+            LOGGER.warning(
+                'Weapon script "{}" does not exist!',
+                file.filename,
+            )
+            return
+        except (IOError, ValueError) as exc:
+            LOGGER.warning(
+                'Weapon script "{}" cannot be parsed:\n{}',
+                file.filename,
+                exc,
+            )
+            return
+
+        try:
+            sound_elem = data['sounds'].val_elem
+        except KeyError:
+            pass
+        else:
+            for attr in sound_elem.values():
+                if attr.type is ValueType.STRING:
+                    self.pack_file(attr.val_str, FileType.GAME_SOUND)
+        for mdl_name in ['viewmodel', 'playermodel', 'playermodel_multiplayer']:
+            try:
+                mdl_attr = data[mdl_name]
+            except LookupError:
+                pass
+            else:
+                self.pack_file(mdl_attr.val_string, FileType.MODEL)
 
 
 def entclass_resources(classname: str) -> Iterable[Tuple[str, FileType]]:
