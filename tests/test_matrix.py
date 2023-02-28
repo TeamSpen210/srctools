@@ -204,19 +204,20 @@ def test_thaw_freezing(py_c_vec: PyCVec) -> None:
 
 
 
-def test_matrix_inverse(py_c_vec: PyCVec) -> None:
-    """Test the matrix inverse() method. """
+def test_matrix_inverse_known(py_c_vec: PyCVec) -> None:
+    """Test the matrix inverse() method with a known inverse. """
     Matrix = vec_mod.Matrix
 
+    # Test for matrix with known inverse
     mat = Matrix()
-    mat[0, 0], mat[0, 1], mat[0, 2] = ( 1, -3,  7)
-    mat[1, 0], mat[1, 1], mat[1, 2] = (-1,  4, -7)
-    mat[2, 0], mat[2, 1], mat[2, 2] = (-1,  3, -6)
+    mat[0, 0], mat[0, 1], mat[0, 2] = ( 1.0, -3.0,  7.0)
+    mat[1, 0], mat[1, 1], mat[1, 2] = (-1.0,  4.0, -7.0)
+    mat[2, 0], mat[2, 1], mat[2, 2] = (-1.0,  3.0, -6.0)
 
     correct = Matrix()
-    mat[0, 0], mat[0, 1], mat[0, 2] = (-3,  3, -7)
-    mat[1, 0], mat[1, 1], mat[1, 2] = ( 1,  1,  0)
-    mat[2, 0], mat[2, 1], mat[2, 2] = ( 1,  0,  1)
+    correct[0, 0], correct[0, 1], correct[0, 2] = (-3.0,  3.0, -7.0)
+    correct[1, 0], correct[1, 1], correct[1, 2] = ( 1.0,  1.0,  0.0)
+    correct[2, 0], correct[2, 1], correct[2, 2] = ( 1.0,  0.0,  1.0)
 
     mat = mat.inverse()
 
@@ -224,6 +225,23 @@ def test_matrix_inverse(py_c_vec: PyCVec) -> None:
 
     for x, y in itertools.product(range(3), range(3)):
         assert abs(mat[x, y] - correct[x, y]) < 0.001
+
+def test_matrix_inverse_fail(py_c_vec: PyCVec) -> None:
+    """Test the matrix inverse() method for known failure. """
+    Matrix = vec_mod.Matrix
+
+    # Test for expected failure
+    mat = Matrix()
+    mat[0, 0], mat[0, 1], mat[0, 2] = (1, 2, 3)
+    mat[1, 0], mat[1, 1], mat[1, 2] = (0, 0, 0)
+    mat[2, 0], mat[2, 1], mat[2, 2] = (2, 4, 6)
+
+    try:
+        mat.inverse()
+        assert False
+    except:
+        assert True
+    
 
 
     
