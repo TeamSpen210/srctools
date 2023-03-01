@@ -13,7 +13,7 @@ Version (dev)
   was parsed from a file, this could case changes to be overwritten with the original data.
 * Add :py:meth:`srctools.vtf.Frame.fill()`, for filling a frame with a constant colour.
 * Add support for `Chaos non-uniform static prop scaling <https://github.com/TeamSpen210/srctools/pull/17>`_ (by `@ozxybox <https://github.com/ozxybox>`_).
-* Correctly handle non-float numeric values being passed to various :module:`srctools.math` operations.
+* Correctly handle non-float numeric values being passed to various :py:mod:`srctools.math` operations.
 
 -------------
 Version 2.3.9
@@ -31,7 +31,7 @@ Version 2.3.9
 Version 2.3.8
 -------------
 
-* Fix :module:`srctools.logger` discarding :external:py:class:`MultiError` (or its backport) if it
+* Fix :py:mod:`srctools.logger` discarding :external:py:class:`MultiError` (or its backport) if it
   bubbles up to the toplevel.
 * Tweak VMF ``localise()`` and ``translate()`` type hints to allow :py:class:`~srctools.math.FrozenVec` as the origin.
 * Make movement and rotation of displacements work correctly.
@@ -59,7 +59,7 @@ Version 2.3.7
   `typeshed updated <https://github.com/python/typeshed/pull/9151>`_ the overloads for
   :external:py:func:`round()` to permit zero-arg calls to return a non-:external:py:class:`int` type.
 * Permit VMFs to accept frozen math classes directly as keyvalues.
-* Fix multiplying vectors and :py:meth:`~srctools.math.Vec.norm_mask()` not producing
+* Fix multiplying vectors and :py:meth:`Vec.norm_mask() <srctools.math.VecBase.norm_mask()>` not producing
   :py:class:`~srctools.math.FrozenVec`.
 * Parse errors in ``BSP.ents`` are more informative and verbose.
 * Add an additional callback parameter to :py:meth:`PackList.pack_into_zip() <srctools.packlist.PackList.pack_into_zip()>` to
@@ -73,7 +73,7 @@ Version 2.3.7
   regular attribute, but the uuid has a unique type and so can coexist with an attribute of the same name.
 * Add support for Black Mesa's static prop format.
 * Support integer values for soundscript channels, instead of just ``CHAN_`` constants.
-* Add a distinct exception (:py:class:`~srctools.fsys.RootEscapeError`) for when :file:`../` paths
+* Add a distinct exception (:py:class:`~srctools.filesys.RootEscapeError`) for when :file:`../` paths
   go above the root of a filesystem.
 
 -------------
@@ -85,8 +85,8 @@ Version 2.3.6
 * Added new :py:meth:`srctools.fgd.EntityDef.get_resources()` method, replacing ``fgd.entclass_*()``
   methods.
 * When parsing VMF outputs, assume extraneous commas are part of the parameter.
-* Add :py:class:`!srctools.math.FrozenVec`, :py:class:`!srctools.math.FrozenAngle` and
-  :py:class:`!srctools.math.FrozenMatrix` - immutable versions of the existing classes. This is a
+* Add :py:class:`~srctools.math.FrozenVec`, :py:class:`~srctools.math.FrozenAngle` and
+  :py:class:`~srctools.math.FrozenMatrix` - immutable versions of the existing classes. This is a
   far better version of ``Vec_tuple``, which is now deprecated.
 * Build Python 3.11 wheels.
 * Drop dependency on ``atomicwrites``, it is no longer being maintained.
@@ -167,7 +167,7 @@ Version 2.3.1
 Version 2.3.0
 -------------
 
-* __Postcompiler code has been moved to HammerAddons.__
+* **Postcompiler code has been moved to HammerAddons.**
 * Fix raw sound filenames not stripping special characters from the start when packing.
 * Allow :py:class:`srctools.dmx.Color` to omit alpha when parsed from strings, and roound/clamp values.
 * Handle INFRA's altered :py:class:`srctools.bsp.Primitive` lump.
@@ -209,7 +209,7 @@ Version 2.2.5
 Version 2.2.4
 -------------
 
-* Fix behaviour of :py:meth:`srctools.Property.__getitem__()` and :py:meth:`~srctools.Property.__setitem__()`.
+* Fix behaviour of :py:meth:`Property.__getitem__() <srctools.keyvalues.Keyvalues.__getitem__()>` and :py:meth:`Property.__setitem__() <srctools.keyvalues.Keyvalues.__setitem__()>`.
 * Improve performance of :py:class:`~srctools.vpk.VPK` parsing.
 * Add support for Portal Revolution's :py:class:`~srctools.fgd.FGD` helper tweaks.
 * Add option to collapse and remove IO proxies entirely.
