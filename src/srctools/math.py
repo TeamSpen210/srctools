@@ -680,15 +680,15 @@ class VecBase:
         """
         if isinstance(other, VecBase):
             return (
-                abs(other.x - self.x) < 1e-6 and
-                abs(other.y - self.y) < 1e-6 and
-                abs(other.z - self.z) < 1e-6
+                abs(other._x - self._x) < 1e-6 and
+                abs(other._y - self._y) < 1e-6 and
+                abs(other._z - self._z) < 1e-6
             )
         elif _check_tuple3(other):
             return (
-                abs(self.x - other[0]) < 1e-6 and
-                abs(self.y - other[1]) < 1e-6 and
-                abs(self.z - other[2]) < 1e-6
+                abs(self._x - other[0]) < 1e-6 and
+                abs(self._y - other[1]) < 1e-6 and
+                abs(self._z - other[2]) < 1e-6
             )
         else:
             return NotImplemented
@@ -702,15 +702,15 @@ class VecBase:
         """
         if isinstance(other, VecBase):
             return (
-                abs(other.x - self.x) >= 1e-6 or
-                abs(other.y - self.y) >= 1e-6 or
-                abs(other.z - self.z) >= 1e-6
+                abs(other._x - self._x) >= 1e-6 or
+                abs(other._y - self._y) >= 1e-6 or
+                abs(other._z - self._z) >= 1e-6
             )
         elif _check_tuple3(other):
             return (
-                abs(self.x - other[0]) >= 1e-6 or
-                abs(self.y - other[1]) >= 1e-6 or
-                abs(self.z - other[2]) >= 1e-6
+                abs(self._x - other[0]) >= 1e-6 or
+                abs(self._y - other[1]) >= 1e-6 or
+                abs(self._z - other[2]) >= 1e-6
             )
         else:
             return NotImplemented
@@ -724,15 +724,15 @@ class VecBase:
         """
         if isinstance(other, VecBase):
             return (
-                (other.x - self.x) > 1e-6 and
-                (other.y - self.y) > 1e-6 and
-                (other.z - self.z) > 1e-6
+                (other._x - self._x) > 1e-6 and
+                (other._y - self._y) > 1e-6 and
+                (other._z - self._z) > 1e-6
             )
         elif _check_tuple3(other):
             return (
-                (other[0] - self.x) > 1e-6 and
-                (other[1] - self.y) > 1e-6 and
-                (other[2] - self.z) > 1e-6
+                (other[0] - self._x) > 1e-6 and
+                (other[1] - self._y) > 1e-6 and
+                (other[2] - self._z) > 1e-6
             )
         else:
             return NotImplemented
@@ -746,15 +746,15 @@ class VecBase:
         """
         if isinstance(other, VecBase):
             return (
-                (self.x - other.x) <= 1e-6 and
-                (self.y - other.y) <= 1e-6 and
-                (self.z - other.z) <= 1e-6
+                (self._x - other._x) <= 1e-6 and
+                (self._y - other._y) <= 1e-6 and
+                (self._z - other._z) <= 1e-6
             )
         elif _check_tuple3(other):
             return (
-                (self.x - other[0]) <= 1e-6 and
-                (self.y - other[1]) <= 1e-6 and
-                (self.z - other[2]) <= 1e-6
+                (self._x - other[0]) <= 1e-6 and
+                (self._y - other[1]) <= 1e-6 and
+                (self._z - other[2]) <= 1e-6
             )
         else:
             return NotImplemented
@@ -768,15 +768,15 @@ class VecBase:
         """
         if isinstance(other, VecBase):
             return (
-                (self.x - other.x) > 1e-6 and
-                (self.y - other.y) > 1e-6 and
-                (self.z - other.z) > 1e-6
+                (self._x - other.x) > 1e-6 and
+                (self._y - other.y) > 1e-6 and
+                (self._z - other.z) > 1e-6
             )
         elif _check_tuple3(other):
             return (
-                (self.x - other[0]) > 1e-6 and
-                (self.y - other[1]) > 1e-6 and
-                (self.z - other[2]) > 1e-6
+                (self._x - other[0]) > 1e-6 and
+                (self._y - other[1]) > 1e-6 and
+                (self._z - other[2]) > 1e-6
             )
         else:
             return NotImplemented
@@ -790,15 +790,15 @@ class VecBase:
         """
         if isinstance(other, VecBase):
             return (
-                (other.x - self.x) <= 1e-6 and
-                (other.y - self.y) <= 1e-6 and
-                (other.z - self.z) <= 1e-6
+                (other._x - self._x) <= 1e-6 and
+                (other._y - self._y) <= 1e-6 and
+                (other._z - self._z) <= 1e-6
             )
         elif _check_tuple3(other):
             return (
-                (other[0] - self.x) <= 1e-6 and
-                (other[1] - self.y) <= 1e-6 and
-                (other[2] - self.z) <= 1e-6
+                (other[0] - self._x) <= 1e-6 and
+                (other[1] - self._y) <= 1e-6 and
+                (other[2] - self._z) <= 1e-6
             )
         else:
             return NotImplemented
@@ -812,29 +812,29 @@ class VecBase:
         x_off = x - in_min
         diff = in_max - in_min
         return cls(
-            out_min.x + (x_off * (out_max.x - out_min.x)) / diff,
-            out_min.y + (x_off * (out_max.y - out_min.y)) / diff,
-            out_min.z + (x_off * (out_max.z - out_min.z)) / diff,
+            out_min.x + (x_off * (out_max._x - out_min._x)) / diff,
+            out_min.y + (x_off * (out_max._y - out_min._y)) / diff,
+            out_min.z + (x_off * (out_max._z - out_min._z)) / diff,
         )
 
     def __round__(self: VecT, ndigits: int=0) -> VecT:
         """Performing :external:py:func:`round()` on a vector rounds each axis."""
         return type(self)(
-            round(self.x, ndigits),
-            round(self.y, ndigits),
-            round(self.z, ndigits),
+            round(self._x, ndigits),
+            round(self._y, ndigits),
+            round(self._z, ndigits),
         )
 
     def mag(self) -> float:
         """Compute the distance from the vector and the origin."""
-        return math.sqrt(self.x**2 + self.y**2 + self.z**2)
+        return math.sqrt(self._x**2 + self._y**2 + self._z**2)
 
     def join(self, delim: str=', ') -> str:
         """Return a string with all numbers joined by the passed delimiter.
 
         This strips off the ``.0`` if no decimal portion exists.
         """
-        return f'{format_float(self.x)}{delim}{format_float(self.y)}{delim}{format_float(self.z)}'
+        return f'{format_float(self._x)}{delim}{format_float(self._y)}{delim}{format_float(self._z)}'
 
     def __str__(self) -> str:
         """Return the values, separated by spaces.
@@ -842,7 +842,7 @@ class VecBase:
         This is the main format in Valve's file formats.
         This strips off the .0 if no decimal portion exists.
         """
-        return f'{format_float(self.x)} {format_float(self.y)} {format_float(self.z)}'
+        return f'{format_float(self._x)} {format_float(self._y)} {format_float(self._z)}'
 
     def __format__(self, format_spec: str) -> str:
         """Control how the text is formatted.
@@ -852,30 +852,30 @@ class VecBase:
         if not format_spec:
             return str(self)
 
-        x = format(self.x, format_spec)
+        x = format(self._x, format_spec)
         if '.' in x:
             x = x.rstrip('0')
 
-        y = format(self.y, format_spec)
+        y = format(self._y, format_spec)
         if '.' in y:
             y = y.rstrip('0')
 
-        z = format(self.z, format_spec)
+        z = format(self._z, format_spec)
         if '.' in z:
             z = z.rstrip('0')
         return f'{x.rstrip(".")} {y.rstrip(".")} {z.rstrip(".")}'
 
     def __iter__(self) -> Iterator[float]:
         """Iterating through the vector yields each axis in order."""
-        yield self.x
-        yield self.y
-        yield self.z
+        yield self._x
+        yield self._y
+        yield self._z
 
     def __reversed__(self) -> Iterator[float]:
         """Allow iterating through the dimensions, in reverse."""
-        yield self.z
-        yield self.y
-        yield self.x
+        yield self._z
+        yield self._y
+        yield self._x
 
     def __getitem__(self, ind: Union[str, int]) -> float:
         """Allow reading values by index instead of name if desired.
@@ -884,11 +884,11 @@ class VecBase:
         Useful in conjunction with a loop to apply commands to all values.
         """
         if ind == 0 or ind == "x":
-            return self.x
+            return self._x
         elif ind == 1 or ind == "y":
-            return self.y
+            return self._y
         elif ind == 2 or ind == "z":
-            return self.z
+            return self._z
         raise KeyError(f'Invalid axis: {ind!r}')
 
     def in_bbox(self, a: AnyVec, b: AnyVec) -> bool:
@@ -902,31 +902,31 @@ class VecBase:
     @staticmethod
     def bbox_intersect(min1: 'VecBase', max1: 'VecBase', min2: 'VecBase', max2: 'VecBase') -> bool:
         """Check if the ``(min1, max1)`` bounding box intersects the ``(min2, max2)`` bounding box."""
-        if (min2.x - max1.x) > 1e-6 or (min1.x - max2.x) > 1e-6:
+        if (min2._x - max1._x) > 1e-6 or (min1._x - max2._x) > 1e-6:
             return False
-        if (min2.y - max1.y) > 1e-6 or (min1.y - max2.y) > 1e-6:
+        if (min2._y - max1._y) > 1e-6 or (min1._y - max2._y) > 1e-6:
             return False
-        if (min2.z - max1.z) > 1e-6 or (min1.z - max2.z) > 1e-6:
+        if (min2._z - max1._z) > 1e-6 or (min1._z - max2._z) > 1e-6:
             return False
         return True
 
     def other_axes(self, axis: str) -> Tuple[float, float]:
         """Get the values for the other two axes."""
         if axis == 'x':
-            return self.y, self.z
+            return self._y, self._z
         if axis == 'y':
-            return self.x, self.z
+            return self._x, self._z
         if axis == 'z':
-            return self.x, self.y
+            return self._x, self._y
         raise KeyError('Bad axis "{}"'.format(axis))
 
     def as_tuple(self) -> Vec_tuple:
         """Return the Vector as a tuple."""
-        return Vec_tuple(round(self.x, 6), round(self.y, 6), round(self.z, 6))
+        return Vec_tuple(round(self._x, 6), round(self._y, 6), round(self._z, 6))
 
     def len_sq(self) -> float:
         """Return the magnitude squared, which is slightly faster."""
-        return self.x**2 + self.y**2 + self.z**2
+        return self._x**2 + self._y**2 + self._z**2
 
     def __len__(self) -> int:
         """The :external:py:func:`len()` of a vector is always ``3``."""
@@ -934,15 +934,15 @@ class VecBase:
 
     def __contains__(self, val: float) -> bool:
         """Check to see if an axis is set to the given value."""
-        return abs(val - self.x) < 1e-6 or abs(val - self.y) < 1e-6 or abs(val - self.z) < 1e-6
+        return abs(val - self._x) < 1e-6 or abs(val - self._y) < 1e-6 or abs(val - self._z) < 1e-6
 
     def __neg__(self: VecT) -> VecT:
         """The inverted form of a Vector has inverted axes."""
-        return type(self)(-self.x, -self.y, -self.z)
+        return type(self)(-self._x, -self._y, -self._z)
 
     def __pos__(self: VecT) -> VecT:
         """``+`` on a Vector simply copies it."""
-        return type(self)(self.x, self.y, self.z)
+        return type(self)(self._x, self._y, self._z)
 
     def norm(self: VecT) -> VecT:
         """Normalise the Vector.
@@ -951,7 +951,7 @@ class VecBase:
          direction.
          The vector is left unchanged if it is equal to ``(0, 0, 0)``, instead of raising.
          """
-        if self.x == 0 and self.y == 0 and self.z == 0:
+        if self._x == 0.0 and self._y == 0.0 and self._z == 0.0:
             # Don't do anything for this - otherwise we'd get division
             # by zero errors - we want this to be a valid normal!
             return self.copy()
@@ -959,9 +959,9 @@ class VecBase:
             # Adding 0 clears -0 values - we don't want those.
             mag = self.mag()
             return type(self)(
-                self.x / mag + 0,
-                self.y / mag + 0,
-                self.z / mag + 0,
+                self._x / mag + 0,
+                self._y / mag + 0,
+                self._z / mag + 0,
             )
 
     def dot(self, other: AnyVec) -> float:
@@ -970,9 +970,9 @@ class VecBase:
         Tip: using this in the form ``Vec.dot(a, b)`` may be more readable.
         """
         return (
-            self.x * other[0] +
-            self.y * other[1] +
-            self.z * other[2]
+            self._x * other[0] +
+            self._y * other[1] +
+            self._z * other[2]
         )
 
     def cross(self: VecT, other: AnyVec) -> VecT:
@@ -983,9 +983,9 @@ class VecBase:
         type of the class takes priority.
         """
         return type(self)(
-            self.y * other[2] - self.z * other[1],
-            self.z * other[0] - self.x * other[2],
-            self.x * other[1] - self.y * other[0],
+            self._y * other[2] - self._z * other[1],
+            self._z * other[0] - self._x * other[2],
+            self._x * other[1] - self._y * other[0],
         )
 
     def norm_mask(self: VecT, normal: 'Vec | FrozenVec') -> VecT:
@@ -1138,9 +1138,9 @@ class FrozenVec(VecBase):
         type of the class takes priority.
         """
         return Py_FrozenVec(
-            self.y * other[2] - self.z * other[1],
-            self.z * other[0] - self.x * other[2],
-            self.x * other[1] - self.y * other[0],
+            self._y * other[2] - self._z * other[1],
+            self._z * other[0] - self._x * other[2],
+            self._x * other[1] - self._y * other[0],
         )
 
     def thaw(self) -> 'Vec':
@@ -1297,15 +1297,15 @@ class Vec(VecBase):
 
     def __repr__(self) -> str:
         """Code required to reproduce this vector."""
-        return f"Vec({format_float(self.x)}, {format_float(self.y)}, {format_float(self.z)})"
+        return f"Vec({format_float(self._x)}, {format_float(self._y)}, {format_float(self._z)})"
 
     def freeze(self) -> FrozenVec:
         """Return an immutable version of this vector."""
-        return Py_FrozenVec(self.x, self.y, self.z)
+        return Py_FrozenVec(self._x, self._y, self._z)
 
     def copy(self) -> 'Vec':
         """Create a duplicate of this vector."""
-        return Py_Vec(self.x, self.y, self.z)
+        return Py_Vec(self._x, self._y, self._z)
 
     __copy__ = copy  # copy module support.
 
@@ -1317,9 +1317,9 @@ class Vec(VecBase):
         type of the class takes priority.
         """
         return Py_Vec(
-            self.y * other[2] - self.z * other[1],
-            self.z * other[0] - self.x * other[2],
-            self.x * other[1] - self.y * other[0],
+            self._y * other[2] - self._z * other[1],
+            self._z * other[0] - self._x * other[2],
+            self._x * other[1] - self._y * other[0],
         )
 
     if TYPE_CHECKING:
@@ -1409,9 +1409,9 @@ class Vec(VecBase):
         # noinspection PyProtectedMember
         mat._vec_rot(self)
         if round_vals:
-            self.x = round(self.x, 6)
-            self.y = round(self.y, 6)
-            self.z = round(self.z, 6)
+            self._x = round(self._x, 6)
+            self._y = round(self._y, 6)
+            self._z = round(self._z, 6)
         return self
 
     def rotate_by_str(
@@ -1428,9 +1428,9 @@ class Vec(VecBase):
         # noinspection PyProtectedMember
         mat._vec_rot(self)
         if round_vals:
-            self.x = round(self.x, 6)
-            self.y = round(self.y, 6)
-            self.z = round(self.z, 6)
+            self._x = round(self.x, 6)
+            self._y = round(self.y, 6)
+            self._z = round(self.z, 6)
         return self
 
     def to_angle_roll(self, z_norm: VecUnion, stride: int=0) -> 'Angle':
@@ -1454,32 +1454,32 @@ class Vec(VecBase):
         arbitary axis.
         """
         warnings.warn('Use Matrix.axis_angle().to_angle()', DeprecationWarning)
-        if self.x and not self.y and not self.z:
-            return Py_Angle(roll=math.copysign(rot, self.x))
-        elif self.y and not self.x and not self.z:
-            return Py_Angle(pitch=math.copysign(rot, self.y))
-        elif self.z and not self.x and not self.y:
-            return Py_Angle(yaw=math.copysign(rot, self.z))
+        if self._x and not self._y and not self._z:
+            return Py_Angle(roll=math.copysign(rot, self._x))
+        elif self._y and not self.x and not self._z:
+            return Py_Angle(pitch=math.copysign(rot, self._y))
+        elif self._z and not self._x and not self._y:
+            return Py_Angle(yaw=math.copysign(rot, self._z))
         else:
             raise ValueError('Zero vector!')
 
     def max(self, other: AnyVec) -> None:
         """Set this vector's values to the maximum of the two vectors."""
-        if self.x < other[0]:
-            self.x = other[0]
-        if self.y < other[1]:
-            self.y = other[1]
-        if self.z < other[2]:
-            self.z = other[2]
+        if self._x < other[0]:
+            self._x = other[0]
+        if self._y < other[1]:
+            self._y = other[1]
+        if self._z < other[2]:
+            self._z = other[2]
 
     def min(self, other: AnyVec) -> None:
         """Set this vector's values to be the minimum of the two vectors."""
-        if self.x > other[0]:
-            self.x = other[0]
-        if self.y > other[1]:
-            self.y = other[1]
-        if self.z > other[2]:
-            self.z = other[2]
+        if self._x > other[0]:
+            self._x = other[0]
+        if self._y > other[1]:
+            self._y = other[1]
+        if self._z > other[2]:
+            self._z = other[2]
 
     def localise(
         self,
