@@ -10,8 +10,8 @@ from libc.math cimport M_PI, NAN, cos, llround, sin, tan
 from libc.stdint cimport uint_fast8_t
 from libc.stdio cimport snprintf, sscanf
 from libc.string cimport memcmp, memcpy, memset
-from libcpp.vector cimport vector
 from libcpp cimport bool
+from libcpp.vector cimport vector
 cimport cython.operator
 
 from srctools cimport quickhull
