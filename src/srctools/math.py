@@ -22,7 +22,7 @@ from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, Iterator, List, NamedTuple,
     Optional, SupportsFloat, Tuple, Type, TypeVar, Union, cast,
 )
-from typing_extensions import Final, Literal, Protocol, TypeGuard, final, overload
+from typing_extensions import Final, Literal, Protocol, TypeAlias, TypeGuard, final, overload
 import contextlib
 import math
 import warnings
@@ -36,11 +36,11 @@ __all__ = [
 ]
 
 # Type aliases
-Tuple3 = Tuple[float, float, float]
-AnyVec = Union['VecBase', 'Vec_tuple', Tuple3]
-VecUnion = Union['Vec', 'FrozenVec']
-AnyAngle = Union['Angle', 'FrozenAngle']
-AnyMatrix = Union['Matrix', 'FrozenMatrix']
+Tuple3: TypeAlias = Tuple[float, float, float]
+AnyVec: TypeAlias = Union['VecBase', 'Vec_tuple', Tuple3]
+VecUnion: TypeAlias = Union['Vec', 'FrozenVec']
+AnyAngle: TypeAlias = Union['Angle', 'FrozenAngle']
+AnyMatrix: TypeAlias = Union['Matrix', 'FrozenMatrix']
 VecT = TypeVar('VecT', bound='VecBase')
 AngleT = TypeVar('AngleT', bound='AngleBase')
 MatrixT = TypeVar('MatrixT', bound='MatrixBase')
