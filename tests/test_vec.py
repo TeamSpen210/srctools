@@ -1098,7 +1098,7 @@ def test_getitem(py_c_vec):
             pytest.fail(f"Key succeeded: {invalid!r} -> {res!r}")
 
 
-def test_setitem(py_c_vec):
+def test_setitem(py_c_vec) -> None:
     """Test vec[x]=y with various args."""
     Vec = vec_mod.Vec
 
@@ -1108,22 +1108,27 @@ def test_setitem(py_c_vec):
         assert vec1[axis] == 20.3, axis
         assert vec1.other_axes(axis) == (0.0, 0.0), axis
 
+        vec1[axis] = Fraction(15, 12)
+        assert vec1[axis] == ExactType(1.25)
+
         vec2 = Vec()
-        vec2[ind] = 20.3
+        vec2[ind] = 1.25
         assert_vec(vec1, vec2.x, vec2.y, vec2.z, axis)
 
     vec = Vec()
     for invalid in INVALID_KEYS:
-        try:
-            vec[invalid] = 8
-        except KeyError:
-            pass
-        else:
-            pytest.fail(f"Key succeeded: {invalid!r}")
+        with pytest.raises(KeyError):
+            vec[invalid] = 8.0
         assert_vec(vec, 0, 0, 0, 'Invalid key set something!')
 
+    with pytest.raises(TypeError):
+        vec['x'] = 'test'
+    with pytest.raises(TypeError):
+        vec['z'] = []
+    assert_vec(vec, 0, 0, 0, 'Invalid number was stored!')
 
-def test_vec_constants(frozen_thawed_vec):
+
+def test_vec_constants(frozen_thawed_vec) -> None:
     """Check some of the constants assigned to Vec."""
     Vec = frozen_thawed_vec
 

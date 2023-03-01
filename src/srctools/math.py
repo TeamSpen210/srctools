@@ -1386,18 +1386,18 @@ class Vec(VecBase):
         """
         return _mk_vec, (self.x, self.y, self.z)
 
-    def __setitem__(self, ind: Union[str, int], val: float) -> None:
+    def __setitem__(self, ind: Union[str, int], val: Numeric) -> None:
         """Allow editing values by index instead of name if desired.
 
         This accepts either ``0``, ``1``, ``2`` or ``x``, ``y``, ``z`` to edit values.
         Useful in conjunction with a loop to apply commands to all values.
         """
         if ind == 0 or ind == "x":
-            self.x = float(val)
+            self._x = _coerce_float(val)
         elif ind == 1 or ind == "y":
-            self.y = float(val)
+            self._y = _coerce_float(val)
         elif ind == 2 or ind == "z":
-            self.z = float(val)
+            self._z = _coerce_float(val)
         else:
             raise KeyError(f'Invalid axis: {ind!r}')
 
