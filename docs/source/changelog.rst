@@ -12,6 +12,8 @@ Version (dev)
 * Fix :py:meth:`srctools.vtf.Frame.copy_from()` not clearing cached unparsed file data. If the VTF
   was parsed from a file, this could case changes to be overwritten with the original data.
 * Add :py:meth:`srctools.vtf.Frame.fill()`, for filling a frame with a constant colour.
+* Add support for `Chaos non-uniform static prop scaling <https://github.com/TeamSpen210/srctools/pull/17>`_ (by `@ozxybox <https://github.com/ozxybox>`_).
+* Correctly handle non-float numeric values being passed to various :module:`srctools.math` operations.
 
 -------------
 Version 2.3.9
@@ -19,7 +21,7 @@ Version 2.3.9
 
 * Fix Cython version of :py:meth:`Vec.join() <srctools.math.VecBase.join>` using a default of
   :samp:`{x} {y} {z}`, not :samp:`{x}, {y}, {z}`.
-* Added support for the [Chaos](https://chaosinitiative.github.io/Wiki/docs/Reference/bsp-v25/) BSP format (via [@ozxybox](https://github.com/ozxybox).
+* Added support for the `Chaos <https://chaosinitiative.github.io/Wiki/docs/Reference/bsp-v25/>`_ BSP format (by `@ozxybox <https://github.com/ozxybox>`_).
 * Improve internal FGD database format to allow parsing entities as they are required. For best
   efficiency, use :py:meth:`EntityDef.engine_def() <srctools.fgd.EntityDef.engine_def>` instead of
   :py:meth:`FGD.engine_dbase() <srctools.fgd.FGD.engine_dbase()>` if possible.
