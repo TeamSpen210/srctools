@@ -1,6 +1,6 @@
 #include <math.h>
 #include "_math_matrix.h"
-#define USE_SIMD 1
+
 
 #ifdef USE_SIMD
 #include <emmintrin.h>
