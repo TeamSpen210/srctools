@@ -1,5 +1,6 @@
 """Tests the Matrix/FrozenMatrix class in srctools.math."""
 import copy
+import fractions
 import pickle
 
 import pytest
@@ -202,6 +203,19 @@ def test_thaw_freezing(py_c_vec: PyCVec) -> None:
     assert_rot(Matrix.from_angle(ang).freeze(), Matrix.from_angle(ang), type=FrozenMatrix)
     assert_rot(FrozenMatrix.from_angle(ang).thaw(), Matrix.from_angle(ang), type=Matrix)
 
+
+def test_invalid_setitem(py_c_vec: PyCVec) -> None:
+    """Test trying to store various invalid values into a matrix."""
+    Matrix = vec_mod.Matrix
+    mat = Matrix()
+    mat[1, 1] = 3
+    assert mat[1, 1] == ExactType(3.0)
+    mat[0, 2] = fractions.Fraction(1, 2)
+    assert mat[0, 2] == ExactType(0.5)
+    with pytest.raises(TypeError):
+        mat[2, 0] = '1'
+    with pytest.raises(TypeError):
+        mat[2, 0] = [1, 2, 3]
 
 
 def test_inverse_known(frozen_thawed_matrix: MatrixClass) -> None:

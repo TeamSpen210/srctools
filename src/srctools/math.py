@@ -20,7 +20,7 @@ but not vice-versa.
 """
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, Iterator, List, NamedTuple,
-    Optional, Tuple, Type, TypeVar, Union, cast,
+    Optional, SupportsFloat, Tuple, Type, TypeVar, Union, cast,
 )
 from typing_extensions import Final, Literal, Protocol, TypeGuard, final, overload
 import contextlib
@@ -47,6 +47,11 @@ MatrixT = TypeVar('MatrixT', bound='MatrixBase')
 T1 = TypeVar('T1')
 T2 = TypeVar('T2')
 T3 = TypeVar('T3')
+
+
+# TODO: Available in typing for 3.8+
+class _SupportsIndex(Protocol):
+    def __index__(self) -> int: ...
 
 
 def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:
@@ -2119,8 +2124,12 @@ class Matrix(MatrixBase):
             self._ca, self._cb, self._cc
         ))
 
-    def __setitem__(self, item: Tuple[int, int], value: float) -> None:
+    def __setitem__(self, item: Tuple[int, int], value: Union[float, SupportsFloat, _SupportsIndex]) -> None:
         """Set an individual matrix value by x, y position (0-2)."""
+        if not isinstance(value, float):
+            if isinstance(value, str):
+                raise TypeError('Strings may not be assigned to matrices.')
+            value = float(value)
         setattr(self, _IND_TO_SLOT[item], value)
 
     def __imatmul__(self, other: 'MatrixBase | AngleBase') -> 'Matrix':
