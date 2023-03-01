@@ -35,23 +35,24 @@ __all__ = [
     'Matrix', 'FrozenMatrix', 'AnyMatrix',
 ]
 
+
+# TODO: Available in typing for 3.8+
+class _SupportsIndex(Protocol):
+    def __index__(self) -> int: ...
+
 # Type aliases
 Tuple3: TypeAlias = Tuple[float, float, float]
 AnyVec: TypeAlias = Union['VecBase', 'Vec_tuple', Tuple3]
 VecUnion: TypeAlias = Union['Vec', 'FrozenVec']
 AnyAngle: TypeAlias = Union['Angle', 'FrozenAngle']
 AnyMatrix: TypeAlias = Union['Matrix', 'FrozenMatrix']
+Numeric = Union[int, float, SupportsFloat, _SupportsIndex]
 VecT = TypeVar('VecT', bound='VecBase')
 AngleT = TypeVar('AngleT', bound='AngleBase')
 MatrixT = TypeVar('MatrixT', bound='MatrixBase')
 T1 = TypeVar('T1')
 T2 = TypeVar('T2')
 T3 = TypeVar('T3')
-
-
-# TODO: Available in typing for 3.8+
-class _SupportsIndex(Protocol):
-    def __index__(self) -> int: ...
 
 
 def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:
@@ -129,6 +130,17 @@ def format_float(x: float, places: int=6) -> str:
     if '.' in result:
         result = result.rstrip('0')
     return result.rstrip('.')
+
+
+def _coerce_float(value: Union[float, SupportsFloat, _SupportsIndex]) -> float:
+    """Convert numeric values to floats."""
+    # Fast path, already a float.
+    if isinstance(value, float):
+        return value
+    # float(str) is valid, but we don't want to do that implicitly.
+    if isinstance(value, str):
+        raise TypeError(f'Cannot convert {type(value).__name__} to a number!')
+    return float(value)
 
 
 def _check_tuple3(obj: object) -> TypeGuard[Tuple3]:
@@ -2124,13 +2136,9 @@ class Matrix(MatrixBase):
             self._ca, self._cb, self._cc
         ))
 
-    def __setitem__(self, item: Tuple[int, int], value: Union[float, SupportsFloat, _SupportsIndex]) -> None:
+    def __setitem__(self, item: Tuple[int, int], value: Numeric) -> None:
         """Set an individual matrix value by x, y position (0-2)."""
-        if not isinstance(value, float):
-            if isinstance(value, str):
-                raise TypeError('Strings may not be assigned to matrices.')
-            value = float(value)
-        setattr(self, _IND_TO_SLOT[item], value)
+        setattr(self, _IND_TO_SLOT[item], _coerce_float(value))
 
     def __imatmul__(self, other: 'MatrixBase | AngleBase') -> 'Matrix':
         if isinstance(other, MatrixBase):
