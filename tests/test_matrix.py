@@ -204,7 +204,7 @@ def test_thaw_freezing(py_c_vec: PyCVec) -> None:
 
 
 
-def test_matrix_inverse_known(py_c_vec: PyCVec) -> None:
+def test_inverse_known(frozen_thawed_matrix: MatrixClass) -> None:
     """Test the matrix inverse() method with a known inverse. """
     Matrix = vec_mod.Matrix
 
@@ -219,22 +219,21 @@ def test_matrix_inverse_known(py_c_vec: PyCVec) -> None:
     correct[1, 0], correct[1, 1], correct[1, 2] = ( 1.0,  1.0,  0.0)
     correct[2, 0], correct[2, 1], correct[2, 2] = ( 1.0,  0.0,  1.0)
 
-    mat = mat.inverse()
+    to_invert = frozen_thawed_matrix(mat)
+    invert = to_invert.inverse()
 
-    assert mat is not None
+    assert_rot(invert, correct, type=frozen_thawed_matrix)
 
-    for x, y in itertools.product(range(3), range(3)):
-        assert abs(mat[x, y] - correct[x, y]) < 0.001
 
-def test_matrix_inverse_fail(py_c_vec: PyCVec) -> None:
+def test_inverse_fail(frozen_thawed_matrix: MatrixClass) -> None:
     """Test the matrix inverse() method for known failure. """
-    Matrix = vec_mod.Matrix
-
     # Test for expected failure
-    mat = Matrix()
+    mat = vec_mod.Matrix()
     mat[0, 0], mat[0, 1], mat[0, 2] = (1.0, 2.0, 3.0)
     mat[1, 0], mat[1, 1], mat[1, 2] = (0.0, 0.0, 0.0)
     mat[2, 0], mat[2, 1], mat[2, 2] = (2.0, 4.0, 6.0)
 
+    to_invert = frozen_thawed_matrix(mat)
+
     with pytest.raises(ArithmeticError):
-        mat.inverse()
+        to_invert.inverse()
