@@ -1,4 +1,5 @@
 """Test the Vector object."""
+from fractions import Fraction
 from typing import Union
 from pathlib import Path
 from random import Random
@@ -242,7 +243,7 @@ def test_parse_vec_passthrough(py_c_vec):
     assert parse_vec_str(range, obj1, obj2, obj3) == (obj1, obj2, obj3)
 
 
-def test_with_axes(frozen_thawed_vec: VecClass):
+def test_with_axes(frozen_thawed_vec: VecClass) -> None:
     """Test the with_axes() constructor."""
     Vec = frozen_thawed_vec
     for axis, u, v in ['xyz', 'yxz', 'zxy']:
@@ -273,6 +274,19 @@ def test_with_axes(frozen_thawed_vec: VecClass):
             assert vec2[a] == x, msg
             assert vec2[b] == y, msg
             assert vec2[c] == z, msg
+
+
+def test_with_axes_conv(frozen_thawed_vec: VecClass) -> None:
+    """Test with_axes() converts values properly."""
+    Vec = frozen_thawed_vec
+    vec = Vec.with_axes('y', 8, 'z', -45, 'x', 32)
+    assert vec.x == ExactType(32.0)
+    assert vec.y == ExactType(8.0)
+    assert vec.z == ExactType(-45.0)
+    vec = Vec.with_axes('z', Fraction(8, 2), 'x', Fraction(1, 4), 'y', Fraction(-23, 16))
+    assert vec.x == ExactType(0.25)
+    assert vec.y == ExactType(-1.4375)
+    assert vec.z == ExactType(4.0)
 
 
 @pytest.mark.parametrize('clsname', ['Vec', 'FrozenVec', 'Angle', 'FrozenAngle'])

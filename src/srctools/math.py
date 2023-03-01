@@ -423,27 +423,27 @@ class VecBase:
 
     @classmethod
     @overload
-    def with_axes(cls: Type[VecT], axis1: str, val1: Union[float, 'VecBase']) -> VecT: ...
+    def with_axes(cls: Type[VecT], axis1: str, val1: Union[Numeric, 'VecBase']) -> VecT: ...
 
     @classmethod
     @overload
     def with_axes(
         cls: Type[VecT],
-        axis1: str, val1: Union[float, 'VecBase'],
-        axis2: str, val2: Union[float, 'VecBase'],
+        axis1: str, val1: Union[Numeric, 'VecBase'],
+        axis2: str, val2: Union[Numeric, 'VecBase'],
     ) -> VecT: ...
 
     @classmethod
     @overload
     def with_axes(
         cls: Type[VecT],
-        axis1: str, val1: Union[float, 'VecBase'],
-        axis2: str, val2: Union[float, 'VecBase'],
-        axis3: str, val3: Union[float, 'VecBase'],
+        axis1: str, val1: Union[Numeric, 'VecBase'],
+        axis2: str, val2: Union[Numeric, 'VecBase'],
+        axis3: str, val3: Union[Numeric, 'VecBase'],
     ) -> VecT: ...
 
     @classmethod
-    def with_axes(cls: Type[VecT], *args: Union[str, float, 'VecBase'], **kwargs: Union[str, float, 'VecBase']) -> VecT:
+    def with_axes(cls: Type[VecT], *args: Union[str, Numeric, 'VecBase'], **kwargs: Union[str, Numeric, 'VecBase']) -> VecT:
         """Create a Vector, given a number of axes and corresponding values.
 
         This is a convenience for doing the following::
@@ -1053,34 +1053,34 @@ class FrozenVec(VecBase):
 
     @classmethod
     @overload
-    def with_axes(cls, axis1: str, val1: Union[float, VecBase]) -> 'FrozenVec': ...
+    def with_axes(cls, axis1: str, val1: Union[Numeric, VecBase]) -> 'FrozenVec': ...
 
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[float, VecBase],
-        axis2: str, val2: Union[float, VecBase],
+        axis1: str, val1: Union[Numeric, VecBase],
+        axis2: str, val2: Union[Numeric, VecBase],
     ) -> 'FrozenVec': ...
 
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[float, VecBase],
-        axis2: str, val2: Union[float, VecBase],
-        axis3: str, val3: Union[float, VecBase],
+        axis1: str, val1: Union[Numeric, VecBase],
+        axis2: str, val2: Union[Numeric, VecBase],
+        axis3: str, val3: Union[Numeric, VecBase],
     ) -> 'FrozenVec': ...
 
     @classmethod
     def with_axes(
         cls,
         axis1: str,
-        val1: Union[float, VecBase],
+        val1: Union[Numeric, VecBase],
         axis2: Optional[str] = None,
-        val2: Union[float, VecBase]=0.0,
+        val2: Union[Numeric, VecBase]=0.0,
         axis3: Optional[str] = None,
-        val3: Union[float, VecBase]=0.0,
+        val3: Union[Numeric, VecBase]=0.0,
     ) -> 'FrozenVec':
         """Create a Vector, given a number of axes and corresponding values.
 
@@ -1098,19 +1098,19 @@ class FrozenVec(VecBase):
         if isinstance(val1, VecBase):
             vals[axis1] = val1[axis1]
         else:
-            vals[axis1] = val1
+            vals[axis1] = _coerce_float(val1)
 
         if axis2 is not None:
             if isinstance(val2, VecBase):
                 vals[axis2] = val2[axis2]
             else:
-                vals[axis2] = val2
+                vals[axis2] = _coerce_float(val2)
 
             if axis3 is not None:
                 if isinstance(val3, VecBase):
                     vals[axis3] = val3[axis3]
                 else:
-                    vals[axis3] = val3
+                    vals[axis3] = _coerce_float(val3)
 
         return cls(**vals)
 
@@ -1128,7 +1128,7 @@ class FrozenVec(VecBase):
 
     def __repr__(self) -> str:
         """Code required to reproduce this vector."""
-        return f"FrozenVec({format_float(self.x)}, {format_float(self.y)}, {format_float(self.z)})"
+        return f"FrozenVec({format_float(self._x)}, {format_float(self._y)}, {format_float(self._z)})"
 
     def __reduce__(self) -> Tuple[Callable[[float, float, float], 'FrozenVec'], Tuple3]:
         """Pickling support.
@@ -1235,8 +1235,8 @@ class Vec(VecBase):
         return self._x
 
     @x.setter
-    def x(self, value: float) -> None:
-        self._x = float(value)
+    def x(self, value: Numeric) -> None:
+        self._x = _coerce_float(value)
 
     @property
     def y(self) -> float:
@@ -1244,8 +1244,8 @@ class Vec(VecBase):
         return self._y
 
     @y.setter
-    def y(self, value: float) -> None:
-        self._y = float(value)
+    def y(self, value: Numeric) -> None:
+        self._y = _coerce_float(value)
 
     @property
     def z(self) -> float:
@@ -1253,39 +1253,39 @@ class Vec(VecBase):
         return self._z
 
     @z.setter
-    def z(self, value: float) -> None:
-        self._z = float(value)
+    def z(self, value: Numeric) -> None:
+        self._z = _coerce_float(value)
 
     @classmethod
     @overload
-    def with_axes(cls, axis1: str, val1: Union[float, VecBase]) -> 'Vec': ...
+    def with_axes(cls, axis1: str, val1: Union[Numeric, VecBase]) -> 'Vec': ...
 
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[float, VecBase],
-        axis2: str, val2: Union[float, VecBase],
+        axis1: str, val1: Union[Numeric, VecBase],
+        axis2: str, val2: Union[Numeric, VecBase],
     ) -> 'Vec': ...
 
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[float, VecBase],
-        axis2: str, val2: Union[float, VecBase],
-        axis3: str, val3: Union[float, VecBase],
+        axis1: str, val1: Union[Numeric, VecBase],
+        axis2: str, val2: Union[Numeric, VecBase],
+        axis3: str, val3: Union[Numeric, VecBase],
     ) -> 'Vec': ...
 
     @classmethod
     def with_axes(
         cls,
         axis1: str,
-        val1: Union[float, VecBase],
+        val1: Union[Numeric, VecBase],
         axis2: Optional[str] = None,
-        val2: Union[float, VecBase]=0.0,
+        val2: Union[Numeric, VecBase]=0.0,
         axis3: Optional[str] = None,
-        val3: Union[float, VecBase]=0.0,
+        val3: Union[Numeric, VecBase]=0.0,
     ) -> 'Vec':
         """Create a Vector, given a number of axes and corresponding values.
 
@@ -2537,11 +2537,20 @@ class FrozenAngle(AngleBase):
         axis will be used from the angle.
         """
         res = {'pitch': 0.0, 'yaw': 0.0, 'roll': 0.0}
-        res[axis1] = val1[axis1] if isinstance(val1, AngleBase) else val1
+        if isinstance(val1, AngleBase):
+            res[axis1] = val1[axis1]
+        else:
+            res[axis1] = _coerce_float(val1)
         if axis2 is not None:
-            res[axis2] = val2[axis2] if isinstance(val2, AngleBase) else val2
+            if isinstance(val2, AngleBase):
+                res[axis2] = val2[axis2]
+            else:
+                res[axis2] = _coerce_float(val2)
             if axis3 is not None:
-                res[axis3] = val3[axis3] if isinstance(val3, AngleBase) else val3
+                if isinstance(val3, AngleBase):
+                    res[axis3] = val3[axis3]
+                else:
+                    res[axis3] = _coerce_float(val3)
         return Py_FrozenAngle(**res)
 
     def __reduce__(self) -> Tuple[Callable[[float, float, float], 'FrozenAngle'], Tuple3]:
@@ -2743,7 +2752,7 @@ class Angle(AngleBase):
                 ang[axis3] = val3[axis3] if isinstance(val3, AngleBase) else val3
         return ang
 
-    def __setitem__(self, ind: Union[str, int], val: float) -> None:
+    def __setitem__(self, ind: Union[str, int], value: Numeric) -> None:
         """Allow editing values by index instead of name if desired.
 
         This accepts the following indexes to edit values:
@@ -2754,11 +2763,11 @@ class Angle(AngleBase):
         Useful in conjunction with a loop to apply commands to all values.
         """
         if ind in (0, 'p', 'pit', 'pitch'):
-            self._pitch = float(val) % 360.0 % 360.0
+            self._pitch = _coerce_float(value) % 360.0 % 360.0
         elif ind in (1, 'y', 'yaw'):
-            self._yaw = float(val) % 360.0 % 360.0
+            self._yaw = _coerce_float(value) % 360.0 % 360.0
         elif ind in (2, 'r', 'rol', 'roll'):
-            self._roll = float(val) % 360.0 % 360.0
+            self._roll = _coerce_float(value) % 360.0 % 360.0
         else:
             raise KeyError('Invalid axis: {!r}'.format(ind))
 
