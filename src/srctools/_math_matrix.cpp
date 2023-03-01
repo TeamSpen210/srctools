@@ -121,7 +121,7 @@ bool mat3_inverse(const mat3_t* in, mat3_t* out)
         double v = row[n];
 
         // Check for zeros along the diagonal
-        if (fabsf(v) <= 0.00001f)
+        if (fabs(v) <= 0.00001)
             return false;
 
         _mat3_inverse_div(row, v);
@@ -134,4 +134,3 @@ bool mat3_inverse(const mat3_t* in, mat3_t* out)
 
     return true;
 }
-
