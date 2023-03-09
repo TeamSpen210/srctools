@@ -14,6 +14,7 @@ Version (dev)
 * Add :py:meth:`srctools.vtf.Frame.fill()`, for filling a frame with a constant colour.
 * Add support for `Chaos non-uniform static prop scaling <https://github.com/TeamSpen210/srctools/pull/17>`_ (by `@ozxybox <https://github.com/ozxybox>`_).
 * Correctly handle non-float numeric values being passed to various :py:mod:`srctools.math` operations.
+* Compute the total vertex count for parsed models.
 
 -------------
 Version 2.3.9

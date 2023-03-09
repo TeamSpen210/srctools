@@ -366,6 +366,7 @@ class Model:
             raise ValueError('Unknown MDL version {}!'.format(self.version))
 
         self.name = name.rstrip(b'\0').decode('ascii')
+        self.total_verts = 0
         self.eye_pos = str_readvec(f)
         self.illum_pos = str_readvec(f)
         # Approx dimensions
@@ -694,6 +695,7 @@ class Model:
         StudioMDL is rather messy, and adds many extra columns that are not used
         on the actual model.
         We're following  mstudiobodyparts_t -> mstudiomodel_t -> mstudiomesh_t -> material.
+        While we're here, store a count of the total vertexes used.
         """
         used_inds = set()
 
@@ -727,6 +729,7 @@ class Model:
                     # Two void* pointers,
                     # 32 empty bytes
                 ) = struct_read('64s i f 9i 8x 32x', f)
+                self.total_verts += num_verts
                 model_end = f.tell()
 
                 f.seek(model_start + mesh_off)
