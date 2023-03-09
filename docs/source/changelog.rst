@@ -6,7 +6,7 @@ Changelog
 	:backlinks: none
 
 -------------
-Version (dev)
+Version 2.3.10
 -------------
 
 * Fix :py:meth:`srctools.vtf.Frame.copy_from()` not clearing cached unparsed file data. If the VTF
