@@ -484,7 +484,8 @@ def item_item_crate(ctx: ResourceCtx, ent: Entity) -> ResGen:
         yield Resource.mdl('models/items/item_item_crate.mdl')
     elif appearance == 1:  # Beacon
         yield Resource.mdl('models/items/item_beacon_crate.mdl')
-    # else: 2 = Mapbase custom model, that'll be packed automatically.
+    elif appearance == 2:  #  Mapbase custom model
+        yield Resource.mdl(ent['model'])
     if conv_int(ent['cratetype']) == 0 and ent['itemclass']:  # "Specific Item"
         spawned = _blank_vmf.create_ent(ent['itemclass'])
         if 'ezvariant' in ent and 'ENTROPYZERO2' in ctx.tags:

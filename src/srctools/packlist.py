@@ -894,12 +894,22 @@ class PackList:
                 ):
                     continue
                 elif key == 'model':
-                    # Models are set on all brush entities, and are always either
-                    # a '*37' brush ref, a model, or a sprite.
+                    # Models are set on all brush entities, and are either a '*37' brush ref,
+                    # a model, or a sprite.
+                    # But look up the KV anyway - if it's explicitly not one of those, don't pack
+                    # this. That indicates it's just there to let you swap the model for in Hammer.
                     value = ent[key]
-                    if value and value[:1] != '*':
+                    if value.startswith('*'):
+                        continue  # Do not "pack" brush references.
+
+                    try:
+                        val_type = ent_class.kv[key].type
+                    except KeyError:
+                        val_type = KVTypes.STR_MODEL  # Try to pack this anyway.
+                    if val_type is KVTypes.STR_MODEL or val_type is KVTypes.STR_SPRITE:
                         self.pack_file(value, skinset=skinset)
-                    continue
+                        continue
+                    # Else, it's another type. Do the generic handling below.
                 try:
                     kv = ent_class.kv[key]
                     val_type = kv.type
