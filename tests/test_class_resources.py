@@ -1,5 +1,5 @@
 """Test the resource functions implemented for specific entities."""
-from typing import Dict, Generator, Iterable, List, Mapping, Union
+from typing import Dict, Iterable, List, Mapping, Union
 from operator import itemgetter
 
 import pytest
@@ -580,12 +580,16 @@ def test_item_ammo_crate(ammo: Dict[int, str], tags: List[str]) -> None:
         Resource.mat("materials/sprites/bluelaser1.vmt"),
         Resource.snd("Grenade.Blip"),
         Resource.snd("BaseGrenade.Explode"),
+        Resource.weapon_script("scripts/weapon_frag.txt"),
         classname='item_ammo_crate',
         ammotype=5,
         tags__=tags,
     )
 
-    # And Mapbase adds the SLAM which does the same:
+
+def test_item_ammo_crate_mbase_extras() -> None:
+    """Test the SLAM, only available in Mapbase."""
+    # The SLAM gives the weapon.
     check_entity(
         Resource.snd('AmmoCrate.Open'),
         Resource.snd('AmmoCrate.Close'),
@@ -597,6 +601,7 @@ def test_item_ammo_crate(ammo: Dict[int, str], tags: List[str]) -> None:
         Resource.snd("Weapon_SLAM.TripMineAttach"),
         Resource.snd("Weapon_SLAM.SatchelThrow"),
         Resource.snd("Weapon_SLAM.SatchelAttach"),
+        Resource.weapon_script("scripts/weapon_slam.txt"),
         # npc_tripmine
         Resource.mdl("models/Weapons/w_slam.mdl"),
         Resource.snd("TripmineGrenade.Charge"),
@@ -753,6 +758,7 @@ def test_npcs() -> None:
         Resource.mdl("models/breen.mdl"),
         Resource.snd("Weapon_StunStick.Activate"),
         Resource.snd("Weapon_StunStick.Deactivate"),
+        Resource.weapon_script("scripts/weapon_stunstick.txt"),
         classname='npc_breen',
         additionalequipment='weapon_stunstick',
     )
@@ -1295,6 +1301,7 @@ def test_npc_maker() -> None:
     check_entity(
         *BASE_NPC,
         Resource.mdl("models/eli.mdl"),
+        Resource.weapon_script("scripts/weapon_rpg.txt"),
         Resource.snd("Missile.Ignite"),
         Resource.snd("Missile.Accelerate"),
         Resource.mdl("models/weapons/w_missile.mdl"),
@@ -1415,3 +1422,28 @@ def test_skybox_swapper() -> None:
 @pytest.mark.xfail
 def test_team_control_point() -> None:
     raise NotImplementedError
+
+
+def test_weapon_scripts() -> None:
+    """Test the handler which adds weapon scripts for every weapon_ class."""
+    check_entity(
+        Resource.snd("Weapon_StunStick.Activate"),
+        Resource.snd("Weapon_StunStick.Deactivate"),
+        Resource.weapon_script("scripts/weapon_stunstick.txt"),
+        classname='weapon_stunstick',
+    )
+    check_entity(
+        Resource.weapon_script('scripts/weapon_pulsepistol.txt'),
+        classname='weapon_pulsepistol',
+    )
+    # Black Mesa uses DMX scripts in a different location.
+    check_entity(
+        Resource.weapon_script("scripts/weapon_crowbar.txt"),
+        classname='weapon_crowbar',
+        tags__=['hl2'],
+    )
+    check_entity(
+        Resource.weapon_script("scripts/gameplay/weapons/weapon_crowbar.dmx"),
+        classname='weapon_crowbar',
+        tags__=['mesa'],
+    )
