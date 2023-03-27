@@ -4,11 +4,17 @@ global-include *.c *.cpp *.h *.hpp
 global-include *.pxd
 # Include .pyi stubs.
 global-include *.pyi
+# Include tests and docs in the sdist.
+graft tests
+graft docs
 # Exclude Cython-generated code.
 exclude src/srctools/*.cpp
 exclude src/srctools/*.c
+global-exclude *.pyc
 
+# Remove build artifacts, if they happen to be here.
 prune .tox
+prune docs/build
 
 # FGD database.
 include src/srctools/fgd.lzma
