@@ -864,5 +864,14 @@ def team_control_point(ctx: ResourceCtx, ent: Entity) -> ResGen:
             yield Resource.mat(f'materials/{icon}_locked.vmt')
 
 
-# TODO: Weapons are unusual, they don't directly specify the models.
-# Instead, it's specified in the weapon script.
+@cls_func
+def weapon_script(ctx: ResourceCtx, ent: Entity) -> ResGen:
+    """Handle weapon entities, which load sounds and models from the weapon script."""
+    classname = ent['classname']
+    if 'MESA' in ctx.tags:
+        # Mesa has item_weapon_xxx, which spawns weapon_xxx.
+        if classname.startswith('item_'):
+            classname = classname[5:]
+        yield Resource(f'scripts/gameplay/weapons/{classname}.dmx', FileType.WEAPON_SCRIPT)
+    else:
+        yield Resource(f'scripts/{classname}.txt', FileType.WEAPON_SCRIPT)

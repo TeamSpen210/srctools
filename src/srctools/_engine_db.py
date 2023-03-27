@@ -39,7 +39,7 @@ _fmt_block_pos = Struct('>IH')
 
 
 # Version number for the format.
-BIN_FORMAT_VERSION: Final = 7
+BIN_FORMAT_VERSION: Final = 8
 TAG_EMPTY: Final[FrozenSet[str]] = frozenset()  # This is a singleton.
 # Soft limit on the number of bytes for each block, needs tuning.
 MAX_BLOCK_SIZE: Final = 2048
@@ -132,6 +132,7 @@ FILE_TYPE_ORDER = [
     FileType.CHOREO,
     FileType.MODEL,
     FileType.BREAKABLE_CHUNK,
+    FileType.WEAPON_SCRIPT,
 ]
 
 # Entity types -> bits used

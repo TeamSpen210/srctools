@@ -16,6 +16,7 @@ Version 2.3.10
 * Correctly handle non-float numeric values being passed to various :py:mod:`srctools.math` operations.
 * Compute the total vertex count for parsed models.
 * Include the docs and tests in the source distribution.
+* Add support for detecting and packing weapon scripts.
 
 -------------
 Version 2.3.9

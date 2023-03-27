@@ -64,6 +64,9 @@ class FileType(Enum):
     #: This corresponds to ``g_PropDataSystem.GetRandomChunkModel()``.
     BREAKABLE_CHUNK = 6
 
+    #: A script file loaded for weapons, referencing models and sounds.
+    WEAPON_SCRIPT = 7
+
     #: Material file.
     MATERIAL = 'vmt'
 
