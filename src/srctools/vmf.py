@@ -26,7 +26,7 @@ from srctools import BOOL_LOOKUP, EmptyMapping
 from srctools.keyvalues import Keyvalues
 from srctools.math import (
     Angle, AnyAngle, AnyMatrix, AnyVec, FrozenAngle, FrozenMatrix, FrozenVec, Matrix, Vec,
-    to_matrix,
+    to_matrix, format_float
 )
 import srctools
 
@@ -119,6 +119,8 @@ def conv_kv(val: ValidKVs) -> str:
         return '0'
     elif isinstance(val, Matrix) or isinstance(val, FrozenMatrix):
         return str(val.to_angle())
+    elif isinstance(val, float):
+        return format_float(val)
     else:
         return str(val)
 
