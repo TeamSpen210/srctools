@@ -2309,15 +2309,14 @@ class BSP:
         )
 
         for off in table_offsets:
-            # Look for the NULL at the end - strings are limited to 128 chars.
-            str_off = 0
-            for str_off in range(off, off + 128):
-                if tex_data[str_off] == 0:
-                    yield tex_data[off: str_off].decode('ascii')
-                    break
-            else:
+            # Look for the NULL at the end of the string. They're limited to 128 chars long.
+            try:
+                str_off = tex_data.index(b'\0', off, off + 128)
+            except ValueError:
                 # Reached the 128 char limit without finding a null.
-                raise ValueError(f'Bad string at {off} in BSP! ({tex_data[off:str_off]!r})')
+                raise ValueError(f'Bad string at {off} in BSP! ({tex_data[off:off + 128]!r})') from None
+            else:
+                yield tex_data[off:str_off].decode('ascii')
 
     def _lmp_write_textures(self, textures: List[str]) -> bytes:
         table = BytesIO()
