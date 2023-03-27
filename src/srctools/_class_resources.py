@@ -872,6 +872,6 @@ def weapon_script(ctx: ResourceCtx, ent: Entity) -> ResGen:
         # Mesa has item_weapon_xxx, which spawns weapon_xxx.
         if classname.startswith('item_'):
             classname = classname[5:]
-        yield Resource(f'scripts/gameplay/weapons/{classname}.dmx', FileType.WEAPON_SCRIPT)
+        yield Resource.weapon_script(f'scripts/gameplay/weapons/{classname}.dmx')
     else:
-        yield Resource(f'scripts/{classname}.txt', FileType.WEAPON_SCRIPT)
+        yield Resource.weapon_script(f'scripts/{classname}.txt')

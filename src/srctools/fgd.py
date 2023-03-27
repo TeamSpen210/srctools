@@ -487,6 +487,11 @@ class Resource:
         """Create a resource definition for a particle system."""
         return cls(filename, FileType.PARTICLE_SYSTEM, tags)
 
+    @classmethod
+    def weapon_script(cls, filename: str, tags: TagsSet = frozenset()) -> 'Resource':
+        """Create a resource definition for a weapon script."""
+        return cls(filename, FileType.WEAPON_SCRIPT, tags)
+
 
 class Helper:
     """Base class for representing helper() commands in the header of an entity.
