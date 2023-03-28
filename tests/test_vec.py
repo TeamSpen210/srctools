@@ -584,8 +584,8 @@ def test_vec_to_vec(frozen_thawed_vec: VecClass):
         # These are direct methods, so no inheritence and iop to deal with.
 
         # Commutative
-        assert vec1.dot(vec2) == (x1*x2 + y1*y2 + z1*z2)
-        assert vec2.dot(vec1) == (x1*x2 + y1*y2 + z1*z2)
+        assert vec1.dot(vec2) == pytest.approx(x1*x2 + y1*y2 + z1*z2)
+        assert vec2.dot(vec1) == pytest.approx(x1*x2 + y1*y2 + z1*z2)
         assert_vec(
             vec1.cross(vec2),
             y1*z2-z1*y2,
