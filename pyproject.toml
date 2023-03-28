@@ -82,6 +82,12 @@ distance-dirty = "{base_version}.dev{distance}+{rev}.dirty.{build_date:%Y.%m.%d}
 method = "basic"
 file = "src/srctools/_version.py"
 
+[tool.cibuildwheel]
+# Ensure both 32-bit and 64-bit are built
+archs = "auto"
+# Skip building on < 3.8, 32-bit Linux.
+skip = ["cp37-*", "*-manylinux_i686"]
+
 [tool.pyright]
 include = [
 	"src/srctools/"
