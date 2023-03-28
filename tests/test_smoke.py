@@ -13,7 +13,7 @@ package_loc = Path(__file__, '..', '..', 'src', 'srctools')
     for fname in package_loc.glob('*.py')
     # Don't import the package init or deprecated modules.
     if fname.stem not in ['__init__', 'property_parser', 'vec']
-] + ['_class_resources', '_engine_db'])
+] + ['_cy_vtf_readwrite', '_math', '_tokenizer'])
 def test_smoke(mod_name: str) -> None:
     """Ensure every module is importable."""
     importlib.import_module('srctools.' + mod_name)
