@@ -88,6 +88,10 @@ archs = "auto"
 # Skip building on < 3.8, 32-bit Linux.
 skip = ["cp37-*", "*-manylinux_i686"]
 
+# After building, run tests to check it works.
+before-test = "pip install -r test-requirements.txt"
+test-command = 'pytest -m "not slow" {project}/tests'
+
 [tool.pytest.ini_options]
 markers = [
     "slow: marks especially-slow tests, to skip when building wheels",
