@@ -1,8 +1,6 @@
 """Test rotations in srctools.math."""
 from typing import List, NamedTuple
 from pathlib import Path
-import copy
-import pickle
 
 from helpers import *
 
@@ -352,6 +350,7 @@ def test_old_rotation(
                 assert_vec(by_mat, old.x, old.y, old.z, ang, tol=1e-1)
 
 
+@pytest.mark.slow
 def test_rotating_vectors(
     py_c_vec: PyCVec,
     rotation_data: List[RotationData],
@@ -489,6 +488,7 @@ def test_rotating_vec_tuples(
         assert_vec((0.0, 0.0, 1.0) @ ang, data.up_x, data.up_y, data.up_z)
 
 
+@pytest.mark.slow
 def test_rotated_matrix_data(
     py_c_vec: PyCVec,
     rotation_data: List[RotationData],
@@ -518,6 +518,7 @@ def test_rotated_matrix_data(
         assert math.isclose(data.up_z, mat[2, 2], abs_tol=EPSILON)
 
 
+@pytest.mark.slow
 def test_from_basis_w_engine_data(
     py_c_vec: PyCVec,
     rotation_data: List[RotationData],
@@ -546,6 +547,7 @@ def test_from_basis_w_engine_data(
         assert_ang(Angle.from_basis(x=x, y=y), *Matrix.from_basis(x=x, y=y).to_angle())
         assert_ang(Angle.from_basis(y=y, z=z), *Matrix.from_basis(y=y, z=z).to_angle())
         assert_ang(Angle.from_basis(x=x, z=z), *Matrix.from_basis(x=x, z=z).to_angle())
+
 
 
 def test_vec_cross_w_engine_data(

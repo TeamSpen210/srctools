@@ -88,6 +88,11 @@ archs = "auto"
 # Skip building on < 3.8, 32-bit Linux.
 skip = ["cp37-*", "*-manylinux_i686"]
 
+[tool.pytest.ini_options]
+markers = [
+    "slow: marks especially-slow tests, to skip when building wheels",
+]
+
 [tool.pyright]
 include = [
 	"src/srctools/"

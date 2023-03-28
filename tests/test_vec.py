@@ -452,6 +452,7 @@ def test_vec_lerp(frozen_thawed_vec: VecClass) -> None:
         Vec.lerp(48.4, -64.0, -64.0, Vec(), Vec())
 
 
+@pytest.mark.slow
 def test_scalar(frozen_thawed_vec: VecClass):
     """Check that Vec() + 5, -5, etc does the correct thing.
 
