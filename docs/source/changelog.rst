@@ -17,6 +17,7 @@ Version 2.3.10
 * Compute the total vertex count for parsed models.
 * Include the docs and tests in the source distribution.
 * Add support for detecting and packing weapon scripts.
+* Make custom model gibs inherit skinset when packing.
 
 -------------
 Version 2.3.9

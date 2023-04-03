@@ -1177,7 +1177,8 @@ class PackList:
                     LOGGER.warning('Can\'t find model "{}"!', file.filename)
                 return
 
-        for tex in mdl.iter_textures(self.skinsets.get(file.filename, None)):
+        skinset = self.skinsets.get(file.filename, None)
+        for tex in mdl.iter_textures(skinset):
             self.pack_file(tex, FileType.MATERIAL, optional=file.optional)
 
         for mdl_file in mdl.included_models:
@@ -1205,7 +1206,14 @@ class PackList:
                         self.pack_particle(part_name)
 
         for break_mdl in mdl.phys_keyvalues.find_all('break', 'model'):
-            self.pack_file(break_mdl.value, FileType.MODEL, optional=file.optional)
+            # Breakable gibs inherit the base prop skin. If the gib prop doesn't have multiple
+            # skins, it'll correctly just include skin 0.
+            self.pack_file(
+                break_mdl.value,
+                FileType.MODEL,
+                optional=file.optional,
+                skinset=skinset,
+            )
 
     def _get_material_files(self, file: PackFile) -> None:
         """Find any needed files for a material."""
