@@ -1004,6 +1004,16 @@ class BModel:
     phys_keyvalues: Optional[Keyvalues] = None
     _phys_solids: List[bytes] = []
 
+    def clear_physics(self) -> None:
+        """Delete the physics data for this brush model, and set the visleafs to non-solid.
+
+        This is useful to optimise if the entity is known to not be solid to physics objects.
+        """
+        self._phys_solids.clear()
+        self.phys_keyvalues = None
+        for leaf in self.node.iter_leafs():
+            leaf.contents = BrushContents.EMPTY
+
 
 def _staticprop_lighting_default(self: 'StaticProp') -> Vec:
     """If not provided, lighting defaults to the origin."""

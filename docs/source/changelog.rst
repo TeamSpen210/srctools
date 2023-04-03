@@ -18,6 +18,7 @@ Version 2.3.10
 * Include the docs and tests in the source distribution.
 * Add support for detecting and packing weapon scripts.
 * Make custom model gibs inherit skinset when packing.
+* Add :py:meth:`srctools.bsp.BModel.clear_physics()`, to delete physics data for a brush model.
 
 -------------
 Version 2.3.9
