@@ -506,3 +506,45 @@ def test_rotations() -> None:
     5.0 @ FrozenAngle()   # type: ignore[operator]
     5.0 @ Matrix()        # type: ignore[operator]
     5.0 @ FrozenMatrix()  # type: ignore[operator]
+
+
+def test_dot() -> None:
+    """Test that dot products can be called as a method and function."""
+    mv = Vec()
+    fv = FrozenVec()
+
+    assert_type(mv.dot(mv), float)
+    assert_type(mv.dot(fv), float)
+    assert_type(fv.dot(mv), float)
+    assert_type(fv.dot(fv), float)
+
+    assert_type(Vec.dot(mv, mv), float)
+    assert_type(Vec.dot(mv, fv), float)
+    assert_type(Vec.dot(fv, mv), float)
+    assert_type(Vec.dot(fv, fv), float)
+
+    assert_type(FrozenVec.dot(mv, mv), float)
+    assert_type(FrozenVec.dot(mv, fv), float)
+    assert_type(FrozenVec.dot(fv, mv), float)
+    assert_type(FrozenVec.dot(fv, fv), float)
+
+
+def test_cross() -> None:
+    """Test that cross products can be called as a method and function."""
+    mv = Vec()
+    fv = FrozenVec()
+
+    assert_type(mv.cross(mv), Vec)
+    assert_type(mv.cross(fv), Vec)
+    assert_type(fv.cross(mv), FrozenVec)
+    assert_type(fv.cross(fv), FrozenVec)
+
+    assert_type(Vec.cross(mv, mv), Vec)
+    assert_type(Vec.cross(mv, fv), Vec)
+    assert_type(Vec.cross(fv, mv), Vec)
+    assert_type(Vec.cross(fv, fv), Vec)
+
+    assert_type(FrozenVec.cross(mv, mv), FrozenVec)
+    assert_type(FrozenVec.cross(mv, fv), FrozenVec)
+    assert_type(FrozenVec.cross(fv, mv), FrozenVec)
+    assert_type(FrozenVec.cross(fv, fv), FrozenVec)
