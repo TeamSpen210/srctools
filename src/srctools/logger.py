@@ -179,9 +179,9 @@ class Formatter(logging.Formatter):
         except Exception:  # Something failed, keep the original.
             trace = exc_tb
 
-        # TODO: Stubs are wrong, this accepts None for the args and does nothing.
-        for line in traceback.TracebackException(exc_type, exc_value, trace).format():  # type: ignore
-            buffer.write(line)
+        if exc_type is not None and exc_value is not None:
+            for line in traceback.TracebackException(exc_type, exc_value, trace).format():
+                buffer.write(line)
 
         return buffer.getvalue().rstrip('\n')
 

@@ -294,8 +294,10 @@ class _EmptyMapping(MutableMapping[Any, Any]):
         return EmptyValuesView
 
     # Mutable functions
-    @overload
+
+    @overload  # type: ignore[override]
     def setdefault(self, key: Any) -> None: ...
+    # This is stricter than Mapping[Any, Any]. That returns Any, we always return the default.
     @overload
     def setdefault(self, key: Any, default: ValT) -> ValT: ...
 

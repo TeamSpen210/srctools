@@ -1,4 +1,5 @@
 # Static analysis test requirements.
 types-Pillow~=8.3.0
-mypy == 1.0.0
+types-pyinstaller~=5.7.0
+mypy == 1.2.0
 flake8 == 6.0.0

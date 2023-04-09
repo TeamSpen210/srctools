@@ -1,7 +1,7 @@
 """Pyinstaller hooks for the main module."""
 import os
 
-from PyInstaller.utils.hooks import get_module_file_attribute  # type: ignore
+from PyInstaller.utils.hooks import get_module_file_attribute
 
 
 srctools_init = get_module_file_attribute('srctools')

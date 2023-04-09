@@ -1245,7 +1245,7 @@ class BSP:
         self._parsed_lumps: Dict[Union[bytes, BSP_LUMPS], Any] = {}
         self.game_lumps: Dict[bytes, GameLump] = {}
         self.header_off = 0
-        self.version = version  # type: ignore  # read() will make it non-none.
+        self.version = VERSIONS.HL2
         # Tracks if the ent lump is using the new x1D output separators,
         # or the old comma separators. If no outputs are present there's no
         # way to determine this.
@@ -1259,7 +1259,7 @@ class BSP:
         # lump_layout holds version specific struct formats for lumps
         self.lump_layout = LUMP_LAYOUT_STANDARD
         
-        self.read()
+        self.read(version)
 
     # The first lump is the main one this reads/writes to, any additional are simpler lumps it
     # reads and includes all the data for.
@@ -1308,7 +1308,7 @@ class BSP:
         """Vitaminsource has a lot of structure changes."""
         return self.version is VERSIONS.VITAMINSOURCE
 
-    def read(self) -> None:
+    def read(self, expected_version: Optional[VERSIONS] = None) -> None:
         """Load all data."""
         self.lumps.clear()
         self.game_lumps.clear()
@@ -1321,17 +1321,18 @@ class BSP:
             if magic_name != BSP_MAGIC and magic_name != VITAMIN_MAGIC:
                 raise ValueError('File is not a BSP file!')
 
-            if self.version is None:
+            if expected_version is None:
                 try:
                     self.version = VERSIONS(bsp_version)
                 except ValueError:
                     self.version = bsp_version
                     LOGGER.warning(f'Unknown BSP Version \"{bsp_version}\"!')
             else:
-                if bsp_version != self.version:
+                if bsp_version != expected_version:
                     raise ValueError(
-                        f'Unexpected BSP version {self.version!r}, expected {bsp_version!r}!'
+                        f'Unexpected BSP version {bsp_version!r}, expected {expected_version!r}!'
                     )
+                self.version = expected_version
 
             if magic_name == VITAMIN_MAGIC and self.version is not VERSIONS.VITAMINSOURCE:
                 raise ValueError('VitaminSource uses a different version number.')

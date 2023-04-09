@@ -490,16 +490,18 @@ class VecBase:
                     'least 1 argument, got 0.'
                 ) from None
 
-        bbox_min = Py_Vec(first)
+        bbox_min: Py_Vec = Py_Vec(first)
         bbox_max = bbox_min.copy()
         for point in point_coll:
             bbox_min.min(point)
             bbox_max.max(point)
         if cls is Py_FrozenVec:
             return cls(bbox_min), cls(bbox_max)
-        else:
+        elif cls is Py_Vec:
             # We know cls is Py_Vec, and these are too.
             return bbox_min, bbox_max  # type: ignore
+        else:
+            raise AssertionError(cls)
 
     @classmethod
     def iter_grid(
@@ -2908,15 +2910,21 @@ _mk = _mk_vec
 # and choose an appropriate unprefixed version. Static analysis then
 # also assumes all three are the Python version.
 
-Cy_Vec = Py_Vec = Vec
-Cy_FrozenVec = Py_FrozenVec = FrozenVec
+Cy_Vec: TypeAlias = Vec 
+Py_Vec: TypeAlias = Vec
+Cy_FrozenVec: TypeAlias = FrozenVec
+Py_FrozenVec: TypeAlias = FrozenVec
+Cy_Angle: TypeAlias = Angle
+Py_Angle: TypeAlias = Angle
+Cy_FrozenAngle: TypeAlias = FrozenAngle
+Py_FrozenAngle: TypeAlias = FrozenAngle
+Cy_Matrix: TypeAlias = Matrix
+Py_Matrix: TypeAlias = Matrix
+Cy_FrozenMatrix: TypeAlias = FrozenMatrix
+Py_FrozenMatrix: TypeAlias = FrozenMatrix
 Cy_parse_vec_str = Py_parse_vec_str = parse_vec_str
 Cy_to_matrix = Py_to_matrix = to_matrix
 Cy_lerp = Py_lerp = lerp
-Cy_Angle = Py_Angle = Angle
-Cy_FrozenAngle = Py_FrozenAngle = FrozenAngle
-Cy_Matrix = Py_Matrix = Matrix
-Cy_FrozenMatrix = Py_FrozenMatrix = FrozenMatrix
 
 # Do it this way, so static analysis ignores this.
 if not TYPE_CHECKING:

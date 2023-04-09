@@ -1826,7 +1826,9 @@ class Side:
                     else:
                         # multi_colors could be None, but we make sure to fix
                         # that before calling this.
-                        self._disp_verts[y * size + x].multi_colors[member] = res  # type: ignore
+                        multi_colors = self._disp_verts[y * size + x].multi_colors
+                        assert multi_colors is not None
+                        multi_colors[member] = res
             except ValueError as exc:
                 raise ValueError(
                     f'Displacement array for {name} in side {self.id}, '
