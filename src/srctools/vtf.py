@@ -617,7 +617,7 @@ class VTF:
         fmt: ImageFormats=ImageFormats.RGBA8888,
         thumb_fmt: ImageFormats=ImageFormats.DXT1,
         depth: int=1,
-    ):
+    ) -> None:
         """Create a blank VTF file."""
         if not ((7, 2) <= version <= (7, 5)):
             raise ValueError(f'Version must be between 7.2 and 7.5! ({version!r})')
@@ -1079,7 +1079,7 @@ class SheetSequence:
         frames: List[Tuple[float, TexCoord, TexCoord, TexCoord, TexCoord]],
         clamp: bool,
         duration: float,
-    ):
+    ) -> None:
         self.frames = frames
         self.clamp = clamp
         self.duration = duration

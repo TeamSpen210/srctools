@@ -166,7 +166,7 @@ class Vec_tuple(NamedTuple):
 if not TYPE_CHECKING:
     _old_vec_tup = Vec_tuple.__new__
 
-    def _vec_tup_new(*args, **kwargs):
+    def _vec_tup_new(*args: Any, **kwargs: Any) -> Vec_tuple:
         warnings.warn(
             'Vec_tuple is deprecated, use FrozenVec instead.',
             DeprecationWarning, stacklevel=2,

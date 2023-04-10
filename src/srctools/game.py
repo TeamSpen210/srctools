@@ -24,7 +24,7 @@ class Game:
     fgd_loc: Optional[str]
     search_paths: List[Path]
 
-    def __init__(self, path: Union[str, Path]):
+    def __init__(self, path: Union[str, Path]) -> None:
         """Parse a game from a folder."""
         if isinstance(path, Path):
             self.path = path

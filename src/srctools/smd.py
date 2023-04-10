@@ -27,7 +27,7 @@ class Bone:
     """Represents a single bone."""
     __slots__ = ('name', 'parent')
 
-    def __init__(self, name: str, parent: Optional['Bone']):
+    def __init__(self, name: str, parent: Optional['Bone']) -> None:
         self.name = name
         self.parent = parent
 
@@ -98,7 +98,7 @@ class Vertex:
         tex_u: float,
         tex_v: float,
         links: List[Tuple[Bone, float]],
-    ):
+    ) -> None:
         self.pos = pos
         self.norm = norm
         self.links = links
@@ -148,7 +148,7 @@ class Triangle:
     """Represents one triangle."""
     __slots__ = ('mat', 'point1', 'point2', 'point3')
 
-    def __init__(self, mat: str, p1: Vertex, p2: Vertex, p3: Vertex):
+    def __init__(self, mat: str, p1: Vertex, p2: Vertex, p3: Vertex) -> None:
         self.mat = mat
         self.point1 = p1
         self.point2 = p2
@@ -228,7 +228,7 @@ class Triangle:
 
 class ParseError(Exception):
     """Invalid model format."""
-    def __init__(self, line_num: Union[int, str], msg: str, *args: object):
+    def __init__(self, line_num: Union[int, str], msg: str, *args: object) -> None:
         super(ParseError, self).__init__('{}: {}'.format(
             line_num,
             msg.format(*args),

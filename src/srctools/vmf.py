@@ -134,7 +134,7 @@ class IDMan(AbstractSet[int]):
     _used: Set[int]
     search_pos: int
 
-    def __init__(self, existing: Iterable[int] = ()):
+    def __init__(self, existing: Iterable[int] = ()) -> None:
         """Initialise the ID manager."""
         super().__init__()
         self._used = set(existing)
@@ -1607,7 +1607,7 @@ class Side:
         uaxis: Optional[UVAxis] = None,
         vaxis: Optional[UVAxis] = None,
         disp_power: DispPower=0,
-    ):
+    ) -> None:
         """Planes must be a list of 3 Vecs or 3-tuples."""
         self.map = vmf_file
         if len(planes) != 3:

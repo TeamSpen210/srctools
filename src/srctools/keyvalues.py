@@ -1221,7 +1221,7 @@ class _BuilderElem:
     This is produced when indexing or accessing attributes on the builder,
     and is then called or used as a context manager to enter the builder.
     """
-    def __init__(self, builder: _Builder, name: str):
+    def __init__(self, builder: _Builder, name: str) -> None:
         self._builder = builder
         self._name = name
 
