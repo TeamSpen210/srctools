@@ -54,6 +54,7 @@ class Particle:
         file: Element,
         version: int = FORMAT_VERSION,
     ) -> Dict[str, 'Particle']: ...
+
     @classmethod
     @overload
     def parse(

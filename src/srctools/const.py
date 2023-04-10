@@ -219,7 +219,7 @@ class BSPContents(Flag):
     CURRENT_DOWN = 0x800000
 
     ORIGIN = 0x1000000
-    """Behaves like a ``tools/toolsorigin`` brush, used to set origin. 
+    """Behaves like a ``tools/toolsorigin`` brush, used to set origin.
     This is Goldsource era and is very deprecated.
     """
     NPC = 0x2000000

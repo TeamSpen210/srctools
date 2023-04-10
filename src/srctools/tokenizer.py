@@ -95,8 +95,8 @@ class Token(Enum):
     PAREN_ARGS = 3  #: Parenthesised ``(data)``.
     DIRECTIVE = 4  #: ``#name`` (automatically casefolded).
 
-    BRACE_OPEN = 5  #- A ``{`` character.
-    BRACE_CLOSE = 6  #- A ``}`` character.
+    BRACE_OPEN = 5  #: A ``{`` character.
+    BRACE_CLOSE = 6  #: A ``}`` character.
 
     PROP_FLAG = 10  #: A ``[!flag]``
     BRACK_OPEN = 11  #: A ``[`` character. Only used if ``PROP_FLAG`` is not.
@@ -111,6 +111,7 @@ class Token(Enum):
     def has_value(self) -> bool:
         """If true, this type has an associated value."""
         return self.value in (1, 3, 4, 10)
+
 
 _OPERATOR_VALS = {
     Token.EOF: '',
@@ -194,10 +195,13 @@ class BaseTokenizer(abc.ABC):
 
     @overload
     def error(self, __message: Token) -> TokenSyntaxError: ...
+
     @overload
     def error(self, __message: Token, __value: str) -> TokenSyntaxError: ...
+
     @overload
     def error(self, __message: str, *args: object) -> TokenSyntaxError: ...
+
     def error(self, message: Union[str, Token], *args: object) -> TokenSyntaxError:
         """Raise a syntax error exception.
 

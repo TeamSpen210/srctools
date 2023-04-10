@@ -553,11 +553,13 @@ class AtomicWriter(Generic[IOKindT]):
 # This shouldn't be used in our modules, to ensure the order here doesn't matter.
 # isort: off
 from .math import (
-    FrozenVec, Vec, Vec_tuple,
+    FrozenVec, Vec,
     parse_vec_str, lerp,
     FrozenMatrix, Matrix,
     FrozenAngle, Angle,
 )
+# Deprecated.
+from .math import Vec_tuple  # noqa
 from srctools.keyvalues import NoKeyError, KeyValError, Keyvalues
 from srctools.filesys import FileSystem, FileSystemChain, get_filesystem
 from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis

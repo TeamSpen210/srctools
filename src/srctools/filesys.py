@@ -8,11 +8,16 @@ With a filesystem object, you can index it to locate files inside (raising
 call :py:func:`~File.open_bin()` or :py:func:`~File.open_str()` to read the contents. Writing is not
 supported.
 
-* :py:class:`FileSystem` is the base :external:py:class:`~abc.ABC`, which can be subclassed to define additional subsystems.
-* :py:class:`RawFileSystem` provides access to a directory, optionally prohibiting access to parent folders.
-* :py:class:`ZipFileSystem` and :py:class:`VPKFileSystem` provide access to their respective archives.
-* :py:class:`VirtualFileSystem` redirects to a mapping object, for fake file contents already in memory.
-* :py:class:`FileSystemChain` contains multiple other systems, concatenating them together like how Source treats its search paths.
+* :py:class:`FileSystem` is the base :external:py:class:`~abc.ABC`, which can be subclassed to
+  define additional subsystems.
+* :py:class:`RawFileSystem` provides access to a directory, optionally prohibiting access to parent
+  folders.
+* :py:class:`ZipFileSystem` and :py:class:`VPKFileSystem` provide access to their respective
+  archives.
+* :py:class:`VirtualFileSystem` redirects to a mapping object, for fake file contents already
+  in memory.
+* :py:class:`FileSystemChain` contains multiple other systems, concatenating them together like
+  how Source treats its search paths.
 
 See the :py:class:`srctools.game.Game` class for parsing ``gameinfo.txt`` files into filesystems.
 To mount a :py:class:`~srctools.bsp.BSP` file, use ``ZipFileSystem(bsp.pakfile)``.
@@ -70,6 +75,7 @@ class RootEscapeError(ValueError):
     """Raised when a path tries to refer to a file outside the root of a filesystem."""
     root: str
     path: str
+
     def __init__(self, root: str, path: str) -> None:
         """Raised when a path tries to refer to a file outside the root of a filesystem."""
         super().__init__(root, path)
@@ -89,6 +95,7 @@ class File(Generic[FileSysT]):
     # doesn't need to expose that TypeVar. FileSystem._get_data does the type
     # check.
     _data: Any
+
     def __init__(
         self,
         system: FileSysT,
@@ -137,6 +144,7 @@ class FileSystem(Generic[_FileDataT]):
     """Base class for different systems defining the interface."""
     path: str
     _ref_count: int
+
     def __init__(self, path: StringPath) -> None:
         self.path = os.fspath(path)
         self._ref_count = 0
@@ -265,7 +273,7 @@ class FileSystem(Generic[_FileDataT]):
     def _get_cache_key(self: FileSysT, file: File[FileSysT]) -> int:
         """Return a checksum or last-modified date suitable for caching.
 
-        This allows preventing re-parsing the file. If not possible, return CACHE_KEY_INVALID (-1).
+        This allows preventing reparsing the file. If not possible, return CACHE_KEY_INVALID (-1).
         """
         return CACHE_KEY_INVALID
 
@@ -499,7 +507,7 @@ class RawFileSystem(FileSystem[str]):
 
     def __repr__(self) -> str:
         return (
-            f'{self.__class__.__name__}({self.path!r}, ' 
+            f'{self.__class__.__name__}({self.path!r}, '
             f'constrain_path={self.constrain_path})'
         )
 
@@ -561,6 +569,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
     """Accesses files in a zip file."""
     _no_close: bool
     zip: ZipFile
+
     def __init__(self, path: StringPath, zipfile: Optional[ZipFile]=None) -> None:
         super().__init__(path)
 

@@ -69,5 +69,6 @@ def main(args: List[str]) -> None:
             print('\t{} = {}'.format(param_name, param_count[param_name]))
         print('\t}')
 
+
 if __name__ == '__main__':
     main(sys.argv[1:])

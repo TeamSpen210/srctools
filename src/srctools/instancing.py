@@ -52,6 +52,7 @@ class Instance:
     brush_ids: Dict[int, int]
     node_ids: Dict[int, int]
     visgroup_ids: Dict[int, int]
+
     def __init__(
         self,
         name: str,
@@ -175,7 +176,9 @@ class Instance:
         elif type is ValueTypes.ANGLE_NEG_PITCH or type is ValueTypes.EXT_ANGLE_PITCH:
             raise ValueError(f'"{type.name}" keyvalue type must be fixed up on the instance as a whole!')
         elif type is ValueTypes.CHOICES:
-            raise ValueError('choices keyvalue type is not meaningful, it should be swapped with another type!')
+            raise ValueError(
+                'Choices keyvalue type is not meaningful, it should be swapped with another type!'
+            )
         # All others = no change required.
         return value
 
@@ -322,7 +325,8 @@ def collapse_one(
 
     * If :external:py:data:`False`, visgroups are stripped.
     * If :external:py:data:`True`, the original visgroups will be kept.
-    * If set to a specific visgroup, all ents and brushes will be added to it, with any existing visgroups in the instance added as a child.
+    * If set to a specific visgroup, all ents and brushes will be added to it, with any existing
+      visgroups in the instance added as a child.
 
     :param engine_cache: This is a dict used to cache parsed FGD data for remapping.
         If multiple instances are being collapsed, create an empty dict and pass it in to every call

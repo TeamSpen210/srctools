@@ -25,3 +25,7 @@ extend-ignore =
 	W503
 	# No complexity counts.
 	C901
+	# Flake8-annotations.
+	# Type annotations for self & cls are not important.
+	ANN101
+	ANN102

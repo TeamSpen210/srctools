@@ -90,6 +90,7 @@ class BoneFrame:
 class Vertex:
     """A single vertex."""
     __slots__ = ('pos', 'norm', 'tex_u', 'tex_v', 'links')
+
     def __init__(
         self,
         pos: Vec,
@@ -595,16 +596,16 @@ class Mesh:
         if offset is None:
             offset = Vec()
 
-        scaling: Vec = Vec(1,1,1)
+        scaling: Vec = Vec(1.0, 1.0, 1.0)
         if isinstance(scale, float):
             scaling = Vec(scale, scale, scale)
         elif isinstance(scale, Vec):
             scaling = scale
-        
+
         bone_link = [(self.root_bone(), 1.0)]
-        
+
         matrix = Matrix()
-        
+
         # Set the scale
         matrix[0, 0] = scaling[0]
         matrix[1, 1] = scaling[1]

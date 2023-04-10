@@ -84,6 +84,7 @@ class AnimEventTypes(FlagEnum):
     FACEPOSER = 1 << 5
     add_unknown(locals())
 
+
 CL = AnimEventTypes.CLIENT
 SV = AnimEventTypes.SERVER
 
@@ -279,16 +280,16 @@ class AnimEvents(Enum):
     CSGO_FOOT_WALK = 4002
 
 
-ANIM_EVENT_BY_INDEX = {
+ANIM_EVENT_BY_INDEX: Dict[int, AnimEvents] = {
     event.value: event
     for event in AnimEvents
-}  # type: Dict[int, AnimEvents]
-ANIM_EVENT_BY_NAME = {
+}
+ANIM_EVENT_BY_NAME: Dict[str, AnimEvents] = {
     event.name: event
     for event in AnimEvents
     # Don't save some that don't actually have official names.
     if event.value not in (4001, 4002, 7001, 7002)
-}  # type: Dict[str, AnimEvents]
+}
 
 ST_PHY_HEADER = Struct('<iiil')
 
@@ -330,6 +331,7 @@ class Model:
     """
     _sys: FileSystem[Any]
     _file: File[Any]
+
     def __init__(self, filesystem: FileSysT, file: File[FileSysT]) -> None:
         """Parse a model from a file."""
         self._file = file

@@ -133,6 +133,7 @@ class IDMan(AbstractSet[int]):
     """
     _used: Set[int]
     search_pos: int
+
     def __init__(self, existing: Iterable[int] = ()):
         """Initialise the ID manager."""
         super().__init__()
@@ -2088,7 +2089,7 @@ class Side:
          This is for use in texture randomisation.
          """
         warnings.warn('This is useless and will be removed.', DeprecationWarning)
-        return self.planes[0].join(' ') + self.planes[1].join(' ') +  self.planes[2].join(' ')
+        return self.planes[0].join(' ') + self.planes[1].join(' ') + self.planes[2].join(' ')
 
     def normal(self) -> Vec:
         """Compute the unit vector which extends perpendicular to the face.

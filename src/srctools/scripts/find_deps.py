@@ -113,5 +113,6 @@ def main(args: List[str]) -> None:
             if not result.filters or any(map(filename.casefold().startswith, result.filters)):
                 print(' ' + filename)
 
+
 if __name__ == '__main__':
     main(sys.argv[1:])

@@ -60,6 +60,7 @@ class Variable:
     name: str  # With correct case
     value: str
 
+
 __all__ = ['VarType', 'Material', 'get_parm_type']
 ArgT = TypeVar('ArgT')
 _SHADER_PARAM_TYPES: Dict[str, VarType] = {}
@@ -69,6 +70,8 @@ _SHADER_PARAM_TYPES: Dict[str, VarType] = {}
 def get_parm_type(name: str) -> Optional[VarType]: ...
 @overload
 def get_parm_type(name: str, default: ArgT) -> Union[VarType, ArgT]: ...
+
+
 def get_parm_type(name: str, default: Optional[ArgT] = None) -> Union[VarType, ArgT, None]:
     """Retrieve the type a parameter has, or return the default."""
     # Import and load the parameters.
@@ -308,7 +311,8 @@ class Material(MutableMapping[str, str]):
 
         :param fsys: This reads from the supplied filesystem as required.
         :param limit: If more than this many files are parsed, a RecursionError is raised.
-        :param parent_func: If this is provided, it will be called with the filenames of the VMTs which are looked up. This allows tracking which are used.
+        :param parent_func: If this is provided, it will be called with the filenames of the \
+        VMTs which are looked up. This allows tracking which are used.
         """
         return self._apply_patch(fsys, 1, limit, parent_func)
 
@@ -377,7 +381,7 @@ class Material(MutableMapping[str, str]):
                         pass
                 elif always_add or prop.name in copy._params:
                     copy[prop.real_name] = prop.value
-                else: 
+                else:
                     pass
         return copy
 

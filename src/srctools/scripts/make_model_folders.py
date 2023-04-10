@@ -32,5 +32,6 @@ def main(args: List[str]) -> None:
                 print(str(full_path).replace('\\', '/') + '/')
                 full_path.mkdir(parents=True, exist_ok=True)
 
+
 if __name__ == '__main__':
     main(sys.argv[1:])

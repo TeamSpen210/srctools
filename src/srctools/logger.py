@@ -34,6 +34,7 @@ class LogMessage:
     args: Tuple[object, ...]
     kwargs: Dict[str, object]
     has_args: bool
+
     def __init__(
         self,
         fmt: str,
@@ -78,6 +79,7 @@ class LogMessage:
         # |___
         #
         return '\n | '.join(lines[:]) + '\n |___\n'
+
 
 _SysExcInfoType = Union[
     Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
@@ -155,6 +157,7 @@ class LoggerAdapter(logging.LoggerAdapter):  # type: ignore[type-arg]  # Only ge
 class Formatter(logging.Formatter):
     """Override exception handling."""
     SKIP_LIBS = ['importlib', 'cx_freeze', 'PyInstaller']
+
     def formatException(self, ei: Union[
         Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
         Tuple[None, None, None],
@@ -329,6 +332,7 @@ class NewLogRecord(logging.LogRecord):
         # If this is one of our logs it {}-formats, otherwise it %-formats.
         return super().getMessage()
 
+
 @overload
 def init_logging(
     filename: Optional[StringPath] = None,
@@ -338,6 +342,8 @@ def init_logging(
         None,
     ]] = None,
 ) -> logging.Logger: ...
+
+
 @overload
 def init_logging(
     filename: Optional[StringPath] = None,
@@ -345,6 +351,8 @@ def init_logging(
     *,
     error: Callable[[BaseException], object],
 ) -> logging.Logger: ...
+
+
 def init_logging(
     filename: Optional[StringPath] = None,
     main_logger: str='',
@@ -378,6 +386,7 @@ def init_logging(
     if on_error is not None:
         if error is not None:
             raise TypeError('Cannot pass both on_error and error!')
+
         def error_closure(exc: BaseException) -> None:
             """Call the old error handler function."""
             if on_error is not None:  # Mypy can't infer this is constant.

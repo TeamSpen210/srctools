@@ -1634,6 +1634,7 @@ class FGD:
     # hierarchical in editor, we and Hammer store it flattened. Each visgroup
     # has a parent (or None for auto), and then a list of the ents it contains.
     auto_visgroups: Dict[str, AutoVisgroup]
+
     def __init__(self) -> None:
         """Create a FGD."""
         self._parse_list = set()
@@ -1800,8 +1801,10 @@ class FGD:
 
     @overload
     def export(self, file: TextIO) -> None: ...
+
     @overload
     def export(self) -> str: ...
+
     def export(self, file: Optional[TextIO] = None) -> Optional[str]:
         """Write the FGD contents into a text file.
 

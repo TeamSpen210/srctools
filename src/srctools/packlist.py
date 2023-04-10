@@ -19,7 +19,7 @@ from srctools import conv_bool
 from srctools.bsp import BSP
 from srctools.const import FileType
 from srctools.dmx import Attribute, Element, ValueType
-from srctools.fgd import FGD, EntityDef, EntityTypes, ResourceCtx, ValueTypes as KVTypes
+from srctools.fgd import FGD, EntityDef, ResourceCtx, ValueTypes as KVTypes
 from srctools.filesys import (
     CACHE_KEY_INVALID, File, FileSystem, FileSystemChain, VirtualFileSystem, VPKFileSystem,
 )

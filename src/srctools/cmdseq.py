@@ -23,6 +23,7 @@ class SpecialCommand(Enum):
     DELETE_FILE = 258
     RENAME_FILE = 259
 
+
 SPECIAL_NAMES = {
     SpecialCommand.CHANGE_DIR: 'Change Directory',
     SpecialCommand.COPY_FILE: 'Copy File',

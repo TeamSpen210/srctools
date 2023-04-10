@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     )
 else:
     from srctools import keyvalues
+
     def __getattr__(name: str) -> object:
         if name == 'Property':
             warnings.warn(

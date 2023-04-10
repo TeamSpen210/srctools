@@ -3,7 +3,7 @@
 As an extension, optionally all strings may become full UTF-8, marked by a new
 set of 'unicode_XXX' encoding formats.
 
-Special 'stub' elements are possible, which represent elements not present in the file. 
+Special 'stub' elements are possible, which represent elements not present in the file.
 These are represented by StubElement instances. Additionally, NULL elements are possible.
 
 To parse a DMX file, it must be opened in binary mode (the kind will be detected automatically)::
@@ -11,7 +11,7 @@ To parse a DMX file, it must be opened in binary mode (the kind will be detected
     with open("path/to/file.dmx", "rb") as f:
         dmx, format_name, format_version = Element.parse(f)
 
-The format name/version are stored in the header, allowing indicating the kind of data stored in 
+The format name/version are stored in the header, allowing indicating the kind of data stored in
 the file.
 """
 from typing import (
@@ -50,33 +50,73 @@ __all__ = [
 class ValueType(Enum):
     """The type of value an element attribute has."""
     ELEMENT = 'element'
-    """A child :py:class:`Element`. This may additionally be :py:data:`NULL` or a :py:class:`StubElement`, representing data stored elsewhere."""
+    """
+    A child :py:class:`Element`. This may additionally be :py:data:`NULL` or a
+    :py:class:`StubElement`, representing data stored elsewhere.
+    """
     INTEGER = INT = 'int'
-    """A 32-bit signed :external:py:class:`int` value. In text format any value can be parsed/exported."""
+    """
+    A 32-bit signed :external:py:class:`int` value. In text format any precision value can be
+    parsed/exported.
+    """
     FLOAT = 'float'
-    """A single-precision :external:py:class:`float` point value. In text format the full Python double-precision value can be parsed/exported."""
+    """
+    A single-precision :external:py:class:`float` point value. In text format the full Python
+    double-precision value can be parsed/exported.
+    """
     BOOL = 'bool'
     """A :external:py:class:`bool` true/false value."""
     STRING = STR = 'string'
-    """A general text string, though it should probably be kept to ASCII/CP-1252 to ensure Valve's parsers produce the correct result. See the ``unicode`` option in :py:meth:`Element.parse()`, :py:meth:`Element.export_kv2()` and :py:meth:`~Element.export_bin()`."""
+    """
+    A general text string, though it should probably be kept to ASCII/CP-1252 to ensure Valve's
+    parsers produce the correct result. See the ``unicode`` option in :py:meth:`Element.parse()`,
+    :py:meth:`Element.export_kv2()` and :py:meth:`~Element.export_bin()`.
+    """
     BINARY = BIN = VOID = 'binary'
-    """A block of raw :external:py:class:`bytes` data. Any buffer object can be converted to this."""
+    """
+    A block of raw :external:py:class:`bytes` data. Any buffer object can be converted to this.
+    """
     TIME = 'time'
-    """Time since the begining of a level, in seconds. This is represented by the :py:class:`Time` type."""
+    """
+    Time since the begining of a level, in seconds. This is represented by the :py:class:`Time` type.
+    """
     COLOR = COLOUR = 'color'
-    """An RGBA 8-bit colour. This can be converted from a 3 or 4-tuple, or a space separated string. In either case alpha defaults to ``255`` if not specified."""
+    """
+    An RGBA 8-bit colour. This can be converted from a 3 or 4-tuple, or a space separated string.
+    In either case alpha defaults to ``255`` if not specified.
+    """
     VEC2 = 'vector2'
-    """A generic XY vector, represented by the :py:class:`Vec2` namedtuple. This can be converted from an iterable of 4 floats."""
+    """
+    A generic XY vector, represented by the :py:class:`Vec2` namedtuple. This can be converted
+    from an iterable of 4 floats.
+    """
     VEC3 = 'vector3'
-    """A generic XYZ vector, represented by :py:class:`srctools.math.FrozenVec` classs. This can be converted from an iterable of 3 floats."""
+    """
+    A generic XYZ vector, represented by :py:class:`srctools.math.FrozenVec` classs. This can be
+    converted from an iterable of 3 floats.
+    """
     VEC4 = 'vector4'
-    """A generic XYZW vector, represented by the :py:class:`Vec4` namedtuple. This can be converted from an iterable of 4 floats."""
+    """
+    A generic XYZW vector, represented by the :py:class:`Vec4` namedtuple. This can be converted
+    from an iterable of 4 floats.
+    """
     ANGLE = 'qangle'
-    """An Euler angle, represented by :py:class:`srctools.math.FrozenAngle`. This can be converted from an iterable of 3 floats, :py:class:`~srctools.math.Angle`,  :py:class:`~srctools.math.FrozenMatrix` or :py:class:`~srctools.math.Matrix`."""
+    """
+    An Euler angle, represented by :py:class:`srctools.math.FrozenAngle`. This can be converted
+    from an iterable of 3 floats, :py:class:`~srctools.math.Angle`,
+    :py:class:`~srctools.math.FrozenMatrix` or :py:class:`~srctools.math.Matrix`.
+    """
     QUATERNION = 'quaternion'
-    """A rotational quaternion, represented by the :py:class:`Quaternion` namedtuple. This can be converted from a 4-element iterable."""
+    """
+    A rotational quaternion, represented by the :py:class:`Quaternion` namedtuple.
+    This can be converted from a 4-element iterable.
+    """
     MATRIX = 'vmatrix'
-    """A translation :py:class:`~srctools.math.FrozenMatrix`. This can be converted from a :py:class:`~srctools.math.Angle`,  :py:class:`~srctools.math.FrozenAngle` or :py:class:`~srctools.math.Matrix`."""
+    """
+    A translation :py:class:`~srctools.math.FrozenMatrix`. This can be converted from a
+    :py:class:`~srctools.math.Angle`,  :py:class:`~srctools.math.FrozenAngle`,
+    :py:class:`~srctools.math.Matrix` or :py:class:`~srctools.math.Matrix`.
+    """
 
 
 class _StubType(str, Enum):
@@ -429,6 +469,7 @@ class _ValProps:
         val_mat = val_matrix = _make_val_prop(ValueType.MATRIX, FrozenMatrix)
         val_compound = val_elem = val = _make_val_prop(ValueType.ELEMENT, _Element)
 
+
 del _make_val_prop
 
 
@@ -465,7 +506,8 @@ class AttrMember(_ValProps):
 class Attribute(Generic[ValueT], _ValProps):
     """A single attribute of an element.
 
-    Attributes store either a single scalar value, or an array of multiple values of the same type. Creation is accomplished mainly via the many classmethods, one for each value type.
+    Attributes store either a single scalar value, or an array of multiple values of the same type.
+    Creation is accomplished mainly via the many classmethods, one for each value type.
 
     To access the value, read/write one of the `val_*` properties, which will if possible convert
     the value to the desired type. For arrays either use `iter_*()` or `attr[ind].val_*` to fetch
@@ -478,40 +520,95 @@ class Attribute(Generic[ValueT], _ValProps):
 
     # Overload with ValueType -> type matchup.
     @overload
-    def __init__(self: 'Attribute[Element]', name: str, val_type: Literal[ValueType.ELEMENT], value: Union['Element', List['Element']]) -> None: ...
+    def __init__(
+        self: 'Attribute[Element]', name: str, val_type: Literal[ValueType.ELEMENT],
+        value: Union['Element', List['Element']],
+    ) -> None: ...
+
     @overload
-    def __init__(self: 'Attribute[int]', name: str, val_type: Literal[ValueType.INTEGER], value: Union[int, List[int]]) -> None: ...
+    def __init__(
+        self: 'Attribute[int]', name: str, val_type: Literal[ValueType.INTEGER],
+        value: Union[int, List[int]],
+    ) -> None: ...
+
     @overload
-    def __init__(self: 'Attribute[float]', name: str, val_type: Literal[ValueType.FLOAT], value: Union[float, List[float]]) -> None: ...
+    def __init__(
+        self: 'Attribute[float]', name: str, val_type: Literal[ValueType.FLOAT],
+        value: Union[float, List[float]],
+    ) -> None: ...
+
     @overload
-    def __init__(self: 'Attribute[bool]', name: str, val_type: Literal[ValueType.BOOL], value: Union[bool, List[bool]]) -> None: ...
+    def __init__(
+        self: 'Attribute[bool]', name: str, val_type: Literal[ValueType.BOOL],
+        value: Union[bool, List[bool]],
+    ) -> None: ...
+
     @overload
-    def __init__(self: 'Attribute[str]', name: str, val_type: Literal[ValueType.STR], value: Union[str, List[str]]) -> None: ...
+    def __init__(
+        self: 'Attribute[str]', name: str, val_type: Literal[ValueType.STR],
+        value: Union[str, List[str]],
+    ) -> None: ...
+
     @overload
-    def __init__(self: 'Attribute[bytes]', name: str, val_type: Literal[ValueType.BIN], value: Union[str, List[str]]) -> None: ...
+    def __init__(
+        self: 'Attribute[bytes]', name: str, val_type: Literal[ValueType.BIN],
+        value: Union[str, List[str]],
+    ) -> None: ...
+
     @overload
-    def __init__(self: 'Attribute[Time]', name: str, val_type: Literal[ValueType.TIME], value: Union[Time, List[Time]]) -> None: ...
+    def __init__(
+        self: 'Attribute[Time]', name: str, val_type: Literal[ValueType.TIME],
+        value: Union[Time, List[Time]],
+    ) -> None: ...
+
     @overload
-    def __init__(self: 'Attribute[Color]', name: str, val_type: Literal[ValueType.COLOR], value: Union[Color, List[Color]]) -> None: ...
+    def __init__(
+        self: 'Attribute[Color]', name: str, val_type: Literal[ValueType.COLOR],
+        value: Union[Color, List[Color]],
+    ) -> None: ...
+
     @overload
-    def __init__(self: 'Attribute[Vec2]', name: str, val_type: Literal[ValueType.VEC2], value: Union[Vec2, List[Vec2]]) -> None: ...
+    def __init__(
+        self: 'Attribute[Vec2]', name: str, val_type: Literal[ValueType.VEC2],
+        value: Union[Vec2, List[Vec2]],
+    ) -> None: ...
+
     @overload
-    def __init__(self: 'Attribute[FrozenVec]', name: str, val_type: Literal[ValueType.VEC3], value: Union[FrozenVec, List[FrozenVec]]) -> None: ...
+    def __init__(
+        self: 'Attribute[FrozenVec]', name: str, val_type: Literal[ValueType.VEC3],
+        value: Union[FrozenVec, List[FrozenVec]],
+    ) -> None: ...
+
     @overload
-    def __init__(self: 'Attribute[Vec4]', name: str, val_type: Literal[ValueType.VEC4], value: Union[Vec4, List[Vec4]]) -> None: ...
+    def __init__(
+        self: 'Attribute[Vec4]', name: str, val_type: Literal[ValueType.VEC4],
+        value: Union[Vec4, List[Vec4]],
+    ) -> None: ...
+
     @overload
-    def __init__(self: 'Attribute[FrozenAngle]', name: str, val_type: Literal[ValueType.ANGLE], value: Union[FrozenAngle, List[FrozenAngle]]) -> None: ...
+    def __init__(
+        self: 'Attribute[FrozenAngle]', name: str, val_type: Literal[ValueType.ANGLE],
+        value: Union[FrozenAngle, List[FrozenAngle]],
+    ) -> None: ...
+
     @overload
-    def __init__(self: 'Attribute[Quaternion]', name: str, val_type: Literal[ValueType.QUATERNION], value: Union[Quaternion, List[Quaternion]]) -> None: ...
+    def __init__(
+        self: 'Attribute[Quaternion]', name: str, val_type: Literal[ValueType.QUATERNION],
+        value: Union[Quaternion, List[Quaternion]],
+    ) -> None: ...
+
     @overload
-    def __init__(self: 'Attribute[FrozenMatrix]', name: str, val_type: Literal[ValueType.MATRIX], value: Union[FrozenMatrix, List[FrozenMatrix]]) -> None: ...
+    def __init__(
+        self: 'Attribute[FrozenMatrix]', name: str, val_type: Literal[ValueType.MATRIX],
+        value: Union[FrozenMatrix, List[FrozenMatrix]],
+    ) -> None: ...
 
     @overload
     def __init__(self, name: str, val_type: ValueType, value: Union[ValueT, List[ValueT]]) -> None: ...
     @overload
     def __init__(self, name: str, val_type: ValueType, value: Union[Value, ValueList]) -> None: ...
 
-    def __init__(self, name: str, val_type: ValueType, value: Union[ValueT, List[ValueT]]) -> None:  # type: ignore
+    def __init__(self, name: str, val_type: ValueType, value: Union[ValueT, List[ValueT]]) -> None:  # type: ignore[misc]
         """For internal use only."""
         self.name = name
         self._typ = val_type
@@ -534,6 +631,7 @@ class Attribute(Generic[ValueT], _ValProps):
         val_type: Literal[ValueType.ELEMENT],
         values: Iterable['Element'] = (),
     ) -> 'Attribute[Element]': ...
+
     @classmethod
     @overload
     def array(
@@ -541,6 +639,7 @@ class Attribute(Generic[ValueT], _ValProps):
         val_type: Literal[ValueType.INTEGER],
         values: Iterable[builtins.int] = (),
     ) -> 'Attribute[builtins.int]': ...
+
     @classmethod
     @overload
     def array(
@@ -548,6 +647,7 @@ class Attribute(Generic[ValueT], _ValProps):
         val_type: Literal[ValueType.FLOAT],
         values: Iterable[builtins.float] = (),
     ) -> 'Attribute[builtins.float]': ...
+
     @classmethod
     @overload
     def array(
@@ -555,6 +655,7 @@ class Attribute(Generic[ValueT], _ValProps):
         val_type: Literal[ValueType.BOOL],
         values: Iterable[builtins.bool] = (),
     ) -> 'Attribute[builtins.bool]': ...
+
     @classmethod
     @overload
     def array(
@@ -562,6 +663,7 @@ class Attribute(Generic[ValueT], _ValProps):
         val_type: Literal[ValueType.STR],
         values: Iterable[builtins.str] = (),
     ) -> 'Attribute[builtins.str]': ...
+
     @classmethod
     @overload
     def array(
@@ -569,6 +671,7 @@ class Attribute(Generic[ValueT], _ValProps):
         val_type: Literal[ValueType.BIN],
         values: Iterable[builtins.bytes] = (),
     ) -> 'Attribute[builtins.bytes]': ...
+
     @classmethod
     @overload
     def array(
@@ -576,6 +679,7 @@ class Attribute(Generic[ValueT], _ValProps):
         val_type: Literal[ValueType.TIME],
         values: Iterable[Time] = (),
     ) -> 'Attribute[Time]': ...
+
     @classmethod
     @overload
     def array(
@@ -583,6 +687,7 @@ class Attribute(Generic[ValueT], _ValProps):
         val_type: Literal[ValueType.COLOR],
         values: Iterable[Color] = (),
     ) -> 'Attribute[Color]': ...
+
     @classmethod
     @overload
     def array(
@@ -590,6 +695,7 @@ class Attribute(Generic[ValueT], _ValProps):
         val_type: Literal[ValueType.VEC2],
         values: Iterable[Vec2] = (),
     ) -> 'Attribute[Vec2]': ...
+
     @classmethod
     @overload
     def array(
@@ -597,6 +703,7 @@ class Attribute(Generic[ValueT], _ValProps):
         val_type: Literal[ValueType.VEC3],
         values: Iterable[Union[FrozenVec, Vec, Iterable[float]]] = (),
     ) -> 'Attribute[FrozenVec]': ...
+
     @classmethod
     @overload
     def array(
@@ -604,6 +711,7 @@ class Attribute(Generic[ValueT], _ValProps):
         val_type: Literal[ValueType.VEC4],
         values: Iterable[Vec2] = (),
     ) -> 'Attribute[Vec4]': ...
+
     @classmethod
     @overload
     def array(
@@ -611,6 +719,7 @@ class Attribute(Generic[ValueT], _ValProps):
         val_type: Literal[ValueType.ANGLE],
         values: Iterable[Union[Angle, FrozenAngle, Matrix, FrozenMatrix, Iterable[float]]] = (),
     ) -> 'Attribute[FrozenAngle]': ...
+
     @classmethod
     @overload
     def array(
@@ -618,6 +727,7 @@ class Attribute(Generic[ValueT], _ValProps):
         val_type: Literal[ValueType.QUATERNION],
         values: Iterable[Quaternion] = (),
     ) -> 'Attribute[Quaternion]': ...
+
     @classmethod
     @overload
     def array(
@@ -671,9 +781,11 @@ class Attribute(Generic[ValueT], _ValProps):
     @classmethod
     @overload
     def vec2(cls, __name: str, __it: Iterable[builtins.float]) -> 'Attribute[Vec2]': ...
+
     @classmethod
     @overload
     def vec2(cls, __name: str, x: builtins.float = 0.0, y: builtins.float = 0.0) -> 'Attribute[Vec2]': ...
+
     @classmethod
     def vec2(
         cls, name: str,
@@ -692,6 +804,7 @@ class Attribute(Generic[ValueT], _ValProps):
     @classmethod
     @overload
     def vec3(cls, __name: str, __it: Iterable[builtins.float]) -> 'Attribute[FrozenVec]': ...
+
     @classmethod
     @overload
     def vec3(
@@ -700,6 +813,7 @@ class Attribute(Generic[ValueT], _ValProps):
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
     ) -> 'Attribute[FrozenVec]': ...
+
     @classmethod
     def vec3(
         cls, name: str,
@@ -720,6 +834,7 @@ class Attribute(Generic[ValueT], _ValProps):
     @classmethod
     @overload
     def vec4(cls, __name: str, __it: Iterable[builtins.float]) -> 'Attribute[Vec4]': ...
+
     @classmethod
     @overload
     def vec4(
@@ -729,6 +844,7 @@ class Attribute(Generic[ValueT], _ValProps):
         z: builtins.float = 0.0,
         w: builtins.float = 0.0,
     ) -> 'Attribute[Vec4]': ...
+
     @classmethod
     def vec4(
         cls, name: str,
@@ -751,6 +867,7 @@ class Attribute(Generic[ValueT], _ValProps):
     @classmethod
     @overload
     def color(cls, __name: str, __it: Iterable[Union[builtins.float, builtins.int]]) -> 'Attribute[Color]': ...
+
     @classmethod
     @overload
     def color(
@@ -760,6 +877,7 @@ class Attribute(Generic[ValueT], _ValProps):
         b: Union[builtins.float, builtins.int] = 0,
         a: Union[builtins.float, builtins.int] = 255,
     ) -> 'Attribute[Color]': ...
+
     @classmethod
     def color(
         cls, name: str,
@@ -782,6 +900,7 @@ class Attribute(Generic[ValueT], _ValProps):
     @classmethod
     @overload
     def angle(cls, __name: str, __it: Iterable[builtins.float]) -> 'Attribute[FrozenAngle]': ...
+
     @classmethod
     @overload
     def angle(
@@ -790,6 +909,7 @@ class Attribute(Generic[ValueT], _ValProps):
         yaw: builtins.float = 0.0,
         roll: builtins.float = 0.0,
     ) -> 'Attribute[FrozenAngle]': ...
+
     @classmethod
     def angle(
         cls, name: str,
@@ -809,6 +929,7 @@ class Attribute(Generic[ValueT], _ValProps):
     @classmethod
     @overload
     def quaternion(cls, __name: str, __it: Iterable[builtins.float]) -> 'Attribute[Quaternion]': ...
+
     @classmethod
     @overload
     def quaternion(
@@ -818,6 +939,7 @@ class Attribute(Generic[ValueT], _ValProps):
         z: builtins.float = 0.0,
         w: builtins.float = 0.0,
     ) -> 'Attribute[Quaternion]': ...
+
     @classmethod
     def quaternion(
         cls, name: str,
@@ -865,7 +987,6 @@ class Attribute(Generic[ValueT], _ValProps):
             except StructError as exc:
                 # Struct errors don't include the value.
                 raise ValueError(f'Failed to convert: {exc}, with value {self._value!r}') from None
-
     if TYPE_CHECKING:
         def iter_int(self) -> Iterator[builtins.int]: ...
         def iter_float(self) -> Iterator[builtins.int]: ...
@@ -1065,7 +1186,7 @@ class Element(Mapping[str, Attribute[Any]]):
     uuid: UUID
     """
     This used in the serialised file to allow elements to be appear multiple times in the tree,
-    including recursively. This does not normally need to be set manually, since a random one 
+    including recursively. This does not normally need to be set manually, since a random one
     will be computed for each new element automatically.
     """
     _members: MutableMapping[str, Attribute[Any]]
@@ -1306,7 +1427,7 @@ class Element(Mapping[str, Attribute[Any]]):
                     size = SIZES[attr_type]
                     conv = TYPE_CONVERT[ValueType.BINARY, attr_type]
                     if array_size is not None:
-                        file_, size_ = file, size  #  Prevent other uses from being cellvars.
+                        file_, size_ = file, size  # Prevent other uses from being cellvars.
                         attr = Attribute(name, attr_type, [
                             conv(file_.read(size_))
                             for _ in range(array_size)
@@ -1957,6 +2078,7 @@ class StubElement(Element):
     This always has no members - attempting to add members will fail silently.
     """
     __slots__ = ['_type']
+
     def __init__(self, typ: _StubType, uuid: Optional[UUID]) -> None:
         """Internal use only."""
         super().__init__('', typ, uuid)
@@ -1981,7 +2103,7 @@ class StubElement(Element):
 # Constant for null elements.
 NULL = StubElement(_StubType.NULL, UUID(bytes=bytes(16)))
 """
-A special constant Element with an all-zero UUID, representing "null" elements in binary DMX 
+A special constant Element with an all-zero UUID, representing "null" elements in binary DMX
 files. This always has no members.
 """
 
@@ -2129,6 +2251,7 @@ _conv_string_to_vec4 = lambda text: Vec4._make(parse_vector(text, 4))
 _conv_string_to_angle = lambda text: FrozenAngle(parse_vector(text, 3))
 _conv_string_to_quaternion = lambda text: Quaternion._make(parse_vector(text, 4))
 
+
 def _conv_string_to_color(text: str) -> Color:
     """Colors can either have 3 or 4 values."""
     parts = text.split()
@@ -2138,6 +2261,7 @@ def _conv_string_to_color(text: str) -> Color:
         return Color(int(parts[0]), int(parts[1]), int(parts[2]), int(parts[3]))
     else:
         raise ValueError(f"'{text}' is not a valid Color!")
+
 
 _conv_integer_to_string = str
 _conv_integer_to_float = float
@@ -2159,6 +2283,7 @@ def _fmt_float(x: float) -> str:
     if res.endswith('.'):
         return res[:-1]
     return res
+
 
 _conv_float_to_string = _fmt_float
 _conv_float_to_integer = int
@@ -2229,6 +2354,7 @@ def _binconv_basic(name: str, fmt: str) -> None:
         """Binary conversion func."""
         [val] = shape.unpack(byt)
         return val
+
     ns = globals()
     ns['_struct_' + name] = shape
     ns[f'_conv_{name}_to_binary'] = shape.pack
@@ -2243,6 +2369,7 @@ def _binconv_cls(name: str, fmt: str, Tup: type) -> None:
     ns[f'_conv_{name}_to_binary'] = lambda val: shape.pack(*val)
     ns[f'_conv_binary_to_{name}'] = lambda byt: Tup(*shape.unpack(byt))
 
+
 _binconv_basic('integer', '<i')
 _binconv_basic('float', '<f')
 _binconv_basic('bool', '<?')
@@ -2256,15 +2383,21 @@ _binconv_cls('vec3', '<3f', FrozenVec)
 _binconv_cls('vec4', '<4f', Vec4)
 
 _struct_time = Struct('<i')
+
+
 def _conv_time_to_binary(tim: Time) -> bytes:
     """Time is written as a fixed point integer."""
     return _struct_time.pack(int(round(tim.value * 10000.0)))
+
 
 def _conv_binary_to_time(byt: bytes) -> Time:
     [num] = _struct_time.unpack(byt)
     return Time(num / 10000.0)
 
+
 _struct_matrix = Struct('<16f')
+
+
 def _conv_matrix_to_binary(mat: FrozenMatrix) -> bytes:
     """We only set the 3x3 part."""
     return _struct_matrix.pack(
@@ -2273,6 +2406,8 @@ def _conv_matrix_to_binary(mat: FrozenMatrix) -> bytes:
         mat[2, 0], mat[2, 1], mat[2, 2], 0.0,
         0.0, 0.0, 0.0, 1.0,
     )
+
+
 def _conv_binary_to_matrix(byt: bytes) -> FrozenMatrix:
     """We only set the 3x3 part."""
     data = _struct_matrix.unpack(byt)
@@ -2299,6 +2434,7 @@ def _conv_matrix_to_string(mat: FrozenMatrix) -> str:
         f'{mat[2, 0]} {mat[2, 1]} {mat[2, 2]} 0.0\n'
         '0.0 0.0 0.0 1.0'
     )
+
 
 # Element ID
 _struct_element = Struct('<i')
@@ -2335,6 +2471,7 @@ def _converter_ntup(typ: Type[ValueT]) -> Callable[[Union[ValueT, Iterable[float
         else:
             return typ._make(value)  # type: ignore
     return _convert
+
 
 _conv_vec2 = _converter_ntup(Vec2)
 _conv_vec4 = _converter_ntup(Vec4)

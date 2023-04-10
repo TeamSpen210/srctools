@@ -58,5 +58,6 @@ def main(args: List[str]) -> None:
     with dest.open('w') as f:
         vmf.export(f)
 
+
 if __name__ == '__main__':
     main(sys.argv[1:])

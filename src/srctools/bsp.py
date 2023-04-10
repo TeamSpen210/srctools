@@ -261,7 +261,7 @@ LUMP_LAYOUT_STANDARD: LumpDataLayout = {
 LUMP_LAYOUT_V19: LumpDataLayout = {
     # See https://github.com/python/mypy/issues/9408
     **LUMP_LAYOUT_STANDARD,  # type: ignore[misc]
-    "LEAF":             struct.Struct('<ihh6h4Hh24s2x'), # Version 0
+    "LEAF": struct.Struct('<ihh6h4Hh24s2x'),  # Version 0
 }
 
 LUMP_LAYOUT_INFRA: LumpDataLayout = {
@@ -401,10 +401,10 @@ class StaticPropVersion(Enum):
     V_LIGHTMAP_v7 = (7, 72)
     V_LIGHTMAP_v10 = (10, 72)
     V_LIGHTMAP_MESA = (11, 80, 'Mesa')  # Adds rendercolor to V10
-    
-    V_CHAOS_V12 = (12, 80)  # Changes the leaf list from uint16 to uint32 
+
+    V_CHAOS_V12 = (12, 80)  # Changes the leaf list from uint16 to uint32
     V_CHAOS_V13 = (13, 88)  # Changes scale from one float to three for non-uniform scaling
-    
+
     # V6_WNAME = (5, 188)  # adds targetname, used by The Ship and Bloody Good Time.
     UNKNOWN = (0, 0, 'unknown')  # Before prop is read.
     # All games should recognise this, so switch to this if set to unknown.
@@ -1152,6 +1152,7 @@ class ParsedLump(Generic[T]):
     lump: Union[bytes, BSP_LUMPS]
     to_clear: Sequence[Union[bytes, BSP_LUMPS]]
     __name__: str
+
     def __init__(self, lump: Union[bytes, BSP_LUMPS], *extra: Union[bytes, BSP_LUMPS]) -> None:
         self.lump = lump
         self.to_clear = (lump, ) + extra
@@ -1258,7 +1259,7 @@ class BSP:
 
         # lump_layout holds version specific struct formats for lumps
         self.lump_layout = LUMP_LAYOUT_STANDARD
-        
+
         self.read(version)
 
     # The first lump is the main one this reads/writes to, any additional are simpler lumps it
@@ -2291,7 +2292,7 @@ class BSP:
                     face_ind, len(leaf.faces),
                     brush_ind, len(leaf.brushes),
                     leaf.water_id)
-                
+
                 # Older leaf lumps include some ambient light data at the end.
                 if has_ambient:
                     leafdata = leafdata + (leaf._ambient,)
@@ -2967,7 +2968,7 @@ class BSP:
                 # One float for uniform scaling
                 [scaling.x] = struct_read("<f", static_lump)
                 scaling.z = scaling.y = scaling.x
-                
+
             real_size = static_lump.tell() - start
             if struct_size != real_size:
                 raise ValueError(f'Expected {struct_size} for {version}, got {real_size}!')

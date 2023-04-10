@@ -40,6 +40,7 @@ __all__ = [
 class _SupportsIndex(Protocol):
     def __index__(self) -> int: ...
 
+
 # Type aliases
 Tuple3: TypeAlias = Tuple[float, float, float]
 AnyVec: TypeAlias = Union['VecBase', 'Vec_tuple', Tuple3]
@@ -161,8 +162,10 @@ class Vec_tuple(NamedTuple):
     y: float
     z: float
 
+
 if not TYPE_CHECKING:
     _old_vec_tup = Vec_tuple.__new__
+
     def _vec_tup_new(*args, **kwargs):
         warnings.warn(
             'Vec_tuple is deprecated, use FrozenVec instead.',
@@ -1164,7 +1167,7 @@ class FrozenVec(VecBase):
         vec._y = self._y
         vec._z = self._z
         return vec
-    
+
 
 VecBase.W = VecBase.west   = VecBase.x_neg = FrozenVec(x=-1)
 VecBase.E = VecBase.east   = VecBase.x_pos = FrozenVec(x=+1)
@@ -1643,9 +1646,11 @@ class MatrixBase:
     @classmethod
     @overload
     def from_angle(cls: Type[MatrixT], __angle: 'AngleBase') -> MatrixT: ...
+
     @classmethod
     @overload
     def from_angle(cls: Type[MatrixT], pitch: float, yaw: float, roll: float) -> MatrixT: ...
+
     @classmethod
     def from_angle(
         cls: Type[MatrixT],
@@ -1845,12 +1850,12 @@ class MatrixBase:
                 mat_l[n], mat_l[pivrow] = mat_l[pivrow], mat_l[n]
                 mat_r[n], mat_r[pivrow] = mat_r[pivrow], mat_r[n]
                 pivrow = n
-            
-            # Apply our pivot row to the rows below 
+
+            # Apply our pivot row to the rows below
             for m in range(n+1, 3):
                 # Get the multiplier
                 v = mat_l[m][n] / mat_l[pivrow][n]
-                
+
                 # Eliminate
                 mat_l[m] -= mat_l[pivrow] * v
                 mat_r[m] -= mat_r[pivrow] * v
@@ -1860,7 +1865,7 @@ class MatrixBase:
             for m in range(n - 1, -1, -1):
                 # Get the multiplier
                 v = mat_l[m][n] / mat_l[n][n]
-                
+
                 # Eliminate
                 mat_l[m] -= mat_l[n] * v
                 mat_r[m] -= mat_r[n] * v
@@ -2910,7 +2915,7 @@ _mk = _mk_vec
 # and choose an appropriate unprefixed version. Static analysis then
 # also assumes all three are the Python version.
 
-Cy_Vec: TypeAlias = Vec 
+Cy_Vec: TypeAlias = Vec
 Py_Vec: TypeAlias = Vec
 Cy_FrozenVec: TypeAlias = FrozenVec
 Py_FrozenVec: TypeAlias = FrozenVec
