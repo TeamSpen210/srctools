@@ -22,7 +22,7 @@ import attrs
 
 from . import EmptyMapping, binformat
 from .const import add_unknown
-from .math import Vec
+from .math import AnyVec, FrozenVec, Vec
 
 
 # Only import while type checking, so these expensive libraries are only loaded
@@ -609,7 +609,7 @@ class VTF:
         width: int,
         height: int,
         version: Tuple[int, int]=(7, 5),
-        ref: Vec=Vec(0, 0, 0),
+        ref: AnyVec=FrozenVec(0, 0, 0),
         frames: int=1,
         bump_scale: float=1.0,
         sheet_info: Mapping[int, 'SheetSequence']=EmptyMapping,
@@ -640,7 +640,7 @@ class VTF:
         self.depth = depth
 
         self.version = version
-        self.reflectivity = ref
+        self.reflectivity = Vec(ref)
         self.bumpmap_scale = bump_scale
         self.resources = {}
         self.sheet_info = dict(sheet_info)

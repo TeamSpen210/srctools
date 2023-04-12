@@ -27,7 +27,7 @@ from srctools.binformat import (
 from srctools.const import BSPContents as BrushContents, SurfFlags, add_unknown
 from srctools.filesys import FileSystem
 from srctools.keyvalues import Keyvalues
-from srctools.math import Angle, Vec
+from srctools.math import Angle, AnyVec, FrozenVec, Vec
 from srctools.tokenizer import Token, Tokenizer
 from srctools.vmf import VMF, Entity, Output
 from srctools.vmt import Material
@@ -1610,20 +1610,20 @@ class BSP:
     @overload
     def create_texinfo(
         self, mat: str, *, copy_from: 'TexInfo',
-        reflectivity: Vec, width: int, height: int,
+        reflectivity: AnyVec, width: int, height: int,
     ) -> 'TexInfo':
         """Copy from texinfo and explicit texdata."""
 
     @overload
     def create_texinfo(
         self, mat: str,
-        s_off: Vec=Vec(),
+        s_off: AnyVec=FrozenVec(),
         s_shift: float=-99999.0,
-        t_off: Vec=Vec(),
+        t_off: AnyVec=FrozenVec(),
         t_shift: float=-99999.0,
-        lightmap_s_off: Vec=Vec(),
+        lightmap_s_off: AnyVec=FrozenVec(),
         lightmap_s_shift: float=-99999.0,
-        lightmap_t_off: Vec=Vec(),
+        lightmap_t_off: AnyVec=FrozenVec(),
         lightmap_t_shift: float=-99999.0,
         flags: SurfFlags = SurfFlags.NONE,
         *, fsys: FileSystem[Any],
@@ -1632,34 +1632,34 @@ class BSP:
     @overload
     def create_texinfo(
         self, mat: str,
-        s_off: Vec=Vec(),
+        s_off: AnyVec=FrozenVec(),
         s_shift: float=-99999.0,
-        t_off: Vec=Vec(),
+        t_off: AnyVec=FrozenVec(),
         t_shift: float=-99999.0,
-        lightmap_s_off: Vec=Vec(),
+        lightmap_s_off: AnyVec=FrozenVec(),
         lightmap_s_shift: float=-99999.0,
-        lightmap_t_off: Vec=Vec(),
+        lightmap_t_off: AnyVec=FrozenVec(),
         lightmap_t_shift: float=-99999.0,
         flags: SurfFlags = SurfFlags.NONE,
         *,
-        reflectivity: Vec, width: int, height: int,
+        reflectivity: AnyVec, width: int, height: int,
     ) -> 'TexInfo':
         """Construct with explicit texdata."""
 
     def create_texinfo(
         self, mat: str,
-        s_off: Vec=Vec(),
+        s_off: AnyVec=FrozenVec(),
         s_shift: float=-99999.0,
-        t_off: Vec=Vec(),
+        t_off: AnyVec=FrozenVec(),
         t_shift: float=-99999.0,
-        lightmap_s_off: Vec=Vec(),
+        lightmap_s_off: AnyVec=FrozenVec(),
         lightmap_s_shift: float=-99999.0,
-        lightmap_t_off: Vec=Vec(),
+        lightmap_t_off: AnyVec=FrozenVec(),
         lightmap_t_shift: float=-99999.0,
         flags: SurfFlags = SurfFlags.NONE,
         *,
         copy_from: Optional['TexInfo'] = None,
-        reflectivity: Optional[Vec] = None,
+        reflectivity: Optional[AnyVec] = None,
         width: int=0, height: int=0,
         fsys: Optional[FileSystem[Any]] = None,
     ) -> 'TexInfo':
@@ -1694,7 +1694,7 @@ class BSP:
                     raise TypeError(
                         'Either valid data must be provided or a filesystem '
                         'to read them from!')
-                data = TexData(mat, reflectivity.copy(), width, height)
+                data = TexData(mat, Vec(reflectivity), width, height)
             else:
                 data = TexData.from_material(fsys, mat)
             self._texdata[mat.casefold()] = data
