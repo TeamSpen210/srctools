@@ -29,3 +29,11 @@ extend-ignore =
 	# Type annotations for self & cls are not important.
 	ANN101
 	ANN102
+
+	# Flake8-bugbear:
+	# Loop control var not used, triggers on unpackings.
+	B007
+
+extend-immutable-calls =
+	# Adds to flake8-bugbear's list of calls allowed in argument defaults.
+	FrozenVec, FrozenAngle, FrozenMatrix, cast, get_logger
