@@ -2342,7 +2342,7 @@ if sys.version_info >= (3, 8):
         return byt.hex(' ', 1).upper()
 else:
     def _conv_binary_to_string(byt: bytes) -> str:
-        """The parameters for bytes.hex aren't available, do it ourselves."""
+        """The parameters for bytes.hex() aren't available, do it ourselves."""
         return ' '.join([format(x, '02X') for x in byt])
 
 

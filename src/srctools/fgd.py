@@ -2081,6 +2081,7 @@ class FGD:
 
 
 _GetFGDFunc: TypeAlias = Callable[[str], EntityDef]
+_EMPTY_FILESYS = VirtualFileSystem(srctools.EmptyMapping)
 
 
 @attrs.frozen(init=False)
@@ -2101,7 +2102,7 @@ class ResourceCtx:
     def __init__(
         self,
         tags: Iterable[str] = (),
-        fsys: FileSystem[Any] = VirtualFileSystem({}),
+        fsys: FileSystem[Any] = _EMPTY_FILESYS,
         fgd: Union[FGD, Mapping[str, EntityDef], _GetFGDFunc] = EntityDef.engine_def,
         mapname: str = '',
         funcs: Mapping[str, Callable[
