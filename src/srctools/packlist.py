@@ -192,13 +192,16 @@ class ManifestedFiles(Generic[ParsedT]):
         try:
             with open(filename, 'rb') as f:
                 root, file_type, file_version = Element.parse(f)
-        except (FileNotFoundError, IOError, ValueError):
+        except FileNotFoundError:
             return
-        if file_type != 'SrcPacklistCache':
-            LOGGER.warning('Unknown cache file "{}"!', file_type)
+        except (IOError, ValueError):
+            LOGGER.warning('Could not parse cache file "{}"!', filename)
             return
-        if file_version != 1:
-            LOGGER.warning('Unrecognised cache file version {}', file_version)
+        if file_type != 'SrcPacklistCache' or file_version != 1:
+            LOGGER.warning(
+                'Unknown cache file "{}" with type {} v{}!',
+                filename, file_type, file_version,
+            )
             return
         for file_elem in root['files'].iter_elem():
             self._cache[file_elem.name] = (
