@@ -6,6 +6,14 @@ Changelog
 	:backlinks: none
 
 -------------
+Version (dev)
+-------------
+* Include the docs and tests in the source distribution.
+* Add support for detecting and packing weapon scripts.
+* Make custom model gibs inherit skinset when packing.
+* Add :py:meth:`srctools.bsp.BModel.clear_physics()`, to delete physics data for a brush model.
+
+-------------
 Version 2.3.10
 -------------
 
@@ -15,10 +23,6 @@ Version 2.3.10
 * Add support for `Chaos non-uniform static prop scaling <https://github.com/TeamSpen210/srctools/pull/17>`_ (by `@ozxybox <https://github.com/ozxybox>`_).
 * Correctly handle non-float numeric values being passed to various :py:mod:`srctools.math` operations.
 * Compute the total vertex count for parsed models.
-* Include the docs and tests in the source distribution.
-* Add support for detecting and packing weapon scripts.
-* Make custom model gibs inherit skinset when packing.
-* Add :py:meth:`srctools.bsp.BModel.clear_physics()`, to delete physics data for a brush model.
 
 -------------
 Version 2.3.9
