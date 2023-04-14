@@ -647,16 +647,18 @@ class TexInfo:
         This can either be parsed from the VMT and VTF, or provided directly.
         """
         try:
-            data = bsp._texdata[mat.casefold()]
+            self._info = bsp._texdata[mat.casefold()]
+            return
         except KeyError:
+            pass
             # Need to create.
-            if fsys is None:
-                if reflectivity is None or not width or not height:
-                    raise TypeError('Either valid data must be provided or a filesystem to read them from!')
-                data = TexData(mat, reflectivity.copy(), width, height)
-            else:
-                data = TexData.from_material(fsys, mat)
-            bsp._texdata[mat.casefold()] = data
+        if fsys is None:
+            if reflectivity is None or not width or not height:
+                raise TypeError('Either valid data must be provided or a filesystem to read them from!')
+            data = TexData(mat, reflectivity.copy(), width, height)
+        else:
+            data = TexData.from_material(fsys, mat)
+        bsp._texdata[mat.casefold()] = data
         self._info = data
 
 
@@ -1601,7 +1603,7 @@ class BSP:
         try:
             lump = self.game_lumps[lump_id]
         except KeyError:
-            raise ValueError('{!r} not in {}'.format(lump_id, list(self.game_lumps)))
+            raise ValueError('{!r} not in {}'.format(lump_id, list(self.game_lumps))) from None
         return lump.data
 
     @overload
@@ -1693,7 +1695,7 @@ class BSP:
                 if reflectivity is None or not width or not height:
                     raise TypeError(
                         'Either valid data must be provided or a filesystem '
-                        'to read them from!')
+                        'to read them from!') from None
                 data = TexData(mat, Vec(reflectivity), width, height)
             else:
                 data = TexData.from_material(fsys, mat)
@@ -2484,7 +2486,7 @@ class BSP:
         try:
             model_list = [bmodels[worldspawn]]
         except KeyError:
-            raise ValueError('Worldspawn has no brush model!')
+            raise ValueError('Worldspawn has no brush model!') from None
         add_model = _find_or_insert(model_list)
 
         for ent, model in bmodels.items():

@@ -315,7 +315,7 @@ def _get_converters() -> Tuple[ConvertMap, ConversionMap, SizesMap]:
                         and from_typ is not ValueType.ELEMENT
                         and to_typ is not ValueType.ELEMENT
                     ):
-                        raise ValueError(func + ' must exist!')
+                        raise ValueError(f'{func!r} must exist!') from None
         # Special cases, variable size.
         if from_typ is not ValueType.STRING and from_typ is not ValueType.BINARY:
             sizes[from_typ] = ns['_struct_' + from_typ.name.casefold()].size
@@ -490,7 +490,7 @@ class AttrMember(_ValProps):
         try:
             func = TYPE_CONVERT[self.owner._typ, newtype]
         except KeyError:
-            raise ValueError(f'Cannot convert ({value}) to {newtype} type!')
+            raise ValueError(f'Cannot convert {self.owner._typ} ({value}) to {newtype} type!') from None
         return func(value)
 
     def _write_val(self, newtype: ValueType, value: object) -> None:
@@ -968,8 +968,7 @@ class Attribute(Generic[ValueT], _ValProps):
         try:
             func = TYPE_CONVERT[self._typ, newtype]
         except KeyError:
-            raise ValueError(
-                f'Cannot convert ({self._value!r}) to {newtype} type!')
+            raise ValueError(f'Cannot convert ({self._value!r}) to {newtype} type!') from None
         return func(self._value)
 
     def _iter_array(self, newtype: ValueType) -> Iterator[Value]:
@@ -977,8 +976,7 @@ class Attribute(Generic[ValueT], _ValProps):
         try:
             func = TYPE_CONVERT[self._typ, newtype]
         except KeyError:
-            raise ValueError(
-                f'Cannot convert ({self._value!r}) to {newtype} type!')
+            raise ValueError(f'Cannot convert ({self._value!r}) to {newtype} type!') from None
         if isinstance(self._value, list):
             return map(func, self._value)
         else:
@@ -1082,7 +1080,7 @@ class Attribute(Generic[ValueT], _ValProps):
             try:
                 func = TYPE_CONVERT[val_type, self._typ]
             except KeyError:
-                raise ValueError(f'Cannot convert ({val_type}) to {self._typ} type!')
+                raise ValueError(f'Cannot convert {val_type} to {self._typ} type!') from None
             arr[item] = func(result)
         else:
             arr[item] = result
@@ -1121,7 +1119,7 @@ class Attribute(Generic[ValueT], _ValProps):
             try:
                 func = cast('Callable[[Value], ValueT]', TYPE_CONVERT[val_type, self._typ])
             except KeyError:
-                raise ValueError(f'Cannot convert ({val_type}) to {self._typ} type!')
+                raise ValueError(f'Cannot convert {val_type} to {self._typ} type!') from None
             self._value.append(func(result))
         else:
             self._value.append(result)  # type: ignore # (we know it's right)
@@ -1141,7 +1139,7 @@ class Attribute(Generic[ValueT], _ValProps):
                 try:
                     func = cast('Callable[[Value], ValueT]', TYPE_CONVERT[val_type, self._typ])
                 except KeyError:
-                    raise ValueError(f'Cannot convert ({val_type}) to {self._typ} type!')
+                    raise ValueError(f'Cannot convert {val_type} to {self._typ} type!') from None
                 self._value.append(func(result))
             else:
                 self._value.append(result)  # type: ignore # (we know it's right)
@@ -1508,8 +1506,8 @@ class Element(Mapping[str, Attribute[Any]]):
                     raise tok.error('Duplicate UUID definition!')
                 try:
                     elem.uuid = UUID(uuid_str)
-                except ValueError:
-                    raise tok.error('Invalid UUID "{}"!', uuid_str)
+                except ValueError as exc:
+                    raise tok.error('Invalid UUID "{}"!', uuid_str) from exc
                 id_to_elem[elem.uuid] = elem
                 continue
             elif attr_name == 'name':  # This is also special.
@@ -1551,8 +1549,8 @@ class Element(Mapping[str, Attribute[Any]]):
                                 if uuid_str:
                                     try:
                                         uuid = UUID(uuid_str)
-                                    except ValueError:
-                                        raise tok.error('Invalid UUID "{}"!', uuid_str)
+                                    except ValueError as exc:
+                                        raise tok.error('Invalid UUID "{}"!', uuid_str) from exc
                                     fixups.append((attr, len(array), uuid, tok.line_num))
                                     # If UUID is present, this stub will be overwritten later.
                                     array.append(stubs[uuid])
@@ -1566,7 +1564,7 @@ class Element(Mapping[str, Attribute[Any]]):
                             try:
                                 array.append(TYPE_CONVERT[ValueType.STRING, attr_type](tok_value))
                             except ValueError:
-                                raise tok.error('"{}" is not a valid {}!', tok_value, attr_type.name)
+                                raise tok.error('"{}" is not a valid {}!', tok_value, attr_type.name) from None
                         # Skip over the trailing comma if present.
                         next_tok, tok_value = tok()
                         while next_tok is Token.NEWLINE:
@@ -1584,8 +1582,8 @@ class Element(Mapping[str, Attribute[Any]]):
                 if uuid_str:
                     try:
                         uuid = UUID(uuid_str)
-                    except ValueError:
-                        raise tok.error('Invalid UUID "{}"!', uuid_str)
+                    except ValueError as exc:
+                        raise tok.error('Invalid UUID "{}"!', uuid_str) from exc
                     attr.val_elem = stubs[uuid]
                     fixups.append((attr, None, uuid, tok.line_num))
                     # If the element is present, the stub value  will be overwritten after.
@@ -2489,7 +2487,7 @@ def _conv_color(value: Union[Color, Iterable[int]]) -> Color:
             r, g, b = value
             a = 255
         except ValueError:
-            raise ValueError(f'Color() requires 3 or 4-long iterable, got: {value!r}')
+            raise ValueError(f'Color() requires 3 or 4-long iterable, got: {value!r}') from None
     return Color(r, g, b, a)
 
 

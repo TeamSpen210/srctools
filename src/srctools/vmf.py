@@ -3230,12 +3230,9 @@ class Output:
         if name.casefold().startswith('instance:'):
             try:
                 inst_part, command = name.split(';', 1)
-            except ValueError as e:
-                # Incorrectly-formatted instance: names will crash VBSP,
-                # so abort now.
-                raise Exception(
-                    f'"Instance:" in/output without command! ({name})'
-                ).with_traceback(e.__traceback__)
+            except ValueError:
+                # This is an invalid instance: command, which will crash VBSP.
+                raise ValueError(f'"Instance:" in/output without command! ({name})') from None
             else:
                 return inst_part[9:], command
         return None, name

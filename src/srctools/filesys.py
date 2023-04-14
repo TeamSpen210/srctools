@@ -445,7 +445,7 @@ class VirtualFileSystem(FileSystem[str]):
         try:
             filename, data = self._mapping[self._clean_path(name)]
         except KeyError:
-            raise FileNotFoundError(name)
+            raise FileNotFoundError(name) from None
         if isinstance(data, str):
             data = data.encode(self.bytes_encoding)
         return io.BytesIO(data)
@@ -464,7 +464,7 @@ class VirtualFileSystem(FileSystem[str]):
         try:
             filename, data = self._mapping[self._clean_path(name)]
         except KeyError:
-            raise FileNotFoundError(name)
+            raise FileNotFoundError(name) from None
         if isinstance(data, bytes):
             # Decode on the fly, with universal newlines.
             return io.TextIOWrapper(
@@ -492,7 +492,7 @@ class VirtualFileSystem(FileSystem[str]):
         try:
             filename, data = self._mapping[self._clean_path(name)]
         except KeyError:
-            raise FileNotFoundError(name)
+            raise FileNotFoundError(name) from None
         return File(self, filename, filename)
 
 
@@ -633,7 +633,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
         try:
             info = self._name_to_info[name.casefold()]
         except KeyError:
-            raise FileNotFoundError('{}:{}'.format(self.path, name))
+            raise FileNotFoundError(f'{self.path}:{name}') from None
         return File(self, name, info)
 
     def _file_exists(self, name: str) -> bool:
@@ -686,7 +686,7 @@ class VPKFileSystem(FileSystem[VPKFile]):
             try:
                 file = self._name_to_file[name.casefold().replace('\\', '/')]
             except KeyError:
-                raise FileNotFoundError(name)
+                raise FileNotFoundError(name) from None
         return io.BytesIO(file.read())
 
     def open_str(
@@ -702,7 +702,7 @@ class VPKFileSystem(FileSystem[VPKFile]):
             try:
                 file = self._name_to_file[name.casefold().replace('\\', '/')]
             except KeyError:
-                raise FileNotFoundError(name)
+                raise FileNotFoundError(name) from None
         # Wrap the data to treat it as bytes, then
         # wrap that to decode and clean up universal newlines.
         return io.TextIOWrapper(io.BytesIO(file.read()), encoding)

@@ -202,10 +202,8 @@ class SurfaceProp:
             try:
                 base = prev[prop['base'].casefold()]
             except KeyError:
-                raise ValueError(
-                    'Missing base surface "{}"'.format(prop['base'])
-                )
-            except IndexError:
+                raise ValueError(f'Missing base surface "{prop["base"]}"') from None
+            except IndexError:  # Not in keyvalues.
                 base = default
 
             game_mat: Optional[SurfChar]

@@ -132,7 +132,7 @@ def read_array(fmt: Union[str, Struct], data: bytes) -> List[int]:
     try:
         item_size = SIZES[fmt]
     except KeyError:
-        raise ValueError(f'Unknown format character {fmt!r}!')
+        raise ValueError(f'Unknown format character {fmt!r}!') from None
     count = len(data) // item_size
     return list(Struct(endianness + fmt * count).unpack_from(data))
 

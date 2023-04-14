@@ -430,7 +430,7 @@ class Mesh:
                 try:
                     bone = bones[int(byt_ind)]
                 except KeyError:
-                    raise ParseError(line_num, 'Unknown bone index {}!', int(byt_ind))
+                    raise ParseError(line_num, 'Unknown bone index {}!', int(byt_ind)) from None
                 frames[time].append(BoneFrame(bone, pos, rot))
 
         raise ParseError('end', 'No end to skeleton section!')
@@ -462,7 +462,7 @@ class Mesh:
                 try:
                     line_num, line = next(file_iter)
                 except StopIteration:
-                    raise ParseError('end', 'Incomplete triangles!')
+                    raise ParseError('end', 'Incomplete triangles!') from None
                 try:
                     (
                         byt_parent,
@@ -472,22 +472,25 @@ class Mesh:
                         *links_raw,
                     ) = line.split()
                 except ValueError:
-                    raise ParseError(line_num, 'Not enough values!')
+                    raise ParseError(line_num, 'Not enough values!') from None
                 try:
                     pos = Vec(float(x), float(y), float(z))
                     norm = Vec(float(nx), float(ny), float(nz))
                 except ValueError:
-                    raise ParseError(line_num, 'Invalid normal or position!')
+                    raise ParseError(line_num, 'Invalid normal or position!') from None
                 try:
                     tex_u = float(byt_tex_u)
                     tex_v = float(byt_tex_v)
                 except ValueError:
-                    raise ParseError(line_num, 'Invalid texture UV!')
+                    raise ParseError(
+                        line_num, 'Invalid texture UV: ({}, {})',
+                        byt_tex_u, byt_tex_v,
+                    ) from None
 
                 try:
                     parent = bones[int(byt_parent)]
                 except KeyError:
-                    raise ParseError(line_num, 'Invalid bone {}!', int(byt_parent))
+                    raise ParseError(line_num, 'Invalid bone {}!', int(byt_parent)) from None
 
                 if links_raw:
                     link_count = int(links_raw[0])
@@ -500,7 +503,7 @@ class Mesh:
                         try:
                             bone = bones[int(links_raw[off])]
                         except KeyError:
-                            raise ParseError(line_num, 'Unknown bone {}!', links_raw[off])
+                            raise ParseError(line_num, 'Unknown bone {}!', links_raw[off]) from None
                         links.append((bone, float(links_raw[off+1])))
                     if not links:
                         # Okay, there's no links set here, use the first index.

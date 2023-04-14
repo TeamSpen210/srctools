@@ -558,8 +558,10 @@ class Tokenizer(BaseTokenizer):
                         try:
                             next_char = ESCAPES[escape]
                         except KeyError:
+                            # Instead of checking for EOF first, do it here since None won't be in
+                            # the dict. That way the happy path doesn't have to check.
                             if escape is None:
-                                raise self.error('Unterminated string!')
+                                raise self.error('Unterminated string!') from None
                             else:
                                 next_char = '\\' + escape
                                 # raise self.error('Unknown escape "\\{}" in {}!', escape, self.cur_chunk)

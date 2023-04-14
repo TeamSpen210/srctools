@@ -698,7 +698,7 @@ class KVDef(EntAttribute):
         try:
             val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
         except KeyError:
-            raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
+            raise tok.error('Unknown keyvalue type "{}"!', raw_value_type) from None
         # Look for the 'readonly' and 'report' flags, in that order.
         next_token, key_flag = tok()
         if next_token is Token.STRING and key_flag.casefold() == 'readonly':
@@ -940,7 +940,7 @@ class IODef(EntAttribute):
             try:
                 val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
             except KeyError:
-                raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
+                raise tok.error('Unknown keyvalue type "{}"!', raw_value_type) from None
 
         # Read desc
         io_vals, token = read_colon_list(tok)
@@ -952,7 +952,7 @@ class IODef(EntAttribute):
             try:
                 [io_desc] = io_vals
             except ValueError:
-                raise tok.error('Too many values for IO definition!')
+                raise tok.error('Too many values for IO definition!') from None
         else:
             io_desc = ''
 
@@ -1662,7 +1662,7 @@ class FGD:
             try:
                 file = filesystem[file]
             except KeyError:
-                raise FileNotFoundError(file)
+                raise FileNotFoundError(file) from None
         elif isinstance(file, File):
             filesystem = file.sys
         else:
@@ -1932,7 +1932,7 @@ class FGD:
                     try:
                         include = filesys[include_file]
                     except KeyError:
-                        raise FileNotFoundError(file)
+                        raise FileNotFoundError(file) from None
                     self.parse_file(
                         filesys,
                         include,
@@ -1951,7 +1951,7 @@ class FGD:
                         raise tokeniser.error(
                             'Invalid @MapSize: ({})',
                             mapsize_args,
-                        )
+                        ) from None
                 elif token_value == '@materialexclusion':
                     # Material exclusion directories.
 
@@ -2016,7 +2016,7 @@ class FGD:
                         raise tokeniser.error(
                             'Invalid Entity type "{}"!',
                             token_value[1:],
-                        )
+                        ) from None
                     EntityDef.parse(self, tokeniser, ent_type, eval_bases)
                 else:
                     raise tokeniser.error('Bad keyword {!r}', token_value)

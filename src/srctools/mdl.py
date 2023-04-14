@@ -648,7 +648,7 @@ class Model:
                         try:
                             event_type = ANIM_EVENT_BY_INDEX[int(event_name)]
                         except KeyError:
-                            raise ValueError('Unknown event index!')
+                            raise ValueError(f'Unknown event index {event_name!r}') from None
                     else:
                         try:
                             event_type = ANIM_EVENT_BY_NAME[event_name]
@@ -660,9 +660,7 @@ class Model:
                     try:
                         event_type = ANIM_EVENT_BY_INDEX[event_index]
                     except KeyError:
-                        # raise ValueError('Unknown event index!')
-                        print('Unknown: ', event_index, event_options.rstrip(b'\0'))
-                        continue
+                        event_type = str(event_index)
 
                 f.seek(event_end)
                 events[j] = SeqEvent(

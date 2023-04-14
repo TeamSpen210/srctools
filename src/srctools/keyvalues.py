@@ -449,7 +449,7 @@ class Keyvalues:
                         'Too many closing brackets.\n\n'
                         'An extra closing bracket was added which would '
                         'close the outermost level.',
-                    )
+                    ) from None
                 # We know this isn't a leaf prop, we made it earlier.
                 cur_block_contents = cur_block._value  # type: ignore
                 # For replacing the block.
