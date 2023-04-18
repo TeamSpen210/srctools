@@ -186,7 +186,7 @@ class Quaternion(NamedTuple):
     #     return f'({self[0]} {self[1]:.6g} {self[2]:.6g} {self[3]:.6g})'
 
 
-def _clamp_color(x: int) -> int:
+def _clamp_color(x: Union[int, float]) -> int:
     """Clamp colors to 0-255."""
     return max(0, min(255, round(x)))
 
@@ -2241,14 +2241,13 @@ def deduce_type_single(value: ConvValue) -> Tuple[ValueType, Value]:
 
 _conv_string_to_float = float
 _conv_string_to_integer = int
-_conv_string_to_time = lambda text: Time(float(text))
-_conv_string_to_bool = lambda time: BOOL_LOOKUP[time.casefold()]
-_conv_string_to_vec2 = lambda text: Vec2._make(parse_vector(text, 2))
-_conv_string_to_vec3 = lambda text: FrozenVec(parse_vector(text, 3))
-_conv_string_to_vec4 = lambda text: Vec4._make(parse_vector(text, 4))
-_conv_string_to_angle = lambda text: FrozenAngle(parse_vector(text, 3))
-_conv_string_to_quaternion = lambda text: Quaternion._make(parse_vector(text, 4))
-
+def _conv_string_to_time(text: str) -> Time: return Time(float(text))
+def _conv_string_to_bool(text: str) -> bool: return BOOL_LOOKUP[text.casefold()]
+def _conv_string_to_vec2(text: str) -> Vec2: return Vec2._make(parse_vector(text, 2))
+def _conv_string_to_vec3(text: str) -> FrozenVec: return FrozenVec(parse_vector(text, 3))
+def _conv_string_to_vec4(text: str) -> Vec4: return Vec4._make(parse_vector(text, 4))
+def _conv_string_to_angle(text: str) -> FrozenAngle: return FrozenAngle(parse_vector(text, 3))
+def _conv_string_to_quaternion(text: str) -> Quaternion: return Quaternion._make(parse_vector(text, 4))
 
 def _conv_string_to_color(text: str) -> Color:
     """Colors can either have 3 or 4 values."""
@@ -2260,14 +2259,13 @@ def _conv_string_to_color(text: str) -> Color:
     else:
         raise ValueError(f"'{text}' is not a valid Color!")
 
-
 _conv_integer_to_string = str
 _conv_integer_to_float = float
-_conv_integer_to_time = lambda n: Time(float(n))
+def _conv_integer_to_time(n: int) -> Time: return Time(float(n))
 _conv_integer_to_bool = bool
-_conv_integer_to_vec2 = lambda n: Vec2(n, n)
-_conv_integer_to_vec3 = lambda n: FrozenVec(n, n, n)
-_conv_integer_to_vec4 = lambda n: Vec4(n, n, n, n)
+def _conv_integer_to_vec2(n: int) -> Vec2: return Vec2(n, n)
+def _conv_integer_to_vec3(n: int) -> Vec3: return FrozenVec(n, n, n)
+def _conv_integer_to_vec4(n: int) -> Vec4: return Vec4(n, n, n, n)
 
 
 def _conv_integer_to_color(val: int) -> Color:
@@ -2287,50 +2285,56 @@ _conv_float_to_string = _fmt_float
 _conv_float_to_integer = int
 _conv_float_to_bool = bool
 _conv_float_to_time = Time
-_conv_float_to_vec2 = lambda n: Vec2(n, n)
-_conv_float_to_vec3 = lambda n: FrozenVec(n, n, n)
-_conv_float_to_vec4 = lambda n: Vec4(n, n, n, n)
+def _conv_float_to_vec2(n: float) -> Vec2: return Vec2(n, n)
+def _conv_float_to_vec3(n: float) -> Vec3: return FrozenVec(n, n, n)
+def _conv_float_to_vec4(n: float) -> Vec4: return Vec4(n, n, n, n)
 
 _conv_bool_to_integer = int
 _conv_bool_to_float = float
 _conv_bool_to_string = bool_as_int
 
-_conv_time_to_integer = lambda t: int(t.value)
-_conv_time_to_float = lambda t: t.value
-_conv_time_to_bool = lambda t: t.value > 0
-_conv_time_to_string = lambda t: str(t.value)
+def _conv_time_to_integer(t: Time) -> int: return int(t.value)
+def _conv_time_to_float(t: Time) -> float: return t.value
+def _conv_time_to_bool(t: Time) -> bool: return t.value > 0
+def _conv_time_to_string(t: Time) -> str: return str(t.value)
 
-_conv_vec2_to_string = lambda v: f'{_fmt_float(v.x)} {_fmt_float(v.y)}'
-_conv_vec2_to_bool = lambda v: bool(v.x or v.y)
-_conv_vec2_to_vec3 = lambda v: FrozenVec(v.x, v.y, 0.0)
-_conv_vec2_to_vec4 = lambda v: Vec4(v.x, v.y, 0.0, 0.0)
+def _conv_vec2_to_string(v: Vec2) -> str: return f'{_fmt_float(v.x)} {_fmt_float(v.y)}'
+def _conv_vec2_to_bool(v: Vec2) -> bool: return bool(v.x or v.y)
+def _conv_vec2_to_vec3(v: Vec2) -> Vec3: return FrozenVec(v.x, v.y, 0.0)
+def _conv_vec2_to_vec4(v: Vec2) -> Vec4: return Vec4(v.x, v.y, 0.0, 0.0)
 
-_conv_vec3_to_string = lambda v: f'{_fmt_float(v.x)} {_fmt_float(v.y)} {_fmt_float(v.z)}'
-_conv_vec3_to_bool = lambda v: bool(v.x or v.y or v.z)
-_conv_vec3_to_vec2 = lambda v: Vec2(v.x, v.y)
-_conv_vec3_to_vec4 = lambda v: Vec4(v.x, v.y, v.z, 0.0)
-_conv_vec3_to_angle = lambda v: FrozenAngle(v.x, v.y, v.z)
-_conv_vec3_to_color = lambda v: Color(v.x, v.y, v.z)
+def _conv_vec3_to_string(v: Vec3) -> str:
+    return f'{_fmt_float(v.x)} {_fmt_float(v.y)} {_fmt_float(v.z)}'
+def _conv_vec3_to_bool(v: Vec3) -> bool: return bool(v.x or v.y or v.z)
+def _conv_vec3_to_vec2(v: Vec3) -> Vec2: return Vec2(v.x, v.y)
+def _conv_vec3_to_vec4(v: Vec3) -> Vec4: return Vec4(v.x, v.y, v.z, 0.0)
+def _conv_vec3_to_angle(v: Vec3) -> FrozenAngle: return FrozenAngle(v.x, v.y, v.z)
+def _conv_vec3_to_color(v: Vec3) -> Color: return Color(v.x, v.y, v.z)
 
-_conv_vec4_to_string = lambda v: f'{_fmt_float(v.x)} {_fmt_float(v.y)} {_fmt_float(v.z)} {_fmt_float(v.w)}'
-_conv_vec4_to_bool = lambda v: bool(v.x or v.y or v.z or v.w)
-_conv_vec4_to_vec3 = lambda v: FrozenVec(v.x, v.y, v.z)
-_conv_vec4_to_vec2 = lambda v: Vec2(v.x, v.y)
-_conv_vec4_to_quaternion = lambda v: Quaternion(v.x, v.y, v.z, v.w)
-_conv_vec4_to_color = lambda v: Color(v.x, v.y, v.z, v.w)
+def _conv_vec4_to_string(v: Vec4) -> str:
+    return f'{_fmt_float(v.x)} {_fmt_float(v.y)} {_fmt_float(v.z)} {_fmt_float(v.w)}'
+def _conv_vec4_to_bool(v: Vec4) -> bool: return bool(v.x or v.y or v.z or v.w)
+def _conv_vec4_to_vec3(v: Vec4) -> Vec3: return FrozenVec(v.x, v.y, v.z)
+def _conv_vec4_to_vec2(v: Vec4) -> Vec2: return Vec2(v.x, v.y)
+def _conv_vec4_to_quaternion(v: Vec4) -> Quaternion: return Quaternion(v.x, v.y, v.z, v.w)
+def _conv_vec4_to_color(v: Vec4) -> Color: return Color(v.x, v.y, v.z, v.w)
 
-_conv_matrix_to_angle = lambda mat: mat.to_angle().freeze()
+def _conv_matrix_to_angle(mat: Matrix) -> FrozenAngle: return mat.to_angle().freeze()
 
-_conv_angle_to_string = lambda a: f'{_fmt_float(a.pitch)} {_fmt_float(a.yaw)} {_fmt_float(a.roll)}'
-_conv_angle_to_matrix = lambda ang: FrozenMatrix.from_angle(ang)
-_conv_angle_to_vec3 = lambda ang: FrozenVec(ang.pitch, ang.yaw, ang.roll)
+def _conv_angle_to_string(a: FrozenAngle) -> str:
+    return f'{_fmt_float(a.pitch)} {_fmt_float(a.yaw)} {_fmt_float(a.roll)}'
+def _conv_angle_to_matrix(ang: FrozenAngle) -> FrozenMatrix: return FrozenMatrix.from_angle(ang)
+def _conv_angle_to_vec3(ang: FrozenAngle) -> FrozenVec:
+    return FrozenVec(ang.pitch, ang.yaw, ang.roll)
 
-_conv_color_to_string = lambda col: f'{col.r} {col.g} {col.b} {col.a}'
-_conv_color_to_vec3 = lambda col: FrozenVec(col.r, col.g, col.b)
-_conv_color_to_vec4 = lambda col: Vec4(col.r, col.g, col.b, col.a)
+def _conv_color_to_string(col: Color) -> str: return f'{col.r} {col.g} {col.b} {col.a}'
+def _conv_color_to_vec3(col: Color) -> FrozenVec: return FrozenVec(col.r, col.g, col.b)
+def _conv_color_to_vec4(col: Color) -> Vec4: return Vec4(col.r, col.g, col.b, col.a)
 
-_conv_quaternion_to_string = lambda quat: f'{_fmt_float(quat.x)} {_fmt_float(quat.y)} {_fmt_float(quat.z)} {_fmt_float(quat.w)}'
-_conv_quaternion_to_vec4 = lambda quat: Vec4(quat.x, quat.y, quat.z, quat.w)
+def _conv_quaternion_to_string(quat: Quaternion) -> str:
+    return f'{_fmt_float(quat.x)} {_fmt_float(quat.y)} {_fmt_float(quat.z)} {_fmt_float(quat.w)}'
+def _conv_quaternion_to_vec4(quat: Quaternion) -> Vec4:
+    return Vec4(quat.x, quat.y, quat.z, quat.w)
 
 # Binary conversions.
 _conv_string_to_binary = bytes.fromhex
