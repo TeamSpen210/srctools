@@ -94,7 +94,7 @@ test-command = 'pytest -m "not slow" {project}/tests'
 
 [tool.pytest.ini_options]
 markers = [
-    "slow: marks especially-slow tests, to skip when building wheels",
+	"slow: marks especially-slow tests, to skip when building wheels",
 ]
 
 [tool.pyright]
@@ -141,3 +141,31 @@ include_trailing_comma = true
 from_first = true
 combine_as_imports = true
 src_paths = ["src", "tests", "type_tests"]
+
+[tool.ruff]
+line-length = 127
+select = ["E", "F", "ANN", "B"]
+extend-ignore = [
+	# Allow module level import later in the file.
+	"E402",
+	# Allow *-imports.
+	"F403",
+	# name may be undefined, or defined from star imports: module
+	"F405",
+	# Flake8-annotations.
+	# Type annotations for self & cls are not important.
+	"ANN101",
+	"ANN102",
+	# Allow typing.Any
+	"ANN401",
+
+	# Flake8-bugbear:
+	# Loop control var not used, triggers on unpackings.
+	"B007",
+	]
+
+[tool.ruff.flake8-bugbear]
+extend-immutable-calls = [
+	"srctools.math.FrozenVec", "srctools.math.FrozenAngle", "srctools.math.FrozenMatrix",
+	"typing.cast", "srctools.logger.get_logger",
+]

@@ -34,23 +34,22 @@ jobs:
       run: |
         python .github/workflows/read_deps.py
     - name: Install dependencies
+      id: install_deps
       run: |
         python -m pip install --upgrade pip setuptools wheel
         python -m pip install -r pyproject-deps.txt -r tool-requirements.txt
-    - name: Show versions
+    - name: Lint with Ruff
       run: |
-        mypy --version
-        flake8 --version
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        ruff check src/srctools/
+      # Override regular check, to run all tools even if one fails.
+      if: ${{(success() || failure()) && steps.install_deps.outcome == "success"}}
     # Test both ends of the version, to catch version changes.
     - name: MyPy - Python 3.7
       run: |
+        mypy --version
         mypy --python-version 3.7 src/srctools/ type_tests/
+      if: ${{(success() || failure()) && steps.install_deps.outcome == "success"}}
     - name: MyPy - Python 3.11
       run: |
         mypy --python-version 3.11 src/srctools/ type_tests/
+      if: ${{(success() || failure()) && steps.install_deps.outcome == "success"}}
