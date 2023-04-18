@@ -162,6 +162,8 @@ extend-ignore = [
 	# Flake8-bugbear:
 	# Loop control var not used, triggers on unpackings.
 	"B007",
+	# Stacklevel parameter required for warnings.warn() - doesn't detect positional args.
+	"B028",
 	]
 
 [tool.ruff.flake8-bugbear]
