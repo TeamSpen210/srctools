@@ -103,17 +103,14 @@ FLAGS_DEFAULT = {
 class KeyValError(TokenSyntaxError):
     """An error that occurred when parsing a Valve KeyValues file.
 
-    mess = The error message that occurred.
-    file = The filename passed to Keyvalues.parse(), if it exists
-    line_num = The line where the error occurred.
+    See the base class for available attributes.
     """
 
 
 class NoKeyError(LookupError):
     """Raised if a key is not found when searching from find_key().
-
-    key = The missing key that was asked for.
     """
+    key: str  #: The key that was missing.
     def __init__(self, key: str) -> None:
         super().__init__()
         self.key = key
@@ -122,7 +119,7 @@ class NoKeyError(LookupError):
         return f'{self.__class__.__name__}({self.key!r})'
 
     def __str__(self) -> str:
-        return "No key " + self.key + "!"
+        return f"No key {self.key}!"
 
 
 def _read_flag(flags: Mapping[str, bool], flag_val: str) -> bool:
