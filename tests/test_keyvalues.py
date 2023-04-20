@@ -351,10 +351,7 @@ def test_parse_fails(py_c_token: Type[Tokenizer]) -> None:
         except KeyValError:
             pass
         else:
-            pytest.fail("Successfully parsed bad text ({!r}) to {!r}".format(
-                text,
-                result,
-            ))
+            pytest.fail(f"Successfully parsed bad text ({text!r}) to {result!r}")
     # Bare text at end of file
     t('''\
 regular text. with sentences.
@@ -655,13 +652,15 @@ def test_getitem() -> None:
     assert root[2] is bLock1
 
     plist = root[1:4]
-    assert isinstance(plist, list) and len(plist) == 3
+    assert isinstance(plist, list)
+    assert len(plist) == 3
     assert plist[0] is key2
     assert plist[1] is bLock1
     assert plist[2] is kEy1
 
     plist = root[2::-2]
-    assert isinstance(plist, list) and len(plist) == 2
+    assert isinstance(plist, list)
+    assert len(plist) == 2
     assert plist[0] is bLock1
     assert plist[1] is key1
 

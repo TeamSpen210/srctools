@@ -596,7 +596,7 @@ def test_special_attr_id() -> None:
     assert 'id' not in elem
     elem['id'] = uuid_b.bytes
     assert elem.uuid == uuid_a
-    elem['id'].val_bytes == uuid_b.bytes
+    assert elem['id'].val_bytes == uuid_b.bytes
 
 
 # TODO: We need to find a sample of legacy binary, v1 and v3 to verify implementation
@@ -904,7 +904,8 @@ def test_kv1_to_dmx() -> None:
     assert elem1.name == 'rOOt'
 
     subkey: Attribute[Element] = elem1['subkeys']
-    assert subkey.type is ValueType.ELEMENT and subkey.is_array
+    assert subkey.type is ValueType.ELEMENT
+    assert subkey.is_array
     [child1, child2] = subkey.iter_elem()
     assert child1.type == 'DmElement'
     assert child1.name == 'child1'
@@ -928,7 +929,8 @@ def test_kv1_to_dmx_dupleafs() -> None:
     assert root.type == 'DmElement'
     assert root.name == 'Root'
     subkeys: Attribute[Element] = root['subkeys']
-    assert subkeys.type is ValueType.ELEMENT and subkeys.is_array
+    assert subkeys.type is ValueType.ELEMENT
+    assert subkeys.is_array
     [k1, k2, k3] = subkeys.iter_elem()
     assert k1.name == 'Key1'
     assert k1.type == 'DmElementLeaf'
@@ -956,7 +958,8 @@ def test_kv1_to_dmx_leaf_and_blocks() -> None:
     assert root.type == 'DmElement'
     assert root.name == 'blah'
     subkeys: Attribute[Element] = root['subkeys']
-    assert subkeys.type is ValueType.ELEMENT and subkeys.is_array
+    assert subkeys.type is ValueType.ELEMENT
+    assert subkeys.is_array
     [e1, e2] = subkeys.iter_elem()
     assert e1.type == 'DmElementLeaf'
     assert e1['value'].val_str == 'result'
