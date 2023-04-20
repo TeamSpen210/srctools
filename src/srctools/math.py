@@ -935,7 +935,7 @@ class VecBase:
             return self._x, self._z
         if axis == 'z':
             return self._x, self._y
-        raise KeyError('Bad axis "{}"'.format(axis))
+        raise KeyError(f'Bad axis "{axis}"')
 
     def as_tuple(self) -> Vec_tuple:
         """Return the Vector as a tuple."""
@@ -2346,7 +2346,7 @@ class AngleBase:
             return self._yaw
         elif ind in (2, 'r', 'rol', 'roll'):
             return self._roll
-        raise KeyError('Invalid axis: {!r}'.format(ind))
+        raise KeyError(f'Invalid axis: {ind!r}')
 
     def __eq__(self, other: object) -> bool:
         """== test.
@@ -2776,7 +2776,7 @@ class Angle(AngleBase):
         elif ind in (2, 'r', 'rol', 'roll'):
             self._roll = _coerce_float(value) % 360.0 % 360.0
         else:
-            raise KeyError('Invalid axis: {!r}'.format(ind))
+            raise KeyError(f'Invalid axis: {ind!r}')
 
     def __imul__(self, other: Union[int, float]) -> 'Angle':
         """Angle *= float multiplies each value."""

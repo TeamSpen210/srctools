@@ -47,7 +47,7 @@ def strip_cstring(data: bytes) -> str:
 def pad_string(text: str, length: int) -> bytes:
     """Pad the string to the specified length and convert."""
     if len(text) > length:
-        raise ValueError('{!r} is longer than {}!'.format(text, length))
+        raise ValueError(f'{text!r} is longer than {length}!')
     return text.encode('ascii') + b'\0' * (length - len(text))
 
 

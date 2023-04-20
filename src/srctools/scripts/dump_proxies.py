@@ -55,18 +55,18 @@ def main(args: List[str]) -> None:
 
     print('\n\nShaders:')
     for shader in sorted(shader_params):
-        print('"{}"\n\t{{'.format(shader.title()))
+        print(f'"{shader.title()}"\n\t{{')
         param_count = shader_params[shader]
         for param_name in sorted(param_count):
-            print('\t{} = {}'.format(param_name, param_count[param_name]))
+            print(f'\t{param_name} = {param_count[param_name]}')
         print('\t}')
 
     print('\n\nProxies:')
     for proxy in sorted(shader_proxies):
-        print('"{}"\n\t{{'.format(proxy.title()))
+        print(f'"{proxy.title()}"\n\t{{')
         param_count = shader_proxies[proxy]
         for param_name in sorted(param_count):
-            print('\t{} = {}'.format(param_name, param_count[param_name]))
+            print(f'\t{param_name} = {param_count[param_name]}')
         print('\t}')
 
 

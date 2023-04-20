@@ -187,7 +187,7 @@ class BaseTokenizer(abc.ABC):
             self.error_type = TokenSyntaxError
         else:
             if not issubclass(error, TokenSyntaxError):
-                raise TypeError('Invalid error instance "{}"!'.format(type(error).__name__))
+                raise TypeError(f'Invalid error instance "{type(error).__name__}"!')
             self.error_type = error
 
         self._pushback = None
@@ -289,7 +289,7 @@ class BaseTokenizer(abc.ABC):
             value = _OPERATOR_VALS[tok]
         except KeyError:
             if value is None:
-                raise ValueError('Value required for {!r}!'.format(tok.name)) from None
+                raise ValueError(f'Value required for {tok.name!r}!') from None
 
         self._pushback = (tok, value)
 

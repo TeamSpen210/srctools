@@ -239,7 +239,7 @@ def main(args: List[str]) -> None:
         ])))
         for var_type in VarType:
             for var_name in sorted(var_by_type[var_type]):
-                f.write('    DB[{!r}] = {}\n'.format(var_name, var_type.name))
+                f.write(f'    DB[{var_name!r}] = {var_type.name}\n')
             f.write('\n')
 
 

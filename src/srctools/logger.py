@@ -226,10 +226,7 @@ def get_handler(filename: 'str | os.PathLike[str]') -> logging.FileHandler:
     # In that case, just keep trying suffixes until we find an empty file.
     for ind in itertools.count(start=1):
         try:
-            return logging.FileHandler(
-                '{}.{}{}'.format(name, ind, ext),
-                mode='x',
-            )
+            return logging.FileHandler(f'{name}.{ind}{ext}', mode='x')
         except (FileExistsError, PermissionError):
             pass
     else:

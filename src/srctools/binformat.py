@@ -102,7 +102,7 @@ def read_offset_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> L
     This first reads the specified number of signed integers, then seeks to those locations and
     reads a null-terminated string from each.
     """
-    offsets = struct_read('<{0}i'.format(str(count)), file)
+    offsets = struct_read(f'<{count}i', file)
     pos = file.tell()
     arr = [
         read_nullstr(file, off, encoding)

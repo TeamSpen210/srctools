@@ -577,7 +577,7 @@ class AutoVisgroup:
     ents: Set[str] = attrs.field(factory=set, hash=False, eq=False, order=False)
 
     def __repr__(self) -> str:
-        return '<AutoVisgroup "{}">'.format(self.name)
+        return f'<AutoVisgroup "{self.name}">'
 
 
 class EntAttribute:
@@ -1002,7 +1002,7 @@ class _EntityView(Generic[T]):
         return self._disp_attr
 
     def __repr__(self) -> str:
-        return '{!r}.{}'.format(self._ent, self._disp_attr)
+        return f'{self._ent!r}.{self._disp_attr}'
 
     def __eq__(self, other: object) -> bool:
         """We're private, so we should be the only instance for a given Entity."""

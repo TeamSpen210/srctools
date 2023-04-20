@@ -530,7 +530,7 @@ class Keyvalues:
         - This prefers keys located closer to the end of the value list.
         """
         if not isinstance(self._value, list):
-            raise ValueError("{!r} has no children!".format(self))
+            raise ValueError(f"{self!r} has no children!")
         key = key.casefold()
         prop: Keyvalues
         for prop in reversed(self._value):
@@ -553,7 +553,7 @@ class Keyvalues:
         - This prefers keys located closer to the end of the value list.
         """
         if not isinstance(self._value, list):
-            raise ValueError("{!r} has no children!".format(self))
+            raise ValueError(f"{self!r} has no children!")
         key = key.casefold()
         prop: Keyvalues
         for prop in reversed(self._value):
@@ -574,7 +574,7 @@ class Keyvalues:
         - This prefers keys located closer to the end of the value list.
         """
         if not isinstance(self._value, list):
-            raise ValueError("{!r} has no children!".format(self))
+            raise ValueError(f"{self!r} has no children!")
         key = key.casefold()
         prop: Keyvalues
         block_prop = False
@@ -605,7 +605,7 @@ class Keyvalues:
         last only.
         """
         if not isinstance(self._value, list):
-            raise ValueError("{!r} has no children!".format(self))
+            raise ValueError(f"{self!r} has no children!")
         try:
             return int(self._get_value(key))
         except (NoKeyError, ValueError, TypeError):
@@ -625,7 +625,7 @@ class Keyvalues:
         last only.
         """
         if not isinstance(self._value, list):
-            raise ValueError("{!r} has no children!".format(self))
+            raise ValueError(f"{self!r} has no children!")
         try:
             return float(self._get_value(key))
         except (NoKeyError, ValueError, TypeError):
@@ -645,7 +645,7 @@ class Keyvalues:
         last only.
         """
         if not isinstance(self._value, list):
-            raise ValueError("{!r} has no children!".format(self))
+            raise ValueError(f"{self!r} has no children!")
         try:
             return BOOL_LOOKUP[self._get_value(key).casefold()]
         except LookupError:  # base for NoKeyError and KeyError
@@ -663,7 +663,7 @@ class Keyvalues:
         last only.
         """
         if not isinstance(self._value, list):
-            raise ValueError("{!r} has no children!".format(self))
+            raise ValueError(f"{self!r} has no children!")
         try:
             return _Vec.from_str(self._get_value(key), x, y, z)
         except LookupError:  # key not present, defaults.
@@ -677,7 +677,7 @@ class Keyvalues:
         - path should be a tuple of names, or a single string.
         """
         if not isinstance(self._value, list):
-            raise ValueError("{!r} has no children!".format(self))
+            raise ValueError(f"{self!r} has no children!")
 
         current_prop = self
         if isinstance(path, tuple):
@@ -745,7 +745,7 @@ class Keyvalues:
                 if not isinstance(child._value, str):
                     raise ValueError(
                         'Cannot have sub-children in a '
-                        '"{}" array of values!'.format(self.real_name)
+                        f'"{self.real_name}" array of values!'
                     )
                 arr.append(conv(child._value))
             return arr
@@ -772,7 +772,7 @@ class Keyvalues:
         """Determine the number of child properties."""
         if isinstance(self._value, list):
             return len(self._value)
-        raise ValueError("{!r} has no children!".format(self))
+        raise ValueError(f"{self!r} has no children!")
 
     def __bool__(self) -> builtins.bool:
         """Properties are true if we have children, or have a value."""
@@ -788,9 +788,7 @@ class Keyvalues:
         if isinstance(self._value, list):
             return iter(self._value)
         else:
-            raise ValueError(
-                "Can't iterate through {!r} without children!".format(self)
-            )
+            raise ValueError(f"Can't iterate through {self!r} without children!")
 
     def iter_tree(self, blocks: builtins.bool=False) -> Iterator['Keyvalues']:
         """Iterate through all keyvalues in this tree.
@@ -803,9 +801,7 @@ class Keyvalues:
         if isinstance(self._value, list):
             return self._iter_tree(blocks)
         else:
-            raise ValueError(
-                "Can't iterate through {!r} without children!".format(self)
-            )
+            raise ValueError(f"Can't iterate through {self!r} without children!")
 
     def _iter_tree(self, blocks: builtins.bool) -> Iterator['Keyvalues']:
         """Implementation of iter_tree(). This assumes self has children."""
@@ -1125,7 +1121,7 @@ class Keyvalues:
         else:
             # We need to escape quotes and backslashes, so they don't get detected.
             assert self._real_name is not None, repr(self)
-            yield '"{}" "{}"\n'.format(escape_text(self._real_name), escape_text(self._value))
+            yield f'"{escape_text(self._real_name)}" "{escape_text(self._value)}"\n'
 
     def build(self) -> '_Builder':
         """Allows appending a tree to this keyvalue in a convenient way.
@@ -1172,7 +1168,7 @@ class Keyvalues:
             Keyvalues('name', [Keyvalues('root1', 'blah'), Keyvalues('root2', 'blah')])
         """
         if not isinstance(self._value, list):
-            raise ValueError("{!r} has no children!".format(self))
+            raise ValueError(f"{self!r} has no children!")
         return _Builder(self)
 
 

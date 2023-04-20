@@ -68,7 +68,7 @@ def get_filesystem(path: str) -> 'FileSystem[Any]':
         return ZipFileSystem(path)
     if ext == '.vpk':
         return VPKFileSystem(path)
-    raise ValueError('Unrecognised filesystem for "{}"'.format(path))
+    raise ValueError(f'Unrecognised filesystem for "{path}"')
 
 
 class RootEscapeError(ValueError):
@@ -611,7 +611,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
             try:
                 info = self._name_to_info[name.casefold()]
             except KeyError:
-                raise FileNotFoundError('{}:{}'.format(self.path, name)) from None
+                raise FileNotFoundError(f'{self.path}:{name}') from None
 
         # Type of open() is IO[bytes], basically the same.
         return cast(BinaryIO, self.zip.open(info))

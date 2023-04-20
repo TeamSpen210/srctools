@@ -1147,7 +1147,7 @@ class SheetSequence:
         file = BytesIO()
 
         if version > 1:
-            raise ValueError('Unknown version {}!'.format(version))
+            raise ValueError(f'Unknown version {version}!')
 
         file.write(struct.pack('<II', version, len(sequences)))
         for seq_num, seq in sequences.items():

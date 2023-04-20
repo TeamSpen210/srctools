@@ -153,7 +153,7 @@ class HelperRenderColor(Helper):
             [tint] = args
         except ValueError:
             raise ValueError(
-                'Expected 1 argument, got ({})!'.format(', '.join(args))
+                f'Expected 1 argument, got ({", ".join(args)})!'
             ) from None
 
         r, g, b = parse_vec_str(tint)
@@ -162,7 +162,7 @@ class HelperRenderColor(Helper):
 
     def export(self) -> List[str]:
         """Produce color(R G B)."""
-        return ['{:g} {:g} {:g}'.format(self.r, self.g, self.b)]
+        return [f'{self.r:g} {self.g:g} {self.b:g}']
 
 
 @attrs.define
@@ -179,9 +179,7 @@ class HelperSphere(Helper):
         """Parse sphere(radius, r g b)."""
         arg_count = len(args)
         if arg_count > 2:
-            raise ValueError(
-                'Expected 1 or 2 arguments, got ({})!'.format(', '.join(args))
-            )
+            raise ValueError(f'Expected 1 or 2 arguments, got ({", ".join(args)})!')
         r = g = b = 255.0
 
         if arg_count > 0:
@@ -196,10 +194,7 @@ class HelperSphere(Helper):
     def export(self) -> List[str]:
         """Export the helper."""
         if self.r != 255.0 or self.g != 255.0 or self.b != 255.0:
-            return [
-                self.size_key,
-                '{:g} {:g} {:g}'.format(self.r, self.g, self.b)
-            ]
+            return [self.size_key, f'{self.r:g} {self.g:g} {self.b:g}']
         # Always explicitly pass radius. If we use the default value,
         # Hammer doesn't display the "camera" button in options to set
         # the value to the distance to the entity.
@@ -230,10 +225,7 @@ class HelperLine(Helper):
         """Parse line(r g b, start_key, start_value, end_key, end_value)."""
         arg_count = len(args)
         if arg_count not in (3, 5):
-            raise ValueError(
-                'Expected 3 or 5 arguments, got ({})!'.format(
-                    ', '.join(args))
-            ) from None
+            raise ValueError(f'Expected 3 or 5 arguments, got {args!r}!')
 
         r, g, b = parse_vec_str(args[0])
         start_key = args[1]
@@ -253,7 +245,7 @@ class HelperLine(Helper):
     def export(self) -> List[str]:
         """Produce the correct line() arguments."""
         args = [
-            '{:g} {:g} {:g}'.format(self.r, self.g, self.b),
+            f'{self.r:g} {self.g:g} {self.b:g}',
             self.start_key,
             self.start_value,
         ]
@@ -293,10 +285,7 @@ class HelperFrustum(Helper):
             pass  # Stop once out of args.
         else:
             if len(args) > 5:
-                raise ValueError(
-                    'Expected at most 5 arguments, '
-                    'got ({})!'.format(', '.join(args))
-                )
+                raise ValueError(f'Expected at most 5 arguments, got {args!r}!')
 
         # Try and parse everything, but if it fails ignore since they could
         # be property names.
@@ -363,10 +352,7 @@ class HelperCylinder(HelperLine):
         """Parse cylinder(r g b, start key/value/radius, end key/value/radius)."""
         arg_count = len(args)
         if arg_count not in (3, 4, 6, 7):
-            raise ValueError(
-                'Expected 3, 4, 6 or 7 arguments, got ({})!'.format(
-                    ', '.join(args))
-            ) from None
+            raise ValueError(f'Expected 3, 4, 6 or 7 arguments, got {args!r}!')
 
         r, g, b = parse_vec_str(args[0])
         start_key = args[1]
@@ -391,7 +377,7 @@ class HelperCylinder(HelperLine):
     def export(self) -> List[str]:
         """Produce the correct line() arguments."""
         args = [
-            '{:g} {:g} {:g}'.format(self.r, self.g, self.b),
+            f'{self.r:g} {self.g:g} {self.b:g}',
             self.start_key,
             self.start_value,
         ]
@@ -436,9 +422,7 @@ class HelperBoundingBox(Helper):
         try:
             [key_min, key_max] = args
         except ValueError:
-            raise ValueError(
-                'Expected 2 arguments, got ({})!'.format(', '.join(args))
-            ) from None
+            raise ValueError(f'Expected 2 arguments, got {args!r}!') from None
 
         return cls(key_min, key_max)
 
@@ -480,9 +464,7 @@ class HelperSprite(Helper):
     def parse(cls: Type[SpriteHelperT], args: List[str]) -> 'SpriteHelperT':
         """Parse iconsprite(mat)."""
         if len(args) > 1:
-            raise ValueError(
-                'Expected up to 1 argument, got ({})!'.format(', '.join(args))
-            )
+            raise ValueError(f'Expected up to 1 argument, got {args!r}!')
         elif len(args) == 1:
             return cls(args[0].strip('"'))
         else:
@@ -545,9 +527,7 @@ class HelperModel(Helper):
     def parse(cls: Type[ModelHelperT], args: List[str]) -> ModelHelperT:
         """Parse iconsprite(mat)."""
         if len(args) > 1:
-            raise ValueError(
-                'Expected up to 1 argument, got ({})!'.format(', '.join(args))
-            )
+            raise ValueError(f'Expected up to 1 argument, got {args!r}!')
         elif len(args) == 1:
             return cls(args[0])
         else:
@@ -683,9 +663,7 @@ class HelperLightSpotBlackMesa(Helper):
     def parse(cls: Type['HelperLightSpotBlackMesa'], args: List[str]) -> 'HelperLightSpotBlackMesa':
         """Parse newlightcone(theta, phi, lightcolor)."""
         if len(args) != 3:
-            raise ValueError(
-                'Expected 3 arguments, got ({})!'.format(', '.join(args))
-            )
+            raise ValueError(f'Expected 3 arguments, got {args!r}!')
         return cls(args[0], args[1], args[2])
 
     def export(self) -> List[str]:
@@ -705,9 +683,7 @@ class HelperRope(Helper):
     def parse(cls, args: List[str]) -> 'HelperRope':
         """Parse keyframe(name)."""
         if len(args) > 1:
-            raise ValueError(
-                'Expected up to one argument, got ({})!'.format(args)
-            )
+            raise ValueError(f'Expected up to one argument, got {args!r}!')
         if len(args) == 0:
             return cls(None)
         return cls(args[0])
@@ -786,7 +762,7 @@ class HelperExtAutoVisgroups(Helper):
         if len(args) > 0 and args[0].casefold() != 'auto':
             args.insert(0, 'Auto')
         if len(args) < 2:
-            raise ValueError('Expected requires 2 or more arguments, got {}!')
+            raise ValueError(f'Expected 2 or more arguments, got {args!r}!')
         return cls(args)
 
     def export(self) -> List[str]:

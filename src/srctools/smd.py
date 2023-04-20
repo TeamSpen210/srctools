@@ -229,10 +229,7 @@ class Triangle:
 class ParseError(Exception):
     """Invalid model format."""
     def __init__(self, line_num: Union[int, str], msg: str, *args: object) -> None:
-        super(ParseError, self).__init__('{}: {}'.format(
-            line_num,
-            msg.format(*args),
-        ))
+        super().__init__(f'{line_num}: {msg.format(*args)}')
 
 
 def _clean_file(file: Iterable[bytes]) -> Iterator[Tuple[int, bytes]]:

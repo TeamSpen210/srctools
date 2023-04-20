@@ -446,7 +446,8 @@ class Sound:
                 if sound_version == 1:
                     raise ValueError(
                         'Operator stacks used with version '
-                        'less than 2 in "{}"!'.format(snd_prop.real_name))
+                        f'less than 2 in "{snd_prop.real_name}"!'
+                    )
 
                 start_stack, update_stack, stop_stack = [
                     Keyvalues(stack_name, [

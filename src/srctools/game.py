@@ -113,7 +113,7 @@ class Game:
             if path.is_dir():
                 raw_folders.append(path)
                 for ind in itertools.count(1):
-                    vpk = (path / 'pak{:02}_dir.vpk'.format(ind))
+                    vpk = (path / f'pak{ind:02}_dir.vpk')
                     if vpk.is_file():
                         vpks.append(vpk)
                     else:
@@ -177,9 +177,7 @@ def find_gameinfo(argv: Optional[List[str]] = None) -> Game:
             try:
                 path = argv[i+1]
             except IndexError:
-                raise ValueError(
-                    '"{}" argument has no value!'.format(value)
-                ) from None
+                raise ValueError(f'"{value}" argument has no value!') from None
             if Path(path, GINFO).exists():
                 return Game(path)
     else:

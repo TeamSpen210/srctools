@@ -365,7 +365,7 @@ class Model:
         ) = struct_read('i 4s 64s i', f)
 
         if not 44 <= self.version <= 49:
-            raise ValueError('Unknown MDL version {}!'.format(self.version))
+            raise ValueError(f'Unknown MDL version {self.version}!')
 
         self.name = name.rstrip(b'\0').decode('ascii')
         self.total_verts = 0
@@ -446,7 +446,7 @@ class Model:
         # For anyone trying to follow along, as of this writing,
         # the next "surfaceprop_index" value is at position 0x0134 (308)
         # from the start of the file.
-        assert f.tell() == 308, 'Offset wrong? {} != 308 {}'.format(f.tell(), f)
+        assert f.tell() == 308, f'Offset wrong? {f.tell()} != 308 {f}'
 
         (
             # Surface property value (single null-terminated string)
@@ -551,7 +551,7 @@ class Model:
         f.seek(skinref_ind)
         ref_data = f.read(2 * skinref_count * skin_count)
         self.skins: List[List[str]] = []
-        skin_group = Struct('<{}H'.format(skinref_count))
+        skin_group = Struct(f'<{skinref_count}H')
         offset = 0
         for ind in range(skin_count):
             self.skins.append([

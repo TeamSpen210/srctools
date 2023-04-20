@@ -505,7 +505,7 @@ class AtomicWriter(Generic[IOKindT]):
             _os.makedirs(self.dir, exist_ok=True)
 
         for i in _itertools.count(start=1):
-            self._temp_name = _os.path.join(self.dir, 'tmp_{}'.format(i))
+            self._temp_name = _os.path.join(self.dir, f'tmp_{i}')
             try:
                 if self.is_bytes:  # type checkers can't narrow self from this!
                     self.temp = open(self._temp_name, 'xb')  # type: ignore

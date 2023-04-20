@@ -1603,7 +1603,7 @@ class BSP:
         try:
             lump = self.game_lumps[lump_id]
         except KeyError:
-            raise ValueError('{!r} not in {}'.format(lump_id, list(self.game_lumps))) from None
+            raise ValueError(f'{lump_id!r} not in {list(self.game_lumps)}') from None
         return lump.data
 
     @overload

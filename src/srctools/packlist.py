@@ -821,7 +821,7 @@ class PackList:
 
         # These are all the materials the BSP references, including brushes and overlays.
         for mat in bsp.textures:
-            self.pack_file('materials/{}.vmt'.format(mat.lower()), FileType.MATERIAL)
+            self.pack_file(f'materials/{mat.lower()}.vmt', FileType.MATERIAL)
 
     def pack_fgd(self, vmf: VMF, fgd: FGD, mapname: str='', tags: Iterable[str]=()) -> None:
         warnings.warn(
@@ -963,7 +963,7 @@ class PackList:
         sky_name = vmf.spawn['skyname']
         for suffix in ['bk', 'dn', 'ft', 'lf', 'rt', 'up']:
             self.pack_file(
-                'materials/skybox/{}{}.vmt'.format(sky_name, suffix),
+                f'materials/skybox/{sky_name}{suffix}.vmt',
                 FileType.MATERIAL,
             )
         self.pack_file(vmf.spawn['detailmaterial'], FileType.MATERIAL)
