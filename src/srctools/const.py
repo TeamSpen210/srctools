@@ -1,8 +1,6 @@
 """Various useful constants and enums."""
 from typing import Any, MutableMapping
 from enum import Enum, Flag
-import functools
-import operator
 import sys
 
 
@@ -23,13 +21,13 @@ def add_unknown(ns: MutableMapping[str, Any], long: bool = False) -> None:
         :external:func:`locals()` or :external:func:`vars()`.
     :param long: If set, extend to 64 bits, not 32 bits.
     """
+    # First, determine which bits we already have.
+    used_bits = 0
+    for n in ns.values():
+        # Skip non-members added to the namespace.
+        if isinstance(n, int):
+            used_bits |= n
 
-    # Don't alias bits we already have.
-    used_bits = functools.reduce(
-        operator.or_,
-        # Skip dunder names etc added to the namespace.
-        filter(lambda n: isinstance(n, int), ns.values()),
-    )
     for i in range(64 if long else 32):
         bit = 1 << i
         if not bit & used_bits:
