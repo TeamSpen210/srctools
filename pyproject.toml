@@ -144,7 +144,7 @@ src_paths = ["src", "tests", "type_tests"]
 
 [tool.ruff]
 line-length = 127
-select = ["E", "UP", "F", "ANN", "B"]
+select = ["E", "UP", "F", "C4", "ANN", "B", "PIE"]
 extend-ignore = [
 	# Allow module level import later in the file.
 	"E402",
@@ -164,6 +164,12 @@ extend-ignore = [
 	"B007",
 	# Stacklevel parameter required for warnings.warn() - doesn't detect positional args.
 	"B028",
+
+	# Flake8-pie:
+	# Prefer to use pass in empty functions, even if docstring is present
+	"PIE790",
+	# Allow aliases for enum values, used often.
+	"PIE796",
 	]
 
 [tool.ruff.flake8-bugbear]
