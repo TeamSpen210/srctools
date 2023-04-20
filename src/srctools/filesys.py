@@ -536,7 +536,7 @@ class RawFileSystem(FileSystem[str]):
         """
         if isinstance(name, File):
             name = self._get_data(name)
-        return open(self._resolve_path(name), mode='rt', encoding=encoding)
+        return open(self._resolve_path(name), encoding=encoding)
 
     def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:
         """Open a file in bytes mode or raise FileNotFoundError.

@@ -144,7 +144,7 @@ src_paths = ["src", "tests", "type_tests"]
 
 [tool.ruff]
 line-length = 127
-select = ["E", "F", "ANN", "B"]
+select = ["E", "UP", "F", "ANN", "B"]
 extend-ignore = [
 	# Allow module level import later in the file.
 	"E402",
@@ -171,3 +171,7 @@ extend-immutable-calls = [
 	"srctools.math.FrozenVec", "srctools.math.FrozenAngle", "srctools.math.FrozenMatrix",
 	"typing.cast", "srctools.logger.get_logger",
 ]
+
+[tool.ruff.pyupgrade]
+# Still use typing types even with `from __future__ import annotations`.
+keep-runtime-typing = true

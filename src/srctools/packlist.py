@@ -194,7 +194,7 @@ class ManifestedFiles(Generic[ParsedT]):
                 root, file_type, file_version = Element.parse(f)
         except FileNotFoundError:
             return
-        except (IOError, ValueError):
+        except (OSError, ValueError):
             LOGGER.warning('Could not parse cache file "{}"!', filename)
             return
         if file_type != 'SrcPacklistCache' or file_version != 1:
@@ -1361,7 +1361,7 @@ class PackList:
                 file.filename,
             )
             return
-        except (IOError, ValueError) as exc:
+        except (OSError, ValueError) as exc:
             LOGGER.warning(
                 'Weapon script "{}" cannot be parsed:\n{}',
                 file.filename,

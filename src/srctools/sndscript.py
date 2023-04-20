@@ -449,7 +449,7 @@ class Sound:
                         f'less than 2 in "{snd_prop.real_name}"!'
                     )
 
-                start_stack, update_stack, stop_stack = [
+                start_stack, update_stack, stop_stack = (
                     Keyvalues(stack_name, [
                         prop.copy()
                         for prop in
@@ -457,7 +457,7 @@ class Sound:
                     ])
                     for stack_name in
                     ['start_stack', 'update_stack', 'stop_stack']
-                ]
+                )
             else:
                 start_stack, update_stack, stop_stack = [None, None, None]
 
