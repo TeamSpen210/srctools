@@ -1,7 +1,6 @@
 """Implemenations of specific code for each FGD helper type."""
-from typing import (
-    ClassVar, Collection, Iterable, Iterator, List, Optional, Tuple, Type, TypeVar, Union,
-)
+from typing import ClassVar, Collection, Iterable, Iterator, List, Optional, Tuple, Union
+from typing_extensions import Self
 
 import attrs
 
@@ -24,11 +23,6 @@ __all__ = [
     'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy',
 ]
 
-T = TypeVar('T', bound=Helper)
-OptHelperT = TypeVar('OptHelperT', bound='_HelperOneOptional')
-SpriteHelperT = TypeVar('SpriteHelperT', bound='HelperSprite')
-ModelHelperT = TypeVar('ModelHelperT', bound='HelperModel')
-
 
 @attrs.define
 class _HelperOneOptional(Helper):
@@ -37,7 +31,7 @@ class _HelperOneOptional(Helper):
     key: str
 
     @classmethod
-    def parse(cls: Type[OptHelperT], args: List[str]) -> OptHelperT:
+    def parse(cls, args: List[str]) -> Self:
         """Parse a single optional keyl."""
         if len(args) > 1:
             raise ValueError(
@@ -97,7 +91,7 @@ class HelperSize(Helper):
         return [HelperTypes.CUBE]
 
     @classmethod
-    def parse(cls, args: List[str]) -> 'HelperSize':
+    def parse(cls, args: List[str]) -> Self:
         """Parse size(x1 y1 z1, x2 y2 z2)."""
         if len(args) > 2:
             raise ValueError(
@@ -147,7 +141,7 @@ class HelperRenderColor(Helper):
         return [HelperTypes.TINT]
 
     @classmethod
-    def parse(cls, args: List[str]) -> 'HelperRenderColor':
+    def parse(cls, args: List[str]) -> Self:
         """Parse color(R G B)."""
         try:
             [tint] = args
@@ -175,7 +169,7 @@ class HelperSphere(Helper):
     size_key: str
 
     @classmethod
-    def parse(cls, args: List[str]) -> 'HelperSphere':
+    def parse(cls, args: List[str]) -> Self:
         """Parse sphere(radius, r g b)."""
         arg_count = len(args)
         if arg_count > 2:
@@ -221,7 +215,7 @@ class HelperLine(Helper):
     end_value: Optional[str] = None
 
     @classmethod
-    def parse(cls, args: List[str]) -> 'HelperLine':
+    def parse(cls, args: List[str]) -> Self:
         """Parse line(r g b, start_key, start_value, end_key, end_value)."""
         arg_count = len(args)
         if arg_count not in (3, 5):
@@ -266,7 +260,7 @@ class HelperFrustum(Helper):
     pitch_scale: Union[str, float]
 
     @classmethod
-    def parse(cls, args: List[str]) -> 'HelperFrustum':
+    def parse(cls, args: List[str]) -> Self:
         """Parse frustum(fov, near, far, color, pitch_scale)."""
         # These are the default values if not provided.
         fov: Union[str, float] = '_fov'
@@ -348,7 +342,7 @@ class HelperCylinder(HelperLine):
     end_radius: Optional[str] = None
 
     @classmethod
-    def parse(cls, args: List[str]) -> 'HelperCylinder':
+    def parse(cls, args: List[str]) -> Self:
         """Parse cylinder(r g b, start key/value/radius, end key/value/radius)."""
         arg_count = len(args)
         if arg_count not in (3, 4, 6, 7):
@@ -417,7 +411,7 @@ class HelperBoundingBox(Helper):
     max: str
 
     @classmethod
-    def parse(cls: Type['HelperBoundingBox'], args: List[str]) -> 'HelperBoundingBox':
+    def parse(cls, args: List[str]) -> Self:
         """Parse wirebox(min, max)"""
         try:
             [key_min, key_max] = args
@@ -461,7 +455,7 @@ class HelperSprite(Helper):
             return [HelperTypes.CUBE, HelperTypes.SPRITE, HelperTypes.ENT_SPRITE]
 
     @classmethod
-    def parse(cls: Type[SpriteHelperT], args: List[str]) -> 'SpriteHelperT':
+    def parse(cls, args: List[str]) -> Self:
         """Parse iconsprite(mat)."""
         if len(args) > 1:
             raise ValueError(f'Expected up to 1 argument, got {args!r}!')
@@ -524,7 +518,7 @@ class HelperModel(Helper):
             return [HelperTypes.CUBE]
 
     @classmethod
-    def parse(cls: Type[ModelHelperT], args: List[str]) -> ModelHelperT:
+    def parse(cls, args: List[str]) -> Self:
         """Parse iconsprite(mat)."""
         if len(args) > 1:
             raise ValueError(f'Expected up to 1 argument, got {args!r}!')
@@ -612,7 +606,7 @@ class HelperLightSpot(Helper):
     pitch_scale: float
 
     @classmethod
-    def parse(cls: Type['HelperLightSpot'], args: List[str]) -> 'HelperLightSpot':
+    def parse(cls, args: List[str]) -> Self:
         """Parse lightcone(inner, outer, color, pitch_scale)."""
         if len(args) >= 1:
             inner_cone = args[0]
@@ -660,7 +654,7 @@ class HelperLightSpotBlackMesa(Helper):
     color_kv: str
 
     @classmethod
-    def parse(cls: Type['HelperLightSpotBlackMesa'], args: List[str]) -> 'HelperLightSpotBlackMesa':
+    def parse(cls, args: List[str]) -> Self:
         """Parse newlightcone(theta, phi, lightcolor)."""
         if len(args) != 3:
             raise ValueError(f'Expected 3 arguments, got {args!r}!')
@@ -680,7 +674,7 @@ class HelperRope(Helper):
     name_kv: Optional[str]  # Extension in Portal: Revolution
 
     @classmethod
-    def parse(cls, args: List[str]) -> 'HelperRope':
+    def parse(cls, args: List[str]) -> Self:
         """Parse keyframe(name)."""
         if len(args) > 1:
             raise ValueError(f'Expected up to one argument, got {args!r}!')
@@ -724,7 +718,7 @@ class HelperExtAppliesTo(Helper):
     tags: List[str] = attrs.Factory(list)
 
     @classmethod
-    def parse(cls, args: List[str]) -> 'HelperExtAppliesTo':
+    def parse(cls, args: List[str]) -> Self:
         return cls(args)
 
     def export(self) -> List[str]:
@@ -740,7 +734,7 @@ class HelperExtOrderBy(Helper):
     order: List[str] = attrs.Factory(list)
 
     @classmethod
-    def parse(cls, args: List[str]) -> 'HelperExtOrderBy':
+    def parse(cls, args: List[str]) -> Self:
         return cls(args)
 
     def export(self) -> List[str]:
@@ -758,7 +752,7 @@ class HelperExtAutoVisgroups(Helper):
     path: List[str] = attrs.Factory(list)
 
     @classmethod
-    def parse(cls: Type['HelperExtAutoVisgroups'], args: List[str]) -> 'HelperExtAutoVisgroups':
+    def parse(cls, args: List[str]) -> Self:
         if len(args) > 0 and args[0].casefold() != 'auto':
             args.insert(0, 'Auto')
         if len(args) < 2:
