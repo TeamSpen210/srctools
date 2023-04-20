@@ -1,5 +1,6 @@
 import copy
 import pickle
+import math
 from fractions import Fraction
 
 import pytest

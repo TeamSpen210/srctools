@@ -1,5 +1,5 @@
 """Test the datamodel exchange implementation."""
-from typing import Set, cast
+from typing import Callable, Set, Tuple, Type, cast
 from io import BytesIO
 from pathlib import Path
 from uuid import UUID, uuid4

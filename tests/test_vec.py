@@ -1,4 +1,5 @@
 """Test the Vector object."""
+import math
 from fractions import Fraction
 from typing import Union
 from pathlib import Path

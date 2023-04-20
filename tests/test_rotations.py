@@ -1,6 +1,9 @@
 """Test rotations in srctools.math."""
-from typing import List, NamedTuple
+import math
+from typing import List, NamedTuple, Tuple
 from pathlib import Path
+
+import pytest
 
 from helpers import *
 

@@ -1,6 +1,7 @@
 """Tests the Matrix/FrozenMatrix class in srctools.math."""
 import copy
 import fractions
+import itertools
 import pickle
 
 import pytest

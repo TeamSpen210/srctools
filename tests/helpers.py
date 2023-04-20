@@ -17,6 +17,18 @@ from srctools.math import (
     Py_parse_vec_str, Cy_parse_vec_str,
 )
 
+__all__ = [
+    'iter_vec', 'ExactType', 'py_c_vec', 'vec_mod', 'parameterize_cython',
+    'VALID_NUMS', 'VALID_ZERONUMS', 'EPSILON', 'PyCVec',
+    'Py_Vec', 'Py_FrozenVec', 'Cy_Vec', 'Cy_FrozenVec', 
+    'Py_Angle', 'Py_FrozenAngle', 'Cy_Angle', 'Cy_FrozenAngle',
+    'Py_Matrix', 'Py_FrozenMatrix', 'Cy_Matrix', 'Cy_FrozenMatrix', 
+    'Py_parse_vec_str', 'Cy_parse_vec_str',
+    'VecClass', 'AngleClass', 'MatrixClass',
+    'assert_vec', 'assert_ang', 'assert_rot',
+    'frozen_thawed_vec', 'frozen_thawed_angle', 'frozen_thawed_matrix',
+]
+
 
 VALID_NUMS = [
     # 10e38 is the max single value, make sure we use double-precision.
