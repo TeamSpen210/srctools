@@ -76,7 +76,7 @@ from srctools.math import Vec as _Vec
 from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
 
 
-__all__ = ['KeyValError', 'NoKeyError', 'Keyvalues']
+__all__ = ['KeyValError', 'NoKeyError', 'LeafKeyvalueError', 'Keyvalues']
 
 # Sentinel value to indicate that no default was given to find_key()
 _NO_KEY_FOUND = cast(str, object())
@@ -112,7 +112,7 @@ class NoKeyError(LookupError):
     """
     key: str  #: The key that was missing.
     def __init__(self, key: str) -> None:
-        super().__init__()
+        super().__init__(key)
         self.key = key
 
     def __repr__(self) -> str:
@@ -120,6 +120,25 @@ class NoKeyError(LookupError):
 
     def __str__(self) -> str:
         return f"No key {self.key}!"
+
+
+class LeafKeyvalueError(ValueError):
+    """Raised when a method requiring a keyvalue block is run on a leaf keyvalue.
+
+    Leaf keyvalues only have a string value, so this operation is not valid.
+    """
+    leaf: 'Keyvalues'  #:  The keyvalue being used.
+    msg: str  # The operation being performed.
+    def __init__(self, leaf: 'Keyvalues', operation: str) -> None:
+        super().__init__(operation)
+        self.leaf = leaf
+        self.operation = operation
+
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}({self.leaf!r}, {self.operation!r})'
+
+    def __str__(self) -> str:
+        return f'Cannot {self.operation} a leaf {self.leaf!r}, since it has no children!'
 
 
 def _read_flag(flags: Mapping[str, bool], flag_val: str) -> bool:
@@ -497,7 +516,7 @@ class Keyvalues:
         targ_key = keys[0].casefold()
         for prop in self:
             if not isinstance(prop, Keyvalues):
-                raise ValueError('Cannot find_all on a leaf Keyvalue!')
+                raise LeafKeyvalueError(prop, 'find children of')
             if prop._folded_name == targ_key is not None:
                 if depth > 1:
                     if prop.has_children():
@@ -527,7 +546,7 @@ class Keyvalues:
         - This prefers keys located closer to the end of the value list.
         """
         if not isinstance(self._value, list):
-            raise ValueError(f"{self!r} has no children!")
+            raise LeafKeyvalueError(self, 'find a key in')
         key = key.casefold()
         prop: Keyvalues
         for prop in reversed(self._value):
@@ -550,7 +569,7 @@ class Keyvalues:
         - This prefers keys located closer to the end of the value list.
         """
         if not isinstance(self._value, list):
-            raise ValueError(f"{self!r} has no children!")
+            raise LeafKeyvalueError(self, 'find a sub-block in')
         key = key.casefold()
         prop: Keyvalues
         for prop in reversed(self._value):
@@ -571,7 +590,7 @@ class Keyvalues:
         - This prefers keys located closer to the end of the value list.
         """
         if not isinstance(self._value, list):
-            raise ValueError(f"{self!r} has no children!")
+            raise LeafKeyvalueError(self, 'find a key in')
         key = key.casefold()
         prop: Keyvalues
         block_prop = False
@@ -601,10 +620,10 @@ class Keyvalues:
         If multiple keys with the same name are present, this will use the
         last only.
         """
-        if not isinstance(self._value, list):
-            raise ValueError(f"{self!r} has no children!")
         try:
             return int(self._get_value(key))
+        except LeafKeyvalueError:
+            raise  # Incorrect usage, not missing.
         except (NoKeyError, ValueError, TypeError):
             return def_
 
@@ -621,10 +640,10 @@ class Keyvalues:
         If multiple keys with the same name are present, this will use the
         last only.
         """
-        if not isinstance(self._value, list):
-            raise ValueError(f"{self!r} has no children!")
         try:
             return float(self._get_value(key))
+        except LeafKeyvalueError:
+            raise  # Incorrect usage, not missing.
         except (NoKeyError, ValueError, TypeError):
             return def_
 
@@ -641,10 +660,10 @@ class Keyvalues:
         If multiple keys with the same name are present, this will use the
         last only.
         """
-        if not isinstance(self._value, list):
-            raise ValueError(f"{self!r} has no children!")
         try:
             return BOOL_LOOKUP[self._get_value(key).casefold()]
+        except LeafKeyvalueError:
+            raise  # Incorrect usage, not missing.
         except LookupError:  # base for NoKeyError and KeyError
             return def_
 
@@ -659,11 +678,11 @@ class Keyvalues:
         If multiple keys with the same name are present, this will use the
         last only.
         """
-        if not isinstance(self._value, list):
-            raise ValueError(f"{self!r} has no children!")
         try:
             return _Vec.from_str(self._get_value(key), x, y, z)
-        except LookupError:  # key not present, defaults.
+        except LeafKeyvalueError:
+            raise  # Incorrect usage, not missing.
+        except NoKeyError:  # key not present, defaults.
             return _Vec(x, y, z)
 
     def set_key(self, path: Union[Tuple[str, ...], str], value: str) -> None:
@@ -674,7 +693,7 @@ class Keyvalues:
         - path should be a tuple of names, or a single string.
         """
         if not isinstance(self._value, list):
-            raise ValueError(f"{self!r} has no children!")
+            raise LeafKeyvalueError(self, 'set a child key of')
 
         current_prop = self
         if isinstance(path, tuple):
@@ -769,7 +788,7 @@ class Keyvalues:
         """Determine the number of child properties."""
         if isinstance(self._value, list):
             return len(self._value)
-        raise ValueError(f"{self!r} has no children!")
+        raise LeafKeyvalueError(self, 'compute the length of')
 
     def __bool__(self) -> builtins.bool:
         """Properties are true if we have children, or have a value."""
@@ -785,7 +804,7 @@ class Keyvalues:
         if isinstance(self._value, list):
             return iter(self._value)
         else:
-            raise ValueError(f"Can't iterate through {self!r} without children!")
+            raise LeafKeyvalueError(self, 'iterate')
 
     def iter_tree(self, blocks: builtins.bool=False) -> Iterator['Keyvalues']:
         """Iterate through all keyvalues in this tree.
@@ -798,7 +817,7 @@ class Keyvalues:
         if isinstance(self._value, list):
             return self._iter_tree(blocks)
         else:
-            raise ValueError(f"Can't iterate through {self!r} without children!")
+            raise LeafKeyvalueError(self, 'recursively iterate')
 
     def _iter_tree(self, blocks: builtins.bool) -> Iterator['Keyvalues']:
         """Implementation of iter_tree(). This assumes self has children."""
@@ -822,7 +841,7 @@ class Keyvalues:
                     return True
             return False
 
-        raise ValueError("Can't search through properties without children!")
+        raise LeafKeyvalueError(self, 'search through')
 
     @overload
     def __getitem__(self, index: builtins.int) -> 'Keyvalues': ...
@@ -863,7 +882,7 @@ class Keyvalues:
             else:
                 raise TypeError(f'Unknown key type: {index!r}')
         else:
-            raise ValueError("Can't index a Keyvalue without children!")
+            raise LeafKeyvalueError(self, 'find a child in')
 
     @overload
     def __setitem__(self, index: slice, value: Iterable['Keyvalues']) -> None: ...
@@ -884,7 +903,7 @@ class Keyvalues:
         - If none are found, it appends the value to the tree.
         """
         if not isinstance(self._value, list):
-            raise ValueError("Can't index a Keyvalue without children!")
+            raise LeafKeyvalueError(self, 'set a child in')
         if isinstance(index, int):
             if isinstance(value, Keyvalues):
                 self._value[index] = value
@@ -925,7 +944,7 @@ class Keyvalues:
         - If given a string, it will delete the last Keyvalue with that name.
         """
         if not isinstance(self._value, list):
-            raise IndexError("Can't index a Keyvalue without children!")
+            raise LeafKeyvalueError(self, 'delete a child from')
         if isinstance(index, (int, slice)):
             del self._value[index]
         else:
@@ -939,7 +958,7 @@ class Keyvalues:
         if isinstance(self._value, list):
             self._value.clear()
         else:
-            raise ValueError("Can't clear a Keyvalue without children!")
+            raise LeafKeyvalueError(self, 'clear')
 
     def __add__(self, other: Iterable['Keyvalues']) -> 'Keyvalues':
         """Extend this keyvalue with the contents of another, or an iterable.
@@ -990,7 +1009,7 @@ class Keyvalues:
                     self._value.append(prop.copy())
             return self
         else:
-            raise ValueError('Cannot += a Keyvalue without children!')
+            raise LeafKeyvalueError(self, 'extend')
 
     def append(self, other: Union[Iterable['Keyvalues'], 'Keyvalues']) -> None:
         """Append another keyvalue to this one.
@@ -1020,12 +1039,12 @@ class Keyvalues:
                         raise TypeError(f'{type(prop).__name__} is not a Keyvalue!')
                     self._value.append(prop)
         else:
-            raise ValueError('Cannot append to a Keyvalue without children!')
+            raise LeafKeyvalueError(self, 'append to')
 
     def extend(self, other: Iterable['Keyvalues']) -> None:
         """Extend this keyvalue with the contents of another, or an iterable."""
         if not isinstance(self._value, list):
-            raise ValueError('Cannot append to a Keyvalue without children!')
+            raise LeafKeyvalueError(self, 'extend')
 
         for prop in other:
             if not isinstance(prop, Keyvalues):
@@ -1035,11 +1054,11 @@ class Keyvalues:
     def merge_children(self, *names: str) -> None:
         """Merge together any children of ours with the given names.
 
-        After execution, this tree will have only one sub-Keyvalue for
-        each of the given names. This ignores leaf Properties.
+        After execution, this tree will have only one sub-Keyvalue for each of the given names.
+        Direct leaf keyvalues will be left unchanged, even if they happen to match the given names.
         """
         if not isinstance(self._value, list):
-            raise ValueError(f"{self!r} has no children!")
+            raise LeafKeyvalueError(self, 'merge children in')
         folded_names = [name.casefold() for name in names]
         new_list = []
         # Optional only here because _folded_name may be None - it'll never actually be there.
@@ -1068,7 +1087,7 @@ class Keyvalues:
     def ensure_exists(self, key: str) -> 'Keyvalues':
         """Ensure a Keyvalue block exists with this name, and return it."""
         if not isinstance(self._value, list):
-            raise ValueError(f"{self!r} has no children!")
+            raise LeafKeyvalueError(self, 'add children to')
         try:
             return self.find_key(key)
         except NoKeyError:
@@ -1165,7 +1184,7 @@ class Keyvalues:
             Keyvalues('name', [Keyvalues('root1', 'blah'), Keyvalues('root2', 'blah')])
         """
         if not isinstance(self._value, list):
-            raise ValueError(f"{self!r} has no children!")
+            raise LeafKeyvalueError(self, 'add children to')
         return _Builder(self)
 
 

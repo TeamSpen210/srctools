@@ -12,6 +12,8 @@ Version (dev)
 * Add support for detecting and packing weapon scripts.
 * Make custom model gibs inherit skinset when packing.
 * Add :py:meth:`srctools.bsp.BModel.clear_physics()`, to delete physics data for a brush model.
+* Add :py:class:`srctools.Keyvalues.LeafKeyvalueError`, raised when block-only operations are
+  attempted on leaf keyvalues. This improves the messages raised and makes them consistent.
 
 -------------
 Version 2.3.10

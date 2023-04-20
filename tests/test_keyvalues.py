@@ -4,7 +4,7 @@ import itertools
 import pytest
 
 from srctools import keyvalues as kv_mod
-from srctools.keyvalues import KeyValError, Keyvalues, NoKeyError
+from srctools.keyvalues import KeyValError, Keyvalues, LeafKeyvalueError, NoKeyError
 # noinspection PyProtectedMember
 from srctools.tokenizer import Cy_Tokenizer, Py_Tokenizer, Tokenizer
 
@@ -555,52 +555,52 @@ def test_bool() -> None:
 
 
 def test_blockfuncs_fail_on_leaf() -> None:
-    """Check that methods requiring a block fail on a leaf key."""
+    """Check that methods requiring a block fail on a leaf key, and raise the specific exception."""
     leaf = Keyvalues('Name', 'blah')
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         for _ in leaf.find_all("blah"):
             pass
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         leaf.find_key("blah")
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         for _ in leaf:
             pass
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         leaf['blah']
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         leaf[0]
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         leaf[1:2]
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         leaf['blah', '']
 
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         leaf['blah'] = 't'
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         leaf[0] = 't'  # type: ignore
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         leaf[1:2] = 't'  # type: ignore
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         leaf['blah', ''] = 't'  # type: ignore
 
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         leaf.int('blah')
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         leaf.bool('blah')
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         leaf.float('blah')
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         leaf.vec('blah')
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         len(leaf)
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         with leaf.build():
             pass
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         leaf.ensure_exists('blah')
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         leaf.set_key(("blah", "another"), 45)
-    with pytest.raises(ValueError):
+    with pytest.raises(LeafKeyvalueError):
         leaf.merge_children()
 
 
