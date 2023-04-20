@@ -1,0 +1,12 @@
+extend = "../pyproject.toml"
+
+extend-ignore = [
+	# Type checking isn't particularly important in test code.
+	"ANN",
+]
+# Enable pytest-specific checks.
+extend-select = ["PT"]
+
+[flake8-pytest-style]
+mark-parentheses = false
+parametrize-names-type = "csv"
