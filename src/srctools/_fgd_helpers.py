@@ -361,7 +361,7 @@ class HelperCylinder(HelperLine):
                 if arg_count == 7:
                     end_radius = args[6]
 
-        return HelperCylinder(
+        return cls(
             r, g, b,
             start_key, start_value,
             end_key, end_value,
