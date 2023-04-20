@@ -295,14 +295,25 @@ def test_multiply(frozen_thawed_angle: AngleClass):
             )
 
             # Check forward and reverse fails.
-            with pytest.raises(TypeError):
+            try:
                 targ * obj  # noqa
+            except TypeError:
+                pass
+            else:
                 pytest.fail('Angle * scalar succeeded.')
-            with pytest.raises(TypeError):
+
+            try:
                 obj * targ  # noqa
+            except TypeError:
+                pass
+            else:
                 pytest.fail('scalar * Angle succeeded.')
-            with pytest.raises(TypeError):
+
+            try:
                 targ *= obj  # noqa
+            except TypeError:
+                pass
+            else:
                 pytest.fail('Angle *= scalar succeeded.')
 
             assert_ang(targ * num, rpit, ryaw, rrol)

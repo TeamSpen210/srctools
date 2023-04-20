@@ -106,11 +106,11 @@ def test_kv_errors() -> None:
     inst = instancing.Instance('test_inst', '', Vec(), Matrix())
     vmf = VMF()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='instance as a whole'):
         inst.fixup_key(vmf, [], ValueTypes.ANGLE_NEG_PITCH, '45')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='instance as a whole'):
         inst.fixup_key(vmf, [], ValueTypes.EXT_ANGLE_PITCH, '45')
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='is not meaningful.+swapped with another'):
         inst.fixup_key(vmf, [], ValueTypes.CHOICES, 'test')
         
         

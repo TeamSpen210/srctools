@@ -1,5 +1,6 @@
 """Test the Vector object."""
 import math
+import re
 from fractions import Fraction
 from typing import Union
 from pathlib import Path
@@ -485,14 +486,23 @@ def test_scalar(frozen_thawed_vec: VecClass):
                 )
 
                 # Check forward and reverse fails.
-                with pytest.raises(TypeError):
+                try:
                     op_func(targ, obj)
+                except TypeError:
+                    pass
+                else:
                     pytest.fail('Vec ' + op_name + 'Scalar succeeded.')
-                with pytest.raises(TypeError):
+                try:
                     op_func(obj, targ)
+                except TypeError:
+                    pass
+                else:
                     pytest.fail('Scalar ' + op_name + ' Vec succeeded.')
-                with pytest.raises(TypeError):
+                try:
                     op_ifunc(targ, obj)
+                except TypeError:
+                    pass
+                else:
                     pytest.fail('Vec ' + op_name + '= scalar succeeded.')
 
                 assert_vec(
@@ -873,6 +883,7 @@ def test_binop_fail(frozen_thawed_vec) -> None:
 def test_axis(frozen_thawed_vec) -> None:
     """Test the Vec.axis() function."""
     Vec = frozen_thawed_vec
+    handler = pytest.raises(ValueError, match='not an on-axis vector')
 
     for num in VALID_NUMS:
         assert Vec(num, 0, 0).axis() == 'x', num
@@ -883,28 +894,28 @@ def test_axis(frozen_thawed_vec) -> None:
         assert Vec(-1e-8, num, -0.0000008).axis() == 'y', num
         assert Vec(-0.000000878, 0.0000003782, num).axis() == 'z', num
 
-        with raises_valueerror:
+        with handler:
             Vec(num, num, 0).axis()
 
-        with raises_valueerror:
+        with handler:
             Vec(num, 0, num).axis()
 
-        with raises_valueerror:
+        with handler:
             Vec(0, num, num).axis()
 
-        with raises_valueerror:
+        with handler:
             Vec(num, num, num).axis()
 
-        with raises_valueerror:
+        with handler:
             Vec(-num, num, num).axis()
 
-        with raises_valueerror:
+        with handler:
             Vec(num, -num, num).axis()
 
-        with raises_valueerror:
+        with handler:
             Vec(num, num, -num).axis()
 
-    with raises_valueerror:
+    with handler:
         Vec().axis()
 
 
@@ -1326,7 +1337,7 @@ def test_bbox(frozen_thawed_vec: VecClass) -> None:
         Vec.bbox(Vec(), None)
 
     # Empty iterable.
-    with raises_valueerror:
+    with pytest.raises(ValueError, match=re.compile('empty', re.IGNORECASE)):
         Vec.bbox([])
 
     # Iterable starting with non-vector.

@@ -273,8 +273,9 @@ def test_pushback_opvalues(py_c_token: Type[Tokenizer], token: Token, val: str) 
     tok.push_back(token, val)
     assert tok() == (token, val)
 
+    # Can only push back one at a time.
     tok.push_back(Token.STRING, 'push')
-    with pytest.raises(ValueError):  # Can only push back one at a time.
+    with pytest.raises(ValueError, match='Token already pushed back!'):
         tok.push_back(Token.STRING, 'two_at_once')
     assert tok() == (Token.STRING, 'push')
 
