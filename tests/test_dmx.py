@@ -369,7 +369,8 @@ def test_attr_extend() -> None:
     assert arr[1].val_float == 2.0
     assert arr[2].val_float == 3.0
 
-    arr.extend((x for x in [1.3, 4.2, '8.9']))
+    # Test a pure iterator
+    arr.extend(x for x in [1.3, 4.2, '8.9'])
     assert len(arr) == 6
     assert arr[0].val_float == 1.0
     assert arr[1].val_float == 2.0
@@ -533,8 +534,16 @@ def test_deduce_type_basic(input, val_type, output) -> None:
     ([1, 4, False, True], ValueType.INT, [1, 4, 0, 1]),
     ([False, True, True, False], ValueType.BOOL, [False, True, True, False]),
     # Frozen/mutable classes can be mixed.
-    ([Angle(3.0, 4.0, 5.0), FrozenAngle(4.0, 3.0, 6.0)], ValueType.ANGLE, [FrozenAngle(3.0, 4.0, 5.0), FrozenAngle(4.0, 3.0, 6.0)]),
-    ([Vec(3.0, 4.0, 5.0), FrozenVec(4.0, 3.0, 6.0)], ValueType.VEC3, [FrozenVec(3.0, 4.0, 5.0), FrozenVec(4.0, 3.0, 6.0)]),
+    (
+        [Angle(3.0, 4.0, 5.0), FrozenAngle(4.0, 3.0, 6.0)],
+        ValueType.ANGLE,
+        [FrozenAngle(3.0, 4.0, 5.0), FrozenAngle(4.0, 3.0, 6.0)]
+    ),
+    (
+        [Vec(3.0, 4.0, 5.0), FrozenVec(4.0, 3.0, 6.0)],
+        ValueType.VEC3,
+        [FrozenVec(3.0, 4.0, 5.0), FrozenVec(4.0, 3.0, 6.0)]
+    ),
 
     # Tuples and other sequences work
     ((Vec2(4, 5), Vec2(6.0, 7.0)), ValueType.VEC2, [Vec2(4.0, 5.0), Vec2(6.0, 7.0)]),

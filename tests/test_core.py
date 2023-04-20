@@ -1,5 +1,5 @@
 """Test functionality in srctools.__init__."""
-from typing import Any, Union
+from typing import Any
 
 import pytest
 
@@ -69,8 +69,8 @@ def check_empty_iterable(obj: Any, name: str, item: object='x') -> None:
     """Check the given object is iterable, and is empty."""
     try:
         iterator = iter(obj)
-    except TypeError:
-        raise AssertionError(name + ' is not iterable!')
+    except TypeError as exc:
+        raise AssertionError(f'{name} is not iterable!') from exc
     else:
         assert item not in obj
         with pytest.raises(StopIteration):
@@ -197,7 +197,6 @@ def test_EmptyMapping() -> None:
 
 def test_EmptyMapping_keys() -> None:
     """Test EmptyMapping.keys() works."""
-    k = EmptyMapping.keys()
     assert len(EmptyMapping.keys()) == 0
     assert object() not in EmptyMapping.keys()
     check_empty_iterable(EmptyMapping.keys(), 'keys()')
