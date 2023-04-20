@@ -23,10 +23,10 @@ def py_c_token(request: Any) -> Generator[None, None, None]:
     """Run the test twice, for the Python and C versions of Tokenizer."""
     orig_tok = kv_mod.Tokenizer
     try:
-        setattr(kv_mod, 'Tokenizer', request.param)
+        kv_mod.Tokenizer = request.param
         yield None
     finally:
-        setattr(kv_mod, 'Tokenizer', orig_tok)
+        kv_mod.Tokenizer = orig_tok
 
 
 def assert_tree(first: Keyvalues, second: Keyvalues, path: str = '') -> None:
@@ -320,7 +320,8 @@ def test_build_exc() -> None:
 
     prop = Keyvalues('Root', [])
 
-    with pytest.raises(Exc):  # Should not swallow.
+    # Check this does not swallow exceptions.
+    with pytest.raises(Exc):
         with prop.build() as build:
             build.prop('Hi')
             raise Exc
@@ -334,7 +335,7 @@ def test_build_exc() -> None:
     with prop.build() as build:
         build.leaf('value')
         with pytest.raises(Exc):
-            with build.subprop as sub:
+            with build.subprop:
                 raise Exc
     assert_tree(Keyvalues('Root', [
         Keyvalues('leaf', 'value'),

@@ -25,7 +25,6 @@ except ImportError:
 
 # Reuse these context managers.
 raises_typeerror = pytest.raises(TypeError)
-raises_valueerror = pytest.raises(ValueError)
 raises_keyerror = pytest.raises(KeyError)
 raises_zero_div = pytest.raises(ZeroDivisionError)
 
@@ -121,29 +120,28 @@ def test_vec_copying(py_c_vec):
             assert FrozenVec(fv) is fv
 
 
-def test_vec_from_str(py_c_vec, frozen_thawed_vec):
-    """Test the functionality of Vec.from_str()."""
+def test_vec_from_str(py_c_vec, frozen_thawed_vec: VecClass) -> None:
+    """Test the functionality of Vec.from_str() and parse_vec_str()."""
     parse_vec_str = vec_mod.parse_vec_str
     Vec = frozen_thawed_vec
     for x, y, z in iter_vec(VALID_ZERONUMS):
         # Test Vec.from_str()
-        assert_vec(Vec.from_str('{} {} {}'.format(x, y, z)), x, y, z)
-        assert_vec(Vec.from_str('<{} {} {}>'.format(x, y, z)), x, y, z)
-        # {x y z}
-        assert_vec(Vec.from_str('{{{} {} {}}}'.format(x, y, z)), x, y, z)
-        assert_vec(Vec.from_str('({} {} {})'.format(x, y, z)), x, y, z)
-        assert_vec(Vec.from_str('[{} {} {}]'.format(x, y, z)), x, y, z)
+        assert_vec(Vec.from_str(f'{x} {y} {z}'), x, y, z)
+        assert_vec(Vec.from_str(f'<{x} {y} {z}>'), x, y, z)
+        assert_vec(Vec.from_str(f'{{{x} {y} {z}}}'), x, y, z)
+        assert_vec(Vec.from_str(f'({x} {y} {z})'), x, y, z)
+        assert_vec(Vec.from_str(f'[{x} {y} {z}]'), x, y, z)
 
         # And parse_vec_str
         v = Vec(x, y, z)
-        assert_vec(v, *parse_vec_str('{} {} {}'.format(x, y, z)))
-        assert_vec(v, *parse_vec_str('<{} {} {}>'.format(x, y, z)))
+        assert_vec(v, *parse_vec_str(f'{x} {y} {z}'))
+        assert_vec(v, *parse_vec_str(f'<{x} {y} {z}>'))
 
-        assert_vec(v, *parse_vec_str('{{{} {} {}}}'.format(x, y, z)))
-        assert_vec(v, *parse_vec_str('({} {} {})'.format(x, y, z)))
-        assert_vec(v, *parse_vec_str('[{} {} {}]'.format(x, y, z)))
+        assert_vec(v, *parse_vec_str(f'{{{x} {y} {z}}}'))
+        assert_vec(v, *parse_vec_str(f'({x} {y} {z})'))
+        assert_vec(v, *parse_vec_str(f'[{x} {y} {z}]'))
 
-        parse_res = parse_vec_str('{} {} {}'.format(x, y, z))
+        parse_res = parse_vec_str(f'{x} {y} {z}')
         assert isinstance(parse_res, tuple)
         assert parse_res == (x, y, z)
 
@@ -154,9 +152,8 @@ def test_vec_from_str(py_c_vec, frozen_thawed_vec):
         assert orig is not new  # It must be a copy
 
 
-def test_vec_as_tuple(frozen_thawed_vec):
-    """Test the functionality of Vec.from_str() and parse_vec_str()."""
-    parse_vec_str = vec_mod.parse_vec_str
+def test_vec_as_tuple(frozen_thawed_vec: VecClass) -> None:
+    """Test the functionality of Vec.as_tuple()."""
     Vec = frozen_thawed_vec
     for x, y, z in iter_vec(VALID_ZERONUMS):
         # Check as_tuple() makes an equivalent tuple
@@ -175,9 +172,9 @@ def test_vec_as_tuple(frozen_thawed_vec):
         assert tup.z == z
 
 
-def test_from_str_fails(py_c_vec, frozen_thawed_vec):
+def test_from_str_fails(py_c_vec, frozen_thawed_vec: VecClass) -> None:
     """Check failures in Vec.from_str()"""
-    # Note - does not pass through unchanged, they're converted to floats!
+    # Note - does not pass defaults through unchanged, they're converted to floats!
     parse_vec_str = vec_mod.parse_vec_str
     Vec = frozen_thawed_vec
     for val in VALID_ZERONUMS:
@@ -455,7 +452,7 @@ def test_vec_lerp(frozen_thawed_vec: VecClass) -> None:
 
 
 @pytest.mark.slow
-def test_scalar(frozen_thawed_vec: VecClass):
+def test_scalar(frozen_thawed_vec: VecClass) -> None:
     """Check that Vec() + 5, -5, etc does the correct thing.
 
     For +, -, *, /, // and % calling with a scalar should perform the
@@ -779,35 +776,30 @@ def test_vector_mult_fail(frozen_thawed_vec, name, func):
     """Test *, /, //, %, divmod always fails between vectors."""
     Vec = frozen_thawed_vec
 
-    msg = 'Expected TypError from vec {} vec'.format(name)
-    for num in VALID_ZERONUMS:
-        for num2 in VALID_NUMS:
-            # Test the whole value, then each axis individually
-            with raises_typeerror:
-                func(Vec(num, num, num), Vec(num2, num2, num2))
-                pytest.fail(msg)
+    try:
+        for num in VALID_ZERONUMS:
+            for num2 in VALID_NUMS:
+                # Test the whole value, then each axis individually
+                with raises_typeerror:
+                    func(Vec(num, num, num), Vec(num2, num2, num2))
 
-            with raises_typeerror:
-                func(Vec(0, num, num), Vec(num2, num2, num2))
-                pytest.fail(msg)
-            with raises_typeerror:
-                func(Vec(num, 0, num), Vec(num2, num2, num2))
-                pytest.fail(msg)
-            with raises_typeerror:
-                func(Vec(num, num, 0), Vec(num2, num2, num2))
-                pytest.fail(msg)
-            with raises_typeerror:
-                func(Vec(num, num, num), Vec(0, num2, num2))
-                pytest.fail(msg)
-            with raises_typeerror:
-                func(Vec(num, num, num), Vec(num2, 0, num2))
-                pytest.fail(msg)
-            with raises_typeerror:
-                func(Vec(num, num, num), Vec(num2, num2, 0))
-                pytest.fail(msg)
+                with raises_typeerror:
+                    func(Vec(0, num, num), Vec(num2, num2, num2))
+                with raises_typeerror:
+                    func(Vec(num, 0, num), Vec(num2, num2, num2))
+                with raises_typeerror:
+                    func(Vec(num, num, 0), Vec(num2, num2, num2))
+                with raises_typeerror:
+                    func(Vec(num, num, num), Vec(0, num2, num2))
+                with raises_typeerror:
+                    func(Vec(num, num, num), Vec(num2, 0, num2))
+                with raises_typeerror:
+                    func(Vec(num, num, num), Vec(num2, num2, 0))
+    except AssertionError as exc:
+        raise AssertionError(f'Expected TypError from vec {name} vec') from exc
 
 
-def test_order(py_c_vec):
+def test_order(py_c_vec) -> None:
     """Test ordering operations (>, <, <=, >=, ==)."""
     Vec = vec_mod.Vec
     FrozenVec = vec_mod.FrozenVec
@@ -1383,7 +1375,6 @@ def test_vmf_rotation(datadir: Path, py_c_vec: PyCVec):
     """
     Vec = vec_mod.Vec
     FrozenVec = vec_mod.FrozenVec
-    Matrix = vec_mod.Matrix
     Angle = vec_mod.Angle
     from srctools.bsp import BSP
 
@@ -1401,7 +1392,7 @@ def test_vmf_rotation(datadir: Path, py_c_vec: PyCVec):
         )
         x, y, z = round(Vec.from_str(ent['origin']) / 128, 3)
 
-        msg = '{} @ {} => ({}, {}, {})'.format(local_vec, angles, x, y, z)
+        msg = f'{local_vec} @ {angles} => ({x}, {y}, {z})'
 
         assert_vec(Vec(local_vec) @ angles, x, y, z, msg, tol=1e-3, type=Vec)
         assert_vec(FrozenVec(local_vec) @ angles, x, y, z, msg, tol=1e-3, type=FrozenVec)

@@ -3,7 +3,6 @@ from itertools import tee, zip_longest
 import codecs
 import platform
 
-from pytest import raises
 import pytest
 
 from srctools.keyvalues import KeyValError
@@ -136,9 +135,9 @@ else:
 
 
 @pytest.fixture(params=parms, ids=ids)
-def py_c_token(request: Any) -> Generator[Type[Tokenizer], None, None]:
+def py_c_token(request: Any) -> Type[Tokenizer]:
     """Run the test twice, for the Python and C versions."""
-    yield request.param
+    return request.param
 
 del parms, ids
 
@@ -606,37 +605,37 @@ def test_colon_op(py_c_token: Type[Tokenizer]) -> None:
 
 def test_invalid_bracket(py_c_token: Type[Tokenizer]) -> None:
     """Test detecting various invalid combinations of [] brackets."""
-    with raises(TokenSyntaxError):
+    with pytest.raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('[ unclosed', string_bracket=True):
             pass
 
-    with raises(TokenSyntaxError):
+    with pytest.raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('unopened ]', string_bracket=True):
             pass
 
-    with raises(TokenSyntaxError):
+    with pytest.raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('[ok] bad ]', string_bracket=True):
             pass
 
-    with raises(TokenSyntaxError):
+    with pytest.raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('[ no [ nesting ] ]', string_bracket=True):
             pass
 
 
 def test_invalid_paren(py_c_token: Type[Tokenizer]) -> None:
-    with raises(TokenSyntaxError):
+    with pytest.raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('( unclosed', string_bracket=True):
             pass
 
-    with raises(TokenSyntaxError):
+    with pytest.raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('unopened )', string_bracket=True):
             pass
 
-    with raises(TokenSyntaxError):
+    with pytest.raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('(ok) bad )', string_bracket=True):
             pass
 
-    with raises(TokenSyntaxError):
+    with pytest.raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('( no ( nesting ) )', string_bracket=True):
             pass
 
@@ -786,14 +785,14 @@ def test_block_iter(py_c_token: Type[Tokenizer]) -> None:
     assert next(bl) == "value"
     assert next(bl) == "another"
     assert next(bl) == "value"
-    with raises(StopIteration):
+    with pytest.raises(StopIteration):
         next(bl)
 
     tok = py_c_token(' "blah" "value" } ')
     bl = tok.block("tester", False)
     assert next(bl) == "blah"
     assert next(bl) == "value"
-    with raises(StopIteration):
+    with pytest.raises(StopIteration):
         next(bl)
 
     # Completes correctly with no values.
@@ -807,42 +806,42 @@ def test_block_iter(py_c_token: Type[Tokenizer]) -> None:
     assert tok() == (Token.PLUS, '+')
     assert tok() == (Token.BRACE_CLOSE, '}')
     assert next(bl) == 'block'
-    with raises(StopIteration):
+    with pytest.raises(StopIteration):
         next(bl)
 
     # Now errors.
 
     # Not an open brace, also it must defer to the first next() call.
     b = py_c_token(' hi ').block('blah', consume_brace=True)
-    with raises(TokenSyntaxError):
+    with pytest.raises(TokenSyntaxError):
         next(b)
 
     # Also with implicit consume_brace
     b = py_c_token(' hi ').block('blah')
-    with raises(TokenSyntaxError):
+    with pytest.raises(TokenSyntaxError):
         next(b)
 
     # Open brace where there shouldn't.
     b = py_c_token('{').block('blah', consume_brace=False)
-    with raises(TokenSyntaxError):
+    with pytest.raises(TokenSyntaxError):
         next(b)
 
     # Two open braces, only consume one.
     b = py_c_token('{ {').block('blah')
-    with raises(TokenSyntaxError):
+    with pytest.raises(TokenSyntaxError):
         next(b)
 
     # And one in the middle.
     b = py_c_token('{ "test" { "never-here" } ').block('blah')
     assert next(b) == "test"
-    with raises(TokenSyntaxError):
+    with pytest.raises(TokenSyntaxError):
         next(b)
 
     # Running off the end uses the block in the result.
     b = py_c_token('{ blah "blah" ').block('SpecialBlockName')
     assert next(b) == "blah"
     assert next(b) == "blah"
-    with raises(TokenSyntaxError, match='SpecialBlockName'):
+    with pytest.raises(TokenSyntaxError, match='SpecialBlockName'):
         next(b)
 
 
