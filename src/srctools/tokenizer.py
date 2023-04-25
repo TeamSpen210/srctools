@@ -15,7 +15,7 @@ the current line number as data is read, letting you ``raise BaseTokenizer.error
 produce an exception listing the relevant line number and filename.
 """
 from typing import Any, Iterable, Iterator, List, Optional, Tuple, Type, Union
-from typing_extensions import Final, overload
+from typing_extensions import Final, Self, overload
 from enum import Enum
 from os import fspath as _conv_path
 import abc
@@ -262,7 +262,7 @@ class BaseTokenizer(abc.ABC):
             return next_val
         return self._get_token()
 
-    def __iter__(self) -> 'BaseTokenizer':
+    def __iter__(self) -> Self:
         """Tokenizers are their own iterator."""
         return self
 
