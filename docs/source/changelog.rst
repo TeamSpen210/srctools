@@ -14,6 +14,7 @@ Version (dev)
 * Add :py:meth:`srctools.bsp.BModel.clear_physics()`, to delete physics data for a brush model.
 * Add :py:class:`srctools.Keyvalues.LeafKeyvalueError`, raised when block-only operations are
   attempted on leaf keyvalues. This improves the messages raised and makes them consistent.
+* Fix :py:class:`srctools.vtf.Frame` indexing behaviour. It would access totally incorrect pixels.
 
 -------------
 Version 2.3.10

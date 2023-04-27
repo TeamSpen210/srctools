@@ -460,14 +460,14 @@ class Frame:
             _format_funcs.scale_down(filter, larger.width, larger.height, self.width, self.height, larger._data, self._data)
 
     def __getitem__(self, item: Tuple[int, int]) -> Pixel:
-        """Retrieve an individual pixel."""
+        """Retrieve an individual pixel at (x, y)."""
         self.load()
         assert self._data is not None
 
         x, y = item
         if x > self.width or y > self.height:
             raise IndexError(item)
-        off = x * self.width + y
+        off = (y * self.width + x) * 4
         return Pixel(*self._data[off: off + 4])
 
     def __setitem__(
@@ -475,14 +475,14 @@ class Frame:
         item: Tuple[int, int],
         data: Union[Pixel, Tuple[int, int, int, int]],
     ) -> None:
-        """Set an individual pixel."""
+        """Set an individual pixel at (x, y)."""
         self.load()
         assert self._data is not None
 
         x, y = item
         if x > self.width or y > self.height:
             raise IndexError(item)
-        off = x * self.width + y
+        off = (y * self.width + x) * 4
         [
             self._data[off],
             self._data[off + 1],
