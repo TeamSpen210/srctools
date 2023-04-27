@@ -188,40 +188,11 @@ class _WAVChunk:
         else:
             self.seekable = True
 
-    def close(self) -> None:
-        """Close this chunk, skipping to the next."""
-        if not self.closed:
-            try:
-                self.skip()
-            finally:
-                self.closed = True
-
-    def seek(self, pos: int, whence: int = 0) -> None:
-        """Seek to specified position into the chunk.
-        Default position is 0 (start of chunk).
-        If the file is not seekable, this will result in an error.
-        """
-
-        if self.closed:
-            raise ValueError("I/O operation on closed file")
-        if not self.seekable:
-            raise OSError("cannot seek")
-        if whence == 1:
-            pos = pos + self.size_read
-        elif whence == 2:
-            pos = pos + self.chunksize
-        if pos < 0 or pos > self.chunksize:
-            raise RuntimeError
-        self.file.seek(self.offset + pos, 0)
-        self.size_read = pos
-
     def read(self, size: int = -1) -> bytes:
         """Read at most size bytes from the chunk.
         If size is omitted or negative, read until the end
         of the chunk.
         """
-        if self.closed:
-            raise ValueError("I/O operation on closed file")
         if self.size_read >= self.chunksize:
             return b''
         if size < 0:
@@ -241,8 +212,6 @@ class _WAVChunk:
         this method should be called so that the file points to
         the start of the next chunk.
         """
-        if self.closed:
-            raise ValueError("I/O operation on closed file")
         if self.seekable:
             try:
                 n = self.chunksize - self.size_read
