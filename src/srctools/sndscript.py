@@ -35,6 +35,10 @@ class VOLUME(Enum):
     def __str__(self) -> str:
         return self.name
 
+    def __repr__(self) -> str:
+        """We only have one value, and it's available globally - use that name."""
+        return 'srctools.sndscript.VOL_NORM'
+
 
 VOL_NORM = VOLUME.VOL_NORM
 
