@@ -181,12 +181,6 @@ class _WAVChunk:
         except struct.error:
             raise EOFError from None
         self.size_read = 0
-        try:
-            self.offset = self.file.tell()
-        except (AttributeError, OSError):
-            self.seekable = False
-        else:
-            self.seekable = True
 
     def read(self, size: int = -1) -> bytes:
         """Read at most size bytes from the chunk.
@@ -212,22 +206,20 @@ class _WAVChunk:
         this method should be called so that the file points to
         the start of the next chunk.
         """
-        if self.seekable:
-            try:
-                n = self.chunksize - self.size_read
-                # maybe fix alignment
-                if self.chunksize & 1:
-                    n = n + 1
-                self.file.seek(n, 1)
-                self.size_read = self.size_read + n
-                return
-            except OSError:
-                pass
-        while self.size_read < self.chunksize:
-            n = min(8192, self.chunksize - self.size_read)
-            dummy = self.read(n)
-            if not dummy:
-                raise EOFError
+        n = self.chunksize - self.size_read
+        # maybe fix alignment
+        if self.chunksize & 1:
+            n = n + 1
+        try:
+            self.file.seek(n, 1)
+        except (AttributeError, OSError):  # Cannot seek, manually read.
+            while self.size_read < self.chunksize:
+                n = min(8192, self.chunksize - self.size_read)
+                skipped = self.read(n)
+                if not skipped:
+                    raise EOFError
+        else:
+            self.size_read = self.size_read + n
 
 
 def wav_is_looped(file: IO[bytes]) -> bool:
