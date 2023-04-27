@@ -490,6 +490,14 @@ class Frame:
             self._data[off + 3],
         ] = data
 
+    def __buffer__(self, flags: int) -> memoryview:
+        """Allow access to the internal buffer of pixels."""
+        # We don't need to check the flags, the memoryview itself knows that it's
+        # C-contiguous and will deny F-contiguous requests.
+        self.load()
+        assert self._data is not None
+        return memoryview(self._data).cast('B', (self.height, self.width, 4))
+
     def to_PIL(self) -> 'PIL_Image':
         """Convert the given frame into a PIL image.
 
@@ -565,8 +573,8 @@ class Frame:
         import wx  # pyright: ignore
 
         img = wx.Bitmap(self.width, self.height)
-        # Bitmap memory layout isn't public, so we have to write to a temporary
-        # that it copies from.
+        # The WX Bitmap memory layout isn't public, so we have to write to a
+        # temporary that it copies from.
         buf = bytearray(3 * self.width * self.height)
         _format_funcs.alpha_flatten(self._data, buf, self.width, self.height, bg)
         img.CopyFromBuffer(buf, wx.BitmapBufferFormat_RGB)
