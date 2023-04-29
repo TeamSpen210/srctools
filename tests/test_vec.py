@@ -1,14 +1,14 @@
 """Test the Vector object."""
-import math
-import re
-from fractions import Fraction
 from typing import Union
+from fractions import Fraction
 from pathlib import Path
 from random import Random
 import copy
 import inspect
+import math
 import operator as op
 import pickle
+import re
 
 import pytest
 

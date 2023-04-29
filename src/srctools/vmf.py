@@ -26,7 +26,7 @@ from srctools import BOOL_LOOKUP, EmptyMapping
 from srctools.keyvalues import Keyvalues
 from srctools.math import (
     Angle, AnyAngle, AnyMatrix, AnyVec, FrozenAngle, FrozenMatrix, FrozenVec, Matrix, Vec,
-    to_matrix, format_float
+    format_float, to_matrix,
 )
 import srctools
 
