@@ -217,7 +217,7 @@ class _WAVChunk:
                 n = min(8192, self.chunksize - self.size_read)
                 skipped = self.read(n)
                 if not skipped:
-                    raise EOFError
+                    raise EOFError from None
         else:
             self.size_read = self.size_read + n
 
