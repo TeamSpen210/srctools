@@ -14,6 +14,7 @@ from zipfile import ZipFile
 import contextlib
 import inspect
 import itertools
+import math
 import os
 import struct
 import warnings
@@ -321,7 +322,7 @@ LUMP_REBUILD_ORDER: List[Union[bytes, BSP_LUMPS]] = [
     BSP_LUMPS.MODELS,  # Brushmodels reference their vis tree, faces, and the entity they're tied to.
     BSP_LUMPS.ENTITIES,  # References brushmodels, overlays, potentially many others.
     BSP_LUMPS.NODES,  # References planes, faces, visleafs.
-    BSP_LUMPS.LEAFS,  # References brushes, faces, leaf water info.
+    BSP_LUMPS.LEAFS,  # References brushes, faces, leaf water info, visibility.
     BSP_LUMPS.LEAFWATERDATA,  # References texinfo
 
     BSP_LUMPS.BRUSHES,  # also brushsides, references texinfo.
@@ -334,6 +335,7 @@ LUMP_REBUILD_ORDER: List[Union[bytes, BSP_LUMPS]] = [
     BSP_LUMPS.SURFEDGES,  # surfedges references vertexes.
     BSP_LUMPS.PLANES,
     BSP_LUMPS.VERTEXES,
+    BSP_LUMPS.VISIBILITY,
 
     BSP_LUMPS.OVERLAYS,  # Adds texinfo entries.
 
@@ -993,6 +995,17 @@ class LeafWaterInfo:
 
 
 @attrs.define(eq=False)
+class Visibility:
+    """The visibility data produced by VVIS.
+
+    Visleafs each have a "cluster" ID. For every pair of cluster IDs, this indicates if the first
+    can see the second, and whether they can hear each other.
+    """
+    potentially_visible: List[bytearray]
+    potentially_audible: List[bytearray]
+
+
+@attrs.define(eq=False)
 class BModel:
     """A brush model definition, used for the world entity along with all other brush ents."""
     mins: Vec
@@ -1142,14 +1155,21 @@ def _find_or_extend(item_list: List[T], key_func: Callable[[T], Hashable]=id) ->
     return finder
 
 
-def runlength_decode(data: Union[bytes, bytearray]) -> bytearray:
+def runlength_decode(
+    data: Union[bytes, bytearray],
+    start: int=0, max_clusters: int=-1,
+) -> bytearray:
     """Decode the run-length encoded viscluster flags in the visibility lump."""
     result = bytearray()
-    pos = 0
+    pos = start
     size = len(data)
     # Use a memoryview, so we can copy right from the original -> dest.
     view = memoryview(data)
-    while pos < size:
+    if max_clusters == -1:
+        ret_bytes = 1 << 128
+    else:
+        ret_bytes = math.ceil(max_clusters / 8)
+    while pos < size and len(result) < ret_bytes:
         try:
             zero_ind = data.index(0x00, pos)
         except ValueError:
@@ -1164,7 +1184,8 @@ def runlength_decode(data: Union[bytes, bytearray]) -> bytearray:
         # Advance past that.
         pos = zero_ind + 2
 
-    return result
+    # Trim down, if the last bulk copy went past the bytes we need.
+    return result[:ret_bytes]
 
 
 def runlength_encode(data: Union[bytes, bytearray]) -> bytearray:
@@ -1345,6 +1366,8 @@ class BSP:
     )
     water_leaf_info: ParsedLump[List[LeafWaterInfo]] = ParsedLump(BSP_LUMPS.LEAFWATERDATA)
     nodes: ParsedLump[List[VisTree]] = ParsedLump(BSP_LUMPS.NODES)
+    # This is None if VVIS has not been run.
+    visibility: ParsedLump[Optional[Visibility]] = ParsedLump(BSP_LUMPS.VISIBILITY)
 
     vertexes: ParsedLump[List[Vec]] = ParsedLump(BSP_LUMPS.VERTEXES)
     surfedges: ParsedLump[List[Edge]] = ParsedLump(BSP_LUMPS.SURFEDGES, BSP_LUMPS.EDGES)
@@ -1789,6 +1812,45 @@ class BSP:
             for vec in [tree.mins, tree.maxes]
             for val in vec
         )
+
+    def is_potentially_visible(self, leaf1: VisLeaf, leaf2: VisLeaf) -> Tuple[bool, bool]:
+        """Check if the first leaf can potentially see and hear the second.
+
+        Always returns True if visibility data has not been computed (self.visibility is None).
+        """
+        vis: Optional[Visibility] = self.visibility
+        if vis is None:
+            return True, True
+        byte_ind, bit_ind = divmod(leaf2.cluster_id, 8)
+        pvs = vis.potentially_visible[leaf1.cluster_id][byte_ind]
+        pas = vis.potentially_audible[leaf1.cluster_id][byte_ind]
+        bits = 1 << bit_ind
+        return pvs & bits != 0, pas & bits != 0
+
+    def set_potentially_visible(
+        self, leaf1: VisLeaf, leaf2: VisLeaf,
+        visible: Optional[bool] = None,
+        audible: Optional[bool] = None,
+    ) -> None:
+        """Override whether the first leaf can see/hear the second.
+
+        If either bool is none that value is left unaltered.
+        """
+        vis: Optional[Visibility] = self.visibility
+        if (visible is None and audible is None) or vis is None:
+            return  # Nothing to do.
+        byte_ind, bit_ind = divmod(leaf2.cluster_id, 8)
+        bits = 1 << bit_ind
+        if visible is not None:
+            pvs = vis.potentially_visible[leaf1.cluster_id][byte_ind]
+            pvs = pvs | bits if visible else pvs & ~bits
+            vis.potentially_visible[leaf1.cluster_id][byte_ind] = pvs
+            if visible:
+                audible = True
+        if audible is not None:
+            pas = vis.potentially_audible[leaf1.cluster_id][byte_ind]
+            pas = pas | bits if visible else pas & ~bits
+            vis.potentially_audible[leaf1.cluster_id][byte_ind] = pas
 
     # Lump reading and writing code:
     def _lmp_read_planes(self, data: bytes) -> Iterator['Plane']:
@@ -2360,6 +2422,44 @@ class BSP:
         self.lumps[BSP_LUMPS.LEAFBRUSHES].data = write_array(self.lump_layout['LEAFBRUSH'], leaf_brushes)
         self.lumps[BSP_LUMPS.LEAFMINDISTTOWATER].data = write_array('<H', min_water_dists)
         return buf.getvalue()
+
+    def _lmp_read_visibility(self, data: bytes) -> Optional[Visibility]:
+        """Read VVIS data."""
+        if not data:
+            return None  # VVIS hasn't run.
+        [cluster_count] = struct.unpack_from('i', data, 0)
+        offset = struct.calcsize('i')
+        two_ints = struct.Struct('ii')
+        vis = Visibility([], [])
+        for _ in range(cluster_count):
+            [pvs_offset, pas_offset] = two_ints.unpack_from(data, offset)
+            offset += two_ints.size
+            vis.potentially_visible.append(runlength_decode(data, pvs_offset, cluster_count))
+            vis.potentially_audible.append(runlength_decode(data, pas_offset, cluster_count))
+        return vis
+
+    def _lmp_write_visibility(self, vis: Optional[Visibility]) -> bytes:
+        """Reconstruct the VVIS data."""
+        if vis is None:
+            return b''  # VVIS hasn't run.
+        cluster_count = len(vis.potentially_visible)
+        if cluster_count != len(vis.potentially_audible):
+            raise ValueError('Inconsistent PVS/PAS lengths!')
+
+        data = BytesIO()
+        writes = DeferredWrites(data)
+        data.write(struct.pack('i', cluster_count))
+        for ind in range(cluster_count):
+            writes.defer(ind,'ii', True)
+
+        for ind, (pvs, pas) in enumerate(zip(vis.potentially_visible, vis.potentially_audible)):
+            pvs_off = data.tell()
+            data.write(runlength_encode(pvs))
+            pas_off = data.tell()
+            data.write(runlength_encode(pas))
+            writes.set_data(ind, pvs_off, pas_off)
+        writes.write()
+        return data.getvalue()
 
     def read_texture_names(self) -> Iterator[str]:
         """Iterate through all brush textures in the map."""
