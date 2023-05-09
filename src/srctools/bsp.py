@@ -1142,6 +1142,61 @@ def _find_or_extend(item_list: List[T], key_func: Callable[[T], Hashable]=id) ->
     return finder
 
 
+def runlength_decode(data: Union[bytes, bytearray]) -> bytearray:
+    """Decode the run-length encoded viscluster flags in the visibility lump."""
+    result = bytearray()
+    pos = 0
+    size = len(data)
+    # Use a memoryview, so we can copy right from the original -> dest.
+    view = memoryview(data)
+    while pos < size:
+        try:
+            zero_ind = data.index(0x00, pos)
+        except ValueError:
+            # No more zeros.
+            result += view[pos:]
+            break
+        # Copy the data from here to there.
+        result += view[pos:zero_ind]
+        # The byte afterward is how many zeros to insert.
+        zeros = data[zero_ind + 1]
+        result += bytes(zeros)
+        # Advance past that.
+        pos = zero_ind + 2
+
+    return result
+
+
+def runlength_encode(data: Union[bytes, bytearray]) -> bytearray:
+    """Re-compress the run-length encoded viscluster flags in the visibility lump."""
+    result = bytearray()
+    pos = 0
+    size = len(data)
+    view = memoryview(data)
+    while pos < size:
+        try:
+            zero_ind = data.index(0x00, pos)
+        except ValueError:
+            # No more zeros.
+            result += view[pos:]
+            break
+        # Copy the data from here to there.
+        result += view[pos:zero_ind]
+        # Find the end of the zeros section.
+        zero_end = zero_ind
+        while zero_end < size and data[zero_end] == 0x00:
+            zero_end += 1
+        # If the distance is > 255, we need multiple zero sections.
+        dist = zero_end - zero_ind
+        while dist > 0:
+            result.append(0x00)
+            result.append(min(255, dist))
+            dist -= 255
+        pos = zero_end
+
+    return result
+
+
 class ParsedLump(Generic[T]):
     """Allows access to parsed versions of lumps.
 
