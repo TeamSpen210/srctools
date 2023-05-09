@@ -132,11 +132,11 @@ def test_pvs_runlength_encode(compressed: bytes, uncompressed: bytes) -> None:
 def test_pvs_runlength_roundtrip(seed: int) -> None:
     """Test RLE against a randomly generated set of bytes, by encoding then decoding data."""
     rand = Random(seed)
-    # AND three random bytes values together to make most of them zero.
-    data = bytes([
-        a & b & c for a, b, c in
-        zip(rand.randbytes(512), rand.randbytes(512), rand.randbytes(512))
-    ])
+    # AND three random binary values together to make most of them zero.
+    data = (
+        rand.getrandbits(8192) & rand.getrandbits(8192) & rand.getrandbits(8192)
+    ).to_bytes(1024, 'little')
+
     comp = runlength_encode(data)
     reconstruct = runlength_decode(comp)
     assert reconstruct == data
