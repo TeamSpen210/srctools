@@ -5,9 +5,9 @@ Changelog
 	:local:
 	:backlinks: none
 
--------------
-Version (dev)
--------------
+--------------
+Version 2.3.11
+--------------
 * Include the docs and tests in the source distribution.
 * Add support for detecting and packing weapon scripts.
 * Make custom model gibs inherit skinset when packing.
@@ -17,9 +17,9 @@ Version (dev)
 * Fix :py:class:`srctools.vtf.Frame` indexing behaviour. It would access totally incorrect pixels.
 * Correctly read/write L4D2's BSP format.
 
--------------
+--------------
 Version 2.3.10
--------------
+--------------
 
 * Fix :py:meth:`srctools.vtf.Frame.copy_from()` not clearing cached unparsed file data. If the VTF
   was parsed from a file, this could case changes to be overwritten with the original data.
