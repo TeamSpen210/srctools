@@ -133,6 +133,18 @@ class VERSIONS(Enum):
         return self.value >= other
 
 
+class GameVersion(Enum):
+    """Identifies specific games which we need to detect and specially handle."""
+    NORMAL = 'normal'  # Anything else.
+    L4D2 = 'l4d2'  # L4D2 has some weirdness with the lump struct.
+    VITAMINSOURCE = 'vitaminsource'  # Desolation's map format, changes many sections.
+
+_GAMEVER_TO_REG = {
+    GameVersion.L4D2: VERSIONS.L4D2,
+    GameVersion.VITAMINSOURCE: VERSIONS.VITAMINSOURCE
+}
+
+
 class BSP_LUMPS(Enum):
     """All the lumps in a BSP file.
 
@@ -1313,18 +1325,24 @@ class BSP:
         Union[bytes, BSP_LUMPS],
         Callable[['BSP', Any], Union[bytes, Generator[bytes, None, None]]]
     ]] = {}
+    # The version ID in the file.
     version: Union[VERSIONS, int]
+    # A srctools-specific version to identify some games with unique handling.
+    game_ver: GameVersion
     lump_layout: LumpDataLayout
     map_revision: int
 
-    def __init__(self, filename: StringPath, version: Optional[VERSIONS] = None) -> None:
+    def __init__(
+        self,
+        filename: StringPath,
+        version: Union[VERSIONS, GameVersion, None] = None,
+    ) -> None:
         self.filename = filename
         self.map_revision = -1  # The map's revision count
         self.lumps: Dict[BSP_LUMPS, Lump] = {}
         self._parsed_lumps: Dict[Union[bytes, BSP_LUMPS], Any] = {}
         self.game_lumps: Dict[bytes, GameLump] = {}
         self.header_off = 0
-        self.version = VERSIONS.HL2
         # Tracks if the ent lump is using the new x1D output separators,
         # or the old comma separators. If no outputs are present there's no
         # way to determine this.
@@ -1337,6 +1355,7 @@ class BSP:
 
         # lump_layout holds version specific struct formats for lumps
         self.lump_layout = LUMP_LAYOUT_STANDARD
+        self.version = VERSIONS.HL2
 
         self.read(version)
 
@@ -1387,14 +1406,23 @@ class BSP:
     @property
     def is_vitamin(self) -> bool:
         """Vitaminsource has a lot of structure changes."""
-        return self.version is VERSIONS.VITAMINSOURCE
+        return self.game_ver is GameVersion.VITAMINSOURCE
 
-    def read(self, expected_version: Optional[VERSIONS] = None) -> None:
+    def read(self, expected_version: Union[VERSIONS, GameVersion, None] = None) -> None:
         """Load all data."""
         self.lumps.clear()
         self.game_lumps.clear()
         self._parsed_lumps.clear()
         self._texdata.clear()
+
+        if isinstance(expected_version, GameVersion):
+            self.game_ver = expected_version
+            if expected_version is GameVersion.NORMAL:
+                expected_version = None
+            else:
+                expected_version = _GAMEVER_TO_REG[expected_version]
+        else:
+            self.game_ver = GameVersion.NORMAL
 
         with open(self.filename, mode='br') as file:
             # BSP files start with 'VBSP', then a version number.
@@ -1424,6 +1452,7 @@ class BSP:
             elif self.version is VERSIONS.VITAMINSOURCE:
                 # Change the expected structure for lumps to fit vitamin's rad new format
                 self.lump_layout = LUMP_LAYOUT_VITAMIN
+                self.game_ver = GameVersion.VITAMINSOURCE
             elif self.version is VERSIONS.INFRA:
                 self.lump_layout = LUMP_LAYOUT_INFRA
             elif self.version <= 19:
@@ -1435,12 +1464,25 @@ class BSP:
             version: int
             uncomp_size: int
 
+            if self.game_ver is GameVersion.NORMAL and self.version is VERSIONS.L4D2:
+                # L4D2 is weird. See BSPSource here:
+                # https://github.com/ata4/bspsrc/blob/678ab441f40361efa9d4ebf994989ed2b8e7ffce/src/main/java/info/ata4/bsplib/BspFile.java#L146
+                offset = file.tell()
+                file.seek(8)
+                if file.read(4) == b'\0\0\0\0':
+                    self.game_ver = GameVersion.L4D2
+                file.seek(offset)
+
             # Read the index describing each BSP lump.
             for index in range(LUMP_COUNT):
                 # The 4th value here is originally the fourCC identity, but is
                 # instead used to indicate the unpacked size if compressed.
                 offset, length, version, uncomp_size = struct_read(HEADER_LUMP, file)
                 lump_id = BSP_LUMPS(index)
+                if self.game_ver is GameVersion.L4D2:
+                    # Order is slightly different.
+                    version, offset, length = offset, length, version
+
                 self.lumps[lump_id] = Lump(
                     lump_id,
                     version,
@@ -1619,12 +1661,19 @@ class BSP:
                         defer.set_data(GameLump, file.tell())
                     # Length of the game lump is current - start.
                     # It is never compressed, and is always version 0.
-                    defer.set_data(
-                        lump_name,
-                        lump_start,
-                        file.tell() - lump_start,
-                        0, 0,
-                    )
+                    length = file.tell() - lump_start
+                    # However, L4D2 has a different order.
+                    if self.game_ver is GameVersion.L4D2:
+                        defer.set_data(
+                            lump_name,
+                            0,lump_start, length, 0,
+                        )
+                    else:
+                        defer.set_data(
+                            lump_name,
+                            lump_start, length, 0, 0,
+                        )
+
                 else:
                     # Normal lump, pakfiles can't be compressed.
                     if lump.is_compressed and lump_name is not BSP_LUMPS.PAKFILE:
@@ -1634,7 +1683,11 @@ class BSP:
                     else:
                         lump_data = lump.data
                         lump_fourcc = 0
-                    defer.set_data(lump_name, file.tell(), len(lump_data), lump.version, lump_fourcc)
+                    # However, L4D2 has a different order.
+                    if self.game_ver is GameVersion.L4D2:
+                        defer.set_data(lump_name, lump.version, file.tell(), len(lump_data), lump_fourcc)
+                    else:
+                        defer.set_data(lump_name, file.tell(), len(lump_data), lump.version, lump_fourcc)
                     file.write(lump_data)
                     # If compressed, this is a big buffer, so discard asap.
                     del lump_data
