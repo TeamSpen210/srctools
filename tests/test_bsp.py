@@ -5,7 +5,7 @@ from random import Random
 import pytest
 
 from srctools.bsp import (
-    BSP, BSP_LUMPS, VERSIONS, GameLump, Lump, _find_or_extend, _find_or_insert,
+    BSP, BSP_LUMPS, GameVersion, VERSIONS, GameLump, Lump, _find_or_extend, _find_or_insert,
     runlength_encode, runlength_decode,
 )
 
@@ -16,6 +16,7 @@ def make_dummy() -> BSP:
         bsp = BSP('<dummy>')
     # Set arbitary dummy values.
     bsp.version = VERSIONS.HL2
+    bsp.game_ver = GameVersion.NORMAL
     bsp.lumps = {
         lump: Lump(lump, 1)
         for lump in BSP_LUMPS
