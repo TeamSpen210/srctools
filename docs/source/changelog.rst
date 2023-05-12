@@ -5,6 +5,12 @@ Changelog
 	:local:
 	:backlinks: none
 
+-------------
+Version (dev)
+-------------
+* Handle the special `$gender` "variable" in WAV filenames.
+
+
 --------------
 Version 2.3.11
 --------------

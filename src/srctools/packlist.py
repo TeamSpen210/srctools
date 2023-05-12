@@ -498,6 +498,12 @@ class PackList:
                     if existing_skins is not None:
                         self.skinsets[filename] = existing_skins | skinset
 
+        if not data and filename.endswith(('.wav', '.mp3')) and '$gender' in filename:
+            # Special case for raw sounds, they can have gendered files.
+            # Just include both variants.
+            self.pack_file(filename.replace('$gender', 'female'), data_type, optional=optional)
+            filename = filename.replace('$gender', 'male')
+
         try:
             file = self._files[filename]
         except KeyError:
