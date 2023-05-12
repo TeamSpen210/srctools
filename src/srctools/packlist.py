@@ -1340,8 +1340,9 @@ class PackList:
             self.pack_file(kv.value, FileType.GAME_SOUND)
         for mdl_name in [
             'viewmodel', 'playermodel',
+            'viewmodel_dual', 'playermodel_dual',  # L4D2
             'vrmodel', 'vrmodel_l',  # HL2 VR Mod
-            'addonmodel',  # L4D2
+            'worldmodel', 'addonmodel',  # L4D2
             'displaymodel',  # ASW
         ]:
             try:
@@ -1350,6 +1351,23 @@ class PackList:
                 pass
             else:
                 self.pack_file(mdl_value, FileType.MODEL)
+        for part_name in [
+            'MuzzleFlashEffect_1stPerson',
+            'MuzzleFlashEffect_3rdPerson',
+            'EjectBrassEffect',
+        ]:
+            try:
+                particle = data[part_name]
+            except LookupError:
+                pass
+            else:
+                self.pack_file(particle, FileType.PARTICLE_SYSTEM)
+        # L4D viewmodel arms
+        for viewmodel in data.find_children('CharacterViewmodelAddon'):
+            self.pack_file(viewmodel.value, FileType.MODEL)
+        for sprite_block in data.find_children('texturedata'):
+            if 'file' in sprite_block:
+                self.pack_file(sprite_block['file'], FileType.TEXTURE)
 
     def _get_weaponscript_dmx_files(self, file: PackFile) -> None:
         """Find any dependencies in a DMX weapon script.
