@@ -403,7 +403,7 @@ class PackList:
         file, which ensures it can be treated appropriately.
 
         If the file is a model, skinset allows restricting which skins are used.
-        If None (default), all skins may be used. Otherwise it is a set of
+        If None (default), all skins may be used. Otherwise, it is a set of
         skins. If all uses of a model restrict the skin, only those skins need
         to be packed.
         If optional is set, this will be marked as optional so no errors occur
@@ -423,6 +423,13 @@ class PackList:
 
         if data_type is FileType.ENTCLASS_FUNC or data_type is FileType.ENTITY:
             raise ValueError(f'File type "{data_type.name}" must not be packed directly!')
+
+        # Try to promote generic to other types if known.
+        if data_type is FileType.GENERIC:
+            try:
+                data_type = EXT_TYPE[os.path.splitext(filename)[1].casefold()]
+            except KeyError:
+                pass
 
         if data_type is FileType.GAME_SOUND:
             self.pack_soundscript(filename)
@@ -448,32 +455,22 @@ class PackList:
 
         filename = unify_path(filename)
 
-        if data_type is FileType.MATERIAL or (
-            data_type is FileType.GENERIC and filename.endswith('.vmt')
-        ):
-            data_type = FileType.MATERIAL
+        if data_type is FileType.MATERIAL:
             if not filename.startswith('materials/'):
                 filename = 'materials/' + filename
             # This will replace .spr materials, which don't exist any more.
             filename = strip_extension(filename) + '.vmt'
-        elif data_type is FileType.TEXTURE or (
-            data_type is FileType.GENERIC and filename.endswith('.vtf')
-        ):
-            data_type = FileType.TEXTURE
+        elif data_type is FileType.TEXTURE:
             if not filename.startswith('materials/'):
                 filename = 'materials/' + filename
             if not filename.endswith('.hdr'):
                 # Strip all other extensions, then add vtf unconditionally.
                 filename = strip_extension(filename)
             filename = filename + '.vtf'
-        elif data_type is FileType.VSCRIPT_SQUIRREL or (
-            data_type is FileType.GENERIC and filename.endswith('.nut')
-        ):
-            data_type = FileType.VSCRIPT_SQUIRREL
+        elif data_type is FileType.VSCRIPT_SQUIRREL:
             filename = strip_extension(filename) + '.nut'
 
-        if data_type is FileType.MODEL or filename.endswith('.mdl'):
-            data_type = FileType.MODEL
+        if data_type is FileType.MODEL:
             if not filename.startswith('models/'):
                 filename = 'models/' + filename
             # Allow passing skinsets via filename. This isn't useful if read from entities,
@@ -500,9 +497,6 @@ class PackList:
                     # Merge the two.
                     if existing_skins is not None:
                         self.skinsets[filename] = existing_skins | skinset
-
-        if filename.endswith('.nut'):
-            data_type = FileType.VSCRIPT_SQUIRREL
 
         try:
             file = self._files[filename]
@@ -543,13 +537,7 @@ class PackList:
 
         start, ext = os.path.splitext(filename)
 
-        # Try to promote generic to other types if known.
-        if data_type is FileType.GENERIC:
-            try:
-                data_type = EXT_TYPE[ext]
-            except KeyError:
-                pass
-        elif data_type is FileType.SOUNDSCRIPT:
+        if data_type is FileType.SOUNDSCRIPT:
             if ext != '.txt':
                 raise ValueError(f'"{filename}" cannot be a soundscript!')
 
