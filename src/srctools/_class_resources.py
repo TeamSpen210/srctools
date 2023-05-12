@@ -862,16 +862,3 @@ def team_control_point(ctx: ResourceCtx, ent: Entity) -> ResGen:
         if icon:
             yield Resource.mat(f'materials/{icon}.vmt')
             yield Resource.mat(f'materials/{icon}_locked.vmt')
-
-
-@cls_func
-def weapon_script(ctx: ResourceCtx, ent: Entity) -> ResGen:
-    """Handle weapon entities, which load sounds and models from the weapon script."""
-    classname = ent['classname']
-    if 'MESA' in ctx.tags:
-        # Mesa has item_weapon_xxx, which spawns weapon_xxx.
-        if classname.startswith('item_'):
-            classname = classname[5:]
-        yield Resource.weapon_script(f'scripts/gameplay/weapons/{classname}.dmx')
-    else:
-        yield Resource.weapon_script(f'scripts/{classname}.txt')
