@@ -3,8 +3,9 @@ from typing import Callable, Dict, Iterator, Mapping, Sequence, TypeVar, Union
 from typing_extensions import Final, TypeAlias
 import itertools
 
-from . import conv_bool, conv_float, conv_int
+from . import KeyValError, Keyvalues, NoKeyError, conv_bool, conv_float, conv_int
 from .fgd import Resource, ResourceCtx
+from .mdl import Model
 from .packlist import FileType
 from .vmf import VMF, Entity
 
@@ -842,6 +843,33 @@ def point_entity_replace(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """In one specific mode, an entity is spawned by classname."""
     if conv_int(ent['replacementtype']) == 1:
         yield _blank_vmf.create_ent(ent['replacemententity'])
+
+
+@cls_func
+def prop_door_rotating(ctx: ResourceCtx, ent: Entity) -> ResGen:
+    """Parse the special door_options block."""
+    try:
+        mdl = Model(ctx.fsys, ctx.fsys[ent['model']])
+        kv = Keyvalues.parse(mdl.keyvalues, single_line=True).find_key('door_options')
+    except (FileNotFoundError, IOError):
+        return
+    except KeyValError:
+        return
+    except NoKeyError:
+        return
+    skin = kv.find_key(f'skin{ent["skin"]}', or_blank=True)
+    hardware_key = kv.find_key(f'hardware{ent["hardware"]}', or_blank=True)
+    defaults = kv.find_key('defaults', or_blank=True)
+    for key in ['open', 'close', 'move']:
+        try:
+            yield Resource.snd(skin[key])
+        except LookupError:
+            yield Resource.snd(defaults[key, ''])
+    for key in ['locked', 'unlocked']:
+        try:
+            yield Resource.snd(hardware_key[key])
+        except LookupError:
+            yield Resource.snd(defaults[key, ''])
 
 
 @cls_func

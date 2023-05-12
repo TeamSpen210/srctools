@@ -9,7 +9,8 @@ Changelog
 Version (dev)
 -------------
 * Handle the special `$gender` "variable" in WAV filenames.
-
+* Add `prop_door_rotating` class resource function.
+* Remove `weapon_script` class resource function, instead use a direct resource in the FGD.
 
 --------------
 Version 2.3.11
