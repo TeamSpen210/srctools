@@ -199,6 +199,7 @@ RESTYPE_BY_NAME = {
     'tex': FileType.TEXTURE,
     'mdl': FileType.MODEL,
     'break_chunk': FileType.BREAKABLE_CHUNK,
+    'weapon_script': FileType.WEAPON_SCRIPT,
 }
 
 
