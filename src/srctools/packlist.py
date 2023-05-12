@@ -837,14 +837,29 @@ class PackList:
         # Definitions for the common keyvalues on all entities.
         base_entity = EntityDef.engine_def('_CBaseEntity_')
 
+        cache: Dict[str, EntityDef] = {}
+
+        def get_ent(classname: str) -> EntityDef:
+            """Look up the FGD for an entity."""
+            try:
+                return cache[classname]
+            except KeyError:
+                pass
+            try:
+                ent_class = cache[classname] = EntityDef.engine_def(classname)
+                return ent_class
+            except KeyError:
+                if (classname, '') not in unknown_keys:
+                    LOGGER.warning('Unknown class "{}"!', classname)
+                    unknown_keys.add((classname, ''))
+                raise
+
         res_ctx = ResourceCtx(
-            fgd=EntityDef.engine_def,
+            fgd=get_ent,
             fsys=self.fsys,
             mapname=mapname,
             tags=tags,
         )
-
-        cache: Dict[str, EntityDef] = {}
 
         for ent in vmf.entities:
             # Allow opting out packing specific entities.
@@ -852,17 +867,12 @@ class PackList:
                 continue
 
             classname = ent['classname']
+
             try:
-                ent_class = cache[classname]
+                ent_class = get_ent(classname)
             except KeyError:
-                try:
-                    ent_class = cache[classname] = EntityDef.engine_def(classname)
-                except KeyError:
-                    if (classname, '') not in unknown_keys:
-                        LOGGER.warning('Unknown class "{}"!', classname)
-                        unknown_keys.add((classname, ''))
-                    # Fall back to generic keyvalues.
-                    ent_class = base_entity
+                # Fall back to generic keyvalues.
+                ent_class = base_entity
 
             skinset: Optional[Set[int]]
             if ent['skinset'] != '':
@@ -950,7 +960,7 @@ class PackList:
                     self.pack_particle(value)
 
             # Handle resources that's coded into different entities with our internal database.
-            for file_type, filename in ent_class.get_resources(res_ctx, ent=ent):
+            for file_type, filename in ent_class.get_resources(res_ctx, ent=ent, on_error=LOGGER.warning):
                 self.pack_file(filename, file_type)
 
         # Handle worldspawn here - this is fairly special.
@@ -1309,7 +1319,7 @@ class PackList:
                 encrypted_file = self.fsys[extensionless + '.ctx']
             except FileNotFoundError:
                 LOGGER.warning(
-                    'Weapon script "{}.txt"/.ctx does not exist!',
+                    'Weapon script {}.txt/.ctx does not exist!',
                     extensionless,
                 )
             else:
