@@ -1,6 +1,7 @@
 """This module defines functions which list resources for various entities with special functionality."""
 from typing import Callable, Dict, Iterator, Mapping, Sequence, TypeVar, Union
 from typing_extensions import Final, TypeAlias
+from enum import IntEnum
 import itertools
 
 from . import KeyValError, Keyvalues, NoKeyError, conv_bool, conv_float, conv_int
@@ -16,6 +17,9 @@ ClassFuncT = TypeVar('ClassFuncT', bound=ClassFunc)
 CLASS_FUNCS: Dict[str, ClassFunc] = {}
 # Dummy VMF, we create entities from this to pass back to recursively get resources for.
 _blank_vmf = VMF(preserve_ids=False)
+
+FLAG_NPC_START_EFFICENT = 1 << 4
+FLAG_NPC_DROP_HEALTHKIT = 1 << 3
 
 
 def cls_func(func: ClassFuncT) -> ClassFuncT:
@@ -549,7 +553,9 @@ def item_healthvial(ctx: ResourceCtx, ent: Entity) -> ResGen:
 
 @cls_func
 def base_npc(ctx: ResourceCtx, ent: Entity) -> ResGen:
-    """Resources precached in CAI_BaseNPC."""
+    """Resources precached in CAI_BaseNPC & CBaseCombatCharacter."""
+    spawnflags = conv_int(ent['spawnflags'])
+
     if conv_int(ent['ezvariant']) == EZ_VARIANT_TEMPORAL:
         yield Resource.snd('NPC_TemporalHeadcrab.Vanish')
         yield Resource.snd('NPC_TemporalHeadcrab.Appear')
@@ -558,6 +564,8 @@ def base_npc(ctx: ResourceCtx, ent: Entity) -> ResGen:
     equipment = ent['additionalequipment']
     if equipment not in ('', '0'):
         yield _blank_vmf.create_ent(equipment)
+    if spawnflags & FLAG_NPC_DROP_HEALTHKIT:
+        yield _blank_vmf.create_ent('item_healthkit')
 
 
 ANT_WORKER_RESOURCES = [
@@ -706,65 +714,121 @@ def combine_scanner(ctx: ResourceCtx, ent: Entity) -> ResGen:
 
 
 CIT_HEADS = [
+    "female_01.mdl",
+    "female_02.mdl",
+    "female_03.mdl",
+    "female_04.mdl",
+    "female_06.mdl",
+    "female_07.mdl",
     "male_01.mdl",
     "male_02.mdl",
-    "female_01.mdl",
     "male_03.mdl",
-    "female_02.mdl",
     "male_04.mdl",
-    "female_03.mdl",
     "male_05.mdl",
-    "female_04.mdl",
     "male_06.mdl",
-    "female_06.mdl",
     "male_07.mdl",
-    "female_07.mdl",
     "male_08.mdl",
     "male_09.mdl",
 ]
 
 
+class CitizenTypes(IntEnum):
+    """npc_citizen type enum."""
+    DEFAULT = 0
+    DOWNTRODDEN = 1
+    REFUGEE = 2
+    REBEL = 3
+    UNIQUE = 4
+    EZ2_BRUTE = 5
+    EZ2_LONGFALL = 6
+    EZ2_ARCTIC = 7
+    EZ2_ARBEIT = 8  # Pre-war Arbeit employees
+    EZ2_ARBEIT_SEC = 9  # Pre-war Arbeit security guards
+
+CIT_MAPNAMES = [
+    ("trainstation", CitizenTypes.DOWNTRODDEN),
+    ("canals",       CitizenTypes.REFUGEE),
+    ("town",         CitizenTypes.REFUGEE),
+    ("coast",        CitizenTypes.REFUGEE),
+    ("prison",       CitizenTypes.DOWNTRODDEN),
+    ("c17",          CitizenTypes.REBEL),
+    ("citadel",      CitizenTypes.DOWNTRODDEN),
+]
+
+CIT_FOLDERS = {
+    CitizenTypes.DOWNTRODDEN: 'Group01',
+    CitizenTypes.REFUGEE: 'Group02',
+    CitizenTypes.REBEL: 'Group03{}',
+    CitizenTypes.EZ2_BRUTE: 'Group03b{}',
+    CitizenTypes.EZ2_LONGFALL: 'Group03x{}',
+    CitizenTypes.EZ2_ARCTIC: 'Group04{}',
+    CitizenTypes.EZ2_ARBEIT: 'Group05',
+    CitizenTypes.EZ2_ARBEIT_SEC: 'Group05b',
+}
+
+
 @cls_func
 def npc_citizen(ctx: ResourceCtx, ent: Entity) -> ResGen:
-    """Cizizens have a complex set of precaching rules."""
+    """Citizens have a complex set of precaching rules."""
     if ent['targetname'] == 'matt':
         # Special crowbar.
-        yield Resource("models/props_canal/mattpipe.mdl", FileType.MODEL)
+        yield Resource.mat("models/props_canal/mattpipe.mdl")
 
-    cit_type = conv_int(ent['citizentype'])
+    spawnflags = conv_int(ent['spawnflags'])
 
-    if cit_type == 0:  # Default
-        # TODO: Pick via mapname:
-        # { "trainstation",	CT_DOWNTRODDEN	},
-        # { "canals",		CT_REFUGEE		},
-        # { "town",			CT_REFUGEE		},
-        # { "coast",		CT_REFUGEE		},
-        # { "prison",		CT_DOWNTRODDEN	},
-        # { "c17",			CT_REBEL		},
-        # { "citadel",		CT_DOWNTRODDEN	},
-        for head in CIT_HEADS:
-            yield Resource('models/humans/group01/' + head, FileType.MODEL)
-            yield Resource('models/humans/group02/' + head, FileType.MODEL)
-            yield Resource('models/humans/group03/' + head, FileType.MODEL)
-            yield Resource('models/humans/group03m/' + head, FileType.MODEL)
+    if spawnflags & FLAG_NPC_START_EFFICENT:
+        yield Resource.mdl("models/humans/male_cheaple.mdl")
+
+    try:
+        cit_type = CitizenTypes(conv_int(ent['citizentype']))
+    except ValueError:
+        cit_type = CitizenTypes.DEFAULT
+
+    if cit_type is CitizenTypes.DEFAULT:
+        mapname = ctx.mapname.casefold()
+        for group_name, poss_type in CIT_MAPNAMES:
+            if group_name in mapname:
+                cit_type = poss_type
+                break
+        else:
+            cit_type = CitizenTypes.DOWNTRODDEN
+
+    if 'ez2' in ctx.tags:
+        can_be_medic = bool((1 << 17) & spawnflags)
+    else:
+        can_be_medic = cit_type is CitizenTypes.REBEL
+
+    yield from citizen_resources(cit_type, can_be_medic)
+
+
+def citizen_resources(cit_type: CitizenTypes, can_be_medic: bool) -> ResGen:
+    """Yield the resources for a specific citizen type."""
+    if 'EZ2' in cit_type.name:
+        # Citizens may pull this out if disarmed.
+        yield _blank_vmf.create_ent('weapon_css_glock')
+
+    if cit_type is CitizenTypes.UNIQUE:  # Uses model in KVs directly.
         return
-    elif cit_type == 1:  # Downtrodden
-        folder = 'group01'
-    elif cit_type == 2:  # Refugee
-        folder = 'group02'
-    elif cit_type == 3:  # Rebel
-        folder = 'group03'
-        # The rebels have an additional set of models.
-        for head in CIT_HEADS:
-            yield Resource('models/humans/group03m/' + head, FileType.MODEL)
-    elif cit_type == 4:  # Use model in KVs directly.
-        return
-    else:  # Invalid type?
-        # TODO: Entropy Zero variants.
-        return
+
+    folder = CIT_FOLDERS[cit_type]
 
     for head in CIT_HEADS:
-        yield Resource(f'models/humans/{folder}/{head}', FileType.MODEL)
+        filename = f'models/humans/{folder}/{head}'
+        yield Resource.mdl(filename.format(''))
+        if can_be_medic:
+            yield Resource.mdl(filename.format('m'))
+
+
+@cls_func
+def hl2_gamerules(ctx: ResourceCtx, ent: Entity) -> ResGen:
+    """In Mapbase, hl2_gamerules allows overriding the map-specific default citizen."""
+    try:
+        cit_type = CitizenTypes(conv_int(ent['DefaultCitizenType']))
+    except ValueError:
+        pass
+    else:
+        if cit_type is not CitizenTypes.DEFAULT and cit_type is not CitizenTypes.UNIQUE:
+            yield from citizen_resources(cit_type, True)
 
 
 @cls_func
@@ -851,11 +915,7 @@ def prop_door_rotating(ctx: ResourceCtx, ent: Entity) -> ResGen:
     try:
         mdl = Model(ctx.fsys, ctx.fsys[ent['model']])
         kv = Keyvalues.parse(mdl.keyvalues, single_line=True).find_key('door_options')
-    except (FileNotFoundError, IOError):
-        return
-    except KeyValError:
-        return
-    except NoKeyError:
+    except (OSError, KeyValError, NoKeyError):
         return
     skin = kv.find_key(f'skin{ent["skin"]}', or_blank=True)
     hardware_key = kv.find_key(f'hardware{ent["hardware"]}', or_blank=True)
