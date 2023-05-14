@@ -32,10 +32,10 @@ __all__ = [
 _fmt_8bit: Final = Struct('>B')
 _fmt_16bit: Final = Struct('>H')
 _fmt_32bit: Final = Struct('>I')
-_fmt_double = Struct('>d')
-_fmt_header = Struct('>BI')
-_fmt_ent_header = Struct('>BBBBBB')
-_fmt_block_pos = Struct('>IH')
+_fmt_double: Final = Struct('>d')
+_fmt_header: Final = Struct('>BI')
+_fmt_ent_header: Final = Struct('>BBBBBB')
+_fmt_block_pos: Final = Struct('>IH')
 
 
 # Version number for the format.
