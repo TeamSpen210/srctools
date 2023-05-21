@@ -74,7 +74,7 @@ def clean_line(line: str) -> str:
 
 def is_plain_text(
     name: str,
-    valid_chars: Container[str]=_FILE_CHARS,
+    valid_chars: Container[str] = _FILE_CHARS,
 ) -> bool:
     """Check to see if any characters are not in the whitelist.
 
@@ -87,8 +87,8 @@ def is_plain_text(
 
 def whitelist(
     string: str,
-    valid_chars: Container[str]=_FILE_CHARS,
-    rep_char: str='_',
+    valid_chars: Container[str] = _FILE_CHARS,
+    rep_char: str = '_',
 ) -> str:
     """Replace any characters not in the whitelist with the replacement char."""
     chars = list(string)
@@ -100,8 +100,8 @@ def whitelist(
 
 def blacklist(
     string: str,
-    invalid_chars: Container[str]=(),
-    rep_char: str='_',
+    invalid_chars: Container[str] = (),
+    rep_char: str = '_',
 ) -> str:
     """Replace any characters in the blacklist with the replacement char."""
     chars = list(string)
@@ -198,7 +198,8 @@ def conv_bool(val: Union[str, bool, None], default: Union[ValT, bool] = False) -
         return BOOL_LOOKUP.get(val.casefold(), default)
 
 
-def conv_float(val: Union[int, float, str], default: Union[ValT, float] = 0.0) -> Union[ValT, float]:
+def conv_float(val: Union[int, float, str], default: Union[ValT, float] = 0.0) -> Union[
+    ValT, float]:
     """Converts a string to an float, using a default if it fails."""
     try:
         return float(val)
@@ -221,7 +222,9 @@ class _SupportsKeysAndGetItem(Protocol):
 
     Since this is for EmptyMapping we don't care about the item type.
     """
+
     def keys(self) -> Iterable[Any]: ...
+
     def __getitem__(self, __k: Any) -> Any: ...
 
 
@@ -264,8 +267,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     def get(self, key: Any) -> None: ...
     @overload
     def get(self, key: Any, default: ValT) -> ValT: ...
-
-    def get(self, key: Any, default: Optional[ValT]=None) -> Optional[ValT]:
+    def get(self, key: Any, default: Optional[ValT] = None) -> Optional[ValT]:
         """get() always returns the default item."""
         return default
 
@@ -479,10 +481,15 @@ class AtomicWriter(Generic[IOKindT]):
     @overload
     def __init__(
         self: 'AtomicWriter[io.TextIOWrapper]', filename: StringPath,
-        is_bytes: Literal[False]=False, encoding: str='utf8',
+        is_bytes: Literal[False] = False, encoding: str = 'utf8',
     ) -> None: ...
 
-    def __init__(self, filename: StringPath, is_bytes: bool=False, encoding: str='utf8') -> None:
+    def __init__(
+        self,
+        filename: StringPath,
+        is_bytes: bool = False,
+        encoding: str = 'utf8',
+    ) -> None:
         """Create an AtomicWriter.
         is_bytes sets text or bytes writing mode. The file is always writable.
         """
@@ -571,7 +578,7 @@ from srctools.vtf import VTF
 
 
 if TYPE_CHECKING:
-    Property = Keyvalues   #: :deprecated: Use srctools.Keyvalues.
+    Property = Keyvalues  #: :deprecated: Use srctools.Keyvalues.
 else:
     def __getattr__(name: str) -> object:
         if name == 'Property':

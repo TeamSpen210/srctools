@@ -109,8 +109,8 @@ class LoggerAdapter(logging.LoggerAdapter):  # type: ignore[type-arg]  # Only ge
                 Tuple[None, None, None]
             ],
             BaseException
-        ]=None,
-        stack_info: bool=False,
+        ] = None,
+        stack_info: bool = False,
         extra: Optional[Mapping[str, object]] = None,
         **kwargs: Any,
     ) -> None:
@@ -310,7 +310,7 @@ class NullStream(TextIO):
         """We are always at the start position."""
         return 0
 
-    def truncate(self, size: Optional[int]=None) -> int:
+    def truncate(self, size: Optional[int] = None) -> int:
         """Truncation does nothing."""
         return 0
 
@@ -333,7 +333,7 @@ class NewLogRecord(logging.LogRecord):
 @overload
 def init_logging(
     filename: Optional[StringPath] = None,
-    main_logger: str='',
+    main_logger: str = '',
     on_error: Optional[Callable[
         [Type[BaseException], BaseException, Optional[TracebackType]],
         None,
@@ -344,7 +344,7 @@ def init_logging(
 @overload
 def init_logging(
     filename: Optional[StringPath] = None,
-    main_logger: str='',
+    main_logger: str = '',
     *,
     error: Callable[[BaseException], object],
 ) -> logging.Logger: ...
@@ -352,7 +352,7 @@ def init_logging(
 
 def init_logging(
     filename: Optional[StringPath] = None,
-    main_logger: str='',
+    main_logger: str = '',
     on_error: Optional[Callable[
         [Type[BaseException], BaseException, Optional[TracebackType]],
         None,
@@ -475,7 +475,7 @@ def init_logging(
         return cast(logging.Logger, LoggerAdapter(logger))
 
 
-def get_logger(name: str='', alias: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str = '', alias: Optional[str] = None) -> logging.Logger:
     """Get the named logger object.
 
     This puts the logger into the ``srctools`` namespace, and wraps it to

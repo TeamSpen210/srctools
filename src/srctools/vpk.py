@@ -80,7 +80,7 @@ def get_arch_filename(prefix: str = 'pak01', index: Optional[int] = None) -> str
         return f'{prefix}_{index:>03}.vpk'
 
 
-def _get_file_parts(value: FileName, relative_to: str='') -> Tuple[str, str, str]:
+def _get_file_parts(value: FileName, relative_to: str = '') -> Tuple[str, str, str]:
     """Get folder, name, ext parts from a string/tuple.
 
     Possible arguments:
@@ -200,7 +200,7 @@ class FileInfo:
                     )
         return chk == self.crc
 
-    def write(self, data: bytes, arch_index: Optional[int]=None) -> None:
+    def write(self, data: bytes, arch_index: Optional[int] = None) -> None:
         """Replace this file with the given byte data.
 
         arch_index is the pak_01_000 file to put data into (or None for _dir).
@@ -275,9 +275,9 @@ class VPK:
         self,
         dir_file: Union[str, 'os.PathLike[str]'],
         *,
-        mode: Union[OpenModes, str]='r',
-        dir_data_limit: Optional[int]=1024,
-        version: int=1,
+        mode: Union[OpenModes, str] = 'r',
+        dir_data_limit: Optional[int] = 1024,
+        version: int = 1,
     ) -> None:
         """Create a VPK file.
 
@@ -534,7 +534,7 @@ class VPK:
                 for info in files.values():
                     yield info
 
-    def filenames(self, ext: str='', folder: str='') -> Iterator[str]:
+    def filenames(self, ext: str = '', folder: str = '') -> Iterator[str]:
         """Yield filenames from this VPK.
 
         If an extension or folder is specified, only files with this extension
@@ -553,7 +553,7 @@ class VPK:
                 for info in files.values():
                     yield info.filename
 
-    def fileinfos(self, ext: str='', folder: str='') -> Iterator[FileInfo]:
+    def fileinfos(self, ext: str = '', folder: str = '') -> Iterator[FileInfo]:
         """Yield file info objects from this VPK.
 
         If an extension or folder is specified, only files with this extension
@@ -655,7 +655,7 @@ class VPK:
         """
         self.new_file(filename, root).write(data, arch_index)
 
-    def add_folder(self, folder: str, prefix: str='') -> None:
+    def add_folder(self, folder: str, prefix: str = '') -> None:
         """Write all files in a folder to the VPK.
 
         If prefix is set, the folders will be written to that subfolder.

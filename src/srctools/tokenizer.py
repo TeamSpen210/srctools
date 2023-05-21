@@ -331,7 +331,7 @@ class BaseTokenizer(abc.ABC):
             elif tok is not Token.NEWLINE:
                 raise self.error(tok)
 
-    def expect(self, token: Token, skip_newline: bool=True) -> str:
+    def expect(self, token: Token, skip_newline: bool = True) -> str:
         """Consume the next token, which should be the given type.
 
         If it is not, this raises an error.
@@ -386,11 +386,11 @@ class Tokenizer(BaseTokenizer):
         self,
         data: Union[str, Iterable[str]],
         filename: Optional[StringPath] = None,
-        error: Type[TokenSyntaxError]=TokenSyntaxError,
-        string_bracket: bool=False,
-        allow_escapes: bool=True,
-        allow_star_comments: bool=False,
-        colon_operator: bool=False,
+        error: Type[TokenSyntaxError] = TokenSyntaxError,
+        string_bracket: bool = False,
+        allow_escapes: bool = True,
+        allow_star_comments: bool = False,
+        colon_operator: bool = False,
     ) -> None:
         # If a file-like object, automatically use the configured name.
         if filename is None and hasattr(data, 'name'):
@@ -677,8 +677,8 @@ class IterTokenizer(BaseTokenizer):
     def __init__(
         self,
         source: Iterable[Tuple[Token, str]],
-        filename: StringPath='',
-        error: Type[TokenSyntaxError]=TokenSyntaxError,
+        filename: StringPath = '',
+        error: Type[TokenSyntaxError] = TokenSyntaxError,
     ) -> None:
         super().__init__(filename, error)
         self.source = iter(source)

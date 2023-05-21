@@ -102,8 +102,8 @@ def get_compiler_name(program: str) -> str:
 def run_compiler(
     name: str,
     args: List[str],
-    logger: logging.Logger=get_logger('<compiler>'),
-    change_name: bool=True,
+    logger: logging.Logger = get_logger('<compiler>'),
+    change_name: bool = True,
 ) -> int:
     """
     Execute the original vbsp, vvis or vrad.

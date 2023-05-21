@@ -125,7 +125,7 @@ def to_matrix(value: Union['AnyAngle', 'AnyMatrix', 'AnyVec', None]) -> 'Matrix 
         return Matrix.from_angle(p, y, r)
 
 
-def format_float(x: float, places: int=6) -> str:
+def format_float(x: float, places: int = 6) -> str:
     """Convert the specified float to a string, stripping off a .0 if it ends with that."""
     result = f'{x:.{places}f}'
     if '.' in result:
@@ -322,7 +322,7 @@ def __r{func}__(self, other: float):
 '''
 
 
-_VEC_MULDIV_INPLACE_TEMP  = '''
+_VEC_MULDIV_INPLACE_TEMP = '''
 def __i{func}__(self, other: float):
     """``{op}=`` operation.
 
@@ -410,7 +410,10 @@ class VecBase:
         raise NotImplementedError
 
     @classmethod
-    def from_str(cls: Type[VecT], val: Union[str, 'VecBase'], x: float=0.0, y: float=0.0, z: float=0.0) -> VecT:
+    def from_str(
+        cls: Type[VecT], val: Union[str, 'VecBase'],
+        x: float = 0.0, y: float = 0.0, z: float = 0.0,
+    ) -> VecT:
         """Convert a string in the form ``(4 6 -4)`` into a Vector.
 
         If the string is unparsable, this uses the defaults ``(x,y,z)``.
@@ -511,7 +514,7 @@ class VecBase:
         cls: Type[VecT],
         min_pos: 'VecBase',
         max_pos: 'VecBase',
-        stride: int=1,
+        stride: int = 1,
     ) -> Iterator[VecT]:
         """Loop over points in a bounding box. All coordinates should be integers.
 
@@ -530,7 +533,7 @@ class VecBase:
                 for z in range(min_z, max_z + 1, stride):
                     yield cls(x, y, z)
 
-    def iter_line(self: VecT, end: 'VecBase', stride: int=1) -> Iterator[VecT]:
+    def iter_line(self: VecT, end: 'VecBase', stride: int = 1) -> Iterator[VecT]:
         """Yield points in a line (including both endpoints).
 
         :param stride: This specifies the distance between each point.
@@ -573,7 +576,7 @@ class VecBase:
             f'not an on-axis vector!'
         )
 
-    def to_angle(self, roll: float=0) -> 'Angle':
+    def to_angle(self, roll: float = 0) -> 'Angle':
         """Convert a normal to a Source Engine angle.
 
         The angle will point its ``+x`` axis in the direction of this vector.
@@ -834,7 +837,7 @@ class VecBase:
             out_min.z + (x_off * (out_max._z - out_min._z)) / diff,
         )
 
-    def __round__(self: VecT, ndigits: int=0) -> VecT:
+    def __round__(self: VecT, ndigits: int = 0) -> VecT:
         """Performing :external:py:func:`round()` on a vector rounds each axis."""
         return type(self)(
             round(self._x, ndigits),
@@ -846,7 +849,7 @@ class VecBase:
         """Compute the distance from the vector and the origin."""
         return math.sqrt(self._x**2 + self._y**2 + self._z**2)
 
-    def join(self, delim: str=', ') -> str:
+    def join(self, delim: str = ', ') -> str:
         """Return a string with all numbers joined by the passed delimiter.
 
         This strips off the ``.0`` if no decimal portion exists.
@@ -1025,9 +1028,9 @@ class FrozenVec(VecBase):
 
     def __new__(
         cls,
-        x: Union[int, float, 'VecBase', Iterable[float]]=0.0,
-        y: float=0.0,
-        z: float=0.0,
+        x: Union[int, float, 'VecBase', Iterable[float]] = 0.0,
+        y: float = 0.0,
+        z: float = 0.0,
     ) -> 'FrozenVec':
         """Create a ``FrozenVec``.
 
@@ -1083,9 +1086,9 @@ class FrozenVec(VecBase):
         axis1: str,
         val1: Union[Numeric, VecBase],
         axis2: Optional[str] = None,
-        val2: Union[Numeric, VecBase]=0.0,
+        val2: Union[Numeric, VecBase] = 0.0,
         axis3: Optional[str] = None,
-        val3: Union[Numeric, VecBase]=0.0,
+        val3: Union[Numeric, VecBase] = 0.0,
     ) -> 'FrozenVec':
         """Create a Vector, given a number of axes and corresponding values.
 
@@ -1127,7 +1130,7 @@ class FrozenVec(VecBase):
         """FrozenVec is immutable."""
         return self
 
-    def __deepcopy__(self, memodict: Optional[Dict[Any, Any]]=None) -> 'FrozenVec':
+    def __deepcopy__(self, memodict: Dict[str, Any] = None) -> 'FrozenVec':
         """FrozenVec is immutable."""
         return self
 
@@ -1209,9 +1212,9 @@ class Vec(VecBase):
     # noinspection PyMissingConstructor
     def __init__(
         self,
-        x: Union[int, float, 'VecBase', Iterable[float]]=0.0,
-        y: float=0.0,
-        z: float=0.0,
+        x: Union[int, float, 'VecBase', Iterable[float]] = 0.0,
+        y: float = 0.0,
+        z: float = 0.0,
     ) -> None:
         """Create a Vector.
 
@@ -1288,9 +1291,9 @@ class Vec(VecBase):
         axis1: str,
         val1: Union[Numeric, VecBase],
         axis2: Optional[str] = None,
-        val2: Union[Numeric, VecBase]=0.0,
+        val2: Union[Numeric, VecBase] = 0.0,
         axis3: Optional[str] = None,
-        val3: Union[Numeric, VecBase]=0.0,
+        val3: Union[Numeric, VecBase] = 0.0,
     ) -> 'Vec':
         """Create a Vector, given a number of axes and corresponding values.
 
@@ -1409,10 +1412,10 @@ class Vec(VecBase):
     # Deprecated, so no need to duplicate for FrozenVec.
     def rotate(
         self,
-        pitch: float=0.0,
-        yaw: float=0.0,
-        roll: float=0.0,
-        round_vals: bool=True,
+        pitch: float = 0.0,
+        yaw: float = 0.0,
+        roll: float = 0.0,
+        round_vals: bool = True,
     ) -> 'Vec':
         """Old method to rotate a vector by a Source rotational angle.
 
@@ -1433,8 +1436,8 @@ class Vec(VecBase):
 
     def rotate_by_str(
         self, ang: str,
-        pitch: float=0.0, yaw: float=0.0, roll: float=0.0,
-        round_vals: bool=True,
+        pitch: float = 0.0, yaw: float = 0.0, roll: float = 0.0,
+        round_vals: bool = True,
     ) -> 'Vec':
         """Rotate a vector, using a string instead of a vector.
 
@@ -1450,7 +1453,7 @@ class Vec(VecBase):
             self._z = round(self.z, 6)
         return self
 
-    def to_angle_roll(self, z_norm: VecUnion, stride: int=0) -> 'Angle':
+    def to_angle_roll(self, z_norm: VecUnion, stride: int = 0) -> 'Angle':
         """Produce a Source Engine angle with roll.
 
         :deprecated: Use :py:func:`MatrixBase.from_basis()` and then \
@@ -1463,7 +1466,7 @@ class Vec(VecBase):
         warnings.warn('Use Matrix.from_basis().to_angle()', DeprecationWarning)
         return Py_Matrix.from_basis(x=self, z=z_norm).to_angle()
 
-    def rotation_around(self, rot: float=90) -> 'Angle':
+    def rotation_around(self, rot: float = 90) -> 'Angle':
         """For an axis-aligned normal, return the angles which rotate around it.
 
         :deprecated: Use :py:func:`MatrixBase.axis_angle()` and then \
@@ -1655,8 +1658,8 @@ class MatrixBase:
     def from_angle(
         cls: Type[MatrixT],
         pitch: Union['AngleBase', float],
-        yaw: Optional[float]=None,
-        roll: Optional[float]=None,
+        yaw: Optional[float] = None,
+        roll: Optional[float] = None,
     ) -> MatrixT:
         """Return the rotation representing an Euler angle.
 
@@ -2052,7 +2055,7 @@ class FrozenMatrix(MatrixBase):
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: object=...) -> 'FrozenMatrix':
+    def __deepcopy__(self, memodict: Dict[str, Any] = ...) -> 'FrozenMatrix':
         """Frozen matrices are immutable."""
         return self
 
@@ -2118,7 +2121,7 @@ class Matrix(MatrixBase):
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: object=...) -> 'Matrix':
+    def __deepcopy__(self, memodict: Dict[str, Any] = ...) -> 'Matrix':
         """Duplicate this matrix."""
         rot = Py_Matrix.__new__(Py_Matrix)
 
@@ -2194,7 +2197,7 @@ class AngleBase:
     @classmethod
     def from_str(
         cls: Type[AngleT], val: Union[str, 'AngleBase'],
-        pitch: float=0.0, yaw: float=0.0, roll: float=0.0,
+        pitch: float = 0.0, yaw: float = 0.0, roll: float = 0.0,
     ) -> AngleT:
         """Convert a string in the form ``(4 6 -4)`` into an Angle.
 
@@ -2276,7 +2279,7 @@ class AngleBase:
         """
         raise NotImplementedError
 
-    def join(self, delim: str=', ') -> str:
+    def join(self, delim: str = ', ') -> str:
         """Return a string with all numbers joined by the passed delimiter.
 
         This strips off the .0 if no decimal portion exists.
@@ -2392,7 +2395,7 @@ class AngleBase:
             rol = other[2] % 360.0 % 360.0
             return (
                 abs(self._pitch - pit) > 1e-6 or
-                abs(self._yaw   - yaw) > 1e-6 or
+                abs(self._yaw - yaw) > 1e-6 or
                 abs(self._roll  - rol) > 1e-6
             )
         else:
@@ -2469,9 +2472,9 @@ class FrozenAngle(AngleBase):
 
     def __new__(
         cls,
-        pitch: Union[int, float, Iterable[Union[int, float]]]=0.0,
-        yaw: Union[int, float]=0.0,
-        roll: Union[int, float]=0.0,
+        pitch: Union[int, float, Iterable[Union[int, float]]] = 0.0,
+        yaw: Union[int, float] = 0.0,
+        roll: Union[int, float] = 0.0,
     ) -> 'FrozenAngle':
         """Create a FrozenAngle.
 
@@ -2588,7 +2591,7 @@ class FrozenAngle(AngleBase):
         """FrozenAngle is immutable."""
         return self
 
-    def __deepcopy__(self, memodict: Any=None) -> 'FrozenAngle':
+    def __deepcopy__(self, memodict: Dict[str, Any] = ...) -> 'FrozenAngle':
         """FrozenAngle is immutable."""
         return self
 
@@ -2627,9 +2630,9 @@ class Angle(AngleBase):
     # noinspection PyMissingConstructor
     def __init__(
         self,
-        pitch: Union[int, float, Iterable[Union[int, float]]]=0.0,
-        yaw: Union[int, float]=0.0,
-        roll: Union[int, float]=0.0,
+        pitch: Union[int, float, Iterable[Union[int, float]]] = 0.0,
+        yaw: Union[int, float] = 0.0,
+        roll: Union[int, float] = 0.0,
     ) -> None:
         """Create an Angle.
 

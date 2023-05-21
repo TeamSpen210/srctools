@@ -116,9 +116,9 @@ class Material(MutableMapping[str, str]):
     def __init__(
         self,
         shader: str,
-        params: Mapping[str, str]=EmptyMapping,
-        blocks: Iterable[Keyvalues]=(),
-        proxies: Iterable[Keyvalues]=(),
+        params: Mapping[str, str] = EmptyMapping,
+        blocks: Iterable[Keyvalues] = (),
+        proxies: Iterable[Keyvalues] = (),
     ) -> None:
         """Create a material."""
         self.shader = shader

@@ -81,7 +81,7 @@ class Command:
         ensure_check: bytes,
         ensure_file: bytes,
         use_proc_win: int,
-        no_wait: int=0,
+        no_wait: int = 0,
     ) -> 'Command':
         """Parse the command from the structure in the file."""
         exe: Union[str, SpecialCommand]

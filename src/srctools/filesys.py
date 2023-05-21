@@ -318,9 +318,9 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
     def add_sys(
         self,
         sys: FileSystem[Any],
-        prefix: str='',
+        prefix: str = '',
         *,
-        priority: bool=False,
+        priority: bool = False,
     ) -> None:
         """Add a filesystem to the list.
 
@@ -378,7 +378,7 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
             done.add(folded)
             yield file
 
-    def walk_folder_repeat(self, folder: str='') -> Iterator[File[Self]]:
+    def walk_folder_repeat(self, folder: str = '') -> Iterator[File[Self]]:
         """Walk folders, but allow repeating files.
 
         If a file is contained in multiple systems, it will be yielded for each. The first is the
@@ -501,7 +501,7 @@ class RawFileSystem(FileSystem[str]):
 
     This can prohibit access to folders above the root.
     """
-    def __init__(self, path: StringPath, constrain_path: bool=True) -> None:
+    def __init__(self, path: StringPath, constrain_path: bool = True) -> None:
         super().__init__(os.path.abspath(path))
         self.constrain_path = constrain_path
 
@@ -570,7 +570,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
     _no_close: bool
     zip: ZipFile
 
-    def __init__(self, path: StringPath, zipfile: Optional[ZipFile]=None) -> None:
+    def __init__(self, path: StringPath, zipfile: Optional[ZipFile] = None) -> None:
         super().__init__(path)
 
         if zipfile is not None:

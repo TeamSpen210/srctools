@@ -295,7 +295,7 @@ class ManifestedFiles(Generic[ParsedT]):
                 raise ValueError(f'Parsed "{filename}", but identifier "{identifier}" was not present!')
         return filename, data
 
-    def pack_and_get(self, lst: 'PackList', identifier: str, preload: bool=False) -> ParsedT:
+    def pack_and_get(self, lst: 'PackList', identifier: str, preload: bool = False) -> ParsedT:
         """Pack the associated filename, then return the data."""
         filename, data = self.fetch_data(identifier)
 
@@ -391,7 +391,7 @@ class PackList:
     def pack_file(
         self,
         filename: str,
-        data_type: FileType=FileType.GENERIC,
+        data_type: FileType = FileType.GENERIC,
         data: Optional[bytes] = None,
         skinset: Optional[Set[int]] = None,
         optional: bool = False,
@@ -574,7 +574,7 @@ class PackList:
         self._inject_files[folder, ext, data] = full_name
         return full_name
 
-    def inject_vscript(self, code: str, folder: str='inject') -> str:
+    def inject_vscript(self, code: str, folder: str = 'inject') -> str:
         """Specialised variant of inject_file() for VScript code specifically.
 
         This returns the script name suitable for passing to Entity Scripts.
@@ -668,7 +668,7 @@ class PackList:
         self,
         file: File[Any],
         *,
-        always_include: bool=False,
+        always_include: bool = False,
     ) -> Iterable[Sound]:
         """Read in a soundscript and record which files use it.
 
@@ -684,7 +684,7 @@ class PackList:
         )
         return scripts.values()
 
-    def load_particle_system(self, filename: str, mode: FileMode=FileMode.UNKNOWN) -> Iterable[Particle]:
+    def load_particle_system(self, filename: str, mode: FileMode = FileMode.UNKNOWN) -> Iterable[Particle]:
         """Read in the specified particle system and record the particles for usage checking."""
         try:
             particles = _load_particle_system(self.fsys[filename])
@@ -696,7 +696,7 @@ class PackList:
         self.particles.add_file(filename, particles.items(), mode)
         return particles.values()
 
-    def load_soundscript_manifest(self, cache_file: Union[Path, str, None]=None) -> None:
+    def load_soundscript_manifest(self, cache_file: Union[Path, str, None] = None) -> None:
         """Read the soundscript manifest, and read all mentioned scripts.
 
         If cache_file is provided, it should be a path to a file used to
@@ -728,7 +728,7 @@ class PackList:
         if cache_file is not None:
             self.soundscript.save_cache(cache_file)
 
-    def load_particle_manifest(self, cache_file: Union[Path, str, None]=None) -> None:
+    def load_particle_manifest(self, cache_file: Union[Path, str, None] = None) -> None:
         """Read the particle manifest, and read all mentioned scripts.
 
         If cache_file is provided, it should be a path to a file used to
@@ -817,7 +817,7 @@ class PackList:
         for mat in bsp.textures:
             self.pack_file(f'materials/{mat.lower()}.vmt', FileType.MATERIAL)
 
-    def pack_fgd(self, vmf: VMF, fgd: FGD, mapname: str='', tags: Iterable[str]=()) -> None:
+    def pack_fgd(self, vmf: VMF, fgd: FGD, mapname: str = '', tags: Iterable[str] = ()) -> None:
         warnings.warn(
             "The provided FGD is no longer used, call pack_with_ents instead.",
             DeprecationWarning, stacklevel=2,
@@ -827,8 +827,8 @@ class PackList:
     def pack_from_ents(
         self,
         vmf: VMF,
-        mapname: str='',
-        tags: Iterable[str]=(),
+        mapname: str = '',
+        tags: Iterable[str] = (),
     ) -> None:
         """Analyse the map to pack files, using an internal database of keyvalues."""
         # Don't show the same keyvalue warning twice, it's just noise.
@@ -995,12 +995,12 @@ class PackList:
         self,
         bsp: BSP,
         *,
-        whitelist: Iterable[FileSystem[Any]]=(),
-        blacklist: Iterable[FileSystem[Any]]=(),
-        callback: Callable[[str], Optional[bool]]=lambda f: None,
-        dump_loc: Optional[Path]=None,
-        only_dump: bool=False,
-        ignore_vpk: bool=True,
+        whitelist: Iterable[FileSystem[Any]] = (),
+        blacklist: Iterable[FileSystem[Any]] = (),
+        callback: Callable[[str], Optional[bool]] = lambda f: None,
+        dump_loc: Optional[Path] = None,
+        only_dump: bool = False,
+        ignore_vpk: bool = True,
     ) -> None:
         """Pack all our files into the packfile in the BSP.
 

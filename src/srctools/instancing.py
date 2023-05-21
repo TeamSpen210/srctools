@@ -190,7 +190,7 @@ class Manifest(Instance):
         name: str,
         filename: str,
         id: int,
-        is_toplevel: bool=False,
+        is_toplevel: bool = False,
     ) -> None:
         super().__init__(
             name, filename,

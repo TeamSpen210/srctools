@@ -127,7 +127,7 @@ class LeafKeyvalueError(ValueError):
 
     Leaf keyvalues only have a string value, so this operation is not valid.
     """
-    leaf: 'Keyvalues'  #:  The keyvalue being used.
+    leaf: 'Keyvalues'  #: The keyvalue being used.
     msg: str  # The operation being performed.
     def __init__(self, leaf: 'Keyvalues', operation: str) -> None:
         super().__init__(operation)
@@ -231,7 +231,7 @@ class Keyvalues:
             self._real_name = sys.intern(new_name)
             self._folded_name = sys.intern(new_name.casefold())
 
-    def edit(self, name: Optional[str]=None, value: Optional[str]=None) -> 'Keyvalues':
+    def edit(self, name: Optional[str] = None, value: Optional[str] = None) -> 'Keyvalues':
         """Simultaneously modify the name and value."""
         if name is not None:
             self._real_name = name
@@ -255,11 +255,11 @@ class Keyvalues:
     def parse(
         file_contents: Union[str, BaseTokenizer, Iterator[str]],
         filename: StringPath = '', *,
-        flags: Mapping[str, bool]=EmptyMapping,
+        flags: Mapping[str, bool] = EmptyMapping,
         newline_keys: bool = False,
         newline_values: bool = True,
-        allow_escapes: bool=True,
-        single_line: bool=False,
+        allow_escapes: bool = True,
+        single_line: bool = False,
     ) -> "Keyvalues":
         """Returns a Keyvalues tree parsed from given text.
 
@@ -534,9 +534,9 @@ class Keyvalues:
     @overload
     def find_key(self, key: str, *, or_blank: bool) -> 'Keyvalues': ...
     @overload
-    def find_key(self, key: str, def_: str=...) -> 'Keyvalues': ...
+    def find_key(self, key: str, def_: str = ...) -> 'Keyvalues': ...
 
-    def find_key(self, key: str, def_: str=_NO_KEY_FOUND, *, or_blank: bool=False) -> 'Keyvalues':
+    def find_key(self, key: str, def_: str = _NO_KEY_FOUND, *, or_blank: bool = False) -> 'Keyvalues':
         """Obtain the child Keyvalue with a given name.
 
         - If no child is found with the given name, this will return the
@@ -580,7 +580,7 @@ class Keyvalues:
         else:
             raise NoKeyError(key)
 
-    def _get_value(self, key: str, def_: Union[builtins.str, T]=_NO_KEY_FOUND) -> Union[str, T]:
+    def _get_value(self, key: str, def_: Union[builtins.str, T] = _NO_KEY_FOUND) -> Union[str, T]:
         """Obtain the value of the child Keyvalue with a given name.
 
         Effectively find_key() but doesn't make a new keyvalue.
@@ -612,7 +612,7 @@ class Keyvalues:
     @overload
     def int(self, key: str, def_: T) -> Union[builtins.int, T]: ...
 
-    def int(self, key: str, def_: Union[builtins.int, T]=0) -> Union[builtins.int, T]:
+    def int(self, key: str, def_: Union[builtins.int, T] = 0) -> Union[builtins.int, T]:
         """Return the value of an integer key.
 
         Equivalent to int(prop[key]), but with a default value if missing or
@@ -632,7 +632,7 @@ class Keyvalues:
     @overload
     def float(self, key: str, def_: T) -> Union[builtins.float, T]: ...
 
-    def float(self, key: str, def_: Union[builtins.float, T]=0.0) -> Union[builtins.float, T]:
+    def float(self, key: str, def_: Union[builtins.float, T] = 0.0) -> Union[builtins.float, T]:
         """Return the value of an integer key.
 
         Equivalent to float(prop[key]), but with a default value if missing or
@@ -652,7 +652,7 @@ class Keyvalues:
     @overload
     def bool(self, key: str, def_: T) -> Union[builtins.bool, T]: ...
 
-    def bool(self, key: str, def_: Union[builtins.bool, T]=False) -> Union[builtins.bool, T]:
+    def bool(self, key: str, def_: Union[builtins.bool, T] = False) -> Union[builtins.bool, T]:
         """Return the value of an boolean key.
 
         The value may be case-insensitively 'true', 'false', '1', '0', 'T',
@@ -669,9 +669,9 @@ class Keyvalues:
 
     def vec(
         self, key: str,
-        x: builtins.float=0.0,
-        y: builtins.float=0.0,
-        z: builtins.float=0.0,
+        x: builtins.float = 0.0,
+        y: builtins.float = 0.0,
+        z: builtins.float = 0.0,
     ) -> _Vec:
         """Return the given keyvalue, converted to a vector.
 
@@ -747,7 +747,7 @@ class Keyvalues:
     @overload
     def as_array(self, *, conv: Callable[[str], T]) -> List[T]: ...
 
-    def as_array(self, *, conv: Callable[[str], T]=cast(Callable[[str], T], str)) -> Union[List[T], List[str]]:
+    def as_array(self, *, conv: Callable[[str], T] = cast(Callable[[str], T], str)) -> Union[List[T], List[str]]:
         """Convert a keyvalue block into a list of values.
 
         If the keyvalue is a single keyvalue, the single value will be
@@ -806,7 +806,7 @@ class Keyvalues:
         else:
             raise LeafKeyvalueError(self, 'iterate')
 
-    def iter_tree(self, blocks: builtins.bool=False) -> Iterator['Keyvalues']:
+    def iter_tree(self, blocks: builtins.bool = False) -> Iterator['Keyvalues']:
         """Iterate through all keyvalues in this tree.
 
         This goes through keyvalues in the same order that they will serialise

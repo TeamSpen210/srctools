@@ -440,7 +440,7 @@ class Frame:
             _format_funcs.load(format, self._data, view, self.width, self.height)
             self._fileinfo = None
 
-    def rescale_from(self, larger: 'Frame', filter: FilterMode=FilterMode.BILINEAR) -> None:
+    def rescale_from(self, larger: 'Frame', filter: FilterMode = FilterMode.BILINEAR) -> None:
         """Regenerate this image from the next mipmap.
 
         The larger image must either have the same dimension, or exactly double.
@@ -546,7 +546,7 @@ class Frame:
         )
 
     # TODO: wx has no type hints, so we can't import.
-    def to_wx_image(self, bg: Optional[Tuple[int, int, int]]=None) -> Any:
+    def to_wx_image(self, bg: Optional[Tuple[int, int, int]] = None) -> Any:
         """Convert the given frame into a wxPython wx.Image.
 
         This requires wxPython to be installed.
@@ -561,7 +561,7 @@ class Frame:
         _format_funcs.alpha_flatten(self._data, img.GetDataBuffer(), self.width, self.height, bg)
         return img
 
-    def to_wx_bitmap(self, bg: Optional[Tuple[int, int, int]]=None) -> Any:
+    def to_wx_bitmap(self, bg: Optional[Tuple[int, int, int]] = None) -> Any:
         """Convert the given frame into a wxPython wx.Bitmap.
 
         This requires wxPython to be installed.
@@ -616,15 +616,15 @@ class VTF:
         self,
         width: int,
         height: int,
-        version: Tuple[int, int]=(7, 5),
-        ref: AnyVec=FrozenVec(0, 0, 0),
-        frames: int=1,
-        bump_scale: float=1.0,
-        sheet_info: Mapping[int, 'SheetSequence']=EmptyMapping,
-        flags: VTFFlags=VTFFlags.EMPTY,
-        fmt: ImageFormats=ImageFormats.RGBA8888,
-        thumb_fmt: ImageFormats=ImageFormats.DXT1,
-        depth: int=1,
+        version: Tuple[int, int] = (7, 5),
+        ref: AnyVec = FrozenVec(0, 0, 0),
+        frames: int = 1,
+        bump_scale: float = 1.0,
+        sheet_info: Mapping[int, 'SheetSequence'] = EmptyMapping,
+        flags: VTFFlags = VTFFlags.EMPTY,
+        fmt: ImageFormats = ImageFormats.RGBA8888,
+        thumb_fmt: ImageFormats = ImageFormats.DXT1,
+        depth: int = 1,
     ) -> None:
         """Create a blank VTF file."""
         if not ((7, 2) <= version <= (7, 5)):
@@ -834,9 +834,9 @@ class VTF:
     def save(
         self,
         file: IO[bytes],
-        version: Optional[Tuple[int, int]]=None,
-        sheet_seq_version: int=1,
-        asw_or_later: bool=True,
+        version: Optional[Tuple[int, int]] = None,
+        sheet_seq_version: int = 1,
+        asw_or_later: bool = True,
     ) -> None:
         """Write out the VTF file to this.
 
@@ -999,7 +999,7 @@ class VTF:
                 frame.clear()
         self._low_res.clear()
 
-    def compute_mipmaps(self, filter: FilterMode=FilterMode.BILINEAR) -> None:
+    def compute_mipmaps(self, filter: FilterMode = FilterMode.BILINEAR) -> None:
         """Regenerate all mipmaps that have previously been cleared."""
         depth_iter: Collection[Union[int, CubeSide]]
         if VTFFlags.ENVMAP in self.flags:
@@ -1150,7 +1150,7 @@ class SheetSequence:
         return sequences
 
     @classmethod
-    def make_data(cls, sequences: Mapping[int, 'SheetSequence'], version: int=0) -> bytes:
+    def make_data(cls, sequences: Mapping[int, 'SheetSequence'], version: int = 0) -> bytes:
         """Write out the binary form of this."""
         file = BytesIO()
 

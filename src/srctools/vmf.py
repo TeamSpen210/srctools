@@ -225,10 +225,10 @@ def make_overlay(
     vax: Vec,
     material: str,
     surfaces: Iterable['Side'],
-    u_repeat: float=1,
-    v_repeat: float=1,
-    swap: bool=False,
-    render_order: int=0,
+    u_repeat: float = 1,
+    v_repeat: float = 1,
+    swap: bool = False,
+    render_order: int = 0,
 ) -> 'Entity':
     """Generate an overlay on an axis-aligned surface.
 
@@ -382,8 +382,8 @@ class VMF:
 
     def __init__(
         self,
-        map_info: Mapping[str, str]=EmptyMapping,
-        preserve_ids: bool=False,
+        map_info: Mapping[str, str] = EmptyMapping,
+        preserve_ids: bool = False,
     ) -> None:
         """Create a VMF.
 
@@ -518,7 +518,11 @@ class VMF:
         self.add_ent(ent)
         return ent
 
-    def create_visgroup(self, name: str, color: Union[Vec, Tuple[int, int, int]]=(255, 255, 255)) -> 'VisGroup':
+    def create_visgroup(
+        self,
+        name: str,
+        color: Union[Vec, Tuple[int, int, int]] = (255, 255, 255),
+    ) -> 'VisGroup':
         """Convenience method for creating visgroups."""
         vis = VisGroup(self, name, -1, Vec(color))
         self.vis_tree.append(vis)
@@ -605,13 +609,13 @@ class VMF:
     @overload
     def export(
         self, *,
-        inc_version: bool=True, minimal: bool=False, disp_multiblend: bool = True,
+        inc_version: bool = True, minimal: bool = False, disp_multiblend: bool = True,
     ) -> str: ...
 
     @overload
     def export(
         self, dest_file: IO[str], *,
-        inc_version: bool=True, minimal: bool=False, disp_multiblend: bool = True,
+        inc_version: bool = True, minimal: bool = False, disp_multiblend: bool = True,
     ) -> None: ...
 
     def export(
@@ -710,7 +714,7 @@ class VMF:
         else:
             return None
 
-    def iter_wbrushes(self, world: bool=True, detail: bool=True) -> Iterator['Solid']:
+    def iter_wbrushes(self, world: bool = True, detail: bool = True) -> Iterator['Solid']:
         """Iterate through all world and detail solids in the map."""
         if world:
             yield from self.brushes
@@ -718,7 +722,7 @@ class VMF:
             for ent in self.by_class['func_detail']:
                 yield from ent.solids
 
-    def iter_wfaces(self, world: bool=True, detail: bool=True) -> Iterator['Side']:
+    def iter_wfaces(self, world: bool = True, detail: bool = True) -> Iterator['Side']:
         """Iterate through the faces of world and detail solids."""
         for brush in self.iter_wbrushes(world, detail):
             yield from brush
@@ -735,8 +739,8 @@ class VMF:
 
     def iter_ents_tags(
         self,
-        vals: Mapping[str, str]=EmptyMapping,
-        tags: Mapping[str, str]=EmptyMapping,
+        vals: Mapping[str, str] = EmptyMapping,
+        tags: Mapping[str, str] = EmptyMapping,
     ) -> Iterator['Entity']:
         """Iterate through all entities.
 
@@ -809,7 +813,7 @@ class VMF:
         self,
         p1: Vec,
         p2: Vec,
-        mat: str='tools/toolsnodraw',
+        mat: str = 'tools/toolsnodraw',
     ) -> PrismFace:
         """Create an axis-aligned brush connecting the two points.
 
@@ -924,9 +928,9 @@ class VMF:
         self,
         p1: Vec,
         p2: Vec,
-        thick: float=16,
-        mat: str='tools/toolsnodraw',
-        inner_mat: str='',
+        thick: float = 16,
+        mat: str = 'tools/toolsnodraw',
+        inner_mat: str = '',
     ) -> List['Solid']:
         """Create 6 brushes to surround the given region.
 
@@ -1025,7 +1029,7 @@ class Camera:
         if self.is_active():
             self.set_inactive_all()
 
-    def export(self, buffer: IO[str], ind: str='') -> None:
+    def export(self, buffer: IO[str], ind: str = '') -> None:
         """Export the camera to the VMF file."""
         buffer.write(ind + 'camera\n')
         buffer.write(ind + '{\n')
@@ -1061,7 +1065,7 @@ class Cordon:
         max_ = bounds.vec('maxs', 128, 128, 128)
         return Cordon(vmf_file, min_, max_, is_active, name)
 
-    def export(self, buffer: IO[str], ind: str='') -> None:
+    def export(self, buffer: IO[str], ind: str = '') -> None:
         """Write the cordon into the VMF."""
         buffer.write(ind + 'cordon\n')
         buffer.write(ind + '{\n')
@@ -1128,7 +1132,7 @@ class VisGroup:
             children,
         )
 
-    def export(self, buffer: IO[str], ind: str='') -> None:
+    def export(self, buffer: IO[str], ind: str = '') -> None:
         """Write out the VMF text for a visgroup"""
         buffer.write(
             f'{ind}visgroup\n'
@@ -1240,7 +1244,7 @@ class Solid:
         )
 
     @classmethod
-    def parse(cls, vmf_file: VMF, tree: Keyvalues, hidden: bool=False) -> 'Solid':
+    def parse(cls, vmf_file: VMF, tree: Keyvalues, hidden: bool = False) -> 'Solid':
         """Parse a Property tree into a Solid object."""
         solid_id = tree.int('id', -1)
         sides = []
@@ -1286,7 +1290,7 @@ class Solid:
     def export(
         self,
         buffer: IO[str],
-        ind: str='',
+        ind: str = '',
         disp_multiblend: bool = True,
         include_groups: bool = True,
     ) -> None:
@@ -1452,8 +1456,8 @@ class UVAxis:
         x: float,
         y: float,
         z: float,
-        offset: float=0.0,
-        scale: float=0.25,
+        offset: float = 0.0,
+        scale: float = 0.25,
     ) -> None:
         self.x = x
         self.y = y
@@ -1599,14 +1603,14 @@ class Side:
         self,
         vmf_file: VMF,
         planes: List[Vec],
-        des_id: int=-1,
-        lightmap: int=16,
-        smoothing: int=0,
-        mat: str='tools/toolsnodraw',
-        rotation: float=0,
+        des_id: int = -1,
+        lightmap: int = 16,
+        smoothing: int = 0,
+        mat: str = 'tools/toolsnodraw',
+        rotation: float = 0,
         uaxis: Optional[UVAxis] = None,
         vaxis: Optional[UVAxis] = None,
-        disp_power: DispPower=0,
+        disp_power: DispPower = 0,
     ) -> None:
         """Planes must be a list of 3 Vecs or 3-tuples."""
         self.map = vmf_file
@@ -1886,7 +1890,7 @@ class Side:
         return new_side
 
     # noinspection PyProtectedMember
-    def export(self, buffer: IO[str], ind: str='', disp_multiblend: bool = True) -> None:
+    def export(self, buffer: IO[str], ind: str = '', disp_multiblend: bool = True) -> None:
         """Generate the strings required to define this side in a VMF.
 
         - disp_multiblend controls whether displacements produce their multiblend
@@ -2163,7 +2167,7 @@ class Entity(MutableMapping[str, str]):
         vis_auto_shown: bool = True,
         logical_pos: Optional[str] = None,
         editor_color: Union[Vec, Tuple[int, int, int]] = (255, 255, 255),
-        comments: str='',
+        comments: str = '',
     ) -> None:
         self.map = vmf_file
         self._keys = _KeyDict({
@@ -2364,7 +2368,7 @@ class Entity(MutableMapping[str, str]):
     def export(
         self,
         buffer: IO[str],
-        ind: str='',
+        ind: str = '',
         disp_multiblend: bool = True,
         _is_worldspawn: bool = False,
     ) -> None:
@@ -2607,7 +2611,7 @@ class Entity(MutableMapping[str, str]):
                         self.map.node_id.discard(node_id)
                 break
 
-    def get(self, key: str, default: Union[str, T]='') -> Union[str, T]:
+    def get(self, key: str, default: Union[str, T] = '') -> Union[str, T]:
         """Allow using [] syntax to search for keyvalues.
 
         - This will return '' if the value is not present.
@@ -2695,7 +2699,7 @@ class EntityFixup(MutableMapping[str, str]):
     # for the type annotations.
     __slots__ = ['_fixup', '_matcher']
 
-    def __init__(self, fixup: Iterable[FixupValue]=()) -> None:
+    def __init__(self, fixup: Iterable[FixupValue] = ()) -> None:
         self._fixup: Dict[str, FixupValue] = {}
         self._matcher: Optional[Pattern[str]] = None
         # In _fixup each variable is stored as a tuple of (var_name,
@@ -2721,7 +2725,7 @@ class EntityFixup(MutableMapping[str, str]):
     @overload
     def get(self, var: str, default: Union[str, T]) -> Union[str, T]: ...
 
-    def get(self, var: str, default: Union[str, T]='') -> Union[str, T]:
+    def get(self, var: str, default: Union[str, T] = '') -> Union[str, T]:
         """Get the value of an instance $replace variable.
 
         If not found, the default will be returned (an empty string).
@@ -2771,7 +2775,7 @@ class EntityFixup(MutableMapping[str, str]):
     @overload
     def setdefault(self, var: str, default: Union[ValidKV_T, str]) -> Union[str, ValidKV_T]: ...
 
-    def setdefault(self, var: str, default: Union[ValidKV_T, str]='') -> Union[str, ValidKV_T]:
+    def setdefault(self, var: str, default: Union[ValidKV_T, str] = '') -> Union[str, ValidKV_T]:
         """Return $key, but if not present set it to the default and return that."""
         if var[0] == '$':
             var = var[1:]
@@ -2940,7 +2944,7 @@ class EntityFixup(MutableMapping[str, str]):
 
         return self._matcher.sub(replacer, text)
 
-    def int(self, key: str, def_: Union[builtins.int, T]=0) -> Union[builtins.int, T]:
+    def int(self, key: str, def_: Union[builtins.int, T] = 0) -> Union[builtins.int, T]:
         """Return the value of an integer key.
 
         Equivalent to int(fixup[key]), but with a default value if missing or
@@ -2951,7 +2955,7 @@ class EntityFixup(MutableMapping[str, str]):
         except (ValueError, TypeError):
             return def_
 
-    def float(self, key: str, def_: Union[builtins.float, T]=0.0) -> Union[builtins.float, T]:
+    def float(self, key: str, def_: Union[builtins.float, T] = 0.0) -> Union[builtins.float, T]:
         """Return the value of an integer key.
 
         Equivalent to float(fixup[key]), but with a default value if missing or
@@ -2962,7 +2966,7 @@ class EntityFixup(MutableMapping[str, str]):
         except (ValueError, TypeError):
             return def_
 
-    def bool(self, key: str, def_: Union[builtins.bool, T]=False) -> Union[builtins.bool, T]:
+    def bool(self, key: str, def_: Union[builtins.bool, T] = False) -> Union[builtins.bool, T]:
         """Return a fixup interpreted as a boolean.
 
         The value may be case-insensitively 'true', 'false', '1', '0', 'T',
@@ -2976,9 +2980,9 @@ class EntityFixup(MutableMapping[str, str]):
     def vec(
         self,
         key: str,
-        x: builtins.float=0.0,
-        y: builtins.float=0.0,
-        z: builtins.float=0.0,
+        x: builtins.float = 0.0,
+        y: builtins.float = 0.0,
+        z: builtins.float = 0.0,
     ) -> Vec:
         """Return the given fixup, converted to a vector."""
         return Vec.from_str(self.get(key), x, y, z)
@@ -3129,14 +3133,14 @@ class Output:
         out: str,
         targ: Union[Entity, str],
         inp: str,
-        param: ValidKVs='',
-        delay: float=0.0,
+        param: ValidKVs = '',
+        delay: float = 0.0,
         *,
-        times: int=-1,
-        only_once: bool=False,
+        times: int = -1,
+        only_once: bool = False,
         inst_out: Optional[str] = None,
         inst_in: Optional[str] = None,
-        comma_sep: bool=False,
+        comma_sep: bool = False,
     ) -> None:
         self.output = out
         self.inst_out = inst_out
@@ -3339,7 +3343,7 @@ class Output:
             self.delay = 0.0
             self.times = -1
 
-    def export(self, buffer: IO[str], ind: str='') -> None:
+    def export(self, buffer: IO[str], ind: str = '') -> None:
         """Generate the text required to define this output in the VMF."""
         buffer.write(ind + self.as_keyvalue())
 
@@ -3365,7 +3369,7 @@ class Output:
             comma_sep=self.comma_sep,
         )
 
-    def gen_addoutput(self, delim: str=',') -> str:
+    def gen_addoutput(self, delim: str = ',') -> str:
         """Return the parameter needed to create this output via AddOutput.
 
         This assumes the target instance uses Prefix fixup, if inst_in is set.

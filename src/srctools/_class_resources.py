@@ -528,7 +528,7 @@ EZ_HEALTH_FOLDERS = [
 
 
 @cls_func
-def item_healthkit(ctx: ResourceCtx, ent: Entity, kind: str='kit') -> ResGen:
+def item_healthkit(ctx: ResourceCtx, ent: Entity, kind: str = 'kit') -> ResGen:
     """Healthkits have multiple variants in EZ2."""
     if 'ezvariant' not in ent:
         return

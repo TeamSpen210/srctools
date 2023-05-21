@@ -262,16 +262,25 @@ class Sound:
         self,
         name: str,
         sounds: List[str],
-        volume: Union[Tuple[Union[float, VOLUME], Union[float, VOLUME]], float, VOLUME]=(VOL_NORM, VOL_NORM),
-        channel: Union[int, Channel]=Channel.DEFAULT,
-        level: Union[Tuple[Union[float, Level], Union[float, Level]], float, Level]=(Level.SNDLVL_NORM, Level.SNDLVL_NORM),
-        pitch: Union[Tuple[Union[float, Pitch], Union[float, Pitch]], float, Pitch]=(Pitch.PITCH_NORM, Pitch.PITCH_NORM),
+        volume: Union[
+            Tuple[Union[float, VOLUME], Union[float, VOLUME]],
+            float, VOLUME,
+        ] = (VOL_NORM, VOL_NORM),
+        channel: Union[int, Channel] = Channel.DEFAULT,
+        level: Union[
+            Tuple[Union[float, Level], Union[float, Level]],
+            float, Level,
+        ] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM),
+        pitch: Union[
+            Tuple[Union[float, Pitch], Union[float, Pitch]],
+            float, Pitch,
+        ] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM),
 
         # Operator stacks
-        stack_start: Optional[Keyvalues]=None,
-        stack_update: Optional[Keyvalues]=None,
-        stack_stop: Optional[Keyvalues]=None,
-        force_v2: bool=False,
+        stack_start: Optional[Keyvalues] = None,
+        stack_update: Optional[Keyvalues] = None,
+        stack_stop: Optional[Keyvalues] = None,
+        force_v2: bool = False,
     ) -> None:
         """Create a soundscript."""
         self.name = name

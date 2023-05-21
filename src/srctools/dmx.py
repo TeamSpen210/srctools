@@ -741,7 +741,7 @@ class Attribute(Generic[ValueT], _ValProps):
     def array(cls, name: str, val_type: ValueType) -> 'Attribute[Any]': ...
 
     @classmethod
-    def array(cls, name: str, val_type: ValueType, values: Iterable[Any]=()) -> 'Attribute[Any]':
+    def array(cls, name: str, val_type: ValueType, values: Iterable[Any] = ()) -> 'Attribute[Any]':
         """Create an attribute with an empty array of a specified type."""
         conv_func = CONVERSIONS[val_type]
         return Attribute(name, val_type, list(map(conv_func, values)))
@@ -817,7 +817,7 @@ class Attribute(Generic[ValueT], _ValProps):
     @classmethod
     def vec3(
         cls, name: str,
-        x: Union[builtins.float, Iterable[builtins.float]]=0.0,
+        x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
     ) -> 'Attribute[FrozenVec]':
@@ -881,10 +881,10 @@ class Attribute(Generic[ValueT], _ValProps):
     @classmethod
     def color(
         cls, name: str,
-        r: Union[builtins.float, builtins.int, Iterable[Union[builtins.float, builtins.int]]]=0,
-        g: Union[builtins.float, builtins.int]=0,
-        b: Union[builtins.float, builtins.int]=0,
-        a: Union[builtins.float, builtins.int]=255,
+        r: Union[builtins.float, builtins.int, Iterable[Union[builtins.float, builtins.int]]] = 0,
+        g: Union[builtins.float, builtins.int] = 0,
+        b: Union[builtins.float, builtins.int] = 0,
+        a: Union[builtins.float, builtins.int] = 255,
     ) -> 'Attribute[Color]':
         """Create an attribute with a color."""
         if isinstance(r, (int, float)):
@@ -913,7 +913,7 @@ class Attribute(Generic[ValueT], _ValProps):
     @classmethod
     def angle(
         cls, name: str,
-        pitch: Union[builtins.float, Iterable[builtins.float]]=0.0,
+        pitch: Union[builtins.float, Iterable[builtins.float]] = 0.0,
         yaw: builtins.float = 0.0, roll: builtins.float = 0.0,
     ) -> 'Attribute[FrozenAngle]':
         """Create an attribute with an Euler angle."""
@@ -1160,7 +1160,7 @@ class Attribute(Generic[ValueT], _ValProps):
 
     copy = __copy__
 
-    def __deepcopy__(self, memodict: Any=EmptyMapping) -> 'Attribute[ValueT]':
+    def __deepcopy__(self, memodict: Any = EmptyMapping) -> 'Attribute[ValueT]':
         """Duplicate this attribute and all children."""
         return Attribute(self.name, self._typ, copy.deepcopy(self._value, memodict))
 
@@ -1604,7 +1604,7 @@ class Element(Mapping[str, Attribute[Any]]):
         self, file: IO[bytes],
         version: int = 5,
         fmt_name: str = 'dmx', fmt_ver: int = 1,
-        unicode: Literal['ascii', 'format', 'silent']='ascii',
+        unicode: Literal['ascii', 'format', 'silent'] = 'ascii',
     ) -> None:
         """Write out a DMX tree, using the binary format.
 

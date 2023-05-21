@@ -394,7 +394,7 @@ class StaticPropVersion(Enum):
 
     Name is set to prevent aliasing special variants that can't lookup.
     """
-    def __init__(self, ver: int, size: int, name: str='') -> None:
+    def __init__(self, ver: int, size: int, name: str = '') -> None:
         self.version = ver
         self.size = size
         self.variant = name
@@ -512,7 +512,7 @@ class Lump:
         return f'<BSP Lump {self.type.name!r}, v{self.version}, {len(self.data)} bytes>'
 
 
-@attrs.define(eq=False)
+@attrs.define(eq=False, repr=False)
 class GameLump:
     """Represents a game lump.
 
@@ -600,7 +600,7 @@ class TexData:
         return TexData(orig_mat, reflect, width, height)
 
 
-@attrs.define(eq=True)
+@attrs.define(eq=True, repr=False)
 class TexInfo:
     """Represents texture positioning / scaling info."""
     s_off: Vec
@@ -652,7 +652,7 @@ class TexInfo:
         self,
         bsp: 'BSP', mat: str,
         reflectivity: Optional[Vec] = None,
-        width: int=0, height: int=0,
+        width: int = 0, height: int = 0,
         fsys: Optional[FileSystem[Any]] = None,
     ) -> None:
         """Set the material used for this texinfo.
@@ -1099,7 +1099,7 @@ def identity(x: T) -> T:
     return x
 
 
-def _find_or_insert(item_list: List[T], key_func: Callable[[T], Hashable]=id) -> Callable[[T], int]:
+def _find_or_insert(item_list: List[T], key_func: Callable[[T], Hashable] = id) -> Callable[[T], int]:
     """Create a function for inserting items in a list if not found.
 
     This is used to build up the structure arrays which other lumps refer
@@ -1123,7 +1123,7 @@ def _find_or_insert(item_list: List[T], key_func: Callable[[T], Hashable]=id) ->
     return finder
 
 
-def _find_or_extend(item_list: List[T], key_func: Callable[[T], Hashable]=id) -> Callable[[List[T]], int]:
+def _find_or_extend(item_list: List[T], key_func: Callable[[T], Hashable] = id) -> Callable[[List[T]], int]:
     """Create a function for positioning a sublist inside the larger list, adding it if required.
 
     This is used to build up structure arrays where other lumps access subsections of it.
@@ -1169,7 +1169,7 @@ def _find_or_extend(item_list: List[T], key_func: Callable[[T], Hashable]=id) ->
 
 def runlength_decode(
     data: Union[bytes, bytearray],
-    start: int=0, max_clusters: int=-1,
+    start: int = 0, max_clusters: int = -1,
 ) -> bytearray:
     """Decode the run-length encoded viscluster flags in the visibility lump."""
     result = bytearray()
@@ -1266,11 +1266,11 @@ class ParsedLump(Generic[T]):
         return f'<srctools.BSP.{self.__name__} member>'
 
     @overload
-    def __get__(self, instance: None, owner: Optional[type]=None) -> 'ParsedLump[T]': ...
+    def __get__(self, instance: None, owner: Optional[type] = None) -> 'ParsedLump[T]': ...
     @overload
-    def __get__(self, instance: 'BSP', owner: Optional[type]=None) -> T: ...
+    def __get__(self, instance: 'BSP', owner: Optional[type] = None) -> T: ...
 
-    def __get__(self, instance: Optional['BSP'], owner: Optional[type]=None) -> Union['ParsedLump[T]', T]:
+    def __get__(self, instance: Optional['BSP'], owner: Optional[type] = None) -> Union['ParsedLump[T]', T]:
         """Read the lump, then discard."""
         if instance is None:  # Accessed on the class.
             return self
@@ -1666,7 +1666,7 @@ class BSP:
                     if self.game_ver is GameVersion.L4D2:
                         defer.set_data(
                             lump_name,
-                            0,lump_start, length, 0,
+                            0, lump_start, length, 0,
                         )
                     else:
                         defer.set_data(
@@ -1707,7 +1707,7 @@ class BSP:
         self,
         new_name: str,
         lump: Union[BSP_LUMPS, 'Lump'],
-        new_data: bytes
+        new_data: bytes,
     ) -> None:
         """Write out the BSP file, replacing a lump with the given bytes.
 
@@ -1750,14 +1750,14 @@ class BSP:
     @overload
     def create_texinfo(
         self, mat: str,
-        s_off: AnyVec=FrozenVec(),
-        s_shift: float=-99999.0,
-        t_off: AnyVec=FrozenVec(),
-        t_shift: float=-99999.0,
-        lightmap_s_off: AnyVec=FrozenVec(),
-        lightmap_s_shift: float=-99999.0,
-        lightmap_t_off: AnyVec=FrozenVec(),
-        lightmap_t_shift: float=-99999.0,
+        s_off: AnyVec = FrozenVec(),
+        s_shift: float = -99999.0,
+        t_off: AnyVec = FrozenVec(),
+        t_shift: float = -99999.0,
+        lightmap_s_off: AnyVec = FrozenVec(),
+        lightmap_s_shift: float = -99999.0,
+        lightmap_t_off: AnyVec = FrozenVec(),
+        lightmap_t_shift: float = -99999.0,
         flags: SurfFlags = SurfFlags.NONE,
         *, fsys: FileSystem[Any],
     ) -> 'TexInfo':
@@ -1765,14 +1765,14 @@ class BSP:
     @overload
     def create_texinfo(
         self, mat: str,
-        s_off: AnyVec=FrozenVec(),
-        s_shift: float=-99999.0,
-        t_off: AnyVec=FrozenVec(),
-        t_shift: float=-99999.0,
-        lightmap_s_off: AnyVec=FrozenVec(),
-        lightmap_s_shift: float=-99999.0,
-        lightmap_t_off: AnyVec=FrozenVec(),
-        lightmap_t_shift: float=-99999.0,
+        s_off: AnyVec = FrozenVec(),
+        s_shift: float = -99999.0,
+        t_off: AnyVec = FrozenVec(),
+        t_shift: float = -99999.0,
+        lightmap_s_off: AnyVec = FrozenVec(),
+        lightmap_s_shift: float = -99999.0,
+        lightmap_t_off: AnyVec = FrozenVec(),
+        lightmap_t_shift: float = -99999.0,
         flags: SurfFlags = SurfFlags.NONE,
         *,
         reflectivity: AnyVec, width: int, height: int,
@@ -1781,19 +1781,19 @@ class BSP:
 
     def create_texinfo(
         self, mat: str,
-        s_off: AnyVec=FrozenVec(),
-        s_shift: float=-99999.0,
-        t_off: AnyVec=FrozenVec(),
-        t_shift: float=-99999.0,
-        lightmap_s_off: AnyVec=FrozenVec(),
-        lightmap_s_shift: float=-99999.0,
-        lightmap_t_off: AnyVec=FrozenVec(),
-        lightmap_t_shift: float=-99999.0,
+        s_off: AnyVec = FrozenVec(),
+        s_shift: float = -99999.0,
+        t_off: AnyVec = FrozenVec(),
+        t_shift: float = -99999.0,
+        lightmap_s_off: AnyVec = FrozenVec(),
+        lightmap_s_shift: float = -99999.0,
+        lightmap_t_off: AnyVec = FrozenVec(),
+        lightmap_t_shift: float = -99999.0,
         flags: SurfFlags = SurfFlags.NONE,
         *,
         copy_from: Optional['TexInfo'] = None,
         reflectivity: Optional[AnyVec] = None,
-        width: int=0, height: int=0,
+        width: int = 0, height: int = 0,
         fsys: Optional[FileSystem[Any]] = None,
     ) -> 'TexInfo':
         """Create or find a texinfo entry with the specified values.
@@ -2503,7 +2503,7 @@ class BSP:
         writes = DeferredWrites(data)
         data.write(struct.pack('i', cluster_count))
         for ind in range(cluster_count):
-            writes.defer(ind,'ii', True)
+            writes.defer(ind, 'ii', True)
 
         for ind, (pvs, pas) in enumerate(zip(vis.potentially_visible, vis.potentially_audible)):
             pvs_off = data.tell()
@@ -2986,7 +2986,7 @@ class BSP:
         return self.write_ent_data(vmf, self.out_comma_sep, _show_dep=False)
 
     @staticmethod
-    def write_ent_data(vmf: VMF, use_comma_sep: Optional[bool]=None, *, _show_dep: bool = True) -> bytes:
+    def write_ent_data(vmf: VMF, use_comma_sep: Optional[bool] = None, *, _show_dep: bool = True) -> bytes:
         """Generate the entity data lump.
 
         :deprecated: Read and write :py:attr:`BSP.ents` instead.

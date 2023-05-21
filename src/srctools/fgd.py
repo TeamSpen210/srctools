@@ -405,7 +405,7 @@ def read_tags(tok: BaseTokenizer) -> TagsSet:
 
 def validate_tags(
     tags: Collection[str],
-    error: Callable[[str], BaseException]=ValueError,
+    error: Callable[[str], BaseException] = ValueError,
 ) -> TagsSet:
     """Check these tags have valid values.
 
@@ -830,7 +830,7 @@ class KVDef(EntAttribute):
             reportable=show_in_report,
         )
 
-    def export(self, file: TextIO, tags: Collection[str]=()) -> None:
+    def export(self, file: TextIO, tags: Collection[str] = ()) -> None:
         """Write this back out to a FGD file."""
         file.write('\t' + self.name)
         if tags:
@@ -965,7 +965,7 @@ class IODef(EntAttribute):
         self,
         file: TextIO,
         io_type: str,
-        tags: Collection[str]=(),
+        tags: Collection[str] = (),
     ) -> None:
         """Write this back out to a FGD file.
 
@@ -1894,7 +1894,7 @@ class FGD:
         filesys: FileSysT,
         file: File[FileSysT],
         *,
-        eval_bases: bool=True,
+        eval_bases: bool = True,
         encoding: str = 'cp1252',
     ) -> None:
         """Parse one file (recursively if needed).
