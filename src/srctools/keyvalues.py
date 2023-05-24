@@ -63,7 +63,7 @@ from typing import (
     Any, Callable, Dict, Iterable, Iterator, List, Mapping, Optional, Tuple, Type, TypeVar,
     Union, cast,
 )
-from typing_extensions import Final, TypeAlias, overload
+from typing_extensions import Final, TypeAlias, deprecated, overload
 import builtins  # Keyvalues.bool etc shadows these.
 import keyword
 import os
@@ -167,6 +167,12 @@ class Keyvalues:
     _folded_name: Optional[str]
     _real_name: Optional[str]
     _value: _KV_Value
+
+    @overload
+    def __init__(self, name: str, value: _KV_Value) -> None: ...
+    @overload
+    @deprecated("Root properties will change to a new class.", category=None)
+    def __init__(self, name: None, value: _KV_Value) -> None: ...
 
     def __init__(self, name: Optional[str], value: _KV_Value) -> None:
         """Create a new keyvalues instance."""

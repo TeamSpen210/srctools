@@ -19,7 +19,7 @@ from typing import (
     Mapping, MutableMapping, NamedTuple, Optional, Sequence, Set, Tuple, Type, TypeVar, Union,
     ValuesView, cast,
 )
-from typing_extensions import Final, Literal, TypeAlias, overload
+from typing_extensions import Final, Literal, TypeAlias, deprecated, overload
 from enum import Enum
 from struct import Struct, error as StructError, pack
 from uuid import UUID, uuid4 as get_uuid
@@ -29,7 +29,6 @@ import copy
 import io
 import re
 import sys
-import warnings
 
 import attrs
 
@@ -1097,9 +1096,9 @@ class Attribute(Generic[ValueT], _ValProps):
             return len(self._value)
         raise ValueError('Singular elements have no length!')
 
+    @deprecated("Use explicit attr.iter_X() methods to indicate desired type.")
     def __iter__(self) -> Iterator[ValueT]:
         """Yield each of the elements in an array."""
-        warnings.warn("Use explicit attr.iter_X() methods to indicate desired type.", DeprecationWarning, stacklevel=2)
         if isinstance(self._value, list):
             return iter(self._value)
         else:

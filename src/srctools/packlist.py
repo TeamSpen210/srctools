@@ -3,6 +3,7 @@ from typing import (
     Any, Callable, Collection, Dict, Generic, Iterable, Iterator, List, Optional, Set, Tuple,
     TypeVar, Union,
 )
+from typing_extensions import deprecated
 from collections import OrderedDict
 from enum import Enum
 from pathlib import Path
@@ -11,7 +12,6 @@ import io
 import os
 import re
 import shutil
-import warnings
 
 import attrs
 
@@ -94,18 +94,15 @@ ANIM_EVENT_FOOTSTEP = {
 ANIM_EVENT_PARTICLE = AnimEvents.AE_CL_CREATE_PARTICLE_EFFECT
 
 
+@deprecated(
+    'Use EntityDef.engine_def() instead if possible, or FGD.engine_dbase() '
+    'if all entities are required.'
+)
 def load_fgd() -> FGD:
     """Extract the local copy of FGD data.
 
     This allows the analysis to not depend on local files.
     """
-    import warnings
-    warnings.warn(
-        'Use EntityDef.engine_def() instead if possible, or FGD.engine_dbase() '
-        'if all entities are required.',
-        DeprecationWarning,
-        stacklevel=2,
-    )
     return FGD.engine_dbase()
 
 
@@ -771,9 +768,9 @@ class PackList:
         if cache_file is not None:
             self.particles.save_cache(cache_file)
 
+    @deprecated('Renamed to write_soundscript_manifest()')
     def write_manifest(self) -> None:
         """Deprecated, call write_soundscript_manifest()."""
-        warnings.warn('Renamed to write_soundscript_manifest()', DeprecationWarning)
         self.write_soundscript_manifest()
 
     def write_soundscript_manifest(self) -> None:
@@ -817,11 +814,8 @@ class PackList:
         for mat in bsp.textures:
             self.pack_file(f'materials/{mat.lower()}.vmt', FileType.MATERIAL)
 
+    @deprecated("The provided FGD is no longer used, call pack_with_ents instead.",)
     def pack_fgd(self, vmf: VMF, fgd: FGD, mapname: str = '', tags: Iterable[str] = ()) -> None:
-        warnings.warn(
-            "The provided FGD is no longer used, call pack_with_ents instead.",
-            DeprecationWarning, stacklevel=2,
-        )
         self.pack_from_ents(vmf, mapname, tags)
 
     def pack_from_ents(
@@ -1408,22 +1402,22 @@ class PackList:
                 self.pack_file(mdl_attr.val_string, FileType.MODEL)
 
 
+@deprecated(
+    'Using entclass_resources() is deprecated, access EntityDef.engine_cls() and '
+    'then EntityDef.get_resources() instead.',
+)
 def entclass_resources(classname: str) -> Iterable[Tuple[str, FileType]]:
     """Fetch a list of resources this entity class is known to use in code.
 
     :deprecated: Use :py:meth:`EntityDef.engine_def() <srctools.fgd.EntityDef.engine_def>` \
     then :py:meth:`EntityDef.get_resources() <srctools.fgd.EntityDef.get_resources>`.
     """
-    warnings.warn(
-        'Using entclass_resources() is deprecated, access EntityDef.engine_cls() and then '
-        'EntityDef.get_resources() instead.',
-        DeprecationWarning, stacklevel=2,
-    )
     ent_def = EntityDef.engine_def(classname)
     for filetype, filename in ent_def.get_resources(ResourceCtx(), ent=None):
         yield (filename, filetype)
 
 
+@deprecated('Using entclass_canonicalise() is deprecated, access EntityDef.engine_def() instead.')
 def entclass_canonicalise(classname: str) -> str:
     """Canonicalise classnames - some ents have old classnames for compatibility and the like.
 
@@ -1433,10 +1427,6 @@ def entclass_canonicalise(classname: str) -> str:
     :deprecated: Use :py:meth:`EntityDef.engine_def() <srctools.fgd.EntityDef.engine_def>`, then \
     check if the entity is an alias.
     """
-    warnings.warn(
-        'Using entclass_canonicalise() is deprecated, access EntityDef.engine_def() instead.',
-        DeprecationWarning, stacklevel=2,
-    )
     ent_def = EntityDef.engine_def(classname)
     if ent_def.is_alias:
         try:
@@ -1450,6 +1440,10 @@ def entclass_canonicalise(classname: str) -> str:
 entclass_canonicalize = entclass_canonicalise  # noqa  # America.
 
 
+@deprecated(
+    'Using entclass_packfunc() is deprecated, access FGD.engine_db() and '
+    'then EntityDef.get_resources() instead.'
+)
 def entclass_packfunc(classname: str) -> Callable[[PackList, Entity], object]:
     """For some entities, they have unique packing behaviour depending on keyvalues.
 
@@ -1457,11 +1451,6 @@ def entclass_packfunc(classname: str) -> Callable[[PackList, Entity], object]:
 
     :deprecated: Use :py:func:`EntityDef.engine_cls()` then :py:func:`EntityDef.get_resources()`.
     """
-    warnings.warn(
-        'Using entclass_packfunc() is deprecated, access FGD.engine_db() and then '
-        'EntityDef.get_resources() instead.',
-        DeprecationWarning, stacklevel=2,
-    )
     ent_def = EntityDef.engine_def(classname)
 
     def pack_shim(packlist: PackList, ent: Entity) -> None:
@@ -1473,13 +1462,10 @@ def entclass_packfunc(classname: str) -> Callable[[PackList, Entity], object]:
     return pack_shim
 
 
+@deprecated('Using entclass_iter() is deprecated, access FGD.engine_db() instead.')
 def entclass_iter() -> Collection[str]:
     """Yield all classnames with known behaviour.
 
     :deprecated: Use :py:func:`FGD.engine_db()` instead.
     """
-    warnings.warn(
-        'Using entclass_iter() is deprecated, access FGD.engine_db() instead.',
-        DeprecationWarning, stacklevel=2,
-    )
     return EntityDef.engine_classes()

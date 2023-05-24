@@ -11,6 +11,7 @@ Version (dev)
 * Handle the special `$gender` "variable" in WAV filenames.
 * Add `prop_door_rotating` class resource function.
 * Remove `weapon_script` class resource function, instead use a direct resource in the FGD.
+* Use `typing_extensions.deprecated` to mark functions and methods which should not be used.
 
 --------------
 Version 2.3.11

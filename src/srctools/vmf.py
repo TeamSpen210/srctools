@@ -8,7 +8,7 @@ from typing import (
     KeysView, List, Mapping, Match, MutableMapping, Optional, Pattern, Set, Tuple, TypeVar,
     Union, ValuesView, overload,
 )
-from typing_extensions import Final, Literal, TypeAlias
+from typing_extensions import Final, Literal, TypeAlias, deprecated
 from array import ArrayType as Array
 from collections import defaultdict
 from contextlib import suppress
@@ -2087,12 +2087,12 @@ class Side:
                 vert_tl, vert_br, vert_tr,
             )
 
+    @deprecated('This is useless and will be removed.')
     def plane_desc(self) -> str:
         """Return a string which describes this face.
 
          This is for use in texture randomisation.
          """
-        warnings.warn('This is useless and will be removed.', DeprecationWarning)
         return self.planes[0].join(' ') + self.planes[1].join(' ') + self.planes[2].join(' ')
 
     def normal(self) -> Vec:

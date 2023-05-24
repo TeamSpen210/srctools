@@ -22,7 +22,10 @@ from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, Iterator, List, NamedTuple,
     Optional, SupportsFloat, Tuple, Type, TypeVar, Union, cast,
 )
-from typing_extensions import Final, Literal, Protocol, TypeAlias, TypeGuard, final, overload
+from typing_extensions import (
+    Final, Literal, Protocol, TypeAlias, TypeGuard, deprecated, final,
+    overload,
+)
 import contextlib
 import math
 import warnings
@@ -1410,6 +1413,7 @@ class Vec(VecBase):
             raise KeyError(f'Invalid axis: {ind!r}')
 
     # Deprecated, so no need to duplicate for FrozenVec.
+    @deprecated("Use vec @ Angle() instead.")
     def rotate(
         self,
         pitch: float = 0.0,
@@ -1424,7 +1428,6 @@ class Vec(VecBase):
         If round is True, all values will be rounded to 6 decimals
         (since these calculations always have small inprecision.)
         """
-        warnings.warn("Use vec @ Angle() instead.", DeprecationWarning, stacklevel=2)
         mat = Py_Matrix.from_angle(Py_Angle(pitch, yaw, roll))
         # noinspection PyProtectedMember
         mat._vec_rot(self)
@@ -1434,6 +1437,7 @@ class Vec(VecBase):
             self._z = round(self._z, 6)
         return self
 
+    @deprecated("Use vec @ Angle.from_str() instead.")
     def rotate_by_str(
         self, ang: str,
         pitch: float = 0.0, yaw: float = 0.0, roll: float = 0.0,
@@ -1443,7 +1447,6 @@ class Vec(VecBase):
 
         :deprecated: use `Vec(...) @ Angle.from_str(...)` instead.
         """
-        warnings.warn("Use vec @ Angle.from_str() instead.", DeprecationWarning, stacklevel=2)
         mat = Py_Matrix.from_angle(Py_Angle.from_str(ang, pitch, yaw, roll))
         # noinspection PyProtectedMember
         mat._vec_rot(self)
@@ -1453,6 +1456,7 @@ class Vec(VecBase):
             self._z = round(self.z, 6)
         return self
 
+    @deprecated('Use Matrix.from_basis().to_angle()')
     def to_angle_roll(self, z_norm: VecUnion, stride: int = 0) -> 'Angle':
         """Produce a Source Engine angle with roll.
 
@@ -1463,9 +1467,9 @@ class Vec(VecBase):
             axis will point in this direction.
         :param stride: is no longer used, it defined the roll angles to try.
         """
-        warnings.warn('Use Matrix.from_basis().to_angle()', DeprecationWarning)
         return Py_Matrix.from_basis(x=self, z=z_norm).to_angle()
 
+    @deprecated('Use Matrix.axis_angle().to_angle()')
     def rotation_around(self, rot: float = 90) -> 'Angle':
         """For an axis-aligned normal, return the angles which rotate around it.
 
@@ -1473,7 +1477,6 @@ class Vec(VecBase):
         :py:func:`MatrixBase.to_angle()`. :py:func:`~MatrixBase.axis_angle()` works for any \
         arbitary axis.
         """
-        warnings.warn('Use Matrix.axis_angle().to_angle()', DeprecationWarning)
         if self._x and not self._y and not self._z:
             return Py_Angle(roll=math.copysign(rot, self._x))
         elif self._y and not self.x and not self._z:

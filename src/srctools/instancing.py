@@ -7,6 +7,7 @@ from pathlib import Path
 import warnings
 
 import attrs
+from typing_extensions import deprecated, overload
 
 from srctools.fgd import FGD, EntityDef, EntityTypes, ValueTypes
 from srctools.filesys import FileSystem, FileSystemChain, RawFileSystem
@@ -308,6 +309,27 @@ def reset_keyvalue_warnings() -> None:
     This resets the internal tracker so the messages will be repeated.
     """
     _UNKNOWN_KV.clear()
+
+
+@overload
+def collapse_one(
+    vmf: VMF,
+    inst: Instance,
+    file: InstanceFile,
+    *,
+    visgroup: Union[bool, VisGroup] = False,
+    engine_cache: MutableMapping[str, EntityDef] = srctools.EmptyMapping,
+) -> None: ...
+@overload
+@deprecated('fgd parameter is deprecated, use engine_cache instead', category=None)
+def collapse_one(
+    vmf: VMF,
+    inst: Instance,
+    file: InstanceFile,
+    *,
+    visgroup: Union[bool, VisGroup] = False,
+    fgd: FGD,  # <<<
+) -> None: ...
 
 
 def collapse_one(

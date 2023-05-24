@@ -6,7 +6,7 @@ from typing import (
     Any, Callable, ClassVar, Dict, Generator, Generic, Hashable, Iterator, List, Mapping,
     Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
-from typing_extensions import TypedDict
+from typing_extensions import TypedDict, deprecated
 from enum import Enum, Flag
 from io import BytesIO
 from weakref import WeakKeyDictionary
@@ -934,7 +934,7 @@ class VisLeaf:
     min_water_dist: int = 65535
 
     def test_point(self, point: Vec) -> Optional['VisLeaf']:
-        """Test the given point against us, returning ourself or None."""
+        """Test the given point against us, returning ourselves or None."""
         return self if point.in_bbox(self.mins, self.maxes) else None
 
 
@@ -955,15 +955,15 @@ class VisTree:
     child_pos: Union['VisTree', VisLeaf] = attrs.field(default=None)
 
     @property
+    @deprecated('Use tree.plane.normal')
     def plane_norm(self) -> Vec:
         """Deprecated alias for tree.plane.normal."""
-        warnings.warn('Use tree.plane.normal', DeprecationWarning, stacklevel=2)
         return self.plane.normal
 
     @property
+    @deprecated('Use tree.plane.dist')
     def plane_dist(self) -> float:
         """Deprecated alias for tree.plane.dist."""
-        warnings.warn('Use tree.plane.dist', DeprecationWarning, stacklevel=2)
         return self.plane.dist
 
     def test_point(self, point: Vec) -> Optional[VisLeaf]:
@@ -1695,14 +1695,18 @@ class BSP:
             # Apply all the deferred writes.
             defer.write()
 
+    @deprecated("No longer has functionality")
     def read_header(self) -> None:
         """No longer used."""
-        warnings.warn('Does nothing.', DeprecationWarning, stacklevel=2)
 
+    @deprecated("No longer has functionality")
     def read_game_lumps(self) -> None:
         """No longer used."""
-        warnings.warn('Does nothing.', DeprecationWarning, stacklevel=2)
 
+    @deprecated(
+        'This is deprecated, use the appropriate property, '
+        'or the .data attribute of the lump.',
+    )
     def replace_lump(
         self,
         new_name: str,
@@ -1713,11 +1717,6 @@ class BSP:
 
         This is deprecated, simply assign to the .data attribute of the lump.
         """
-        warnings.warn(
-            'This is deprecated, use the appropriate property, '
-            'or the .data attribute of the lump.',
-            DeprecationWarning, stacklevel=2,
-        )
         if isinstance(lump, BSP_LUMPS):
             lump = self.lumps[lump]
 
@@ -2514,9 +2513,9 @@ class BSP:
         writes.write()
         return data.getvalue()
 
+    @deprecated('Access bsp.textures')
     def read_texture_names(self) -> Iterator[str]:
         """Iterate through all brush textures in the map."""
-        warnings.warn('Access bsp.textures', DeprecationWarning, stacklevel=2)
         return iter(self.textures)
 
     def _lmp_read_textures(self, tex_data: bytes) -> Iterator[str]:
@@ -2864,12 +2863,12 @@ class BSP:
         self.lumps[BSP_LUMPS.OVERLAY_SYSTEM_LEVELS].data = levels_buf.getvalue()
 
     @contextlib.contextmanager
+    @deprecated('Use BSP.pakfile to access the cached archive.')
     def packfile(self) -> Iterator[ZipFile]:
         """A context manager to allow editing the packed content.
 
         When successfully exited, the zip will be rewritten to the BSP file.
         """
-        warnings.warn('Use BSP.pakfile to access the cached archive.', DeprecationWarning, stacklevel=2)
         pak_lump = self.lumps[BSP_LUMPS.PAKFILE]
         data_file = BytesIO(pak_lump.data)
 
@@ -2884,12 +2883,12 @@ class BSP:
         # here.
         pak_lump.data = data_file.getvalue()
 
+    @deprecated('Use BSP.ents directly.')
     def read_ent_data(self) -> VMF:
         """Deprecated function to parse the entdata lump.
 
         Use BSP.ents directly.
         """
-        warnings.warn('Use BSP.ents directly.', DeprecationWarning, stacklevel=2)
         return self._lmp_read_ents(self.get_lump(BSP_LUMPS.ENTITIES))
 
     def _lmp_read_ents(self, ent_data: bytes) -> VMF:
@@ -2986,6 +2985,7 @@ class BSP:
         return self.write_ent_data(vmf, self.out_comma_sep, _show_dep=False)
 
     @staticmethod
+    @deprecated('Modify bsp.ents instead', category=None)
     def write_ent_data(vmf: VMF, use_comma_sep: Optional[bool] = None, *, _show_dep: bool = True) -> bytes:
         """Generate the entity data lump.
 
@@ -2995,7 +2995,7 @@ class BSP:
         :param use_comma_sep: This is used to force using either commas, or ``0x1D`` in I/O.
         """
         if _show_dep:
-            warnings.warn('Modify BSP.ents instead', DeprecationWarning, stacklevel=2)
+            warnings.warn('Modify bsp.ents instead', DeprecationWarning, stacklevel=2)
         out = BytesIO()
         for ent in itertools.chain([vmf.spawn], vmf.entities):
             out.write(b'{\n')
@@ -3024,20 +3024,20 @@ class BSP:
             # Strip null chars off the end, and convert to a str.
             yield padded_name.rstrip(b'\x00').decode('ascii')
 
+    @deprecated('Access bsp.props instead')
     def static_props(self) -> Iterator['StaticProp']:
         """Read in the Static Props lump.
 
         Deprecated, use bsp.props.
         """
-        warnings.warn('Access BSP.props instead', DeprecationWarning, stacklevel=2)
         return iter(self.props)
 
+    @deprecated('Assign to bsp.props instead')
     def write_static_props(self, props: List['StaticProp']) -> None:
         """Remake the static prop lump.
 
         Deprecated, bsp.props is stored and resaved.
         """
-        warnings.warn('Assign to BSP.props', DeprecationWarning, stacklevel=2)
         self.props = props
 
     def _lmp_read_props(self, vers_num: int, data: bytes) -> Iterator['StaticProp']:
@@ -3310,7 +3310,10 @@ class BSP:
 
             if version is StaticPropVersion.V_CHAOS_V13:
                 # Three floats for non-uniform scaling
-                scaling_3 = prop.scaling if isinstance(prop.scaling, Vec) else Vec(prop.scaling, prop.scaling, prop.scaling)
+                if isinstance(prop.scaling, Vec):
+                    scaling_3 = prop.scaling
+                else:
+                    scaling_3 = Vec(prop.scaling, prop.scaling, prop.scaling)
 
                 prop_lump.write(struct.pack(
                     '<fff',

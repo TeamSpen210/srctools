@@ -26,12 +26,10 @@ from typing import (
     Any, BinaryIO, Dict, Generic, Iterator, List, Mapping, Optional, Set, TextIO, Tuple, Type,
     TypeVar, Union, cast,
 )
-from typing_extensions import Final, Self
+from typing_extensions import Final, Self, deprecated
 from zipfile import ZipFile, ZipInfo
 import io
 import os
-import types
-import warnings
 
 from srctools import StringPath
 from srctools.keyvalues import Keyvalues
@@ -152,19 +150,17 @@ class FileSystem(Generic[_FileDataT]):
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.path!r})'
 
+    @deprecated('References concept removed, filesystems are always open.')
     def open_ref(self) -> None:
         """:deprecated: No longer needs to be called."""
-        warnings.warn(
-            'References concept removed, filesystems are always open.',
-            DeprecationWarning, stacklevel=2,
-        )
 
+    @deprecated('References concept removed, filesystems are always open.')
     def close_ref(self) -> None:
         """:deprecated: No longer needs to be called."""
-        warnings.warn(
-            'References concept removed, filesystems are always open.',
-            DeprecationWarning, stacklevel=2,
-        )
+
+    @deprecated('References concept removed, filesystems are always open.')
+    def _check_open(self) -> None:
+        """Ensure self._ref is valid."""
 
     def read_kv1(self, path: str, encoding: str = 'utf8') -> Keyvalues:
         """Read a Keyvalues1 file from the filesystem.
@@ -177,20 +173,13 @@ class FileSystem(Generic[_FileDataT]):
                 self.path + ':' + path,
             )
 
+    @deprecated('Use FileSystem.read_kv1() instead.')
     def read_prop(self, path: str, encoding: str = 'utf8') -> Keyvalues:
         """Read a Keyvalues1 file from the filesystem.
 
         :deprecated: Use :py:meth:`~FileSystem.read_kv1()`.
         """
-        warnings.warn('Use FileSystem.read_kv1() instead.', DeprecationWarning, stacklevel=2)
         return self.read_kv1(path, encoding)
-
-    def _check_open(self) -> None:
-        """Ensure self._ref is valid."""
-        warnings.warn(
-            'References concept removed, filesystems are always open.',
-            DeprecationWarning, stacklevel=2,
-        )
 
     def __eq__(self, other: object) -> bool:
         """Filesystems are equal if they have the same type and same path."""
@@ -201,23 +190,15 @@ class FileSystem(Generic[_FileDataT]):
     def __hash__(self) -> int:
         return hash(type(self).__name__ + os.path.normpath(self.path))
 
+    @deprecated('References concept removed, filesystems are always open.')
     def __enter__(self: FileSysT) -> FileSysT:
         """:deprecated: No longer needs to be used as a context manager."""
-        warnings.warn(
-            'References concept removed, filesystems are always open.',
-            DeprecationWarning, stacklevel=2,
-        )
         return self
 
-    def __exit__(
-        self,
-        exc_type: Type[BaseException], exc_val: BaseException, exc_tb: types.TracebackType,
-    ) -> None:
+    @deprecated('References concept removed, filesystems are always open.')
+    def __exit__(self, *args: object) -> None:
         """:deprecated: No longer needs to be used as a context manager."""
-        warnings.warn(
-            'References concept removed, filesystems are always open.',
-            DeprecationWarning, stacklevel=2,
-        )
+        return None
 
     def __iter__(self: FileSysT) -> Iterator[File[FileSysT]]:
         """Iteration yields each file."""
