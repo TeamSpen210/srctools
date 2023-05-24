@@ -171,10 +171,7 @@ class SurfaceProp:
 
     def copy(self) -> 'SurfaceProp':
         """Duplicate this surfaceprop."""
-        copy = SurfaceProp.__new__(SurfaceProp)
-        for field in attrs.fields(SurfaceProp):
-            setattr(copy, field.name, getattr(self, field.name))
-        return copy
+        return attrs.evolve(self)
 
     __copy__ = copy
 
