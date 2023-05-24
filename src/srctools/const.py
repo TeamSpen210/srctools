@@ -28,7 +28,8 @@ def add_unknown(ns: MutableMapping[str, Any], long: bool = False) -> None:
         if isinstance(n, int):
             used_bits |= n
 
-    for i in range(64 if long else 32):
+    # The zero bit is always available as a pseudo-flag.
+    for i in range(1, 64 if long else 32):
         bit = 1 << i
         if not bit & used_bits:
             # We don't have to stick to var naming rules, so just name it
