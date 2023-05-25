@@ -43,11 +43,27 @@ jobs:
         ruff check src/srctools/
       # Override regular check, to run all tools even if one fails.
       if: (success() || failure()) && steps.install_deps.outcome == 'success'
-    # Test both ends of the version, to catch version changes.
+
+    # Check every version.
     - name: MyPy - Python 3.7
       run: |
         mypy --version
         mypy --python-version 3.7 src/srctools/ type_tests/
+      if: (success() || failure()) && steps.install_deps.outcome == 'success'
+    - name: MyPy - Python 3.8
+      run: |
+        mypy --version
+        mypy --python-version 3.8 src/srctools/ type_tests/
+      if: (success() || failure()) && steps.install_deps.outcome == 'success'
+    - name: MyPy - Python 3.9
+      run: |
+        mypy --version
+        mypy --python-version 3.9 src/srctools/ type_tests/
+      if: (success() || failure()) && steps.install_deps.outcome == 'success'
+    - name: MyPy - Python 3.10
+      run: |
+        mypy --version
+        mypy --python-version 3.10 src/srctools/ type_tests/
       if: (success() || failure()) && steps.install_deps.outcome == 'success'
     - name: MyPy - Python 3.11
       run: |
