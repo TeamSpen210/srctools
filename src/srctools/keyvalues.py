@@ -939,7 +939,10 @@ class Keyvalues:
                 try:
                     self.find_key(index)._value = value
                 except NoKeyError:
-                    self._value.append(Keyvalues(index, value))
+                    if isinstance(value, str):
+                        self._value.append(Keyvalues(index, value))
+                    else:
+                        self._value.append(Keyvalues(index, list(value)))
         else:
             raise TypeError(f'Unknown key type: {index!r}')
 
