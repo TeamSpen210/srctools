@@ -169,12 +169,12 @@ class Keyvalues:
     _value: _KV_Value
 
     @overload
-    def __init__(self, name: str, value: _KV_Value) -> None: ...
+    def __init__(self, name: str, value: Union[List['Keyvalues'], str]) -> None: ...
     @overload
     @deprecated("Root properties will change to a new class.", category=None)
-    def __init__(self, name: None, value: _KV_Value) -> None: ...
+    def __init__(self, name: None, value: Union[List['Keyvalues'], str]) -> None: ...
 
-    def __init__(self, name: Optional[str], value: _KV_Value) -> None:
+    def __init__(self, name: Optional[str], value: Union[List['Keyvalues'], str]) -> None:
         """Create a new keyvalues instance."""
         if name is None:
             warnings.warn("Root properties will change to a new class.", DeprecationWarning, 2)
