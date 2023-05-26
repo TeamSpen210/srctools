@@ -159,24 +159,12 @@ def _check_tuple3(obj: object) -> TypeGuard[Tuple3]:
     return False
 
 
+@deprecated('Vec_tuple is deprecated, use FrozenVec instead.')
 class Vec_tuple(NamedTuple):
     """An immutable tuple, useful for dictionary keys."""
     x: float
     y: float
     z: float
-
-
-if not TYPE_CHECKING:
-    _old_vec_tup = Vec_tuple.__new__
-
-    def _vec_tup_new(*args: Any, **kwargs: Any) -> Vec_tuple:
-        warnings.warn(
-            'Vec_tuple is deprecated, use FrozenVec instead.',
-            DeprecationWarning, stacklevel=2,
-        )
-        return _old_vec_tup(*args, **kwargs)
-    # noinspection PyDeprecation
-    Vec_tuple.__new__ = _vec_tup_new
 
 
 if TYPE_CHECKING:
