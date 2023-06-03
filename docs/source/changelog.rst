@@ -5,9 +5,9 @@ Changelog
 	:local:
 	:backlinks: none
 
--------------
-Version (dev)
--------------
+--------------
+Version 2.3.12
+--------------
 * Handle the special `$gender` "variable" in WAV filenames.
 * Add `prop_door_rotating` class resource function.
 * Remove `weapon_script` class resource function, instead use a direct resource in the FGD.
