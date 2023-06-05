@@ -23,7 +23,7 @@ See the :py:class:`srctools.game.Game` class for parsing ``gameinfo.txt`` files 
 To mount a :py:class:`~srctools.bsp.BSP` file, use ``ZipFileSystem(bsp.pakfile)``.
 """
 from typing import (
-    Any, BinaryIO, Dict, Generic, Iterator, List, Mapping, Optional, Set, TextIO, Tuple, Type,
+    Any, BinaryIO, Dict, Generic, Iterator, List, Mapping, Optional, Set, TextIO, Tuple,
     TypeVar, Union, cast,
 )
 from typing_extensions import Final, Self, deprecated
@@ -191,7 +191,7 @@ class FileSystem(Generic[_FileDataT]):
         return hash(type(self).__name__ + os.path.normpath(self.path))
 
     @deprecated('References concept removed, filesystems are always open.')
-    def __enter__(self: FileSysT) -> FileSysT:
+    def __enter__(self) -> Self:
         """:deprecated: No longer needs to be used as a context manager."""
         return self
 
@@ -200,18 +200,18 @@ class FileSystem(Generic[_FileDataT]):
         """:deprecated: No longer needs to be used as a context manager."""
         return None
 
-    def __iter__(self: FileSysT) -> Iterator[File[FileSysT]]:
+    def __iter__(self) -> Iterator[File[Self]]:
         """Iteration yields each file."""
         return self.walk_folder('')
 
-    def __getitem__(self: FileSysT, name: str) -> File[FileSysT]:
+    def __getitem__(self, name: str) -> File[Self]:
         return self._get_file(name)
 
     def __contains__(self, name: str) -> bool:
         return self._file_exists(name)
 
     @classmethod
-    def _get_data(cls: Type[FileSysT], file: File[FileSysT]) -> _FileDataT:
+    def _get_data(cls, file: File[Self]) -> _FileDataT:
         """Accessor for file._data, to show the relationship to the type
         checker.
 
@@ -229,29 +229,29 @@ class FileSystem(Generic[_FileDataT]):
         except FileNotFoundError:
             return False
 
-    def _get_file(self: FileSysT, name: str) -> File[FileSysT]:
+    def _get_file(self, name: str) -> File[Self]:
         """Return a specific file."""
         raise NotImplementedError
 
-    def walk_folder(self: FileSysT, folder: str = '') -> Iterator[File[FileSysT]]:
+    def walk_folder(self, folder: str = '') -> Iterator[File[Self]]:
         """Iterate over all files in the specified subfolder, yielding each."""
         raise NotImplementedError
 
-    def open_str(self: FileSysT, name: Union[str, File[FileSysT]], encoding: str = 'utf8') -> TextIO:
+    def open_str(self, name: Union[str, File[Self]], encoding: str = 'utf8') -> TextIO:
         """Open a file in unicode mode or raise FileNotFoundError.
 
         This should be closed when done.
         """
         raise NotImplementedError
 
-    def open_bin(self: FileSysT, name: Union[str, File[FileSysT]]) -> BinaryIO:
+    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:
         """Open a file in bytes mode or raise FileNotFoundError.
 
         This should be closed when done.
         """
         raise NotImplementedError
 
-    def _get_cache_key(self: FileSysT, file: File[FileSysT]) -> int:
+    def _get_cache_key(self, file: File[Self]) -> int:
         """Return a checksum or last-modified date suitable for caching.
 
         This allows preventing reparsing the file. If not possible, return CACHE_KEY_INVALID (-1).
