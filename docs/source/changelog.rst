@@ -15,10 +15,10 @@ Version (dev)
 --------------
 Version 2.3.12
 --------------
-* Handle the special `$gender` "variable" in WAV filenames.
-* Add `prop_door_rotating` class resource function.
-* Remove `weapon_script` class resource function, instead use a direct resource in the FGD.
-* Use `typing_extensions.deprecated` to mark functions and methods which should not be used.
+* Handle the special ``$gender`` "variable" in WAV filenames.
+* Add ``prop_door_rotating`` class resource function.
+* Remove ``weapon_script`` class resource function, instead use a direct resource in the FGD.
+* Use :py:func:`typing_extensions.deprecated` to mark functions and methods which should not be used.
 
 --------------
 Version 2.3.11
@@ -27,7 +27,7 @@ Version 2.3.11
 * Add support for detecting and packing weapon scripts.
 * Make custom model gibs inherit skinset when packing.
 * Add :py:meth:`srctools.bsp.BModel.clear_physics()`, to delete physics data for a brush model.
-* Add :py:class:`srctools.Keyvalues.LeafKeyvalueError`, raised when block-only operations are
+* Add :py:class:`srctools.keyvalues.LeafKeyvalueError`, raised when block-only operations are
   attempted on leaf keyvalues. This improves the messages raised and makes them consistent.
 * Fix :py:class:`srctools.vtf.Frame` indexing behaviour. It would access totally incorrect pixels.
 * Correctly read/write L4D2's BSP format.
@@ -61,7 +61,9 @@ Version 2.3.8
 
 * Fix :py:mod:`srctools.logger` discarding :external:py:class:`MultiError` (or its backport) if it
   bubbles up to the toplevel.
-* Tweak VMF ``localise()`` and ``translate()`` type hints to allow :py:class:`~srctools.math.FrozenVec` as the origin.
+* Tweak VMF :py:meth:`localise() <srctools.vmf.Solid.localise>` and
+  :py:meth:`translate()  <srctools.vmf.Solid.translate>` type hints to allow
+  :py:class:`~srctools.math.FrozenVec` as the origin.
 * Make movement and rotation of displacements work correctly.
 * Handle pitch keyvalues correctly when instancing, only rotating if it is a specific type.
 * Changed :py:func:`srctools.instancing.collapse_one()` to use the entclass database directly,
