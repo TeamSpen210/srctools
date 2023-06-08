@@ -448,17 +448,18 @@ class StaticPropFlags(Flag):
 
     DOES_FADE = 0x01  # Is the fade distances set?
     HAS_LIGHTING_ORIGIN = 0x02  # info_lighting entity used.
-    DISABLE_DRAW = 0x04  # Changes at runtime.
+    #: This was nodraw in earlier versions, but it now prevents projected textures from affecting the prop.
+    NO_FLASHLIGHT = DISABLE_DRAW = 0x04
     IGNORE_NORMALS = 0x08
     NO_SHADOW = 0x10
-    SCREEN_SPACE_FADE = 0x20  # Use screen space fading. Obsolete since at least ASW.
+    SCREEN_SPACE_FADE = 0x20  #: Use screen space fading. Obsolete since at least ASW.
     NO_PER_VERTEX_LIGHTING = 0x40
     NO_SELF_SHADOWING = 0x80
 
     # These are set in the secondary flags section.
-    NO_FLASHLIGHT = 0x100  # Disable projected texture lighting.
-    NO_LIGHTMAP = 0x100   # In V_LIGHTMAP only, disable per-luxel lighting.
-    BOUNCED_LIGHTING = 0x0400  # Bounce lighting off the prop.
+    NO_SHADOW_DEPTH = 0x100  #: Disable affecting projected texture lighting.
+    NO_LIGHTMAP = 0x100   #: In ``V_LIGHTMAP`` only, disable per-luxel lighting.
+    BOUNCED_LIGHTING = 0x0400  #: Bounce lighting off the prop.
 
     # Add _BIT_XX members, so any bit combo can be preserved.
     add_unknown(locals(), long=True)
