@@ -12,9 +12,10 @@ exclude src/srctools/*.cpp
 exclude src/srctools/*.c
 global-exclude *.pyc
 
-# Remove build artifacts, if they happen to be here.
+# Remove build artifacts and other generated stuff, if they happen to be here.
 prune .tox
 prune docs/build
+prune tests/.ruff_cache
 
 # FGD database.
 include src/srctools/fgd.lzma
