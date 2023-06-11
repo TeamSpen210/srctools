@@ -290,16 +290,6 @@ cdef AngleBase pick_ang_type(type left, type right):
         return <AngleBase>Angle.__new__(Angle)
 
 
-cdef MatrixBase pick_mat_type(type left, type right):
-    # Given the LHS and RHS types, determine the Matrix to create.
-    cdef bint frozen = False
-    # We use the type of the left, falling back to the right
-    # if the left isn't a matrix.
-    if left is FrozenMatrix or (right is FrozenMatrix and left is not Matrix):
-        return <MatrixBase>FrozenMatrix.__new__(FrozenMatrix)
-    else:
-        return <MatrixBase>Matrix.__new__(Matrix)
-
 cdef bint vec_check(obj) except -1:
     # Check if this is a vector instance.
     return type(obj) is Vec or type(obj) is FrozenVec
