@@ -42,3 +42,5 @@ jobs:
       # produced.
       run: |
         python -X dev -Werror -m pytest tests
+      # Don't fail for beta versions of Python.
+      continue-on-error: ${{ contains('dev', matrix.python-version) }}
