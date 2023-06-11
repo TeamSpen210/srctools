@@ -36,7 +36,7 @@ jobs:
         python -m pip install -r test-requirements.txt
     - name: Build package
       run: |
-        python -m pip install --editable .
+        python -m pip -v install --editable .
     - name: Test with pytest
       # Enable Python's debug mode to do additional checks, and error if any uncaught warnings are
       # produced.
