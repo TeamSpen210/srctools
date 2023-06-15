@@ -455,6 +455,8 @@ class Tokenizer(BaseTokenizer):
 
     def _get_token(self) -> Tuple[Token, str]:
         """Return the next token, value pair."""
+        comment_buf: Optional[List[str]]
+        value_chars: List[str]
         while True:
             next_char = self._next_char()
             if next_char is None:  # EOF, use a dummy string.
@@ -552,7 +554,7 @@ class Tokenizer(BaseTokenizer):
 
             # Strings
             elif next_char == '"':
-                value_chars: List[str] = []
+                value_chars = []
                 last_was_cr = False
                 while True:
                     next_char = self._next_char()
