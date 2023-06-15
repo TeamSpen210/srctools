@@ -11,6 +11,8 @@ Version (dev)
 * Renamed :py:attr:`!NO_FLASHLIGHT` in :py:attr:`bsp.StaticPropFlags <srctools.bsp.StaticPropFlags>` to 
   :py:attr:`NO_SHADOW_DEPTH <srctools.bsp.StaticPropFlags.NO_SHADOW_DEPTH>` to reflect the actual 
   behaviour of the flag, added the real :py:attr:`NO_FLASHLIGHT <srctools.bsp.StaticPropFlags.NO_FLASHLIGHT>` define.
+* Add :py:attr:`Tokenizer.preserve_comments <srctools.tokenizer.Tokenizer.preserve_comments>`, which
+  produces :py:const:`COMMENT <srctools.tokenizer.Token.COMMENT>` tokens instead of discarding them.
 
 --------------
 Version 2.3.12

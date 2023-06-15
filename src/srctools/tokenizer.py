@@ -94,23 +94,24 @@ class Token(Enum):
     NEWLINE = 2  #: Produced at the end of every line.
     PAREN_ARGS = 3  #: Parenthesised ``(data)``.
     DIRECTIVE = 4  #: ``#name`` (automatically casefolded).
+    COMMENT = 5  #: A ``//`` or ``/* */`` comment.
 
-    BRACE_OPEN = 5  #: A ``{`` character.
-    BRACE_CLOSE = 6  #: A ``}`` character.
+    BRACE_OPEN = 6  #: A ``{`` character.
+    BRACE_CLOSE = 7  #: A ``}`` character.
 
-    PROP_FLAG = 10  #: A ``[!flag]``
-    BRACK_OPEN = 11  #: A ``[`` character. Only used if ``PROP_FLAG`` is not.
-    BRACK_CLOSE = 12  #: A ``]`` character.
+    PROP_FLAG = 11  #: A ``[!flag]``
+    BRACK_OPEN = 12  #: A ``[`` character. Only used if ``PROP_FLAG`` is not.
+    BRACK_CLOSE = 13  #: A ``]`` character.
 
-    COLON = 13  #: A ``:`` character.
-    EQUALS = 14  #: A ``=`` character.
-    PLUS = 15  #: A ``+`` character.
-    COMMA = 16  #: A ``,`` character.
+    COLON = 14  #: A ``:`` character.
+    EQUALS = 15  #: A ``=`` character.
+    PLUS = 16  #: A ``+`` character.
+    COMMA = 17  #: A ``,`` character.
 
     @property
     def has_value(self) -> bool:
         """If true, this type has an associated value."""
-        return self.value in (1, 3, 4, 10)
+        return self.value in (1, 3, 4, 5, 11)
 
 
 _OPERATOR_VALS = {
@@ -226,6 +227,8 @@ class BaseTokenizer(abc.ABC):
                 message = f'Unexpected string = "{tok_val}"!'
             elif message is Token.DIRECTIVE:
                 message = f'Unexpected directive "#{tok_val}"!'
+            elif message is Token.COMMENT:
+                message = f'Unexpected comment "//{tok_val}"!'
             elif message is Token.EOF:
                 message = 'File ended unexpectedly!'
             elif message is Token.NEWLINE:
@@ -370,6 +373,7 @@ class Tokenizer(BaseTokenizer):
         then :py:const:`~Token.BRACK_CLOSE`.
     * allow_escapes controls whether ``\\n``-style escapes are expanded.
     * allow_star_comments if enabled allows ``/* */`` comments.
+    * preserve_comments causes :py:const:`Token.COMMENT` tokens to be produced.
     * colon_operator controls if ``:`` produces :py:const:`~Token.COLON` tokens, or is treated as
       a bare string.
     """
@@ -379,6 +383,7 @@ class Tokenizer(BaseTokenizer):
     string_bracket: bool
     allow_escapes: bool
     allow_star_comments: bool
+    preserve_comments: bool
     colon_operator: bool
     _last_was_cr: bool
 
@@ -387,9 +392,11 @@ class Tokenizer(BaseTokenizer):
         data: Union[str, Iterable[str]],
         filename: Optional[StringPath] = None,
         error: Type[TokenSyntaxError] = TokenSyntaxError,
+        *,
         string_bracket: bool = False,
         allow_escapes: bool = True,
         allow_star_comments: bool = False,
+        preserve_comments: bool = False,
         colon_operator: bool = False,
     ) -> None:
         # If a file-like object, automatically use the configured name.
@@ -420,6 +427,7 @@ class Tokenizer(BaseTokenizer):
         self.allow_escapes = bool(allow_escapes)
         self.allow_star_comments = bool(allow_star_comments)
         self.colon_operator = bool(colon_operator)
+        self.preserve_comments = bool(preserve_comments)
         self._last_was_cr = False
 
     def _next_char(self) -> Optional[str]:
@@ -479,6 +487,7 @@ class Tokenizer(BaseTokenizer):
             elif next_char == '/':
                 # The next must be another slash! (//)
                 comment_next = self._next_char()
+                comment_buf = [] if self.preserve_comments else None
                 if comment_next == '*':
                     # /* comment.
                     if self.allow_star_comments:
@@ -493,8 +502,10 @@ class Tokenizer(BaseTokenizer):
                                 )
                             elif next_char == '\n':
                                 self.line_num += 1
+                                if comment_buf is not None:
+                                    comment_buf.append(next_char)
                             elif next_char == '*':
-                                # Check next next character!
+                                # Check next, next character!
                                 next_next_char = self._next_char()
                                 if next_next_char is None:
                                     raise self.error(
@@ -508,6 +519,10 @@ class Tokenizer(BaseTokenizer):
                                     # We need to reparse this, to ensure
                                     # "**/" parses correctly!
                                     self.char_index -= 1
+                            elif comment_buf is not None:
+                                comment_buf.append(next_char)
+                        if comment_buf is not None:
+                            return Token.COMMENT, ''.join(comment_buf)
                     else:
                         raise self.error(
                             '/**/-style comments are not allowed!'
@@ -522,12 +537,18 @@ class Tokenizer(BaseTokenizer):
                     )
                 else:
                     # Skip to end of line
+                    comment_buf = [] if self.preserve_comments else None
                     while True:
                         next_char = self._next_char()
                         if next_char == '\n' or next_char is None:
                             break
+                        if comment_buf is not None:
+                            comment_buf.append(next_char)
+
                     # We want to produce the token for the end character.
                     self.char_index -= 1
+                    if comment_buf is not None:
+                        return Token.COMMENT, ''.join(comment_buf)
 
             # Strings
             elif next_char == '"':

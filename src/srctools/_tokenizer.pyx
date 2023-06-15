@@ -34,6 +34,7 @@ cdef:
     object PAREN_ARGS = Token.PAREN_ARGS
     object PROP_FLAG = Token.PROP_FLAG  # [!flag]
     object DIRECTIVE = Token.DIRECTIVE  # #name (automatically casefolded)
+    object COMMENT = Token.COMMENT
 
     object EOF = Token.EOF
     object NEWLINE = Token.NEWLINE
@@ -78,6 +79,7 @@ struct TokFlags {
     unsigned char allow_escapes: 1;
     unsigned char colon_operator: 1;
     unsigned char allow_star_comments: 1;
+    unsigned char preserve_comments: 1;
     unsigned char file_input: 1;
     unsigned char last_was_cr: 1;
 };
@@ -87,6 +89,7 @@ struct TokFlags {
         bint allow_escapes
         bint colon_operator
         bint allow_star_comments
+        bint preserve_comments
         # If set, the file_iter is a bound read() method.
         bint file_input
         # Records if the last character was a \r, so the next swallows \n.
@@ -145,6 +148,7 @@ cdef class BaseTokenizer:
             'allow_escapes': 0,
             'colon_operator': 0,
             'allow_star_comments': 0,
+            'preserve_comments': 0,
             'file_input': 0,
             'last_was_cr': 0,
         }
@@ -216,6 +220,8 @@ cdef class BaseTokenizer:
                 str_msg = f'Unexpected string = "{tok_val}"!'
             elif message is DIRECTIVE:
                 str_msg = f'Unexpected directive "#{tok_val}"!'
+            elif message is COMMENT:
+                str_msg = f'Unexpected comment "//{tok_val}"!'
             elif message is EOF:
                 str_msg = 'File ended unexpectedly!'
             elif message is NEWLINE:
@@ -302,27 +308,27 @@ cdef class BaseTokenizer:
 
         if tok_val == 0: # EOF
             value = ''
-        elif tok_val in (1, 3, 4, 10):  # STRING, PAREN_ARGS, DIRECTIVE, PROP_FLAG
+        elif tok_val in (1, 3, 4, 5, 11):  # STRING, PAREN_ARGS, DIRECTIVE, COMMENT, PROP_FLAG
             # Value parameter is required.
             if value is None:
                 raise ValueError(f'Value required for {tok!r}' '!')
         elif tok_val == 2:  # NEWLINE
             value = '\n'
-        elif tok_val == 5:  # BRACE_OPEN
+        elif tok_val == 6:  # BRACE_OPEN
             value = '{'
-        elif tok_val == 6:  # BRACE_CLOSE
+        elif tok_val == 7:  # BRACE_CLOSE
             value = '}'
-        elif tok_val == 11:  # BRACK_OPEN
+        elif tok_val == 12:  # BRACK_OPEN
             value = '['
-        elif tok_val == 12:  # BRACK_CLOSE
+        elif tok_val == 13:  # BRACK_CLOSE
             value = ']'
-        elif tok_val == 13:  # COLON
+        elif tok_val == 14:  # COLON
             value = ':'
-        elif tok_val == 14:  # EQUALS
+        elif tok_val == 15:  # EQUALS
             value = '='
-        elif tok_val == 15:  # PLUS
+        elif tok_val == 16:  # PLUS
             value = '+'
-        elif tok_val == 16: # COMMA
+        elif tok_val == 17: # COMMA
             value = ','
         else:
             raise ValueError(f'Unknown token {tok!r}')
@@ -412,9 +418,11 @@ cdef class Tokenizer(BaseTokenizer):
         data not None,
         object filename=None,
         error=None,
+        *,
         bint string_bracket=False,
         bint allow_escapes=True,
         bint allow_star_comments=False,
+        bint preserve_comments=False,
         bint colon_operator=False,
     ):
         # Early warning for this particular error.
@@ -428,6 +436,7 @@ cdef class Tokenizer(BaseTokenizer):
             'string_brackets': string_bracket,
             'allow_escapes': allow_escapes,
             'allow_star_comments': allow_star_comments,
+            'preserve_comments': preserve_comments,
             'colon_operator': colon_operator,
             'file_input': 0,
             'last_was_cr': 0,
@@ -516,6 +525,16 @@ cdef class Tokenizer(BaseTokenizer):
     def allow_star_comments(self, bint value) -> None:
         """Set if /**/ style comments are enabled."""
         self.flags.allow_star_comments = value
+
+    @property
+    def preserve_comments(self) -> bool:
+        """Check if comments will be output as tokens."""
+        return self.flags.preserve_comments
+
+    @preserve_comments.setter
+    def preserve_comments(self, bint value) -> None:
+        """Set if comments will be output as tokens."""
+        self.flags.preserve_comments = value
 
     @property
     def colon_operator(self) -> bool:
@@ -629,6 +648,7 @@ cdef class Tokenizer(BaseTokenizer):
             bint ascii_only
             uchar decode[5]
             bint last_was_cr
+            bint save_comments
 
         # Implement pushback directly for efficiency.
         if self.pushback_tok is not None:
@@ -679,6 +699,7 @@ cdef class Tokenizer(BaseTokenizer):
                 if next_char == b'*': # /* comment.
                     if self.flags.allow_star_comments:
                         start_line = self.line_num
+                        save_comments = self.flags.preserve_comments
                         while True:
                             next_char = self._next_char()
                             if next_char == CHR_EOF:
@@ -688,8 +709,10 @@ cdef class Tokenizer(BaseTokenizer):
                                 )
                             elif next_char == b'\n':
                                 self.line_num += 1
+                                if save_comments:
+                                    self.buf_add_char(next_char)
                             elif next_char == b'*':
-                                # Check next next character!
+                                # Check next, next character!
                                 peek_char = self._next_char()
                                 if peek_char == CHR_EOF:
                                     raise self._error(
@@ -702,20 +725,30 @@ cdef class Tokenizer(BaseTokenizer):
                                     # We need to reparse this, to ensure
                                     # "**/" parses correctly!
                                     self.char_index -= 1
+                            else:
+                                if save_comments:
+                                    self.buf_add_char(next_char)
+                        if save_comments:
+                            return COMMENT, self.buf_get_text()
                     else:
                         raise self._error(
                             '/**/-style comments are not allowed!'
                         )
                 elif next_char == b'/':
-                    # Skip to end of line
+                    # Skip to end of line.
+                    save_comments = self.flags.preserve_comments
                     while True:
                         next_char = self._next_char()
                         if next_char == CHR_EOF or next_char == b'\n':
                             break
+                        if save_comments:
+                            self.buf_add_char(next_char)
 
                     # We want to produce the token for the end character -
                     # EOF or NEWLINE.
                     self.char_index -= 1
+                    if save_comments:
+                        return COMMENT, self.buf_get_text()
                 else:
                     raise self._error(
                         'Single slash found, '
@@ -835,7 +868,7 @@ cdef class Tokenizer(BaseTokenizer):
                         next_char in BARE_DISALLOWED or
                         (next_char == b':' and self.flags.colon_operator)
                     ):
-                        # We need to repeat this so we return the ending
+                        # We need to repeat this, so we return the ending
                         # char next. If it's not allowed, that'll error on
                         # next call.
                         self.char_index -= 1
@@ -851,7 +884,7 @@ cdef class Tokenizer(BaseTokenizer):
                         ascii_only = False
                         self.buf_add_char(next_char)
                     else:
-                        # If ASCII, use bit math to convert over.
+                        # If ASCII, use bitwise math to convert over.
                         if b'A' <= next_char <= b'Z':
                             self.buf_add_char(next_char + 0x20)
                         else:
@@ -883,7 +916,7 @@ cdef class Tokenizer(BaseTokenizer):
                         else:
                             self.buf_add_char(next_char)
                 else:
-                    # Add in a few more bytes so we can decode the UTF8 fully.
+                    # Add in a few more bytes, so we can decode the UTF8 fully.
                     decode = [
                         next_char,
                         self._next_char(),

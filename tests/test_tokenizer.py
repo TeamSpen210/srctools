@@ -331,12 +331,24 @@ def test_star_comments(py_c_token: Type[Tokenizer]) -> None:
         for tok, tok_value in py_c_token(text, allow_star_comments=False):
             pass
 
-
     check_tokens(py_c_token(text, allow_star_comments=True), [
         (Token.STRING, "blah"), Token.NEWLINE,
         Token.BRACE_OPEN, Token.NEWLINE,
         (Token.STRING, "a"), (Token.STRING, "b"), Token.NEWLINE,
         Token.NEWLINE,
+        Token.BRACE_CLOSE, Token.NEWLINE,
+    ])
+
+    check_tokens(py_c_token(text, allow_star_comments=True, preserve_comments=True), [
+        (Token.STRING, "blah"), Token.NEWLINE,
+        Token.BRACE_OPEN, Token.NEWLINE,
+        (Token.STRING, "a"), (Token.STRING, "b"), Token.NEWLINE,
+        (Token.COMMENT, '''
+        "c" "d"
+        }
+    "second"
+        {
+    '''), Token.NEWLINE,
         Token.BRACE_CLOSE, Token.NEWLINE,
     ])
 
@@ -443,6 +455,7 @@ def test_token_has_value() -> None:
     assert Token.PAREN_ARGS.has_value
     assert Token.DIRECTIVE.has_value
     assert Token.PROP_FLAG.has_value
+    assert Token.COMMENT.has_value
 
 
 def test_constructor(py_c_token: Type[Tokenizer]) -> None:
@@ -452,7 +465,6 @@ def test_constructor(py_c_token: Type[Tokenizer]) -> None:
     Tokenizer('blah')
     Tokenizer('blah', None)
     Tokenizer('blah', '', TokenSyntaxError)
-    Tokenizer('blah', '', KeyValError, True)
     Tokenizer('blah', error=KeyValError)
     Tokenizer(['blah', 'blah'], string_bracket=True)
 
@@ -481,6 +493,7 @@ def test_tok_filename(py_c_token: Type[Tokenizer]) -> None:
     ('string_bracket', False),
     ('allow_escapes', True),
     ('allow_star_comments', False),
+    ('preserve_comments', False),
     ('colon_operator', False),
 ])
 def test_obj_config(py_c_token: Type[Tokenizer], parm: str, default: bool) -> None:
@@ -663,6 +676,40 @@ def test_allow_escapes(py_c_token: Type[Tokenizer]) -> None:
         tok()
 
 
+def test_preserve_comments(py_c_token: Type[Tokenizer]) -> None:
+    """Test the ability to output comments."""
+    text = '''
+    "a" { "b" } // end-of-"line" comment
+    /* multi
+    line comment
+    */
+    
+    "c" // Successive
+    // Comments
+    '''
+    check_tokens(py_c_token(text, allow_star_comments=True), [
+        Token.NEWLINE,
+        (Token.STRING, "a"), Token.BRACE_OPEN, (Token.STRING, "b"), Token.BRACE_CLOSE, Token.NEWLINE,
+        Token.NEWLINE,
+        Token.NEWLINE,
+        (Token.STRING, "c"), Token.NEWLINE,
+        Token.NEWLINE,
+    ])
+    check_tokens(py_c_token(text, allow_star_comments=True, preserve_comments=True), [
+        Token.NEWLINE,
+        (Token.STRING, "a"), Token.BRACE_OPEN, (Token.STRING, "b"), Token.BRACE_CLOSE,
+        (Token.COMMENT, ' end-of-"line" comment'), Token.NEWLINE,
+        (Token.COMMENT, ' multi\n    line comment\n    '), Token.NEWLINE,
+        Token.NEWLINE,
+        (Token.STRING, "c"), (Token.COMMENT, " Successive"), Token.NEWLINE,
+        (Token.COMMENT, " Comments"), Token.NEWLINE,
+    ])
+    # Verify the line numbers are also correct. Note that these are *after* the token.
+    tok = py_c_token(text, allow_star_comments=True, preserve_comments=True)
+    line_numbers = [tok.line_num for _ in tok.skipping_newlines()]
+    assert line_numbers == [2, 2, 2, 2, 2, 5, 7, 7, 8]
+
+
 def test_token_syntax_error() -> None:
     """Test the TokenSyntaxError class."""
     # There's no C version - if we're erroring, we don't care about
@@ -722,6 +769,7 @@ error_messages = {
     Token.PROP_FLAG: 'Unexpected property flags = [%]!',
     Token.PAREN_ARGS: 'Unexpected parentheses block = (%)!',
     Token.DIRECTIVE: 'Unexpected directive "#%"!',
+    Token.COMMENT: 'Unexpected comment "//%"!',
     Token.EOF: 'File ended unexpectedly!',
     Token.NEWLINE: 'Unexpected newline!',
     Token.BRACE_OPEN: 'Unexpected "{" character!',
