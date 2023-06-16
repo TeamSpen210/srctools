@@ -60,6 +60,7 @@ if not TYPE_CHECKING:
 __all__ = [
     'VTF', 'Frame', 'FilterMode',
     'ResourceID', 'CubeSide', 'ImageFormats', 'VTFFlags',
+    'Resource', 'SheetSequence',
 ]
 
 

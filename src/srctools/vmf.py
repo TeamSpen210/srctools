@@ -36,7 +36,7 @@ __all__ = [
     'conv_kv', 'ValidKVs',
     'overlay_bounds', 'make_overlay', 'localise_overlay',
     'VMF', 'Camera', 'Cordon', 'VisGroup', 'Solid', 'Side', 'Entity', 'EntityGroup',
-    'DispFlag', 'TriangleTag',
+    'DispFlag', 'TriangleTag', 'DispVertex',
     'PrismFace', 'UVAxis', 'EntityFixup', 'FixupValue',  # For typing, shouldn't be constructed.
     'Output', 'OUTPUT_SEP',
 ]

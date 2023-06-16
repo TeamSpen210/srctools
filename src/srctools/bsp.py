@@ -36,13 +36,16 @@ from srctools.vtf import VTF
 
 
 __all__ = [
-    'BSP_LUMPS', 'VERSIONS',
-    'BSP', 'Lump',
+    'BSP_LUMPS', 'VERSIONS', 'GameVersion',
+    'BSP', 'Lump', 'GameLump',
     'StaticProp', 'StaticPropFlags',
+    'DetailProp', 'DetailPropModel', 'DetailPropOrientation', 'DetailPropShape', 'DetailPropSprite',
     'TexData', 'TexInfo',
     'Cubemap', 'Overlay',
-    'VisTree', 'VisLeaf',
+    'VisTree', 'VisLeaf', 'VisLeafFlags', 'LeafWaterInfo',
+    'Visibility',
     'BModel', 'Plane', 'PlaneType',
+    'Primitive', 'Face', 'Edge', 'RevEdge',
     'Brush', 'BrushSide', 'BrushContents',
 ]
 
