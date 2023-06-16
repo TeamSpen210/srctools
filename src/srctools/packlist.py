@@ -387,7 +387,7 @@ class PackList:
 
     def pack_file(
         self,
-        filename: str,
+        filename: 'os.PathLike[str]',
         data_type: FileType = FileType.GENERIC,
         data: Optional[bytes] = None,
         skinset: Optional[Set[int]] = None,
