@@ -460,8 +460,10 @@ class StaticPropFlags(Flag):
     NO_SELF_SHADOWING = 0x80
 
     # These are set in the secondary flags section.
-    NO_SHADOW_DEPTH = 0x100  #: Disable affecting projected texture lighting.
-    NO_LIGHTMAP = 0x100   #: In ``V_LIGHTMAP`` only, disable per-luxel lighting.
+    #: Disable affecting projected texture lighting.
+    #: In games supporting lightmapped props (TF2), this instead, disables per-luxel lighting.
+    NO_SHADOW_DEPTH = 0x100
+    NO_LIGHTMAP = 0x100
     BOUNCED_LIGHTING = 0x0400  #: Bounce lighting off the prop.
 
     # Add _BIT_XX members, so any bit combo can be preserved.
@@ -555,7 +557,8 @@ class GameLump:
 class TexData:
     """Represents some additional infomation for textures.
 
-    Do not construct directly, use BSP.create_texinfo() or TexInfo.set().
+    Usually does not need to be constructed directly. Use :py:meth:`BSP.create_texinfo()` or
+    :py:meth:`TexInfo.set()` to create this along with the texinfo.
     """
     mat: str
     reflectivity: Vec
@@ -606,7 +609,10 @@ class TexData:
 
 @attrs.define(eq=True, repr=False)
 class TexInfo:
-    """Represents texture positioning / scaling info."""
+    """Represents texture positioning / scaling info.
+
+    Overlays don't use the offset/shifts, setting them to ``(0, 0, 0)`` and ``-99999.0`` respectively.
+    """
     s_off: Vec
     s_shift: float
     t_off: Vec
@@ -749,7 +755,10 @@ class Edge:
 
 
 class RevEdge(Edge):
-    """The edge on the opposite side from the original."""
+    """The edge on the opposite side from the original.
+
+    This is implicitly created when an :class:`Edge` is.
+    """
     # noinspection PyMissingConstructor
     def __init__(self, ed: Edge) -> None:
         # Deliberately not calling super to set a and b.
@@ -796,8 +805,8 @@ class Face:
     primitives: List[Primitive]
     dynamic_shadows: bool
     smoothing_groups: int
-    hammer_id: Optional[int]  # The original ID of the Hammer face.
-    vitamin_flags: int  # VitaminSource flags.
+    hammer_id: Optional[int]  #: The original ID of the Hammer face.
+    vitamin_flags: int  #: VitaminSource-specific flags.
 
 
 @attrs.define(eq=False)
@@ -1053,16 +1062,17 @@ def _staticprop_lighting_default(self: 'StaticProp') -> Vec:
 
 @attrs.define(eq=False, repr=False)
 class StaticProp:
-    """Represents a prop_static in the BSP.
+    """Represents a ``prop_static`` in the BSP.
 
     Different features were added in different versions.
-    v5+ allows fade_scale.
-    v6 and v7 allow min/max DXLevel.
-    v8+ allows min/max GPU and CPU levels.
-    v7+ allows model tinting, and renderfx.
-    v9+ allows disabling on XBox 360.
-    v10+ adds 4 unknown bytes (float?), and an expanded flags section.
-    v11+ adds uniform scaling.
+
+    * ``v5+`` allows fade_scale.
+    * ``v6`` and ``v7`` allow min/max DXLevel.
+    * ``v8+`` allows min/max GPU and CPU levels.
+    * ``v7+`` allows model tinting, and renderfx.
+    * ``v9+`` allows disabling on XBox 360.
+    * ``v10+`` adds 4 unknown bytes (float?), and an expanded flags section.
+    * ``v11+`` adds uniform scaling.
     """
     model: str
     origin: Vec
@@ -1109,7 +1119,7 @@ def _find_or_insert(item_list: List[T], key_func: Callable[[T], Hashable] = id) 
     This is used to build up the structure arrays which other lumps refer
     to by index.
     If the provided argument to the callable is already in the list,
-    the index is returned. Otherwise it is appended and the new index returned.
+    the index is returned. Otherwise, it is appended and the new index returned.
     The key function is used to match existing items.
 
     """
@@ -1329,9 +1339,9 @@ class BSP:
         Union[bytes, BSP_LUMPS],
         Callable[['BSP', Any], Union[bytes, Generator[bytes, None, None]]]
     ]] = {}
-    # The version ID in the file.
+    #: The version ID in the file.
     version: Union[VERSIONS, int]
-    # A srctools-specific version to identify some games with unique handling.
+    #: A srctools-specific version to identify some games with unique handling.
     game_ver: GameVersion
     lump_layout: LumpDataLayout
     map_revision: int
@@ -1719,7 +1729,7 @@ class BSP:
     ) -> None:
         """Write out the BSP file, replacing a lump with the given bytes.
 
-        This is deprecated, simply assign to the .data attribute of the lump.
+        :deprecated: simply assign to the ``.data`` attribute of the lump.
         """
         if isinstance(lump, BSP_LUMPS):
             lump = self.lumps[lump]
@@ -1803,7 +1813,7 @@ class BSP:
 
         The s/t offset and shift values control the texture positioning. The
         defaults are those used for overlays, but for brushes all must be
-        specified. Alternatively copy_from can be provided an existing texinfo
+        specified. Alternatively ``copy_from`` can be provided an existing texinfo
         to copy from, if a texture is being swapped out.
 
         In the BSP each material also stores its texture size and reflectivity.
@@ -1872,7 +1882,7 @@ class BSP:
     def is_potentially_visible(self, leaf1: VisLeaf, leaf2: VisLeaf) -> Tuple[bool, bool]:
         """Check if the first leaf can potentially see and hear the second.
 
-        Always returns True if visibility data has not been computed (self.visibility is None).
+        Always returns :obj:`True` if visibility data has not been computed (``self.visibility is None``).
         """
         vis: Optional[Visibility] = self.visibility
         if vis is None:
@@ -1890,7 +1900,7 @@ class BSP:
     ) -> None:
         """Override whether the first leaf can see/hear the second.
 
-        If either bool is none that value is left unaltered.
+        If either :obj:`bool` is :obj:`None` that value is left unaltered.
         """
         vis: Optional[Visibility] = self.visibility
         if (visible is None and audible is None) or vis is None:

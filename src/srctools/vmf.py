@@ -2131,12 +2131,14 @@ class Entity(MutableMapping[str, str]):
     """A representation of either a point or brush entity.
 
     Creation:
-    * Entity(args) for a brand-new Entity
-    * Entity.parse(property) if reading from a VMF file
-    * ent.copy() to duplicate an existing entity
 
-    Supports [] operations to read and write keyvalues.
-    To read instance $replace values operate on entity.fixup[]
+    * :py:meth:`Entity(args) <Entity>` for a brand-new Entity
+    * :py:meth:`Entity.parse(keyvalues) <Entity.parse>` if reading from a VMF file
+    * :py:meth:`ent.copy() <Entity.copy()>` to duplicate an existing entity.
+    * :py:meth:`vmf.create_ent() <VMF.create_ent>` to create an entity, then add it to the VMF file.
+
+    Supports ``ent[key]`` operations to read and write keyvalues.
+    To read instance ``$replace`` values operate on ``entity.fixup[var]``.
     """
     _fixup: Optional['EntityFixup']
     outputs: List['Output']
@@ -2169,6 +2171,7 @@ class Entity(MutableMapping[str, str]):
         editor_color: Union[Vec, Tuple[int, int, int]] = (255, 255, 255),
         comments: str = '',
     ) -> None:
+        """Construct an entity from scratch."""
         self.map = vmf_file
         self._keys = _KeyDict({
             k: conv_kv(v)
@@ -2212,7 +2215,7 @@ class Entity(MutableMapping[str, str]):
 
     @property
     def fixup(self) -> 'EntityFixup':
-        """Access $replace variables on instances."""
+        """Access ``$replace`` variables on instances."""
         # Store None for non-instance entities, create if used.
         if self._fixup is None:
             self._fixup = EntityFixup()
@@ -2854,12 +2857,12 @@ class EntityFixup(MutableMapping[str, str]):
         for fixup in self._fixup.values():
             yield fixup.var
 
-    def items(self) -> '_EntityFixupItems':
-        """Iterate over all variable-value pairs."""
+    def items(self) -> 'ItemsView[str, str]':
+        """Provides a view over all variable-value pairs."""
         return _EntityFixupItems(self)
 
-    def values(self) -> '_EntityFixupValues':
-        """Iterate over all variable values."""
+    def values(self) -> 'ValuesView[str]':
+        """Provides a view over all variable values."""
         return _EntityFixupValues(self)
 
     def export(self, buffer: IO[str], ind: str) -> None:

@@ -69,7 +69,7 @@ class ValueType(Enum):
     """
     A general text string, though it should probably be kept to ASCII/CP-1252 to ensure Valve's
     parsers produce the correct result. See the ``unicode`` option in :py:meth:`Element.parse()`,
-    :py:meth:`Element.export_kv2()` and :py:meth:`~Element.export_bin()`.
+    :py:meth:`Element.export_kv2()` and :py:meth:`~Element.export_binary()`.
     """
     BINARY = BIN = VOID = 'binary'
     """
@@ -1300,8 +1300,8 @@ class Element(Mapping[str, Attribute[Any]]):
     def parse_bin(cls, file: IO[bytes], version: int, unicode: bool = False) -> 'Element':
         """Parse the core binary data in a DMX file.
 
-        The <!-- --> format comment line should have already be read.
-        If unicode is set to True, strings will be treated as UTF8 instead
+        The ``<!-- -->`` format comment line should have already be read.
+        If ``unicode`` is set to :obj:`True`, strings will be treated as UTF8 instead
         of safe ASCII.
         """
         # There should be a newline and null byte after the comment.
@@ -1442,7 +1442,7 @@ class Element(Mapping[str, Attribute[Any]]):
     def parse_kv2(cls, file: IO[str], version: int, unicode: bool = False) -> 'Element':
         """Parse a DMX file encoded in KeyValues2.
 
-        The <!-- --> format comment line should have already been read.
+        The ``<!-- -->`` format comment line should have already been read.
         """
         # We apply UUID lookups after everything's parsed.
         id_to_elem: Dict[UUID, Element] = {}
@@ -1766,21 +1766,22 @@ class Element(Mapping[str, Attribute[Any]]):
         The format name and version can be anything, to indicate which
         application should read the file.
 
-        * If flat is enabled, elements will all be placed at the toplevel,
+        * If ``flat`` is enabled, elements will all be placed at the toplevel,
           so they don't nest inside each other.
-        * If cull_uuid is enabled, UUIDs are only written for self-referential
+        * If ``cull_uuid`` is enabled, UUIDs are only written for self-referential
           elements. When parsed by this or Valve's parser, new ones will simply
           be generated.
 
-        * unicode controls whether Unicode characters are permitted:
-            - 'ascii' (the default) raises an error if any value is non-ASCII.
+        * ``unicode`` controls whether Unicode characters are permitted:
+
+            - ``ascii`` (the default) raises an error if any value is non-ASCII.
               This ensures no encoding issues occur when read by the game.
-            - 'format' changes the encoding format to 'unicode_keyvalues2',
+            - ``format`` changes the encoding format to ``unicode_keyvalues2``,
               allowing the file to be rejected if the game tries to read it and
               this module's parser to automatically switch to Unicode.
-            - 'silent' outputs UTF8 without any marker, meaning it could be
+            - ``silent`` outputs UTF8 without any marker, meaning it could be
               parsed incorrectly by the game or other utilties. This must be
-              parsed with  unicode=True to succeed.
+              parsed with ``unicode=True`` to succeed.
         """
         file.write(b'<!-- dmx encoding %skeyvalues2 1 format %b %i -->\r\n' % (
             b'unicode_' if unicode == 'format' else b'',
@@ -1890,15 +1891,15 @@ class Element(Mapping[str, Attribute[Any]]):
 
     @classmethod
     def from_kv1(cls, props: Keyvalues) -> 'Element':
-        """Convert a KeyValues 1 property tree into DMX format.
+        """Convert a KeyValues 1 property tree into DMX format, allowing nesting inside a DMX file.
 
-        All blocks have a type of "DmElement", with children stored in the "subkeys" array. Leaf
+        All blocks have a type of ``DmElement``, with children stored in the ``subkeys`` array. Leaf
         properties are stored as regular attributes. The following attributes are prepended with
-        an underscore when converting as they are reserved: "name" and "subkeys".
+        an underscore when converting as they are reserved: ``name`` and ``subkeys``.
 
         If multiple leaf properties with the same name or the element has a mix of blocks and leafs
-        all elements will be put in the subkeys array. Leafs will use "DmElementLeaf" elements with
-        values in the "value" key.
+        all elements will be put in the ``subkeys`` array. Leafs will use ``DmElementLeaf`` elements with
+        values in the ``value`` key.
         """
         if not props.has_children():
             elem = cls(props.real_name, NAME_KV1_LEAF)
@@ -1948,8 +1949,9 @@ class Element(Mapping[str, Attribute[Any]]):
     def to_kv1(self) -> Keyvalues:
         """Convert an element tree containing a KeyValues 1 tree back into a Property.
 
-        These must satisfy the format from_kv1() produces - all elements have the type DmElement,
-        all attributes are strings except for the "subkeys" attribute which is an element array.
+        These must satisfy the format :py:meth:`from_kv1()` produces - all elements have the type
+        ``DmElement``, all attributes are strings, except for the ``subkeys`` attribute which is
+        an element array.
         """
         if self.type == NAME_KV1_LEAF:
             return Keyvalues(self.name, self['value'].val_str)

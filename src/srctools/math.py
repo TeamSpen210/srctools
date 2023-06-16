@@ -443,7 +443,6 @@ class VecBase:
         """Create a Vector, given a number of axes and corresponding values.
 
         This is a convenience for doing the following::
-
             vec = Vec()
             vec[axis1] = val1
             vec[axis2] = val2
@@ -2772,7 +2771,7 @@ class Angle(AngleBase):
             raise KeyError(f'Invalid axis: {ind!r}')
 
     def __imul__(self, other: Union[int, float]) -> 'Angle':
-        """Angle *= float multiplies each value."""
+        """Angle ``*=`` float multiplies each value."""
         if isinstance(other, (int, float)):
             self._pitch = self._pitch * other % 360.0 % 360.0
             self._yaw = self._yaw * other % 360.0 % 360.0
@@ -2782,7 +2781,7 @@ class Angle(AngleBase):
 
     # noinspection PyProtectedMember
     def __imatmul__(self, other: Union[AngleBase, MatrixBase]) -> 'Angle':
-        """Angle @ Angle or Angle @ Matrix rotates the first by the second."""
+        """Angle ``@`` Angle or Angle ``@`` Matrix rotates the first by the second."""
         if isinstance(other, AngleBase):
             mat = Py_Matrix.from_angle(self)
             mat @= other

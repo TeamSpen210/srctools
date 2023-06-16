@@ -28,6 +28,7 @@ def identify_typevars() -> Iterator[Tuple[str, str]]:
 # All our typevars, so we can suppress reference errors for them.
 typevars = {
     '_os.PathLike': 'typing.TypeVar',
+    'srctools.math._SupportsIndex': 'typing.SupportsIndex',
 }
 
 typevars.update(identify_typevars())
