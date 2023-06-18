@@ -141,7 +141,7 @@ class LoggerAdapter(logging.LoggerAdapter):  # type: ignore[type-arg]  # Only ge
                 log_args['stacklevel'] = kwargs.pop('stacklevel')
 
             if sys.version_info >= (3, 10):
-                log_args['stacklevel'] = kwargs.get( 'stacklevel', 0 ) + 2
+                log_args['stacklevel'] = kwargs.get('stacklevel', 0) + 2
 
             # noinspection PyProtectedMember
             self.logger._log(
