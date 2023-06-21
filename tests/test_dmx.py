@@ -394,11 +394,27 @@ def test_attr_extend() -> None:
     (ValueType.COLOUR, 'val_color', Color(192, 64, 192, 32), bytes([192, 64, 192, 32]), '192 64 192 32'),
     (ValueType.BINARY, 'val_bin', b'\x34\xFF\x20\x3D', b'\x34\xFF\x20\x3D', '34 FF 20 3D'),
     (ValueType.TIME, 'val_time', Time(60.5), bytes.fromhex('48 3b 09 00'), '60.5'),
-    (ValueType.VEC2, 'val_vec2', Vec2(36.5, -12.75), bytes.fromhex('00 00 12 42  00 00 4c c1'), '36.5 -12.75'),
-    (ValueType.VEC3, 'val_vec3', FrozenVec(36.5, 0.125, -12.75), bytes.fromhex('00 00 12 42 00 00 00 3e 00 00 4c c1'), '36.5 0.125 -12.75'),
-    (ValueType.VEC4, 'val_vec4', Vec4(384.0, 36.5, 0.125, -12.75), bytes.fromhex('00 00 c0 43 00 00 12 42 00 00 00 3e 00 00 4c c1'), '384 36.5 0.125 -12.75'),
-    (ValueType.QUATERNION, 'val_quat', Quaternion(384.0, 36.5, 0.125, -12.75), bytes.fromhex('00 00 c0 43 00 00 12 42 00 00 00 3e 00 00 4c c1'), '384 36.5 0.125 -12.75'),
     (
+        ValueType.VEC2, 'val_vec2',
+        Vec2(36.5, -12.75),
+        bytes.fromhex('00 00 12 42  00 00 4c c1'),
+        '36.5 -12.75',
+    ), (
+        ValueType.VEC3, 'val_vec3',
+        FrozenVec(36.5, 0.125, -12.75),
+        bytes.fromhex('00 00 12 42 00 00 00 3e 00 00 4c c1'),
+        '36.5 0.125 -12.75',
+    ), (
+        ValueType.VEC4, 'val_vec4',
+        Vec4(384.0, 36.5, 0.125, -12.75),
+        bytes.fromhex('00 00 c0 43 00 00 12 42 00 00 00 3e 00 00 4c c1'),
+        '384 36.5 0.125 -12.75',
+    ), (
+        ValueType.QUATERNION, 'val_quat',
+        Quaternion(384.0, 36.5, 0.125, -12.75),
+        bytes.fromhex('00 00 c0 43 00 00 12 42 00 00 00 3e 00 00 4c c1'),
+        '384 36.5 0.125 -12.75',
+    ), (
         ValueType.MATRIX, 'val_mat', Matrix(),
         b'1000' b'0100' b'0010' b'0001'.replace(b'0', b'\x00\x00\x00\x00').replace(b'1', b'\x00\x00\x80?'),
         '1.0 0.0 0.0 0.0\n'

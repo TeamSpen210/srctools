@@ -30,7 +30,7 @@ def test_export(file_regression, version: StaticPropVersion) -> None:
     bsp.nodes = [visleaf]
 
     bsp.static_prop_version = version
-    bsp.props=[StaticProp(
+    bsp.props = [StaticProp(
         model='models/props_testing/some_model001.mdl',
         origin=Vec(289.289, 3782.187, -28.821),
         angles=Angle(12.5, 270.0, 0),

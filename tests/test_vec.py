@@ -1225,7 +1225,7 @@ MINMAX_VALUES = [
     (0.3, 0.4),
     (-0.3, -0.2),
 ]
-MINMAX_VALUES += [(b, a) for a,b in MINMAX_VALUES]
+MINMAX_VALUES += [(b, a) for a, b in MINMAX_VALUES]
 
 
 def test_minmax(py_c_vec):

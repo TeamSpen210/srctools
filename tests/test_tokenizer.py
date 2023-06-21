@@ -1,4 +1,4 @@
-from typing import Any, Callable, Generator, Iterable, Iterator, Tuple, Type, Union
+from typing import Any, Callable, Iterable, Iterator, Tuple, Type, Union
 from itertools import tee, zip_longest
 import codecs
 import platform
@@ -324,14 +324,14 @@ def test_star_comments(py_c_token: Type[Tokenizer]) -> None:
 
     with pytest.raises(TokenSyntaxError):
         # Default = false
-        for tok, tok_value in py_c_token(text):
+        for _ in Tokenizer(text):
             pass
 
     with pytest.raises(TokenSyntaxError):
-        for tok, tok_value in py_c_token(text, allow_star_comments=False):
+        for _ in Tokenizer(text, allow_star_comments=False):
             pass
 
-    check_tokens(py_c_token(text, allow_star_comments=True), [
+    check_tokens(Tokenizer(text, allow_star_comments=True), [
         (Token.STRING, "blah"), Token.NEWLINE,
         Token.BRACE_OPEN, Token.NEWLINE,
         (Token.STRING, "a"), (Token.STRING, "b"), Token.NEWLINE,
@@ -339,7 +339,7 @@ def test_star_comments(py_c_token: Type[Tokenizer]) -> None:
         Token.BRACE_CLOSE, Token.NEWLINE,
     ])
 
-    check_tokens(py_c_token(text, allow_star_comments=True, preserve_comments=True), [
+    check_tokens(Tokenizer(text, allow_star_comments=True, preserve_comments=True), [
         (Token.STRING, "blah"), Token.NEWLINE,
         Token.BRACE_OPEN, Token.NEWLINE,
         (Token.STRING, "a"), (Token.STRING, "b"), Token.NEWLINE,
@@ -353,25 +353,25 @@ def test_star_comments(py_c_token: Type[Tokenizer]) -> None:
     ])
 
     # Test with one string per chunk:
-    for tok, tok_value in py_c_token(list(text), allow_star_comments=True):
+    for _ in Tokenizer(list(text), allow_star_comments=True):
         pass
 
     # Check line number is correct.
-    tokenizer = py_c_token(text, allow_star_comments=True)
+    tokenizer = Tokenizer(text, allow_star_comments=True)
     for tok, tok_value in tokenizer:
         if tok is Token.BRACE_CLOSE:
             assert 10 == tokenizer.line_num
 
     # Check unterminated comments are invalid.
     with pytest.raises(TokenSyntaxError):
-        for tok, tok_value in py_c_token(text.replace('*/', ''), allow_star_comments=True):
+        for _ in Tokenizer(text.replace('*/', ''), allow_star_comments=True):
             pass
 
     # Test some edge cases with multiple asterisks:
-    for tok, tok_value in py_c_token('"blah"\n/**/', allow_star_comments=True):
+    for _ in Tokenizer('"blah"\n/**/', allow_star_comments=True):
         pass
 
-    for tok, tok_value in py_c_token('"blah"\n/*\n **/', allow_star_comments=True):
+    for _ in Tokenizer('"blah"\n/*\n **/', allow_star_comments=True):
         pass
 
 
@@ -757,11 +757,18 @@ def test_tok_error(py_c_token: Type[Tokenizer]) -> None:
     tok: Tokenizer = py_c_token(['test'], 'filename.py')
     tok.line_num = 45
     assert tok.error('basic') == TokenSyntaxError('basic', 'filename.py', 45)
-    assert tok.error('Error with } and { brackets') == TokenSyntaxError('Error with } and { brackets', 'filename.py', 45)
-    tok.line_num = 9999
-    assert tok.error('Arg {0}, {2} and {1} formatted', 'a', 'b', 'c') == TokenSyntaxError('Arg a, c and b formatted', 'filename.py', 9999)
+    assert tok.error('Error with } and { brackets') == TokenSyntaxError(
+        'Error with } and { brackets', 'filename.py', 45,
+    )
+
+    tok.line_num = 3782
+    assert tok.error('Arg {0}, {2} and {1} formatted', 'a', 'b', 'c') == TokenSyntaxError(
+        'Arg a, c and b formatted', 'filename.py', 3782,
+    )
     tok.filename = None
-    assert tok.error('Param: {:.6f}, {!r}, {}', 1/3, "test", test_tok_error) == TokenSyntaxError(f"Param: {1/3:.6f}, 'test', {test_tok_error}", None, 9999)
+    assert tok.error('Param: {:.6f}, {!r}, {}', 1/3, "test", test_tok_error) == TokenSyntaxError(
+        f"Param: {1/3:.6f}, 'test', {test_tok_error}", None, 3782,
+    )
 
 
 error_messages = {

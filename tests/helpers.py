@@ -123,7 +123,7 @@ def assert_ang(
 def assert_vec(
     vec: vec_mod.VecBase,
     x: float = 0.0, y: float = 0.0, z: float = 0.0,
-    msg: object='',
+    msg: object = '',
     tol: float = EPSILON,
     type: Optional[type] = None,
 ) -> None:

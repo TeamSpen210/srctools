@@ -3,6 +3,9 @@ extend = "../pyproject.toml"
 extend-ignore = [
 	# Type checking isn't particularly important in test code.
 	"ANN",
+	# Permit multiple statements in pytest.raises blocks, we want to test for loops and
+	# with statements raise.
+	"PT012",
 ]
 # Enable pytest-specific checks.
 extend-select = ["PT"]

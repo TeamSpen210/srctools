@@ -210,9 +210,9 @@ def test_name_or_class_fixups() -> None:
     assert inst_none.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, '@autosave') == '@autosave'
 
     # For classnames, if it matches no fixup occurs.
-    assert inst_prefix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS,'npc_Headcrab') == 'npc_Headcrab'
-    assert inst_suffix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS,'npc_hEAdcrab') == 'npc_hEAdcrab'
-    assert inst_none.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS,'npc_headcRAb') == 'npc_headcRAb'
+    assert inst_prefix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, 'npc_Headcrab') == 'npc_Headcrab'
+    assert inst_suffix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, 'npc_hEAdcrab') == 'npc_hEAdcrab'
+    assert inst_none.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, 'npc_headcRAb') == 'npc_headcRAb'
 
 
 @pytest.mark.parametrize(
@@ -254,7 +254,7 @@ def test_negative_pitch(orient: Matrix) -> None:
     )
     inst = instancing.Instance('test_inst', '', Vec(128, 512, -1024), orient)
     vmf = VMF()
-    instancing.collapse_one(vmf, inst,instancing.InstanceFile(inst_vmf))
+    instancing.collapse_one(vmf, inst, instancing.InstanceFile(inst_vmf))
     expected = Angle(45.0, 35.0, 0.0) @ orient
 
     [light] = vmf.by_class['light_spot']

@@ -279,9 +279,9 @@ def old_mat_mul(
 
 def old_rotate(
     self,
-    pitch: float=0.0,
-    yaw: float=0.0,
-    roll: float=0.0
+    pitch: float = 0.0,
+    yaw: float = 0.0,
+    roll: float = 0.0
 ) -> Py_Vec:
     """Code from an earlier version of Vec, that does rotation."""
     # pitch is in the y axis
@@ -495,18 +495,15 @@ def test_rotating_vec_tuples(
 def test_rotated_matrix_data(
     py_c_vec: PyCVec,
     rotation_data: List[RotationData],
-    frozen_thawed_vec: VecClass,
-    frozen_thawed_angle: AngleClass,
     frozen_thawed_matrix: MatrixClass,
 ) -> None:
     """Test our rotation code with engine rotation data."""
-    Vec = frozen_thawed_vec
     Matrix = frozen_thawed_matrix
-    Angle = frozen_thawed_angle
 
     for data in rotation_data:
         mat = Matrix.from_angle(*data.angle)
-        assert_rot(mat, Matrix.from_angle(Angle(data.angle)))
+        assert_rot(mat, Matrix.from_angle(vec_mod.Angle(data.angle)))
+        assert_rot(mat, Matrix.from_angle(vec_mod.FrozenAngle(data.angle)))
 
         assert math.isclose(data.for_x, mat[0, 0], abs_tol=EPSILON)
         assert math.isclose(data.for_y, mat[0, 1], abs_tol=EPSILON)

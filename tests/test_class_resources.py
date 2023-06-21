@@ -541,7 +541,7 @@ ammo_crate_models_mbase = {
     1: "models/items/ammocrate_smg1.mdl",
     2: "models/items/ammocrate_ar2.mdl",
     3: "models/items/ammocrate_rockets.mdl",
-    4:"models/items/ammocrate_buckshot.mdl",
+    4: "models/items/ammocrate_buckshot.mdl",
     # 5: "models/items/ammocrate_grenade.mdl",
     6: "models/items/ammocrate_357.mdl",
     7: "models/items/ammocrate_xbow.mdl",
@@ -896,7 +896,7 @@ def test_npc_antlion_worker() -> None:
         Resource.mdl("models/antlion_worker.mdl"),
         classname='npc_antlion',
         tags__=["hl2", "episodic"],
-        spawnflags=(1<<18) | 3,  # 3 = irrelevant.
+        spawnflags=(1 << 18) | 3,  # 3 = irrelevant.
     )
     # EZ variant 0 doesn't change the antlion, adds some grenade resources though.
     check_entity(
@@ -907,7 +907,7 @@ def test_npc_antlion_worker() -> None:
         Resource.part("ExplosionFlash"),
         classname='npc_antlion',
         tags__=TAGS_EZ2,
-        spawnflags=(1<<18) | 3,
+        spawnflags=(1 << 18) | 3,
         ezvariant=0,
     )
     check_entity(
@@ -918,7 +918,7 @@ def test_npc_antlion_worker() -> None:
         Resource.part("ExplosionFlash"),
         classname='npc_antlion',
         tags__=TAGS_EZ2,
-        spawnflags=(1<<18) | 3,
+        spawnflags=(1 << 18) | 3,
         ezvariant=5,  # Bloodlion
     )
 

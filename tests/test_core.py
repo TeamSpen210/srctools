@@ -65,7 +65,7 @@ def_vals = [
 ]
 
 
-def check_empty_iterable(obj: Any, name: str, item: object='x') -> None:
+def check_empty_iterable(obj: Any, name: str, item: object = 'x') -> None:
     """Check the given object is iterable, and is empty."""
     try:
         iterator = iter(obj)

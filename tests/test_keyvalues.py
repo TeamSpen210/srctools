@@ -559,13 +559,11 @@ def test_blockfuncs_fail_on_leaf() -> None:
     """Check that methods requiring a block fail on a leaf key, and raise the specific exception."""
     leaf = Keyvalues('Name', 'blah')
     with pytest.raises(LeafKeyvalueError):
-        for _ in leaf.find_all("blah"):
-            pass
+        next(leaf.find_all("blah"))
     with pytest.raises(LeafKeyvalueError):
         leaf.find_key("blah")
     with pytest.raises(LeafKeyvalueError):
-        for _ in leaf:
-            pass
+        next(iter(leaf))
     with pytest.raises(LeafKeyvalueError):
         leaf['blah']
     with pytest.raises(LeafKeyvalueError):
