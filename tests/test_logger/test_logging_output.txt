@@ -1,0 +1,14 @@
+[I] test_logger.test_logging_output(): hello there
+[I] test_logger.function(): Starting other function
+[I] test_logger.function(): Finishing.
+[I] (First) test_logger.test_logging_output(): Message
+[I] (First, Second) test_logger.test_logging_output(): More messages
+
+<<<<< STDOUT | STDERR >>>>>
+[E] test_logger.test_logging_output(): Root error!:
+ | - Something failed.
+ |___
+
+[W] test_logger.test_logging_output(): A problem: 45
+[W] test_logger.function(): Used wrong logic
+[W] (First) test_logger.test_logging_output(): A warning.
