@@ -989,6 +989,9 @@ class VMF:
 
 class Camera:
     """Represents one of several cameras which can be swapped between."""
+    pos: Vec
+    target: Vec
+    map: VMF
     def __init__(self, vmf_file: VMF, pos: Vec, targ: Vec) -> None:
         self.pos = pos
         self.target = targ

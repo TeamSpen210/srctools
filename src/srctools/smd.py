@@ -65,6 +65,8 @@ class Bone:
 class BoneFrame:
     """Represents a single frame of bone animation."""
     __slots__ = ('bone', 'position', 'rotation')
+    bone: Bone
+    position: Vec
     rotation: Angle
 
     def __init__(self, bone: Bone, position: Vec, rotation: Angle) -> None:
@@ -90,6 +92,11 @@ class BoneFrame:
 class Vertex:
     """A single vertex."""
     __slots__ = ('pos', 'norm', 'tex_u', 'tex_v', 'links')
+    pos: Vec
+    norm: Vec
+    tex_u: float
+    tex_v: float
+    links: List[Tuple[Bone, float]]
 
     def __init__(
         self,
@@ -147,6 +154,10 @@ class Vertex:
 class Triangle:
     """Represents one triangle."""
     __slots__ = ('mat', 'point1', 'point2', 'point3')
+    mat: str
+    point1: Vertex
+    point2: Vertex
+    point3: Vertex
 
     def __init__(self, mat: str, p1: Vertex, p2: Vertex, p3: Vertex) -> None:
         self.mat = mat
