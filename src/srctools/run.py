@@ -27,25 +27,25 @@ if sys.platform == 'win32':
 
     _FindWindowW.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p]
     _FindWindowW.restype = ctypes.c_void_p  # HWND
-    is_64bit = sys.maxsize > 2**33
-    uint_ptr = ctypes.POINTER(ctypes.c_ulonglong if is_64bit else ctypes.c_uint)
-    ulong_ptr = ctypes.POINTER(ctypes.c_ulonglong if is_64bit else ctypes.c_ulong)
-    long_ptr = ctypes.POINTER(ctypes.c_longlong if is_64bit else ctypes.c_long)
+    _is_64bit = sys.maxsize > 2 ** 33
+    _uint_ptr = ctypes.POINTER(ctypes.c_ulonglong if _is_64bit else ctypes.c_uint)
+    _ulong_ptr = ctypes.POINTER(ctypes.c_ulonglong if _is_64bit else ctypes.c_ulong)
+    _long_ptr = ctypes.POINTER(ctypes.c_longlong if _is_64bit else ctypes.c_long)
     _SendMessageW.argtypes = [
         ctypes.c_void_p,  # HWND hWnd
         ctypes.c_uint,  # Msg
-        uint_ptr,  # WPARAM wParam
-        long_ptr,  # LPARAM lParam
+        _uint_ptr,  # WPARAM wParam
+        _long_ptr,  # LPARAM lParam
     ]
-    _SendMessageW.restype = long_ptr
+    _SendMessageW.restype = _long_ptr
 
     WM_COPYDATA = 0x4A
-    del is_64bit
+    del _is_64bit
 
     class CopyDataStruct(ctypes.Structure):
         """Data to pass for WM_COPYDATA."""
         _fields_ = [
-            ('dWData', ulong_ptr),
+            ('dWData', _ulong_ptr),
             ('cbData', ctypes.c_uint32),
             ('lpData', ctypes.c_void_p),
         ]
@@ -57,11 +57,11 @@ if sys.platform == 'win32':
             raise ctypes.WinError(descr='No window found!')
         buf = ctypes.create_string_buffer(command)
         data = CopyDataStruct(
-            dWData=ulong_ptr(),
+            dWData=_ulong_ptr(),
             cbData=len(command) + 1,
             lpData=ctypes.cast(buf, ctypes.c_void_p),
         )
-        if not _SendMessageW(window, WM_COPYDATA, uint_ptr(), ctypes.cast(ctypes.byref(data), long_ptr)):
+        if not _SendMessageW(window, WM_COPYDATA, _uint_ptr(), ctypes.cast(ctypes.byref(data), _long_ptr)):
             raise ctypes.WinError(descr="Failed to send command.")
 else:
     def _send_cmd(command: bytes, classname: str) -> None:
