@@ -753,7 +753,7 @@ class Keyvalues:
     @overload
     def as_array(self, *, conv: Callable[[str], T]) -> List[T]: ...
 
-    def as_array(self, *, conv: Callable[[str], T] = cast(Callable[[str], T], str)) -> Union[List[T], List[str]]:
+    def as_array(self, *, conv: Callable[[str], T] = cast(Any, str)) -> Union[List[T], List[str]]:
         """Convert a keyvalue block into a list of values.
 
         If the keyvalue is a single keyvalue, the single value will be
@@ -761,7 +761,7 @@ class Keyvalues:
         of those will be yielded. The name is ignored.
         """
         if isinstance(self._value, list):
-            arr = []
+            arr: List[T] = []
             child: Keyvalues
             for child in self._value:
                 if not isinstance(child._value, str):

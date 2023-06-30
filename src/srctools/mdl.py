@@ -380,7 +380,7 @@ class Model:
 
         # Break up the reading a bit to limit the stack size.
         (
-            flags,
+            flags,  # Byte 152
 
             bone_count,
             bone_off,

@@ -679,7 +679,7 @@ def load_dxt3(pixels: Array, data: bytes, width: int, height: int) -> None:
             c0r, c0g, c0b = decomp565(data[block_off + 8], data[block_off + 9])
             c1r, c1g, c1b = decomp565(data[block_off + 10], data[block_off + 11])
 
-            table = [
+            table: List[Tuple[int, int, int, int]] = [
                 (c0b, c0g, c0r, 255),
                 (c1b, c1g, c1r, 255),
                 (
@@ -736,7 +736,7 @@ def load_dxt5(pixels: Array, data: bytes, width: int, height: int) -> None:
             c0r, c0g, c0b = decomp565(data[block_off + 8], data[block_off + 9])
             c1r, c1g, c1b = decomp565(data[block_off + 10], data[block_off + 11])
 
-            table = [
+            table: List[Tuple[int, int, int, int]] = [
                 (c0b, c0g, c0r, 127),
                 (c1b, c1g, c1r, 127),
                 (

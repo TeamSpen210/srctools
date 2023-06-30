@@ -7,6 +7,7 @@ from typing import (
     Any, Callable, Dict, Generator, Iterable, List, Mapping, Optional, TextIO, Tuple, Type,
     Union, cast, overload,
 )
+from typing_extensions import TypedDict
 from io import StringIO
 from types import TracebackType
 import contextlib
@@ -85,12 +86,26 @@ _SysExcInfoType = Union[
     Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
     Tuple[None, None, None]
 ]
+_LogExcInfo = Union[None, bool, _SysExcInfoType, BaseException]
+if sys.version_info >= (3, 8):
+    class _LogKwargs(TypedDict, total=False):
+        extra: Dict[str, object]
+        exc_info: _LogExcInfo
+        stack_info: bool
+        stacklevel: int
+else:
+    class _LogKwargs(TypedDict, total=False):
+        extra: Dict[str, object]
+        exc_info: _LogExcInfo
+        stack_info: bool
 
 
 class LoggerAdapter(logging.LoggerAdapter):  # type: ignore[type-arg]  # Only generic in stubs.
     """Fix loggers to use str.format().
 
     """
+    logger: logging.Logger
+    alias: Optional[str]
     def __init__(self, logger: logging.Logger, alias: Optional[str] = None) -> None:
         # Alias is a replacement module name for log messages.
         self.alias = alias
@@ -102,14 +117,7 @@ class LoggerAdapter(logging.LoggerAdapter):  # type: ignore[type-arg]  # Only ge
         level: int,
         msg: Any,
         *args: Any,
-        exc_info: Union[
-            None, bool,
-            Union[
-                Tuple[type, BaseException, Optional[TracebackType]],
-                Tuple[None, None, None]
-            ],
-            BaseException
-        ] = None,
+        exc_info: Union[None, bool, _SysExcInfoType, BaseException] = None,
         stack_info: bool = False,
         extra: Optional[Mapping[str, object]] = None,
         **kwargs: Any,
@@ -131,17 +139,17 @@ class LoggerAdapter(logging.LoggerAdapter):  # type: ignore[type-arg]  # Only ge
             new_extra['context'] = f' ({ctx})' if ctx else ''
 
             # Pull these arguments out of kwargs, so they can be set..
-            log_args = {
+            log_args: _LogKwargs = {
                 'extra': new_extra,
                 'exc_info': exc_info,
                 'stack_info': stack_info,
             }
             # Not present in 3.7, silently discard.
-            if sys.version_info >= (3, 8) and 'stacklevel' in kwargs:
-                log_args['stacklevel'] = kwargs.pop('stacklevel')
-
-            if sys.version_info >= (3, 10):
-                log_args['stacklevel'] = kwargs.get('stacklevel', 0) + 2
+            stack_level = kwargs.pop('stacklevel', 0)
+            if sys.version_info >= (3, 8):
+                if sys.version_info >= (3, 10):
+                    stack_level += 2
+                log_args['stacklevel'] = stack_level
 
             # noinspection PyProtectedMember
             self.logger._log(

@@ -885,7 +885,7 @@ class Overlay:
         attrs.validators.instance_of(int),
         attrs.validators.instance_of(list),
     ))
-    render_order: int = attrs.field(default=0, validator=attrs.validators.in_(range(4)))
+    render_order: int = attrs.field(default=int(0), validator=attrs.validators.in_(range(4)))
     u_min: float = 0.0
     u_max: float = 1.0
     v_min: float = 0.0
@@ -900,10 +900,10 @@ class Overlay:
     fade_max_sq: float = 0.0
 
     # If system exceeds these limits, the overlay is skipped. Each is a single byte.
-    min_cpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
-    max_cpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
-    min_gpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
-    max_gpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
+    min_cpu: int = attrs.field(default=int(0), validator=attrs.validators.in_(range(255)))
+    max_cpu: int = attrs.field(default=int(0), validator=attrs.validators.in_(range(255)))
+    min_gpu: int = attrs.field(default=int(0), validator=attrs.validators.in_(range(255)))
+    max_gpu: int = attrs.field(default=int(0), validator=attrs.validators.in_(range(255)))
 
 
 @attrs.define(eq=False)
