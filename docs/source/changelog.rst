@@ -13,6 +13,7 @@ Version (dev)
   behaviour of the flag, added the real :py:attr:`NO_FLASHLIGHT <srctools.bsp.StaticPropFlags.NO_FLASHLIGHT>` define.
 * Add :py:attr:`Tokenizer.preserve_comments <srctools.tokenizer.Tokenizer.preserve_comments>`, which
   produces :py:const:`COMMENT <srctools.tokenizer.Token.COMMENT>` tokens instead of discarding them.
+* Fix #18: Incorrect module/function names in logging messages (via @ENDERZOMBI102).
 
 --------------
 Version 2.3.12
