@@ -351,7 +351,10 @@ class Material(MutableMapping[str, str]):
         parent = parent._apply_patch(fsys, count + 1, limit, parent_func)
 
         copy = Material(parent.shader)
+        # Transfer them all over, the parent is being deleted so we don't need to bother copying.
         copy._params.update(parent._params)
+        copy.proxies.extend(parent.proxies)
+        copy.blocks.extend(parent.blocks)
 
         # Empty strings in these delete the value.
         # If replace is used, the value must exist, otherwise it's skipped.

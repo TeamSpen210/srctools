@@ -14,6 +14,7 @@ Version (dev)
 * Add :py:attr:`Tokenizer.preserve_comments <srctools.tokenizer.Tokenizer.preserve_comments>`, which
   produces :py:const:`COMMENT <srctools.tokenizer.Token.COMMENT>` tokens instead of discarding them.
 * Fix #18: Incorrect module/function names in logging messages (via @ENDERZOMBI102).
+* Fix :py:meth:`srctools.mdl.Model.apply_patches()` not applying material proxies from the parent.
 
 --------------
 Version 2.3.12
