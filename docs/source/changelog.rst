@@ -15,6 +15,7 @@ Version (dev)
   produces :py:const:`COMMENT <srctools.tokenizer.Token.COMMENT>` tokens instead of discarding them.
 * Fix #18: Incorrect module/function names in logging messages (via @ENDERZOMBI102).
 * Fix :py:meth:`srctools.mdl.Model.apply_patches()` not applying material proxies from the parent.
+* Use ``surrogateescape`` when eonciding/decoding BSP data, to allow values to round-trip.
 
 --------------
 Version 2.3.12

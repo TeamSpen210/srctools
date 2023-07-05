@@ -2551,7 +2551,7 @@ class BSP:
                 # Reached the 128 char limit without finding a null.
                 raise ValueError(f'Bad string at {off} in BSP! ({tex_data[off:off + 128]!r})') from None
             else:
-                yield tex_data[off:str_off].decode('ascii')
+                yield tex_data[off:str_off].decode('ascii', 'surrogateescape')
 
     def _lmp_write_textures(self, textures: List[str]) -> bytes:
         table = BytesIO()
@@ -2559,7 +2559,7 @@ class BSP:
         for tex in textures:
             if len(tex) >= 128:
                 raise OverflowError(f'Texture "{tex}" exceeds 128 character limit')
-            string = tex.encode('ascii') + b'\0'
+            string = tex.encode('ascii', 'surrogateescape') + b'\0'
             ind = data.find(string)
             if ind == -1:
                 ind = len(data)
@@ -2916,7 +2916,8 @@ class BSP:
         seen_spawn = False  # The first entity is worldspawn.
 
         # We have to use the tokenizer to handle newlines inside quotes.
-        tok = Tokenizer(ent_data.decode('ascii'), allow_escapes=True)
+        # Use surrogateescape, to preserve bytes > 127 - VMFs don't have a clear encoding.
+        tok = Tokenizer(ent_data.decode('ascii', 'surrogateescape'), allow_escapes=True)
         for tok_typ, tok_value in tok:
             if tok_typ is Token.BRACE_OPEN:
                 if cur_ent is not None:
@@ -3014,11 +3015,11 @@ class BSP:
         for ent in itertools.chain([vmf.spawn], vmf.entities):
             out.write(b'{\n')
             for key, value in ent.items():
-                out.write(f'"{key}" "{value}"\n'.encode('ascii'))
+                out.write(f'"{key}" "{value}"\n'.encode('ascii', 'surrogateescape'))
             for output in ent.outputs:
                 if use_comma_sep is not None:
                     output.comma_sep = use_comma_sep
-                out.write(output.as_keyvalue().encode('ascii'))
+                out.write(output.as_keyvalue().encode('ascii', 'surrogateescape'))
             out.write(b'}\n')
         out.write(b'\x00')
 
@@ -3036,13 +3037,13 @@ class BSP:
         for _ in range(dict_num):
             [padded_name] = struct_read('<128s', static_lump)
             # Strip null chars off the end, and convert to a str.
-            yield padded_name.rstrip(b'\x00').decode('ascii')
+            yield padded_name.rstrip(b'\x00').decode('ascii', 'surrogateescape')
 
     @deprecated('Access bsp.props instead')
     def static_props(self) -> Iterator['StaticProp']:
         """Read in the Static Props lump.
 
-        Deprecated, use bsp.props.
+        Deprecated, use ``bsp.props``.
         """
         return iter(self.props)
 
@@ -3050,7 +3051,7 @@ class BSP:
     def write_static_props(self, props: List['StaticProp']) -> None:
         """Remake the static prop lump.
 
-        Deprecated, bsp.props is stored and resaved.
+        Deprecated, ``bsp.props`` is stored and resaved.
         """
         self.props = props
 
@@ -3247,7 +3248,7 @@ class BSP:
         prop_lump = BytesIO()
         prop_lump.write(struct.pack('<i', len(model_list)))
         for name in model_list:
-            prop_lump.write(struct.pack('<128s', name.encode('ascii')))
+            prop_lump.write(struct.pack('<128s', name.encode('ascii', 'surrogateescape')))
 
         prop_lump.write(struct.pack('<i', len(leaf_array)))
         prop_lump.write(write_array(self.lump_layout['STATICPROPLEAF'], leaf_array))
@@ -3496,7 +3497,7 @@ class BSP:
         # Now build the complete lump.
         yield struct.pack('<i', len(models))
         for name in models:
-            yield struct.pack('<128s', name.encode('ascii'))
+            yield struct.pack('<128s', name.encode('ascii', 'surrogateescape'))
         yield struct.pack('<i', len(sprites))
         spr_format = struct.Struct('<8f')
         for spr in sprites:
