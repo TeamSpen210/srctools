@@ -14,8 +14,8 @@ token/value pair. One token of lookahead is supported, accessed by the
 the current line number as data is read, letting you ``raise BaseTokenizer.error(...)`` to easily
 produce an exception listing the relevant line number and filename.
 """
-from typing import Any, Iterable, Iterator, List, Optional, Tuple, Type, Union
-from typing_extensions import Final, Self, overload
+from typing import Any, Final, Iterable, Iterator, List, Optional, Tuple, Type, Union
+from typing_extensions import Self, overload
 from enum import Enum
 from os import fspath as _conv_path
 import abc

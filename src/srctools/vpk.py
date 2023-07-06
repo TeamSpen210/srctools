@@ -1,6 +1,5 @@
 """Classes for reading and writing Valve's VPK format, version 1."""
-from typing import IO, Dict, Iterable, Iterator, List, Optional, Tuple, Type, Union
-from typing_extensions import Final
+from typing import IO, Dict, Final, Iterable, Iterator, List, Optional, Tuple, Type, Union
 from enum import Enum
 from types import TracebackType
 import operator

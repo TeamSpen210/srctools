@@ -1,13 +1,11 @@
 """Implements support for collapsing instances."""
-from typing import (
-    Any, Container, Dict, Iterable, List, MutableMapping, Optional, Set, Tuple, Union,
-)
+from typing import Any, Container, Dict, Iterable, List, MutableMapping, Optional, Set, Tuple, Union
+from typing_extensions import deprecated, overload
 from enum import Enum
 from pathlib import Path
 import warnings
 
 import attrs
-from typing_extensions import deprecated, overload
 
 from srctools.fgd import FGD, EntityDef, EntityTypes, ValueTypes
 from srctools.filesys import FileSystem, FileSystemChain, RawFileSystem

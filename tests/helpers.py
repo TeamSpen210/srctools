@@ -1,5 +1,7 @@
 """Helpers for performing tests."""
-from typing import Callable, Generator, Iterable, Iterator, Optional, Tuple, Type, TypeVar, Union
+from typing import (
+    Callable, Generator, Iterable, Iterator, Optional, Tuple, Type, TypeVar, Union,
+)
 from typing_extensions import TypeAlias
 import builtins
 import itertools
@@ -8,7 +10,10 @@ import math
 import pytest
 
 from srctools import math as vec_mod
+
+
 # These are for testing uses only.
+# isort: off
 # noinspection PyProtectedMember
 from srctools.math import (
     Py_Vec, Py_FrozenVec, Cy_Vec, Cy_FrozenVec, 
@@ -16,6 +21,8 @@ from srctools.math import (
     Py_Matrix, Py_FrozenMatrix, Cy_Matrix, Cy_FrozenMatrix,
     Py_parse_vec_str, Cy_parse_vec_str,
 )
+# isort: on
+
 
 __all__ = [
     'iter_vec', 'ExactType', 'py_c_vec', 'vec_mod', 'parameterize_cython',

@@ -1,6 +1,5 @@
 """Reads the GameInfo file to determine where Source game data is stored."""
-from typing import List, Optional, Union
-from typing_extensions import Final
+from typing import Final, List, Optional, Union
 from pathlib import Path
 import itertools
 import os

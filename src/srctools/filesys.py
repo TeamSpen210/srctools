@@ -23,10 +23,10 @@ See the :py:class:`srctools.game.Game` class for parsing ``gameinfo.txt`` files 
 To mount a :py:class:`~srctools.bsp.BSP` file, use ``ZipFileSystem(bsp.pakfile)``.
 """
 from typing import (
-    Any, BinaryIO, Dict, Generic, Iterator, List, Mapping, Optional, Set, TextIO, Tuple,
+    Any, BinaryIO, Dict, Final, Generic, Iterator, List, Mapping, Optional, Set, TextIO, Tuple,
     TypeVar, Union, cast,
 )
-from typing_extensions import Final, Self, deprecated
+from typing_extensions import Self, deprecated
 from zipfile import ZipFile, ZipInfo
 import io
 import os

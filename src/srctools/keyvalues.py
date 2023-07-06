@@ -60,10 +60,10 @@ Properties with children can be indexed by their names, or by a
 Handling `\\\\n`, `\\\\t`, `\\\\"`, and `\\\\\\\\` escape characters can be enabled.
 """
 from typing import (
-    Any, Callable, Dict, Iterable, Iterator, List, Mapping, Optional, Tuple, Type, TypeVar,
-    Union, cast,
+    Any, Callable, Dict, Final, Iterable, Iterator, List, Mapping, Optional, Tuple, Type,
+    TypeVar, Union, cast,
 )
-from typing_extensions import Final, TypeAlias, deprecated, overload
+from typing_extensions import TypeAlias, deprecated, overload
 import builtins  # Keyvalues.bool etc shadows these.
 import keyword
 import os

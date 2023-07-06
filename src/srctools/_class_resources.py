@@ -1,6 +1,6 @@
 """This module defines functions which list resources for various entities with special functionality."""
-from typing import Callable, Dict, Iterator, Mapping, Sequence, TypeVar, Union
-from typing_extensions import Final, TypeAlias
+from typing import Callable, Dict, Final, Iterator, Mapping, Sequence, TypeVar, Union
+from typing_extensions import TypeAlias
 from enum import IntEnum
 import itertools
 

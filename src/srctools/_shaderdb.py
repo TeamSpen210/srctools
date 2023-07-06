@@ -1,4 +1,5 @@
 from typing import Dict, Type
+
 from srctools.vmt import VarType
 
 

@@ -4,11 +4,11 @@ Wraps property_parser tree in a set of classes which smartly handle
 specifics of VMF files.
 """
 from typing import (
-    IO, TYPE_CHECKING, AbstractSet, Any, Dict, FrozenSet, ItemsView, Iterable, Iterator,
+    IO, TYPE_CHECKING, AbstractSet, Any, Dict, Final, FrozenSet, ItemsView, Iterable, Iterator,
     KeysView, List, Mapping, Match, MutableMapping, Optional, Pattern, Set, Tuple, TypeVar,
     Union, ValuesView, overload,
 )
-from typing_extensions import Final, Literal, TypeAlias, deprecated
+from typing_extensions import Literal, TypeAlias, deprecated
 from array import ArrayType as Array
 from collections import defaultdict
 from contextlib import suppress
@@ -2446,8 +2446,7 @@ class Entity(MutableMapping[str, str]):
         """Iterate through all our brush sides."""
         if self.is_brush():
             for solid in self.solids:
-                for face in solid:
-                    yield face
+                yield from solid
 
     def add_out(self, *outputs: 'Output') -> None:
         """Add the outputs to our list."""

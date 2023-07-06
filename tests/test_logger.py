@@ -12,7 +12,7 @@ def function(logger: Logger) -> None:
 
 def test_logging_output(capsys, file_regression, monkeypatch) -> None:
     """Test the output of logging to the console."""
-    from srctools.logger import init_logging, get_logger, context
+    from srctools.logger import context, get_logger, init_logging
 
     # Init_logging modifies sys.excepthook, so ensure we undo that.
     monkeypatch.setattr(sys, 'excepthook', sys.excepthook)
