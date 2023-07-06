@@ -107,7 +107,7 @@ class LoggerAdapter(logging.LoggerAdapter):  # type: ignore[type-arg]  # Only ge
         exc_info: Union[None, bool, _SysExcInfoType, BaseException] = None,
         stack_info: bool = False,
         extra: Optional[Mapping[str, object]] = None,
-        stacklevel: int=0,
+        stacklevel: int = 0,
         **kwargs: Any,
     ) -> None:
         """This version of :external:py:meth:`~logging.Logger.log()` is for :external:py:meth:`str.format()` compatibility.
