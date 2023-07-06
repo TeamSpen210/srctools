@@ -9,7 +9,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "srctools"
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 dynamic = ["version"]
 urls = {source="https://github.com/TeamSpen210/srctools"}
 description = "Modules for working with Valve's Source Engine file formats."
@@ -25,7 +25,6 @@ classifiers = [
 	"Framework :: tox",
 	"License :: OSI Approved :: MIT License",
 	"Programming Language :: Cython",
-	"Programming Language :: Python :: 3.7",
 	"Programming Language :: Python :: 3.8",
 	"Programming Language :: Python :: 3.9",
 	"Programming Language :: Python :: 3.10",

@@ -5,6 +5,11 @@ Changelog
 	:local:
 	:backlinks: none
 
+-------------
+Version (dev)
+-------------
+* Drop support for Python 3.7.
+
 --------------
 Version 2.3.13
 --------------
