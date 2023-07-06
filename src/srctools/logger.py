@@ -7,7 +7,6 @@ from typing import (
     Any, Callable, Dict, Generator, Iterable, List, Mapping, Optional, TextIO, Tuple, Type,
     Union, cast, overload,
 )
-from typing_extensions import TypedDict
 from io import StringIO
 from types import TracebackType
 import contextlib
@@ -86,18 +85,6 @@ _SysExcInfoType = Union[
     Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
     Tuple[None, None, None]
 ]
-_LogExcInfo = Union[None, bool, _SysExcInfoType, BaseException]
-if sys.version_info >= (3, 8):
-    class _LogKwargs(TypedDict, total=False):
-        extra: Dict[str, object]
-        exc_info: _LogExcInfo
-        stack_info: bool
-        stacklevel: int
-else:
-    class _LogKwargs(TypedDict, total=False):
-        extra: Dict[str, object]
-        exc_info: _LogExcInfo
-        stack_info: bool
 
 
 class LoggerAdapter(logging.LoggerAdapter):  # type: ignore[type-arg]  # Only generic in stubs.
@@ -120,13 +107,13 @@ class LoggerAdapter(logging.LoggerAdapter):  # type: ignore[type-arg]  # Only ge
         exc_info: Union[None, bool, _SysExcInfoType, BaseException] = None,
         stack_info: bool = False,
         extra: Optional[Mapping[str, object]] = None,
+        stacklevel: int=0,
         **kwargs: Any,
     ) -> None:
         """This version of :external:py:meth:`~logging.Logger.log()` is for :external:py:meth:`str.format()` compatibility.
 
         The message is wrapped in a :py:class:`LogMessage` object, which is given the
         ``args`` and ``kwargs``.
-        ``stacklevel`` is supported, but is silently ignored in Python 3.7.
         """
         if self.isEnabledFor(level):
             try:
@@ -138,26 +125,20 @@ class LoggerAdapter(logging.LoggerAdapter):  # type: ignore[type-arg]  # Only ge
             new_extra['alias'] = self.alias
             new_extra['context'] = f' ({ctx})' if ctx else ''
 
-            # Pull these arguments out of kwargs, so they can be set..
-            log_args: _LogKwargs = {
-                'extra': new_extra,
-                'exc_info': exc_info,
-                'stack_info': stack_info,
-            }
-            # Not present in 3.7, silently discard.
-            stack_level = kwargs.pop('stacklevel', 0)
-            if sys.version_info >= (3, 8):
-                if sys.version_info >= (3, 10):
-                    stack_level += 2
-                log_args['stacklevel'] = stack_level
+            # Handle some extra indirection in 3.10+
+            if sys.version_info >= (3, 10):
+                stacklevel += 2
 
             # noinspection PyProtectedMember
             self.logger._log(
                 level,
                 LogMessage(str(msg), args, kwargs),
-                (),  # No positional arguments, we do the formatting through
-                # LogMessage..
-                **log_args,
+                (),  # No positional arguments, we do the formatting through LogMessage.
+                # Pull out of kwargs, so log can handle them specially.
+                extra=new_extra,
+                exc_info=exc_info,
+                stack_info=stack_info,
+                stacklevel=stacklevel,
             )
 
     def __getattr__(self, attr: str) -> Any:

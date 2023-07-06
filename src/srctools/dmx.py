@@ -28,7 +28,6 @@ import collections
 import copy
 import io
 import re
-import sys
 
 import attrs
 
@@ -2339,14 +2338,9 @@ def _conv_quaternion_to_vec4(quat: Quaternion) -> Vec4:
 
 # Binary conversions.
 _conv_string_to_binary = bytes.fromhex
-if sys.version_info >= (3, 8):
-    def _conv_binary_to_string(byt: bytes) -> str:
-        """Format each byte, seperated by spaces."""
-        return byt.hex(' ', 1).upper()
-else:
-    def _conv_binary_to_string(byt: bytes) -> str:
-        """The parameters for bytes.hex() aren't available, do it ourselves."""
-        return ' '.join([format(x, '02X') for x in byt])
+def _conv_binary_to_string(byt: bytes) -> str:
+    """Format each byte, seperated by spaces."""
+    return byt.hex(' ', 1).upper()
 
 
 def _binconv_basic(name: str, fmt: str) -> None:

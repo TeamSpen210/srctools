@@ -530,8 +530,7 @@ class VPK:
         """Yield all FileInfo objects."""
         for folders in self._fileinfo.values():
             for files in folders.values():
-                for info in files.values():
-                    yield info
+                yield from files.values()
 
     def filenames(self, ext: str = '', folder: str = '') -> Iterator[str]:
         """Yield filenames from this VPK.
@@ -568,8 +567,7 @@ class VPK:
             for subfolder, files in folders.items():
                 if not subfolder.startswith(folder):
                     continue
-                for info in files.values():
-                    yield info
+                yield from files.values()
 
     def __len__(self) -> int:
         """Returns the number of files we have."""
