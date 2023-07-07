@@ -13,6 +13,22 @@ from srctools.vmf import VMF, ValidKVs
 
 TAGS_EZ2 = frozenset({"hl2", "episodic", "mapbase", "entropyzero2"})
 
+# Additional resources EZ2 precaches for any prop.
+RES_EZ2_PROP = [
+    Resource.snd('Metal.SawbladeStick'),
+    Resource.snd('PropaneTank.Burst'),
+    Resource.snd('Weapon_FlareGun.Burn'),
+    Resource.part('env_fire_large'),
+    Resource.part('env_fire_large_smoke'),
+    Resource.part('env_fire_medium'),
+    Resource.part('env_fire_medium_smoke'),
+    Resource.part('env_fire_small'),
+    Resource.part('env_fire_small_smoke'),
+    Resource.part('env_fire_tiny'),
+    Resource.part('env_fire_tiny_smoke'),
+    Resource.mdl('models/weapons/flare.mdl'),
+]
+
 
 def check_entity(
     *resources: Resource,
@@ -641,6 +657,75 @@ def test_item_ammo_crate_mbase_extras() -> None:
         classname='item_ammo_crate',
         ammotype=10,
         tags__=['mapbase'],
+    )
+
+
+def test_item_item_crate() -> None:
+    """Item crates can produce an arbitary entity, and swap models."""
+    # No classname = don't spawn anything.
+    check_entity(
+        Resource.snd('PropaneTank.Burst'),  # From prop_physics.
+        Resource.mdl('models/items/item_item_crate.mdl'),
+        classname='item_item_crate',
+    )
+    check_entity(
+        Resource.snd('PropaneTank.Burst'),
+        Resource.mdl('models/items/item_item_crate.mdl'),
+        Resource.mdl('models/items/boxmrounds.mdl'),
+        classname='item_item_crate',
+        itemclass='item_ammo_smg1',
+    )
+    check_entity(
+        Resource.snd('PropaneTank.Burst'),
+        Resource.mdl('models/items/item_item_crate.mdl'),
+        classname='item_item_crate',
+        itemclass='item_ammo_smg1',
+        cratetype=1,  # Mapbase - spawn template, so not spawned by class.
+    )
+    check_entity(
+        Resource.snd('PropaneTank.Burst'),
+        Resource.mdl('models/items/item_beacon_crate.mdl'),
+        classname='item_item_crate',
+        crateappearance=1,  # Beacon version.
+        cratetype=1,
+    )
+    check_entity(
+        Resource.snd('PropaneTank.Burst'),
+        Resource.mdl('models/my_custom_crate.mdl'),
+        classname='item_item_crate',
+        crateappearance=2,  # Mapbase, custom model.
+        model='models/my_custom_crate.mdl',
+        cratetype=1,
+    )
+    # In EZ2, the variant is passed along.
+    check_entity(
+        *RES_EZ2_PROP,
+        Resource.snd('PropaneTank.Burst'),
+        Resource.mdl('models/items/item_item_crate.mdl'),
+        classname='item_item_crate',
+        tags__=TAGS_EZ2,
+    )
+    check_entity(
+        *RES_EZ2_PROP,
+        Resource.snd('PropaneTank.Burst'),
+        Resource.mdl('models/items/item_item_crate.mdl'),
+        Resource.snd('HealthKit.Touch'),
+        Resource.mdl('models/items/healthkit.mdl#0'),
+        classname='item_item_crate',
+        ezvariant=0,
+        itemclass='item_healthkit',
+        tags__=TAGS_EZ2,
+    )
+    check_entity(
+        *RES_EZ2_PROP,
+        Resource.snd('PropaneTank.Burst'),
+        Resource.mdl('models/items/item_item_crate.mdl'),
+        Resource.snd('HealthKit_Arbeit.Touch'),
+        Resource.mdl('models/items/arbeit/healthkit.mdl#0'),
+        classname='item_item_crate',
+        ezvariant=4,
+        itemclass='item_healthkit',
+        tags__=TAGS_EZ2,
     )
 
 
