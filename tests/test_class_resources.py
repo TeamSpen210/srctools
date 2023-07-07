@@ -64,6 +64,24 @@ def test_basic_ent() -> None:
     )
 
 
+@pytest.mark.xfail
+def test_asw_emitter() -> None:
+    """Test handling the ASW-specific effect system."""
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_asw_snow_volume() -> None:
+    """Test handling a snowing effect using the ASW effect system."""
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_asw_spawner() -> None:
+    """Test special keyvalues on asw_spawner."""
+    raise NotImplementedError
+
+
 def test_color_correction() -> None:
     """Color correction packs the correction filename."""
     check_entity(
@@ -201,6 +219,7 @@ def test_func_breakable_spawns() -> None:
 
 
 def test_func_breakable_surf() -> None:
+    """Breakable surf has two sets of special resources loaded."""
     check_entity(
         *BREAKABLE,
         Resource.mdl("models/brokenglass_piece.mdl"),
@@ -1244,6 +1263,12 @@ def test_npc_citizen() -> None:
     raise NotImplementedError
 
 
+@pytest.mark.xfail
+def test_hl2_gamerules() -> None:
+    """In Mapbase, the default citizen can be overridden using the gamerules entity."""
+    raise NotImplementedError
+
+
 def test_npc_combinedropship() -> None:
     """The dropship can spawn with a variety of cargos."""
     common = [
@@ -1525,6 +1550,12 @@ def test_skybox_swapper() -> None:
         classname='skybox_swapper',
         skyboxname='sky_purple',
     )
+
+
+@pytest.mark.xfail
+def test_prop_door_rotating() -> None:
+    """Prop_door_rotating uses a special $keyvalues block in the model to specify sounds."""
+    raise NotImplementedError
 
 
 @pytest.mark.parametrize('cls', ['move_rope', 'keyframe_rope'])
