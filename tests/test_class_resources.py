@@ -87,6 +87,29 @@ def test_func_button_timed() -> None:
     )
 
 
+def test_momentary_rot_button() -> None:
+    """If a flag is set, the sounds keyvalue is not used."""
+    check_entity(classname='momentary_rot_button')
+    check_entity(
+        Resource('Buttons.snd8', FileType.GAME_SOUND),
+        Resource('Buttons.snd34', FileType.GAME_SOUND),
+        classname='momentary_rot_button',
+        sounds=16,
+        locked_sound='8',
+        unlocked_sound=34,
+    )
+    check_entity(
+        Resource('Buttons.snd16', FileType.GAME_SOUND),
+        Resource('Buttons.snd8', FileType.GAME_SOUND),
+        Resource('Buttons.snd34', FileType.GAME_SOUND),
+        classname='momentary_rot_button',
+        spawnflags=1024,  # SF_BUTTON_USE_ACTIVATES
+        sounds=16,
+        locked_sound='8',
+        unlocked_sound=34,
+    )
+
+
 @pytest.mark.xfail
 def test_base_plat_train() -> None:
     raise NotImplementedError
