@@ -1442,6 +1442,41 @@ def test_skybox_swapper() -> None:
     )
 
 
+@pytest.mark.parametrize('cls', ['move_rope', 'keyframe_rope'])
+def test_sprite_rope(cls: str) -> None:
+    """move_rope/keyframe_rope can fall back to a hardocded list of materials."""
+    check_entity(
+        Resource.mat("materials/cable/rope_shadowdepth.vmt"),
+        Resource.mat('materials/cable/cable.vmt'),
+        classname=cls,
+    )
+    check_entity(
+        Resource.mat("materials/cable/rope_shadowdepth.vmt"),
+        classname=cls,
+        ropematerial='custom/some_rope',  # Done by generic FGD packing.
+    )
+    check_entity(
+        Resource.mat("materials/cable/rope_shadowdepth.vmt"),
+        Resource.mat('materials/cable/cable.vmt'),
+        classname=cls,
+        ropematerial='custom/some_rope',  # Ignored.
+        ropeshader=0,
+    )
+    check_entity(
+        Resource.mat("materials/cable/rope_shadowdepth.vmt"),
+        Resource.mat('materials/cable/rope.vmt'),
+        classname=cls,
+        ropematerial='custom/some_rope',  # Ignored.
+        ropeshader=1,
+    )
+    check_entity(
+        Resource.mat("materials/cable/rope_shadowdepth.vmt"),
+        Resource.mat('materials/cable/chain.vmt'),
+        classname=cls,
+        ropeshader=2,
+    )
+
+
 @pytest.mark.xfail
 def test_team_control_point() -> None:
     raise NotImplementedError
