@@ -9,6 +9,7 @@ Changelog
 Version (dev)
 -------------
 * Drop support for Python 3.7.
+* Fix VMT parsing not handling `Proxies {` style braces.
 
 --------------
 Version 2.3.13

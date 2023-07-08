@@ -172,12 +172,11 @@ class Material(MutableMapping[str, str]):
             if token is Tok.STRING:
                 # We have the value.
                 pass
-            elif token is Tok.NEWLINE:
-                # Name by itself: '%compilenodraw' etc...
+            elif token is Tok.NEWLINE or token is Tok.BRACE_OPEN:
+                # Name by itself: '%compilenodraw' etc if newline,
+                # or 'Proxies {' etc.
                 param_value = ''
-                # We need to check there's a newline after that - for proxies,
-                # or errors.
-                token, ignored = tok()
+                # Skip newlines, figure out what this is.
                 while token is Tok.NEWLINE:
                     token, ignored = tok()
 
@@ -256,10 +255,9 @@ class Material(MutableMapping[str, str]):
             if token is Tok.STRING:
                 # We have the value.
                 pass
-            elif token is Tok.NEWLINE:
-                # Name by itself: '%compilenodraw' etc...
-                # We need to check there's a newline after that - for subblocks.
-                token, ignored = tok()
+            elif token is Tok.NEWLINE or token is Tok.BRACE_OPEN:
+                # Name by itself: '%compilenodraw' etc if newline,
+                # or 'Proxies {' etc. Skip newlines, figure out what this is.
                 while token is Tok.NEWLINE:
                     token, ignored = tok()
 
