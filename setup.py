@@ -12,10 +12,13 @@ optional_ext = os.environ.get('CIBUILDWHEEL', '0') != '1'
 
 if WIN:
     openmp = ['/openmp']
+    openmp_link = []
 elif MAC:
     openmp = []  # Not supported by system Clang.
+    openmp_link = []
 else:
     openmp = ['-fopenmp']
+    openmp_link = ['-fopenmp']
 
 extensions = [
     Extension(
@@ -46,7 +49,7 @@ extensions = [
         extra_compile_args=[
             # '/FAs',  # MS ASM dump
         ] + openmp,
-        extra_link_args=openmp,
+        extra_link_args=openmp_link,
     ),
     Extension(
         "srctools._math",
