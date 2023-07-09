@@ -165,7 +165,7 @@ def bool_as_int(val: object) -> Literal['0', '1']:
         return '0'
 
 
-BOOL_LOOKUP: Mapping[str, bool] = {
+BOOL_LOOKUP: Final[Mapping[str, bool]] = {
     '0': False,
     'no': False,
     'false': False,
@@ -182,9 +182,9 @@ BOOL_LOOKUP: Mapping[str, bool] = {
 def conv_bool(val: Union[str, bool, None], default: Union[ValT, bool] = False) -> Union[ValT, bool]:
     """Converts a string to a boolean, using a default if it fails.
 
-    Accepts any of '0', '1', 'false', 'true', 'yes', 'no'.
-    If Val is None, this always returns the default.
-    0, 1, True and False will be passed through unchanged.
+    Accepts any of ``0``, ``1``, ``false``, ``true``, ``yes``, ``no``.
+    If val is ``None``, this always returns the default.
+    ``0``, ``1``, ``True`` and ``False`` will be passed through unchanged.
     """
     if val is None:
         return default

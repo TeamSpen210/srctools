@@ -36,7 +36,7 @@ Type Conversion
 ``BOOL_LOOKUP`` is a constant mapping string values to the appropriate boolean result, the same way :py:func:`conv_bool` functions.
 
 .. py:data:: EmptyMapping
-	:type: collections.abc.MutableMapping
+	:type: collections.abc.MutableMapping[Any, Any]
 
 This is a constant mapping which behaves as if it is always empty. It is intended for use in default parameter values, and other fallbacks. It also supports writing operations, which simply do nothing.
 
