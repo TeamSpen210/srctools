@@ -59,9 +59,6 @@ srctools_find_deps = "srctools.scripts.find_deps:main"
 [project.entry-points]
 pyinstaller40 = {hook-dirs="srctools._pyinstaller:get_hook_dirs"}
 
-[tool.setuptools]
-	include-package-data = true
-
 [tool.setuptools.packages.find]
 	where = ["src"]
 	include = ["srctools*"]
