@@ -56,6 +56,7 @@ true_strings = ['1', 'true', 'yes', 'True', 'trUe', 'Yes', 'yEs', 'yeS']
 
 non_ints = ['-23894.0', '', 'hello', '5j', '6.2', '0.2', '6.9', None, object()]
 non_floats = ['5j', '', 'hello', '6.2.5', '4F', '100-', None, object(), float]
+non_bools = ['', 'noe', 'tru', 'fals', None]
 
 # We want to pass through all object types unchanged as defaults.
 def_vals = [
@@ -108,17 +109,21 @@ def test_conv_int() -> None:
 def test_conv_bool() -> None:
     """Test srctools.conv_bool()"""
     for val in true_strings:
-        assert srctools.conv_bool(val)
+        assert srctools.conv_bool(val) is True
     for val in false_strings:
-        assert not srctools.conv_bool(val)
+        assert srctools.conv_bool(val) is False
 
     # Check that bools pass through
-    assert srctools.conv_bool(True)
-    assert not srctools.conv_bool(False)
+    assert srctools.conv_bool(True) is True
+    assert srctools.conv_bool(False) is False
 
     # None passes through the default
-    for val in def_vals:
-        assert srctools.conv_bool(None, val) is val
+    for val in non_bools:
+        # Check default value.
+        assert srctools.conv_bool(val) is False
+        # Check all default values pass through unchanged
+        for default in def_vals:
+            assert srctools.conv_bool(val, default) is default
 
 
 def test_conv_float() -> None:
