@@ -455,7 +455,6 @@ class Tokenizer(BaseTokenizer):
 
     def _get_token(self) -> Tuple[Token, str]:
         """Return the next token, value pair."""
-        comment_buf: Optional[List[str]]
         value_chars: List[str]
         while True:
             next_char = self._next_char()
@@ -485,114 +484,11 @@ class Tokenizer(BaseTokenizer):
                 # Ignore whitespace..
                 continue
 
-            # Comments
             elif next_char == '/':
-                # The next must be another slash! (//)
-                comment_next = self._next_char()
-                comment_buf = [] if self.preserve_comments else None
-                if comment_next == '*':
-                    # /* comment.
-                    if self.allow_star_comments:
-                        comment_start = self.line_num
-                        while True:
-                            next_char = self._next_char()
-                            if next_char is None:
-                                raise self.error(
-                                    'Unclosed /* comment '
-                                    '(starting on line {})!',
-                                    comment_start,
-                                )
-                            elif next_char == '\n':
-                                self.line_num += 1
-                                if comment_buf is not None:
-                                    comment_buf.append(next_char)
-                            elif next_char == '*':
-                                # Check next, next character!
-                                next_next_char = self._next_char()
-                                if next_next_char is None:
-                                    raise self.error(
-                                        'Unclosed /* comment '
-                                        '(starting on line {})!',
-                                        comment_start,
-                                    )
-                                elif next_next_char == '/':
-                                    break
-                                else:
-                                    # We need to reparse this, to ensure
-                                    # "**/" parses correctly!
-                                    self.char_index -= 1
-                            elif comment_buf is not None:
-                                comment_buf.append(next_char)
-                        if comment_buf is not None:
-                            return Token.COMMENT, ''.join(comment_buf)
-                    else:
-                        raise self.error(
-                            '/**/-style comments are not allowed!'
-                        )
-                elif comment_next != '/':
-                    raise self.error(
-                        'Single slash found, '
-                        'instead of two for a comment (// or /* */)!'
-                        if self.allow_star_comments else
-                        'Single slash found, '
-                        'instead of two for a comment (//)!'
-                    )
-                else:
-                    # Skip to end of line
-                    comment_buf = [] if self.preserve_comments else None
-                    while True:
-                        next_char = self._next_char()
-                        if next_char == '\n' or next_char is None:
-                            break
-                        if comment_buf is not None:
-                            comment_buf.append(next_char)
-
-                    # We want to produce the token for the end character.
-                    self.char_index -= 1
-                    if comment_buf is not None:
-                        return Token.COMMENT, ''.join(comment_buf)
-
-            # Strings
+                if (comm := self._handle_comment()) is not None:
+                    return comm
             elif next_char == '"':
-                value_chars = []
-                last_was_cr = False
-                while True:
-                    next_char = self._next_char()
-                    if next_char == '"':
-                        return Token.STRING, ''.join(value_chars)
-                    elif next_char == '\r':
-                        self.line_num += 1
-                        last_was_cr = True
-                        value_chars.append('\n')
-                        continue
-                    elif next_char == '\n':
-                        if last_was_cr:
-                            last_was_cr = False
-                            continue
-                        self.line_num += 1
-                    else:
-                        last_was_cr = False
-
-                    if next_char == '\\' and self.allow_escapes:
-                        # Escape text
-                        escape = self._next_char()
-                        if escape is None:
-                            raise self.error('No character to escape!')
-                        try:
-                            next_char = ESCAPES[escape]
-                        except KeyError:
-                            # Instead of checking for EOF first, do it here since None won't be in
-                            # the dict. That way the happy path doesn't have to check.
-                            if escape is None:
-                                raise self.error('Unterminated string!') from None
-                            else:
-                                next_char = '\\' + escape
-                                # raise self.error('Unknown escape "\\{}" in {}!', escape, self.cur_chunk)
-                    if next_char is None:
-                        raise self.error('Unterminated string!')
-                    else:
-                        value_chars.append(next_char)
-
+                return self._handle_string()
             elif next_char == '[':
                 # FGDs use [] for grouping, Properties use it for flags.
                 if not self.string_bracket:
@@ -687,6 +583,115 @@ class Tokenizer(BaseTokenizer):
 
             else:
                 raise self.error('Unexpected character "{}"!', next_char)
+
+    def _handle_comment(self) -> Optional[Tuple[Token, str]]:
+        """Handle a comment. The last character read was the initial slash."""
+        # The next must be either a slash (//) or star (/*)
+        comment_next = self._next_char()
+        comment_buf: Optional[List[str]] = [] if self.preserve_comments else None
+        if comment_next == '*':
+            # /* comment.
+            if self.allow_star_comments:
+                comment_start = self.line_num
+                while True:
+                    next_char = self._next_char()
+                    if next_char is None:
+                        raise self.error(
+                            'Unclosed /* comment '
+                            '(starting on line {})!',
+                            comment_start,
+                        )
+                    elif next_char == '\n':
+                        self.line_num += 1
+                        if comment_buf is not None:
+                            comment_buf.append(next_char)
+                    elif next_char == '*':
+                        # Check next, next character!
+                        next_next_char = self._next_char()
+                        if next_next_char is None:
+                            raise self.error(
+                                'Unclosed /* comment '
+                                '(starting on line {})!',
+                                comment_start,
+                            )
+                        elif next_next_char == '/':
+                            break
+                        else:
+                            # We need to reparse this, to ensure
+                            # "**/" parses correctly!
+                            self.char_index -= 1
+                    elif comment_buf is not None:
+                        comment_buf.append(next_char)
+                if comment_buf is not None:
+                    return Token.COMMENT, ''.join(comment_buf)
+            else:
+                raise self.error(
+                    '/**/-style comments are not allowed!'
+                )
+        elif comment_next != '/':
+            raise self.error(
+                'Single slash found, '
+                'instead of two for a comment (// or /* */)!'
+                if self.allow_star_comments else
+                'Single slash found, '
+                'instead of two for a comment (//)!'
+            )
+        else:
+            # Skip to end of line
+            comment_buf = [] if self.preserve_comments else None
+            while True:
+                next_char = self._next_char()
+                if next_char == '\n' or next_char is None:
+                    break
+                if comment_buf is not None:
+                    comment_buf.append(next_char)
+
+            # We want to produce the token for the end character.
+            self.char_index -= 1
+            if comment_buf is not None:
+                return Token.COMMENT, ''.join(comment_buf)
+        return None  # Swallow the comment.
+
+    def _handle_string(self) -> Tuple[Token, str]:
+        """Handle a quoted string definition. The last character was a quote."""
+        value_chars: List[str] = []
+        last_was_cr = False
+        while True:
+            next_char = self._next_char()
+            if next_char == '"':
+                return Token.STRING, ''.join(value_chars)
+            elif next_char == '\r':
+                self.line_num += 1
+                last_was_cr = True
+                value_chars.append('\n')
+                continue
+            elif next_char == '\n':
+                if last_was_cr:
+                    last_was_cr = False
+                    continue
+                self.line_num += 1
+            else:
+                last_was_cr = False
+
+            if next_char == '\\' and self.allow_escapes:
+                # Escape text
+                escape = self._next_char()
+                if escape is None:
+                    raise self.error('No character to escape!')
+                try:
+                    next_char = ESCAPES[escape]
+                except KeyError:
+                    # Instead of checking for EOF first, do it here since None won't be in
+                    # the dict. That way the happy path doesn't have to check.
+                    if escape is None:
+                        raise self.error('Unterminated string!') from None
+                    else:
+                        next_char = '\\' + escape
+                        # raise self.error('Unknown escape "\\{}" in {}!', escape, self.cur_chunk)
+            if next_char is None:
+                raise self.error('Unterminated string!')
+            else:
+                value_chars.append(next_char)
 
 
 class IterTokenizer(BaseTokenizer):
