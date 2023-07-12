@@ -195,7 +195,14 @@ def conv_bool(val: Union[str, bool, None], default: Union[ValT, bool] = False) -
         return BOOL_LOOKUP[val]
     except KeyError:
         # Try again with casefolded strings
-        return BOOL_LOOKUP.get(val.casefold(), default)
+        try:
+            val = val.casefold()
+        except AttributeError:  # Non-string?
+            return default
+        try:
+            return BOOL_LOOKUP[val]
+        except KeyError:
+            return default
 
 
 def conv_float(val: Union[int, float, str], default: Union[ValT, float] = 0.0) -> Union[

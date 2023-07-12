@@ -56,7 +56,7 @@ true_strings = ['1', 'true', 'yes', 'True', 'trUe', 'Yes', 'yEs', 'yeS']
 
 non_ints = ['-23894.0', '', 'hello', '5j', '6.2', '0.2', '6.9', None, object()]
 non_floats = ['5j', '', 'hello', '6.2.5', '4F', '100-', None, object(), float]
-non_bools = ['', 'noe', 'tru', 'fals', None]
+non_bools = ['', 'noe', 'tru', 'fals', None, object()]
 
 # We want to pass through all object types unchanged as defaults.
 def_vals = [
