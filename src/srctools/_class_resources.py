@@ -544,6 +544,17 @@ def item_ammo_ar2_altfire(ctx: ResourceCtx, ent: Entity) -> ResGen:
 
 
 @cls_func
+def item_battery(ctx: ResourceCtx, ent: Entity) -> ResGen:
+    """Suit batteries have multiple variants in EZ2."""
+    if 'ezvariant' not in ent:
+        return
+    variant = conv_int(ent['ezvariant'])
+    model, skin, snd = EZ_MODEL_FOLDERS[variant]
+
+    yield Resource.mdl(f'models/items/{model}battery.mdl#{skin}')
+
+
+@cls_func
 def item_healthkit(ctx: ResourceCtx, ent: Entity, kind: str = 'kit') -> ResGen:
     """Healthkits have multiple variants in EZ2."""
     if 'ezvariant' not in ent:

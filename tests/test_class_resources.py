@@ -885,21 +885,88 @@ def test_item_healthvial() -> None:
     check_entity(
         Resource.snd('HealthVial_Blood.Touch'),
         Resource.mdl('models/items/blood/healthvial.mdl#0'),
-        classname='item_healthkit',
+        classname='item_healthvial',
         ezvariant=5,
         tags__=TAGS_EZ2,
     )
     check_entity(
         Resource.snd('HealthVial_Athenaeum.Touch'),
         Resource.mdl('models/items/athenaeum/healthvial.mdl#0'),
-        classname='item_healthkit',
+        classname='item_healthvial',
         ezvariant=6,
         tags__=TAGS_EZ2,
     )
     check_entity(
         Resource.snd('HealthVial_Ash.Touch'),
         Resource.mdl('models/items/ash/healthvial.mdl#0'),
-        classname='item_healthkit',
+        classname='item_healthvial',
+        ezvariant=7,
+        tags__=TAGS_EZ2,
+    )
+
+
+def test_item_battery() -> None:
+    """Entropy Zero 2 has several variants for this item."""
+    # Regular HL2.
+    check_entity(
+        Resource.snd('ItemBattery.Touch'),
+        Resource.mdl('models/items/battery.mdl'),
+        classname='item_battery',
+        tags__=['hl2'],
+    )
+    check_entity(
+        Resource.snd('ItemBattery.Touch'),
+        Resource.mdl('models/items/battery.mdl#0'),
+        classname='item_battery',
+        ezvariant=0,
+        tags__=TAGS_EZ2,
+    )
+    check_entity(
+        Resource.snd('ItemBattery.Touch'),
+        Resource.mdl('models/items/xen/battery.mdl#0'),
+        classname='item_battery',
+        ezvariant=1,
+        tags__=TAGS_EZ2,
+    )
+    check_entity(
+        Resource.snd('ItemBattery.Touch'),
+        Resource.mdl('models/items/arbeit/battery.mdl#1'),
+        classname='item_battery',
+        ezvariant=2,
+        tags__=TAGS_EZ2,
+    )
+    check_entity(
+        Resource.snd('ItemBattery.Touch'),
+        Resource.mdl('models/items/temporal/battery.mdl#0'),
+        classname='item_battery',
+        ezvariant=3,
+        tags__=TAGS_EZ2,
+    )
+    check_entity(
+        Resource.snd('ItemBattery.Touch'),
+        Resource.mdl('models/items/arbeit/battery.mdl#0'),
+        classname='item_battery',
+        ezvariant=4,
+        tags__=TAGS_EZ2,
+    )
+    check_entity(
+        Resource.snd('ItemBattery.Touch'),
+        Resource.mdl('models/items/blood/battery.mdl#0'),
+        classname='item_battery',
+        ezvariant=5,
+        tags__=TAGS_EZ2,
+    )
+    check_entity(
+        Resource.snd('ItemBattery.Touch'),
+        Resource.mdl('models/items/athenaeum/battery.mdl#0'),
+        classname='item_battery',
+        ezvariant=6,
+        tags__=TAGS_EZ2,
+    )
+    check_entity(
+        Resource.snd('ItemBattery.Touch'),
+        Resource.mdl('models/items/ash/battery.mdl#0'),
+        classname='item_battery',
         ezvariant=7,
         tags__=TAGS_EZ2,
     )
