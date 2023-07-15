@@ -815,6 +815,27 @@ def test_item_healthkit() -> None:
         ezvariant=4,
         tags__=TAGS_EZ2,
     )
+    check_entity(
+        Resource.snd('HealthKit_Blood.Touch'),
+        Resource.mdl('models/items/blood/healthkit.mdl#0'),
+        classname='item_healthkit',
+        ezvariant=5,
+        tags__=TAGS_EZ2,
+    )
+    check_entity(
+        Resource.snd('HealthKit_Athenaeum.Touch'),
+        Resource.mdl('models/items/athenaeum/healthkit.mdl#0'),
+        classname='item_healthkit',
+        ezvariant=6,
+        tags__=TAGS_EZ2,
+    )
+    check_entity(
+        Resource.snd('HealthKit_Ash.Touch'),
+        Resource.mdl('models/items/ash/healthkit.mdl#0'),
+        classname='item_healthkit',
+        ezvariant=7,
+        tags__=TAGS_EZ2,
+    )
 
 
 def test_item_healthvial() -> None:
@@ -859,6 +880,27 @@ def test_item_healthvial() -> None:
         Resource.mdl('models/items/arbeit/healthvial.mdl#0'),
         classname='item_healthvial',
         ezvariant=4,
+        tags__=TAGS_EZ2,
+    )
+    check_entity(
+        Resource.snd('HealthVial_Blood.Touch'),
+        Resource.mdl('models/items/blood/healthvial.mdl#0'),
+        classname='item_healthkit',
+        ezvariant=5,
+        tags__=TAGS_EZ2,
+    )
+    check_entity(
+        Resource.snd('HealthVial_Athenaeum.Touch'),
+        Resource.mdl('models/items/athenaeum/healthvial.mdl#0'),
+        classname='item_healthkit',
+        ezvariant=6,
+        tags__=TAGS_EZ2,
+    )
+    check_entity(
+        Resource.snd('HealthVial_Ash.Touch'),
+        Resource.mdl('models/items/ash/healthvial.mdl#0'),
+        classname='item_healthkit',
+        ezvariant=7,
         tags__=TAGS_EZ2,
     )
 

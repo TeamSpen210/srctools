@@ -46,6 +46,8 @@ EZ_VARIANT_RAD: Final = 2
 EZ_VARIANT_TEMPORAL: Final = 3
 EZ_VARIANT_ARBEIT: Final = 4
 EZ_VARIANT_BLOOD: Final = 5
+EZ_VARIANT_ATHENAEUM: Final = 6
+EZ_VARIANT_ASH: Final = 7
 
 
 # TODO: We need to parse vehicle scripts.
@@ -524,6 +526,9 @@ EZ_MODEL_FOLDERS = [
     ('arbeit/', 1, '_Rad'),
     ('temporal/', 0, '_Temporal'),
     ('arbeit/', 0, '_Arbeit'),
+    ('blood/', 0, '_Blood'),
+    ('athenaeum/', 0, '_Athenaeum'),
+    ('ash/', 0, '_Ash'),
 ]
 
 
@@ -544,8 +549,6 @@ def item_healthkit(ctx: ResourceCtx, ent: Entity, kind: str = 'kit') -> ResGen:
     if 'ezvariant' not in ent:
         return
     variant = conv_int(ent['ezvariant'])
-    if variant == EZ_VARIANT_BLOOD:  # Causes a segfault.
-        ent['ezvariant'] = variant = EZ_VARIANT_DEFAULT
     model, skin, snd = EZ_MODEL_FOLDERS[variant]
 
     if kind == 'vial' and model == '':
