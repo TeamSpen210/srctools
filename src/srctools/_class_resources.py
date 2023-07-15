@@ -517,7 +517,7 @@ def item_teamflag(ctx: ResourceCtx, ent: Entity) -> ResGen:
             yield Resource.mat(folder + '_blue.vmt')
 
 
-EZ_HEALTH_FOLDERS = [
+EZ_MODEL_FOLDERS = [
     # model folder, skin, sound folder
     ('', 0, ''),  # Normal
     ('xen/', 0, '_Xen'),
@@ -528,6 +528,17 @@ EZ_HEALTH_FOLDERS = [
 
 
 @cls_func
+def item_ammo_ar2_altfire(ctx: ResourceCtx, ent: Entity) -> ResGen:
+    """AR2 energy ball ammo has multiple variants in EZ2."""
+    if 'ezvariant' not in ent:
+        return
+    variant = conv_int(ent['ezvariant'])
+    model, skin, snd = EZ_MODEL_FOLDERS[variant]
+
+    yield Resource.mdl(f'models/items/{model}combine_rifle_ammo01.mdl#{skin}')
+
+
+@cls_func
 def item_healthkit(ctx: ResourceCtx, ent: Entity, kind: str = 'kit') -> ResGen:
     """Healthkits have multiple variants in EZ2."""
     if 'ezvariant' not in ent:
@@ -535,7 +546,7 @@ def item_healthkit(ctx: ResourceCtx, ent: Entity, kind: str = 'kit') -> ResGen:
     variant = conv_int(ent['ezvariant'])
     if variant == EZ_VARIANT_BLOOD:  # Causes a segfault.
         ent['ezvariant'] = variant = EZ_VARIANT_DEFAULT
-    model, skin, snd = EZ_HEALTH_FOLDERS[variant]
+    model, skin, snd = EZ_MODEL_FOLDERS[variant]
 
     if kind == 'vial' and model == '':
         # Special case, the regular model is not in items.
