@@ -595,7 +595,10 @@ cdef class Tokenizer(BaseTokenizer):
             return CHR_EOF
 
         if self.flags.file_input:
-            self.cur_chunk = self.chunk_iter(FILE_BUFFER)
+            try:
+                self.cur_chunk = self.chunk_iter(FILE_BUFFER)
+            except UnicodeDecodeError as exc:
+                raise self._error(f"Could not decode file:\n{exc!s}") from exc
             self.char_index = 0
 
             if type(self.cur_chunk) is str:
@@ -617,7 +620,7 @@ cdef class Tokenizer(BaseTokenizer):
             try:
                 chunk_obj = next(self.chunk_iter, None)
             except UnicodeDecodeError as exc:
-                raise self._error("Could not decode file!") from exc
+                raise self._error(f"Could not decode file:\n{exc!s}") from exc
             if chunk_obj is None:
                 # Out of characters after empty chunks
                 self.chunk_iter = None
