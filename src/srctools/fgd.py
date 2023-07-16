@@ -513,9 +513,8 @@ class Helper:
         The default implementation expects no arguments.
         """
         if args:
-            raise ValueError('No arguments accepted by {}()!'.format(
-                cls.TYPE.name if cls.TYPE is not None else cls.__name__
-            ))
+            name = cls.TYPE.name if cls.TYPE is not None else cls.__name__
+            raise ValueError(f'No arguments accepted by {name}()!')
         return cls()
 
     def export(self) -> List[str]:
@@ -1693,10 +1692,7 @@ class FGD:
                     new_bases.append(self[base])
                 except KeyError:
                     raise ValueError(
-                        'Unknown base ({}) for {}'.format(
-                            base,
-                            ent.classname,
-                        )
+                        f'Unknown base ({base}) for {ent.classname}'
                     ) from None
 
     def sorted_ents(self) -> Iterator[EntityDef]:

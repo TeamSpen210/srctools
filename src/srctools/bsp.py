@@ -545,11 +545,9 @@ class GameLump:
             self.flags &= ~0x1
 
     def __repr__(self) -> str:
-        return '<GameLump {}, flags={}, v{}, {} bytes>'.format(
-            repr(self.id)[1:],
-            self.flags,
-            self.version,
-            len(self.data),
+        return (
+            f'<GameLump {repr(self.id)[1:]}, flags={self.flags}, '
+            f'v{self.version}, {len(self.data)} bytes>'
         )
 
 

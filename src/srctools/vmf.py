@@ -1323,14 +1323,8 @@ class Solid:
             for group in self.visgroup_ids:
                 buffer.write(f'{ind}\t\t"visgroupid" "{group}"\n')
 
-        buffer.write('{}\t\t"visgroupshown" "{}"\n'.format(
-            ind,
-            srctools.bool_as_int(self.vis_shown),
-        ))
-        buffer.write('{}\t\t"visgroupautoshown" "{}"\n'.format(
-            ind,
-            srctools.bool_as_int(self.vis_auto_shown),
-        ))
+        buffer.write(f'{ind}\t\t"visgroupshown" "{"1" if self.vis_shown else "0"}"\n')
+        buffer.write(f'{ind}\t\t"visgroupautoshown" "{"1" if self.vis_auto_shown else "0"}"\n')
         if self.cordon_solid is not None:
             buffer.write(f'{ind}\t\t"cordonsolid" "{self.cordon_solid}"\n')
 
