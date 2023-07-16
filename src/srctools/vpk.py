@@ -726,9 +726,7 @@ def script_write(args: List[str]) -> None:
 # is very slow without a speedup.
 _Py_iter_nullstr = _Cy_iter_nullstr = iter_nullstr
 try:
-    from srctools._tokenizer import (  # type: ignore  # noqa
-        _VPK_IterNullstr as _Cy_iter_nullstr,
-    )
+    from srctools._tokenizer import _VPK_IterNullstr as _Cy_iter_nullstr  # type: ignore  # noqa
     iter_nullstr = _Cy_iter_nullstr
 except ImportError:
     pass

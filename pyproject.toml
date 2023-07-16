@@ -129,7 +129,9 @@ extra_standard_library = ["importlib_resources"]
 known_typing = ["typing", "typing_extensions"]
 no_lines_before = ["TYPING", "FRAMEWORK", "STDLIB"]
 multi_line_output = 5 # hanging grid grouped
-line_length = 95
+# Wrap to 90 long, but only if it exceeds 100 chars.
+line_length = 100
+wrap_length = 90
 lines_after_imports = 2
 use_parentheses = true
 order_by_type = true

@@ -19,12 +19,10 @@ but not vice-versa.
  - Matrix @ Matrix -> Matrix
 """
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, Final, Iterable, Iterator, List, NamedTuple,
-    Optional, SupportsFloat, Tuple, Type, TypeVar, Union, cast,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, Final, Iterable, Iterator, List,
+    NamedTuple, Optional, SupportsFloat, Tuple, Type, TypeVar, Union, cast,
 )
-from typing_extensions import (
-    Literal, Protocol, TypeAlias, TypeGuard, deprecated, final, overload,
-)
+from typing_extensions import Literal, Protocol, TypeAlias, TypeGuard, deprecated, final, overload
 import contextlib
 import math
 

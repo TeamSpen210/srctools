@@ -1,7 +1,7 @@
 """Parses Source models, to extract metadata."""
 from typing import (
-    Any, BinaryIO, Dict, Iterable, Iterator, List, Optional, Sequence as SequenceType, Tuple,
-    TypeVar, Union, cast,
+    Any, BinaryIO, Dict, Iterable, Iterator, List, Optional, Sequence as SequenceType,
+    Tuple, TypeVar, Union, cast,
 )
 from enum import Enum, Flag as FlagEnum
 from pathlib import PurePosixPath

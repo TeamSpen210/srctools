@@ -4,8 +4,8 @@ Wrapper around logging to provide our own functionality.
 This adds the ability to log using str.format() instead of %.
 """
 from typing import (
-    Any, Callable, Dict, Generator, Iterable, List, Mapping, Optional, TextIO, Tuple, Type,
-    Union, cast, overload,
+    Any, Callable, Dict, Generator, Iterable, List, Mapping, Optional, TextIO, Tuple,
+    Type, Union, cast, overload,
 )
 from io import StringIO
 from types import TracebackType

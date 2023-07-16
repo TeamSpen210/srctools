@@ -1,7 +1,7 @@
 """Handles the list of files which are desired to be packed into the BSP."""
 from typing import (
-    Any, Callable, Collection, Dict, Generic, Iterable, Iterator, List, Optional, Set, Tuple,
-    TypeVar, Union,
+    Any, Callable, Collection, Dict, Generic, Iterable, Iterator, List, Optional, Set,
+    Tuple, TypeVar, Union,
 )
 from typing_extensions import deprecated
 from collections import OrderedDict
@@ -21,7 +21,8 @@ from srctools.const import FileType
 from srctools.dmx import Attribute, Element, ValueType
 from srctools.fgd import FGD, EntityDef, ResourceCtx, ValueTypes as KVTypes
 from srctools.filesys import (
-    CACHE_KEY_INVALID, File, FileSystem, FileSystemChain, VirtualFileSystem, VPKFileSystem,
+    CACHE_KEY_INVALID, File, FileSystem, FileSystemChain, VirtualFileSystem,
+    VPKFileSystem,
 )
 from srctools.keyvalues import KeyValError, Keyvalues, NoKeyError
 from srctools.mdl import MDL_EXTS, AnimEvents, Model

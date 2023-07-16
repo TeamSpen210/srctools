@@ -95,8 +95,9 @@ cdef object unpickle_mvec, unpickle_fvec, unpickle_mang, unpickle_fang, unpickle
 # Grab the Vec_Tuple class for quick construction as well
 cdef object Vec_tuple
 from srctools.math import (
-    Vec_tuple, _mk_ang as unpickle_mang, _mk_fang as unpickle_fang, _mk_fmat as unpickle_fmat,
-    _mk_fvec as unpickle_fvec, _mk_mat as unpickle_mmat, _mk_vec as unpickle_mvec,
+    Vec_tuple, _mk_ang as unpickle_mang, _mk_fang as unpickle_fang,
+    _mk_fmat as unpickle_fmat, _mk_fvec as unpickle_fvec, _mk_mat as unpickle_mmat,
+    _mk_vec as unpickle_mvec,
 )
 
 

@@ -4,8 +4,8 @@ from typing import Any
 import pytest
 
 from srctools import (
-    EmptyMapping, _cy_conv_bool, _cy_conv_float, _cy_conv_int, _py_conv_bool, _py_conv_float,
-    _py_conv_int,
+    EmptyMapping, _cy_conv_bool, _cy_conv_float, _cy_conv_int, _py_conv_bool,
+    _py_conv_float, _py_conv_int,
 )
 import srctools
 

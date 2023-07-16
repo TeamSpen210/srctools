@@ -1,7 +1,5 @@
 """Helpers for performing tests."""
-from typing import (
-    Callable, Generator, Iterable, Iterator, Optional, Tuple, Type, TypeVar, Union,
-)
+from typing import Callable, Generator, Iterable, Iterator, Optional, Tuple, Type, TypeVar, Union
 from typing_extensions import TypeAlias
 import builtins
 import itertools
