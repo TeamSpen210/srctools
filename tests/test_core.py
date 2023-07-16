@@ -3,7 +3,10 @@ from typing import Any
 
 import pytest
 
-from srctools import EmptyMapping
+from srctools import (
+    EmptyMapping, _cy_conv_bool, _cy_conv_float, _cy_conv_int, _py_conv_bool, _py_conv_float,
+    _py_conv_int,
+)
 import srctools
 
 
@@ -88,56 +91,73 @@ def test_bool_as_int() -> None:
         assert srctools.bool_as_int(val) == '0', repr(val)
 
 
-def test_conv_int() -> None:
+@pytest.mark.parametrize(
+    'func',
+    [_py_conv_int, _cy_conv_int],
+    ids=['Python', 'Cython'],
+)
+def test_conv_int(func) -> None:
+    """Test srctools.conv_int()."""
     for st_int, result in ints:
-        assert srctools.conv_int(st_int) == result, st_int
+        assert func(st_int) == result, st_int
 
     # Check that float values fail
     marker = object()
     for st_float, result in floats:
         if isinstance(st_float, str):  # We don't want to check float-rounding
-            assert srctools.conv_int(st_float, marker) is marker, repr(st_float)
+            assert func(st_float, marker) is marker, repr(st_float)
 
     # Check non-integers return the default.
     for st_obj in non_ints:
-        assert srctools.conv_int(st_obj) == 0
+        assert func(st_obj) == 0
         for default in def_vals:
             # Check all default values pass through unchanged
-            assert srctools.conv_int(st_obj, default) is default, repr(st_obj)  # type: ignore
+            assert func(st_obj, default) is default, repr(st_obj)  # type: ignore
 
 
-def test_conv_bool() -> None:
-    """Test srctools.conv_bool()"""
+@pytest.mark.parametrize(
+    'func',
+    [_py_conv_bool, _cy_conv_bool],
+    ids=['Python', 'Cython'],
+)
+def test_conv_bool(func) -> None:
+    """Test srctools.conv_bool()."""
     for val in true_strings:
-        assert srctools.conv_bool(val) is True
+        assert func(val) is True
     for val in false_strings:
-        assert srctools.conv_bool(val) is False
+        assert func(val) is False
 
     # Check that bools pass through
-    assert srctools.conv_bool(True) is True
-    assert srctools.conv_bool(False) is False
+    assert func(True) is True
+    assert func(False) is False
 
     # None passes through the default
     for val in non_bools:
         # Check default value.
-        assert srctools.conv_bool(val) is False
+        assert func(val) is False
         # Check all default values pass through unchanged
         for default in def_vals:
-            assert srctools.conv_bool(val, default) is default
+            assert func(val, default) is default
 
 
-def test_conv_float() -> None:
+@pytest.mark.parametrize(
+    'func',
+    [_py_conv_float, _cy_conv_float],
+    ids=['Python', 'Cython'],
+)
+def test_conv_float(func) -> None:
+    """Test srctools.conv_float()."""
     # Float should convert integers too
     for string, result in ints:
-        assert srctools.conv_float(string) == float(result)
-        assert srctools.conv_float(string) == result
+        assert func(string) == float(result)
+        assert func(string) == result
 
     for string in non_floats:
         # Default default value
-        assert srctools.conv_float(string) == 0.0
+        assert func(string) == 0.0
         for default in def_vals:
             # Check all default values pass through unchanged
-            assert srctools.conv_float(string, default) is default
+            assert func(string, default) is default
 
 
 # noinspection PyStatementEffect, PyCallingNonCallable

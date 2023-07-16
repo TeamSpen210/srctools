@@ -7,7 +7,7 @@ from cpython.object cimport Py_EQ, Py_GE, Py_GT, Py_LE, Py_LT, Py_NE, PyObject, 
 from cpython.ref cimport Py_INCREF
 from libc cimport math
 from libc.math cimport M_PI, NAN, cos, llround, sin, tan
-from libc.stdint cimport uint_fast8_t
+from libc.stdint cimport uint16_t, uint32_t, uint_fast8_t
 from libc.stdio cimport snprintf, sscanf
 from libc.string cimport memcmp, memcpy, memset
 from libcpp cimport bool
@@ -738,6 +738,97 @@ def cross_vec(left, right):
     res = Vec.__new__(Vec)
     _vec_cross(&res.val, &a, &b)
     return res
+
+
+cdef char _parse_boolstr(const char *utf8, Py_ssize_t size):
+    # Do direct comparisons for the various valid booleans. Since we know the size of the buffer,
+    # we know which word to compare to. Casting to integer lets us compare 2/4 character sections
+    # in one go.
+    # '0', 'no', 'false', 'n', 'f'
+    # '1', 'yes', 'true', 'y', 't'
+    # We do some of the more likely uppercase variants to avoid calling casefold().
+    if size == 1:
+        if utf8[0] in (b'0', b'n', b'f', b'N', b'F'):
+            return 0
+        elif utf8[0] in (b'1', b'y', b't', b'T', b'T'):
+            return 1
+    elif size == 2:
+        if (<uint16_t *>utf8)[0] in ((<uint16_t *><char *>b'no')[0], (<uint16_t *><char *>b'No')[0]):
+            return 0
+    elif size == 3: # Null terminated, so actually 4 bytes long.
+        if (<uint32_t *>utf8)[0] in ((<uint32_t *><char *>b'yes\0')[0], (<uint32_t *><char *>b'Yes\0')[0]):
+            return 1
+    elif size == 4:
+        if (<uint32_t *> utf8)[0] in ((<uint32_t *> <char *> b'true')[0], (<uint32_t *> <char *> b'True')[0]):
+            return 1
+    elif size == 5:
+        if (<uint32_t *> utf8)[0] == (<uint32_t *> <char *> b'fals')[0] and utf8[4] == b'e':
+            return 0
+    return 2
+
+
+def conv_bool(val, object default=False):
+    """Converts a string to a boolean, using a default if it fails.
+
+    Accepts any of ``0``, ``1``, ``false``, ``true``, ``yes``, ``no``.
+    If val is ``None``, this always returns the default.
+    ``0``, ``1``, ``True`` and ``False`` will be passed through unchanged.
+    """
+    if val is True or val is False:
+        return val
+    if isinstance(val, int):
+        return val != 0
+    if val is None or not isinstance(val, str):
+        return default
+
+    cdef str string = <str>val
+    cdef Py_ssize_t size
+    cdef const char *utf8 = PyUnicode_AsUTF8AndSize(string, &size);
+    if size == 0:
+        return default
+
+    cdef char result = _parse_boolstr(utf8, size)
+    if result == 2:
+        # Try again but casefolded.
+        string = string.casefold()
+        utf8 = PyUnicode_AsUTF8AndSize(string, &size)
+
+        result = _parse_boolstr(utf8, size)
+
+    if result == 0:
+        return False
+    elif result == 1:
+        return True
+    else:
+        return default
+
+
+def conv_float(object val, object default = 0.0):
+    """Converts a string to a float, using a default if it fails."""
+    if type(val) is float:
+        return val
+    if isinstance(val, float):
+        return <double>val
+    if val is None:
+        return default
+    try:
+        return float(val)
+    except (ValueError, TypeError):
+        return default
+
+
+def conv_int(val, default = 0):
+    """Converts a string to an integer, using a default if it fails.
+
+    """
+    if type(val) is int:
+        return val
+    if val is None:
+        return default
+    try:
+        return int(val)
+    except (ValueError, TypeError):
+        return default
 
 
 @cython.final

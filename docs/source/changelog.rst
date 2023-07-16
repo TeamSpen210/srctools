@@ -10,6 +10,7 @@ Version (dev)
 -------------
 * Drop support for Python 3.7.
 * Fix VMT parsing not handling `Proxies {` style braces.
+* Add Cythonised versions of :py:func:`~srctools.conv_int`, :py:func`~srctools.conv_float` and :py:func`~srctools.conv_bool`.
 
 --------------
 Version 2.3.13

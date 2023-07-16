@@ -205,9 +205,11 @@ def conv_bool(val: Union[str, bool, None], default: Union[ValT, bool] = False) -
             return default
 
 
-def conv_float(val: Union[int, float, str], default: Union[ValT, float] = 0.0) -> Union[
-    ValT, float]:
-    """Converts a string to an float, using a default if it fails."""
+def conv_float(val: Union[int, float, str], default: Union[ValT, float] = 0.0) -> Union[ValT, float]:
+    """Converts a string to a float, using a default if it fails.
+
+    The value may also be an integer or float, which is also converted.
+    """
     try:
         return float(val)
     except (ValueError, TypeError):
@@ -217,6 +219,7 @@ def conv_float(val: Union[int, float, str], default: Union[ValT, float] = 0.0) -
 def conv_int(val: Union[int, float, str], default: Union[ValT, int] = 0) -> Union[ValT, int]:
     """Converts a string to an integer, using a default if it fails.
 
+    The value may also be an integer or float, which is also converted.
     """
     try:
         return int(val)
@@ -583,6 +586,10 @@ from srctools.const import GameID
 from srctools.surfaceprop import SurfaceProp, SurfChar
 from srctools.vtf import VTF
 
+_py_conv_int = _cy_conv_int = conv_int
+_py_conv_float = _cy_conv_float = conv_float
+_py_conv_bool = _cy_conv_bool = conv_bool
+
 
 if TYPE_CHECKING:
     Property = Keyvalues  #: :deprecated: Use srctools.Keyvalues.
@@ -596,3 +603,12 @@ else:
             )
             return Keyvalues
         raise AttributeError(name)
+
+    try:
+        from ._math import conv_int, conv_float, conv_bool
+    except ImportError:
+        pass
+    else:
+        _cy_conv_int = conv_int
+        _cy_conv_float = conv_float
+        _cy_conv_bool = conv_bool
