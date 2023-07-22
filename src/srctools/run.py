@@ -127,7 +127,7 @@ def run_compiler(
         startup_info = None
 
     with subprocess.Popen(
-        args=[comp_name] + args,
+        args=[comp_name, *args],
         executable=comp_name,
         bufsize=0,  # No buffering at all.
         stdin=subprocess.DEVNULL,

@@ -1257,7 +1257,7 @@ class ParsedLump(Generic[T]):
 
     def __init__(self, lump: Union[bytes, BSP_LUMPS], *extra: Union[bytes, BSP_LUMPS]) -> None:
         self.lump = lump
-        self.to_clear = (lump, ) + extra
+        self.to_clear = (lump, *extra)
         self.__name__ = ''
         # May also be a Generator[X] if T = List[X]
         # Args are (BSP, version, data) if game lump, else (BSP, data).
@@ -2478,7 +2478,7 @@ class BSP:
 
                 # Older leaf lumps include some ambient light data at the end.
                 if has_ambient:
-                    leafdata = leafdata + (leaf._ambient,)
+                    leafdata = (*leafdata, leaf._ambient)
 
                 buf.write(self.lump_layout['LEAF'].pack(*leafdata))
 

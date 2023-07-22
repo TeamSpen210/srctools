@@ -143,7 +143,7 @@ src_paths = ["src", "tests", "type_tests"]
 [tool.ruff]
 line-length = 127
 select = [
-	"E", "UP", "F", "C4", "ANN", "B", "PIE",
+	"E", "UP", "F", "C4", "ANN", "B", "PIE", "RUF",
 
     "E111", "E112", "E113", "E114", "E115", "E116", "E117",
     "E201", "E202", "E203", "E211", "E222", "E223",
@@ -164,6 +164,10 @@ extend-ignore = [
 	"ANN102",
 	# Allow typing.Any
 	"ANN401",
+
+	# Ruff:
+	"RUF001", "RUF002", "RUF003",  # Allow ambiguous Unicode chars
+	"RUF100", # Sometimes use # noqa for other linters
 
 	# Pycodestyle:
 	"E221",  # Allow multiple spaces before operators if we want to align

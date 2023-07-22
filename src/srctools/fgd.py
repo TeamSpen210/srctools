@@ -441,8 +441,8 @@ def match_tags(search: Container[str], tags: Collection[str]) -> bool:
     matched = None
     for tag in tags:
         tag = tag.upper()
-        start = tag[0:1]
-        if start == '!' or start == '-':
+        start = tag[:1]
+        if start in ('!', '-'):
             if tag[1:] in search:
                 return False
         elif start == '+':

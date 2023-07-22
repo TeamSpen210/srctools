@@ -2385,9 +2385,9 @@ class Entity(MutableMapping[str, str]):
 
         buffer.write(f'{ind}{"world" if _is_worldspawn else "entity"}\n')
         buffer.write(ind + '{\n')
-        buffer.write(f'{ind}\t"id" "{str(self.id)}"\n')
+        buffer.write(f'{ind}\t"id" "{self.id}"\n')
         for key, value in sorted(self._keys.items(), key=operator.itemgetter(0)):
-            buffer.write(f'{ind}\t"{key}" "{value!s}"\n')
+            buffer.write(f'{ind}\t"{key}" "{value}"\n')
 
         if self._fixup is not None:
             self._fixup.export(buffer, ind)
@@ -3078,7 +3078,7 @@ class EntityGroup:
         """Write out a group into a VMF file."""
         buffer.write(ind + 'group\n')
         buffer.write(ind + '{\n')
-        buffer.write(f'{ind}\t"id" "{str(self.id)}"\n')
+        buffer.write(f'{ind}\t"id" "{self.id}"\n')
         buffer.write(ind + '\teditor\n')
         buffer.write(ind + '\t{\n')
         buffer.write(ind + f'\t\t"visgroupshown" "{int(self.shown)}"\n')
@@ -3289,7 +3289,7 @@ class Output:
         if self.params and not self.inst_in:
             st += f" ({self.params})"
         if self.delay != 0:
-            st += f" after {str(self.delay)} seconds"
+            st += f" after {self.delay} seconds"
         if self.times != -1:
             st += " (once only)" if self.times == 1 else f" ({self.times!s} times only)"
         return st
@@ -3308,7 +3308,8 @@ class Output:
         )
         # Instance, delays and times are more rare - if unset don't include.
         if self.inst_in or self.inst_out or self.params or self.delay or self.times != -1:
-            return basic + (
+            return (
+                *basic,
                 intern(self.inst_out) if self.inst_out is not None else None,
                 intern(self.inst_in) if self.inst_in is not None else None,
                 intern(self.params),
