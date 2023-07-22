@@ -4,8 +4,8 @@ Wrapper around logging to provide our own functionality.
 This adds the ability to log using str.format() instead of %.
 """
 from typing import (
-    Any, Callable, Dict, Generator, Iterable, List, Mapping, Optional, TextIO, Tuple,
-    Type, Union, cast, overload,
+    Any, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping, Optional, TextIO,
+    Tuple, Type, Union, cast, overload,
 )
 from io import StringIO
 from types import TracebackType
@@ -148,7 +148,7 @@ class LoggerAdapter(logging.LoggerAdapter):  # type: ignore[type-arg]  # Only ge
 
 class Formatter(logging.Formatter):
     """Override exception handling."""
-    SKIP_LIBS = ['importlib', 'cx_freeze', 'PyInstaller']
+    SKIP_LIBS: ClassVar[List[str]] = ['importlib', 'cx_freeze', 'PyInstaller']
 
     def formatException(self, ei: Union[
         Tuple[Type[BaseException], BaseException, Optional[TracebackType]],

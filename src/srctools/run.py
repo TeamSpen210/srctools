@@ -1,5 +1,5 @@
 """Code which handles executing and interfacing with game binaries."""
-from typing import IO, List
+from typing import IO, ClassVar, List, Tuple
 import logging
 import os.path
 import subprocess
@@ -44,7 +44,7 @@ if sys.platform == 'win32':
 
     class CopyDataStruct(ctypes.Structure):
         """Data to pass for WM_COPYDATA."""
-        _fields_ = [
+        _fields_: ClassVar[List[Tuple[str, type]]] = [
             ('dWData', _ulong_ptr),
             ('cbData', ctypes.c_uint32),
             ('lpData', ctypes.c_void_p),

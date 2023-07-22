@@ -60,8 +60,8 @@ Properties with children can be indexed by their names, or by a
 Handling `\\\\n`, `\\\\t`, `\\\\"`, and `\\\\\\\\` escape characters can be enabled.
 """
 from typing import (
-    Any, Callable, Dict, Final, Iterable, Iterator, List, Mapping, Optional, Tuple, Type,
-    TypeVar, Union, cast,
+    Any, Callable, ClassVar, Dict, Final, Iterable, Iterator, List, Mapping, Optional,
+    Tuple, Type, TypeVar, Union, cast,
 )
 from typing_extensions import TypeAlias, deprecated, overload
 import builtins  # Keyvalues.bool etc shadows these.
@@ -1232,7 +1232,7 @@ class _Builder:
         """Return the tree root."""
         return self._parents[0]
 
-    _keywords = {kw + '_': kw for kw in keyword.kwlist}
+    _keywords: ClassVar[Mapping[str, str]] = {kw + '_': kw for kw in keyword.kwlist}
 
 
 # noinspection PyProtectedMember

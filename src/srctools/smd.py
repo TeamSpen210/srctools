@@ -1,5 +1,7 @@
 """Parses SMD model/animation data."""
-from typing import Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
+from typing import (
+    Any, ClassVar, Dict, Iterable, Iterator, List, Optional, Sequence, Set, Tuple, Union,
+)
 from typing_extensions import Protocol
 from collections import defaultdict
 from copy import deepcopy
@@ -645,7 +647,7 @@ class Mesh:
     # The triangles required for a prism.
     # Each sublist is a triangle.
     # The tuples are (x, y, z, u, v).
-    _BBOX_MESH_DATA = [
+    _BBOX_MESH_DATA: ClassVar[Sequence[tuple[int, int, int, float, float]]] = [
         [
             (-1, -1, -1, 0.0, 0.0),
             (-1, +1, +1, 1.0, 1.0),

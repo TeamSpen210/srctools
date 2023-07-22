@@ -1040,7 +1040,7 @@ class BModel:
     # If solid, the .phy file-like physics data.
     # This is a text section, and a list of blocks.
     phys_keyvalues: Optional[Keyvalues] = None
-    _phys_solids: List[bytes] = []
+    _phys_solids: List[bytes] = attrs.field(factory=list)
 
     def clear_physics(self) -> None:
         """Delete the physics data for this brush model, and set the visleafs to non-solid.
