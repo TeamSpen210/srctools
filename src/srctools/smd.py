@@ -647,7 +647,7 @@ class Mesh:
     # The triangles required for a prism.
     # Each sublist is a triangle.
     # The tuples are (x, y, z, u, v).
-    _BBOX_MESH_DATA: ClassVar[Sequence[tuple[int, int, int, float, float]]] = [
+    _BBOX_MESH_DATA: ClassVar[Sequence[Sequence[Tuple[int, int, int, float, float]]]] = [
         [
             (-1, -1, -1, 0.0, 0.0),
             (-1, +1, +1, 1.0, 1.0),
