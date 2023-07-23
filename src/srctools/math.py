@@ -20,7 +20,7 @@ but not vice-versa.
 """
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, Final, Iterable, Iterator, List,
-    NamedTuple, Optional, SupportsFloat, Tuple, Type, TypeVar, Union, cast,
+    NamedTuple, Optional, SupportsFloat, SupportsIndex, Tuple, Type, TypeVar, Union, cast,
 )
 from typing_extensions import Literal, Protocol, TypeAlias, TypeGuard, deprecated, final, overload
 import contextlib
@@ -34,19 +34,13 @@ __all__ = [
     'Matrix', 'FrozenMatrix', 'AnyMatrix',
 ]
 
-
-# TODO: Available in typing for 3.8+
-class _SupportsIndex(Protocol):
-    def __index__(self) -> int: ...
-
-
 # Type aliases
 Tuple3: TypeAlias = Tuple[float, float, float]
 AnyVec: TypeAlias = Union['VecBase', 'Vec_tuple', Tuple3]
 VecUnion: TypeAlias = Union['Vec', 'FrozenVec']
 AnyAngle: TypeAlias = Union['Angle', 'FrozenAngle']
 AnyMatrix: TypeAlias = Union['Matrix', 'FrozenMatrix']
-Numeric = Union[int, float, SupportsFloat, _SupportsIndex]
+Numeric = Union[int, float, SupportsFloat, SupportsIndex]
 VecT = TypeVar('VecT', bound='VecBase')
 AngleT = TypeVar('AngleT', bound='AngleBase')
 MatrixT = TypeVar('MatrixT', bound='MatrixBase')
@@ -132,7 +126,7 @@ def format_float(x: float, places: int = 6) -> str:
     return result.rstrip('.')
 
 
-def _coerce_float(value: Union[float, SupportsFloat, _SupportsIndex]) -> float:
+def _coerce_float(value: Union[float, SupportsFloat, SupportsIndex]) -> float:
     """Convert numeric values to floats."""
     # Fast path, already a float.
     if isinstance(value, float):
