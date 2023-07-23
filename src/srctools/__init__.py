@@ -3,7 +3,7 @@ from typing import (
     Iterator, KeysView, List, Mapping, MutableMapping, NoReturn, Optional, Sequence, Set,
     Tuple, Type, TypeVar, Union, ValuesView, overload,
 )
-from typing_extensions import Literal, Protocol, TypeAlias
+from typing_extensions import Literal, TypeAlias
 from collections import deque
 from types import TracebackType
 import io
@@ -11,6 +11,8 @@ import itertools as _itertools
 import os as _os
 import sys as _sys
 import warnings
+
+from useful_types import SupportsKeysAndGetItem
 
 
 __version__: str
@@ -227,17 +229,6 @@ def conv_int(val: Union[int, float, str], default: Union[ValT, int] = 0) -> Unio
         return default
 
 
-class _SupportsKeysAndGetItem(Protocol):
-    """The parts of a mapping that is required for dict.update().
-
-    Since this is for EmptyMapping we don't care about the item type.
-    """
-
-    def keys(self) -> Iterable[Any]: ...
-
-    def __getitem__(self, __k: Any) -> Any: ...
-
-
 class _EmptyMapping(MutableMapping[Any, Any]):
     """A Mapping class which is always empty.
 
@@ -318,7 +309,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
         return default
 
     @overload
-    def update(self, __m: _SupportsKeysAndGetItem, **kwargs: Any) -> None: ...
+    def update(self, __m: SupportsKeysAndGetItem[Any, Any], **kwargs: Any) -> None: ...
     @overload
     def update(self, __m: Iterable[Tuple[Any, Any]], **kwargs: Any) -> None: ...
     @overload
