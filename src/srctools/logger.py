@@ -67,7 +67,7 @@ class LogMessage:
         if '\n' not in msg:
             return msg
 
-        # For multi-line messages, add an indent so they're associated
+        # For multi-line messages, add an indent so that they're associated
         # with the logging tag.
         lines = msg.split('\n')
         if lines[-1].isspace():
@@ -122,8 +122,8 @@ class LoggerAdapter(logging.LoggerAdapter):  # type: ignore[type-arg]  # Only ge
                 ctx = ''
 
             new_extra = {} if extra is None else dict(extra)
-            new_extra['alias'] = self.alias
-            new_extra['context'] = f' ({ctx})' if ctx else ''
+            new_extra['_srctools_alias'] = self.alias
+            new_extra['srctools_context'] = f' ({ctx})' if ctx else ''
 
             # Handle some extra indirection in 3.10+
             if sys.version_info >= (3, 10):
@@ -182,7 +182,7 @@ class Formatter(logging.Formatter):
 
     def format(self, record: logging.LogRecord) -> str:
         """Ensure a default context is set in the record."""
-        record.__dict__.setdefault('context', '')
+        record.__dict__.setdefault('srctools_context', '')
         return super().format(record)
 
 
@@ -309,15 +309,17 @@ class NullStream(TextIO):
 
 class NewLogRecord(logging.LogRecord):
     """Allow passing an alias and context for log modules."""
-    alias: Optional[str] = None
+    _srctools_alias: Optional[str] = None
+    # Can be used by formatters.
+    srctools_context: str = ''
 
     def getMessage(self) -> str:
         """We have to hook here to change the value of .module.
 
         It's called just before the formatting call is made.
         """
-        if self.alias is not None:
-            self.module = self.alias
+        if self._srctools_alias is not None:
+            self.module = self._srctools_alias
         # If this is one of our logs it {}-formats, otherwise it %-formats.
         return super().getMessage()
 
@@ -385,13 +387,13 @@ def init_logging(
 
     # Put more info in the log file, since it's not onscreen.
     long_log_format = Formatter(
-        '[{levelname}]{context} {module}.{funcName}(): {message}',
+        '[{levelname}]{srctools_context} {module}.{funcName}(): {message}',
         style='{',
     )
     # Console messages, etc.
     short_log_format = Formatter(
         # One letter for level name
-        '[{levelname[0]}]{context} {module}.{funcName}(): {message}',
+        '[{levelname[0]}]{srctools_context} {module}.{funcName}(): {message}',
         style='{',
     )
 
