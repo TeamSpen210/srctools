@@ -11,7 +11,6 @@ from typing import (
 from typing_extensions import Literal, TypeAlias, deprecated
 from array import ArrayType as Array
 from collections import defaultdict
-from contextlib import suppress
 from enum import Flag
 from sys import intern
 import builtins
@@ -2257,49 +2256,56 @@ class Entity(MutableMapping[str, str]):
         _worldspawn indicates if this is the worldspawn entity, which additionally contains
         the entity group definitions.
         """
+        ent = Entity.__new__(Entity)
+
+        ent.map = vmf_file
+        ent._keys = {}
+        ent._fixup = None
+        ent.outputs = []
+        ent.solids = []
+        ent.hidden = hidden
+        ent.groups = set()
+        ent.visgroup_ids = set()
+        ent.vis_shown = True
+        ent.vis_auto_shown = True
+        ent.editor_color = Vec()
+        ent.comments = ''
+
         ent_id = -1
-        solids: List[Solid] = []
-        keys: Dict[str, str] = {}
-        outputs: List[Output] = []
-        fixup: List[FixupValue] = []
-        group_ids: List[int] = []
-        visgroup_ids: List[int] = []
-        vis_shown = vis_auto_shown = True
         logical_pos = None
-        comment = ''
-        editor_color = Vec()
+        fixup: List[FixupValue] = []
         for item in tree_list:
             name = item.name
             assert name is not None, repr(item)
             if item.has_children():
                 if name == "solid":
-                    solids.append(Solid.parse(vmf_file, item))
+                    ent.solids.append(Solid.parse(vmf_file, item))
                 elif name == "connections":
                     for out in item:
-                        outputs.append(Output.parse(out))
+                        ent.outputs.append(Output.parse(out))
                 elif name == "editor":
                     for editor_prop in item:
                         if editor_prop.name == "visgroupshown":
-                            vis_shown = srctools.conv_bool(editor_prop.value, default=True)
+                            ent.vis_shown = srctools.conv_bool(editor_prop.value, default=True)
                         elif editor_prop.name == "visgroupautoshown":
-                            vis_auto_shown = srctools.conv_bool(editor_prop.value, default=True)
+                            ent.vis_auto_shown = srctools.conv_bool(editor_prop.value, default=True)
                         elif editor_prop.name == 'color':
-                            editor_color = Vec.from_str(editor_prop.value, 255, 255, 255)
+                            ent.editor_color = Vec.from_str(editor_prop.value, 255, 255, 255)
                         elif editor_prop.name == 'logicalpos':
                             logical_pos = editor_prop.value
                         elif editor_prop.name == 'comments':
-                            comment = editor_prop.value
+                            ent.comment = editor_prop.value
                         elif editor_prop.name == 'group':
-                            group_ids.append(int(editor_prop.value))
+                            ent.groups.add(int(editor_prop.value))
                         elif editor_prop.name == 'visgroupid':
                             try:
-                                visgroup_ids.append(int(editor_prop.value))
+                                ent.visgroup_ids.add(int(editor_prop.value))
                             except (TypeError, ValueError):
                                 raise ValueError(f'Invalid visgroup ID "{editor_prop.value}"!') from None
                 elif name == "hidden":
                     for brush_prop in item:
                         if brush_prop.name == "solid":
-                            solids.append(Solid.parse(vmf_file, brush_prop, hidden=True))
+                            ent.solids.append(Solid.parse(vmf_file, brush_prop, hidden=True))
                         else:
                             raise ValueError(f'Unknown hidden keyvalue "{brush_prop.name}"!')
                 elif name == "group":
@@ -2316,7 +2322,7 @@ class Entity(MutableMapping[str, str]):
                 try:
                     index = int(ind_str)
                 except ValueError:  # Not a replace value!
-                    keys[name] = item.value
+                    ent[name] = item.value
                 else:
                     # Parse the $replace value
                     try:
@@ -2330,26 +2336,17 @@ class Entity(MutableMapping[str, str]):
                         fixup.append(FixupValue(var, value, int(index)))
                     except ValueError:
                         # Failed!
-                        keys[name] = item.value
+                        ent[name] = item.value
             else:
-                keys[item.name] = item.value
+                ent[item.real_name] = item.value
 
-        return Entity(
-            vmf_file,
-            keys,
-            fixup,
-            ent_id,
-            outputs,
-            solids,
-            hidden,
-            group_ids,
-            visgroup_ids,
-            vis_shown,
-            vis_auto_shown,
-            logical_pos,
-            editor_color,
-            comment,
-        )
+        ent.id = vmf_file.ent_id.get_id(ent_id)
+        ent.logical_pos = logical_pos or f'[0 {ent.id}]'
+        if fixup:
+            ent._fixup = EntityFixup(fixup)
+        else:
+            ent._fixup = None
+        return ent
 
     def is_brush(self) -> bool:
         """Is this Entity a brush entity?"""
