@@ -2118,10 +2118,11 @@ class Side:
     del _scale_setter, _offset_setter
 
 
-class _KeyDict(Dict[str, str]):
-    """Temporary class to allow the `Entity.keys` dict to be accessed directly, as well as call keys()."""
-    def __call__(self) -> KeysView[str]:
-        return self.keys()
+@attrs.define(weakref_slot=False)
+class _EntityKey:
+    """An entity key with value, to preserve casing."""
+    var: str  # The original casing of the variable name.
+    value: str
 
 
 class Entity(MutableMapping[str, str]):
@@ -2138,6 +2139,7 @@ class Entity(MutableMapping[str, str]):
     To read instance ``$replace`` values operate on ``entity.fixup[var]``.
     """
     _fixup: Optional['EntityFixup']
+    _keys: dict[str, _EntityKey]
     outputs: List['Output']
     solids: List[Solid]
     id: int
@@ -2170,11 +2172,11 @@ class Entity(MutableMapping[str, str]):
     ) -> None:
         """Construct an entity from scratch."""
         self.map = vmf_file
-        self._keys = _KeyDict({
-            k: conv_kv(v)
+        self._keys = {
+            k.casefold(): _EntityKey(k, conv_kv(v))
             for k, v in
             keys.items()
-        })
+        }
         self._fixup = EntityFixup(fixup) if fixup else None
         self.outputs = list(outputs)
         self.solids = list(solids)
@@ -2188,27 +2190,6 @@ class Entity(MutableMapping[str, str]):
         self.editor_color = Vec(editor_color)
         self.logical_pos = logical_pos or f'[0 {self.id}]'
         self.comments = comments
-
-    if TYPE_CHECKING:
-        # To type checkers, treat as a regular method.
-        def keys(self) -> KeysView[str]: ...
-    else:
-        @property
-        def keys(self) -> _KeyDict:
-            """Access the internal keyvalues dict.
-
-            This use is deprecated, the entity is a MutableMapping. It can also be called to get
-            a keys view, as with other mappings.
-            """
-            warnings.warn('This is private, use the entity as a mapping.', DeprecationWarning, stacklevel=2)
-            return self._keys
-
-        @keys.setter
-        def keys(self, value: Dict[str, ValidKVs]) -> None:
-            """Deprecated method to replace all keys."""
-            warnings.warn('This is private, call .clear_keys() and update().', DeprecationWarning, stacklevel=2)
-            self.clear_keys()
-            self.update(value)
 
     @property
     def fixup(self) -> 'EntityFixup':
@@ -2231,30 +2212,39 @@ class Entity(MutableMapping[str, str]):
         keep_vis: bool = True,
     ) -> 'Entity':
         """Duplicate this entity entirely, including solids and outputs."""
-        new_solids = [
+        copy = Entity.__new__(Entity)
+        copy.vmf_file = vmf_file or self.map
+        copy.solids = [
             solid.copy(vmf_file=vmf_file, side_mapping=side_mapping)
             for solid in
             self.solids
         ]
-        outs = [o.copy() for o in self.outputs]
+        copy.outputs = [o.copy() for o in self.outputs]
+        copy.id = vmf_file.ent_id.get_id(des_id)
+        copy.groups = set(self.groups)
 
-        return Entity(
-            vmf_file=vmf_file or self.map,
-            keys=self._keys,  # __init__() copies for us.
-            fixup=self._fixup.copy_values() if self._fixup is not None else (),
-            ent_id=des_id,
-            outputs=outs,
-            solids=new_solids,
-            hidden=self.hidden if keep_vis else False,
-            groups=self.groups,  # __init__() copies for us.
+        if self._fixup is not None:
+            copy._fixup = EntityFixup.__new__(EntityFixup)
+            copy._fixup._matcher = self._fixup._matcher
+            copy._fixup._fixup = self._fixup._fixup.copy()
+        else:
+            copy._fixup = None
 
-            editor_color=self.editor_color,
-            logical_pos=self.logical_pos,
-            vis_shown=self.vis_shown if keep_vis else True,
-            vis_auto_shown=self.vis_auto_shown if keep_vis else True,
-            vis_ids=self.visgroup_ids if keep_vis else (),
-            comments=self.comments,
-        )
+        copy.comments = self.comments
+        copy.editor_color = self.editor_color.copy()
+        copy.logical_pos = self.logical_pos
+        if keep_vis:
+            copy.hidden = self.hidden
+            copy.vis_shown = self.vis_shown
+            copy.vis_auto_shown = self.vis_auto_shown
+            copy.vis_ids = set(self.visgroup_ids)
+        else:
+            copy.hidden = False
+            copy.vis_shown = True
+            copy.vis_auto_shown = True
+            copy.vis_ids = ()
+
+        return copy
 
     @staticmethod
     def parse(
@@ -2489,9 +2479,8 @@ class Entity(MutableMapping[str, str]):
     def __str__(self) -> str:
         """Dump a user-friendly representation of the entity."""
         st = "<Entity>: \n{\n"
-        for k, v in self._keys.items():
-            if not isinstance(v, list):
-                st += f"\t {k} = \"{v}\"\n"
+        for kv in self._keys.values():
+            st += f"\t {kv.var} = \"{kv.value}\"\n"
         if self._fixup is not None:
             for k, v in self.fixup.items():
                 st += f"\t ${k} = \"{v}\"\n"
@@ -2507,7 +2496,8 @@ class Entity(MutableMapping[str, str]):
 
     def __iter__(self) -> Iterator[str]:
         """Iteration iterates over all keyvalues."""
-        return iter(self._keys)
+        for kv in self._keys.values():
+            yield kv.var
 
     @overload
     def __getitem__(self, key: str) -> str: ...
@@ -2530,11 +2520,9 @@ class Entity(MutableMapping[str, str]):
         else:
             default = ''
 
-        key = key.casefold()
-        for k in self._keys:
-            if k.casefold() == key:
-                return self._keys[k]
-        else:
+        try:
+            return self._keys[key.casefold()].value
+        except KeyError:
             return default
 
     def __setitem__(
@@ -2550,65 +2538,89 @@ class Entity(MutableMapping[str, str]):
         """
         str_val = conv_kv(val)
         key_fold = key.casefold()
-        for k in self._keys:
-            if k.casefold() == key_fold:
-                # Check case-insensitively for this key first
-                orig_val = self._keys.get(k)
-                self._keys[k] = str_val
-                key = k
-                break
-        else:
-            orig_val = self._keys.get(key)
-            self._keys[key] = str_val
 
         # TODO: if 'mapversion' is passed and self is self.map.spawn, update version there.
-
         # Update the by_class/target dicts with our new value
         if key_fold == 'classname':
-            with suppress(KeyError):
-                self.map.by_class[orig_val or ''].remove(self)
+            try:
+                existing = self._keys[key]
+            except KeyError:
+                self._keys[key_fold] = _EntityKey(key, str_val)
+            else:
+                self.map.by_class[existing.value].discard(self)
+                self._keys[key_fold] = _EntityKey(existing.var, str_val)
             self.map.by_class[str_val].add(self)
         elif key_fold == 'targetname':
-            with suppress(KeyError):
-                self.map.by_target[orig_val].remove(self)
+            try:
+                existing = self._keys[key]
+            except KeyError:
+                self._keys[key_fold] = _EntityKey(key, str_val)
+            else:
+                self.map.by_target[existing.value].discard(self)
+                self._keys[key_fold] = _EntityKey(existing.var, str_val)
             self.map.by_target[str_val].add(self)
         elif key_fold == 'nodeid':
+            # Automatically assign node IDs.
             try:
-                node_id = int(orig_val)  # type: ignore  # Using as a cast
-            except (TypeError, ValueError):
-                pass
+                existing = self._keys[key]
+            except KeyError:
+                var_name = key
             else:
-                self.map.node_id.discard(node_id)
+                self.map.by_target[existing.value].discard(self)
+                var_name = existing.var
+                try:
+                    node_id = int(existing.value)  # type: ignore  # Using as a cast
+                except (TypeError, ValueError):
+                    pass
+                else:
+                    self.map.node_id.discard(node_id)
+
             try:
                 node_id = int(val)  # type: ignore  # Using as a cast
             except (TypeError, ValueError):
                 pass
             else:
-                self._keys[key] = str(self.map.node_id.get_id(node_id))
+                str_val = str(self.map.node_id.get_id(node_id))
+            self._keys[key_fold] = _EntityKey(var_name, str_val)
+        else:
+            try:
+                existing = self._keys[key]
+            except KeyError:
+                self._keys[key_fold] = _EntityKey(key, str_val)
+                orig_val = ''
+            else:
+                orig_val = existing.value
+                self._keys[key_fold] = _EntityKey(existing.var, str_val)
 
     def __delitem__(self, key: str) -> None:
         key = key.casefold()
         if key == 'targetname':
-            with suppress(KeyError):
-                self.map.by_target[
-                    self._keys.get('targetname', None)
-                ].remove(self)
+            try:
+                existing = self._keys.pop(key)
+            except KeyError:
+                pass
+            else:
+                self.map.by_target[existing.value].remove(self)
             self.map.by_target[None].add(self)
+            return
 
         if key == 'classname':
             raise KeyError('Classnames cannot be deleted!')
 
-        for k in self._keys:
-            if k.casefold() == key:
-                val = self._keys.pop(k)
-                if key == 'nodeid':
-                    try:
-                        node_id = int(val)
-                    except (TypeError, ValueError):
-                        pass
-                    else:
-                        self.map.node_id.discard(node_id)
-                break
+        if key == 'nodeid':
+            try:
+                existing = self._keys.pop(key)
+            except KeyError:
+                pass
+            else:
+                try:
+                    node_id = int(existing.value)
+                except (TypeError, ValueError):
+                    pass
+                else:
+                    self.map.node_id.discard(node_id)
+
+        self._keys.pop(key, '')
 
     def get(self, key: str, default: Union[str, T] = '') -> Union[str, T]:
         """Allow using [] syntax to search for keyvalues.
@@ -2620,11 +2632,9 @@ class Entity(MutableMapping[str, str]):
         - A tuple can be passed for the default to be set, inside the
           [] syntax.
         """
-        key = key.casefold()
-        for k in self._keys:
-            if k.casefold() == key:
-                return self._keys[k]
-        else:
+        try:
+            return self._keys[key.casefold()].value
+        except KeyError:
             return default
 
     def clear(self) -> None:
@@ -2632,6 +2642,7 @@ class Entity(MutableMapping[str, str]):
         # Delete these so the .by_class/name values are cleared.
         self['classname'] = 'info_null'
         del self['targetname']
+        del self['nodeid']
         self._keys.clear()
         # Clear $fixup as well.
         self._fixup = None
@@ -2640,10 +2651,7 @@ class Entity(MutableMapping[str, str]):
     def __contains__(self, key: object) -> bool:
         """Determine if a value exists for the given key."""
         if isinstance(key, str):
-            key = key.casefold()
-            for k in self._keys:
-                if k.casefold() == key:
-                    return True
+            return key.casefold() in self._keys
         return False
 
     get_key = __contains__
@@ -2651,6 +2659,17 @@ class Entity(MutableMapping[str, str]):
     def __del__(self) -> None:
         """Forget this entity's ID when the object is destroyed."""
         self.map.ent_id.discard(self.id)
+        try:
+            existing = self._keys['nodeid']
+        except KeyError:
+            pass
+        else:
+            try:
+                node_id = int(existing.value)
+            except (TypeError, ValueError):
+                pass
+            else:
+                self.map.node_id.discard(node_id)
 
     def get_bbox(self) -> Tuple[Vec, Vec]:
         """Get two vectors representing the space this entity takes up."""
