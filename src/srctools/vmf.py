@@ -303,6 +303,18 @@ class CopySet(Set[T]):
         yield from self - cur_items
 
 
+def _remove_copyset(mapping: MutableMapping[T, CopySet['Entity']], key: T, ent: 'Entity') -> None:
+    """Remove the entity from the by_class or by_target mappings.
+
+    We also remove the set if now empty.
+    """
+    copyset = mapping.get(key, None)
+    if copyset is not None:
+        copyset.discard(ent)
+        if not copyset:
+            del mapping[key]
+
+
 @attrs.frozen
 class PrismFace:
     """Return value for VMF.make_prism().
@@ -476,8 +488,8 @@ class VMF:
         except ValueError:
             pass  # Already removed.
 
-        self.by_class[item['classname'].casefold()].discard(item)
-        self.by_target[item['targetname'].casefold() or None].discard(item)
+        _remove_copyset(self.by_class, item['classname'].casefold(), item)
+        _remove_copyset(self.by_target, item['targetname'].casefold() or None, item)
         if 'nodeid' in item:
             try:
                 node_id = int(item['nodeid'])
@@ -2586,12 +2598,10 @@ class Entity(MutableMapping[str, str]):
 
         # Update the by_class/target dicts with our new value
         if key_fold == 'classname':
-            with suppress(KeyError):
-                self.map.by_class[orig_val or ''].remove(self)
+            _remove_copyset(self.map.by_class, orig_val or '', self)
             self.map.by_class[str_val].add(self)
         elif key_fold == 'targetname':
-            with suppress(KeyError):
-                self.map.by_target[orig_val].remove(self)
+            _remove_copyset(self.map.by_target, orig_val, self)
             self.map.by_target[str_val].add(self)
         elif key_fold == 'nodeid':
             try:
@@ -2610,10 +2620,7 @@ class Entity(MutableMapping[str, str]):
     def __delitem__(self, key: str) -> None:
         key = key.casefold()
         if key == 'targetname':
-            with suppress(KeyError):
-                self.map.by_target[
-                    self._keys.get('targetname', None)
-                ].remove(self)
+            _remove_copyset(self.map.by_target, self._keys.get('targetname', None), self)
             self.map.by_target[None].add(self)
 
         if key == 'classname':

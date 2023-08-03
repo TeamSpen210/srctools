@@ -12,6 +12,7 @@ Version (dev)
 * Fix VMT parsing not handling `Proxies {` style braces.
 * Add Cythonised versions of :py:func:`~srctools.conv_int`, :py:func`~srctools.conv_float` and :py:func`~srctools.conv_bool`.
 * Added a ``repr()`` for :py:class:`srctools.vmf.Entity`.
+* Automatically clean up up empty sets when removing entities from :py:class:`VMF.by_class <srctools.vmf.VMF.by_class>` and :py:class:`.by_target <srctools.vmf.VMF.by_target>`.
 
 --------------
 Version 2.3.13
