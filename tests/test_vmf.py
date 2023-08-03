@@ -2,6 +2,7 @@
 from typing import Any
 
 import pytest
+from dirty_equals import IsList
 
 from srctools import Angle, Keyvalues, Vec
 from srctools.vmf import VMF, Entity, Output
@@ -46,6 +47,65 @@ def assert_output(
         f'params={params!r}, delay={delay!r}, times={times!r}, i_out={inst_out!r}, '
         f'i_in={inst_in!r}, comma={comma_sep!r})'
     )
+
+
+def test_entkey_basic() -> None:
+    """Test entity mapping functionality."""
+    obj = object()  # Arbitrary example object.
+
+    ent = VMF().create_ent('info_null')
+    internal_keys = ent._keys  # If an assertion fails, include the internal state with --showlocals.
+    assert len(ent) == 1
+    assert list(ent) == ['classname']
+    with pytest.warns(DeprecationWarning):
+        assert list(ent.keys()) == ['classname']
+    assert list(ent.values()) == ['info_null']
+    assert list(ent.items()) == [('classname', 'info_null')]
+
+    ent['target'] = 'the_target'
+
+    assert ent['target'] == 'the_target'  # Standard
+    assert ent['tARget'] == 'the_target'  # Case-insensitive
+
+    assert ent['invalid'] == '', 'Defaults to ""'
+    assert ent['target', '!picker'] == 'the_target'  # Unused default.
+    assert ent['not_here', 'default'] == 'default'  # Used default.
+    assert ent['not_here', obj] is obj  # Default can be anything.
+
+    assert ent.get('invalid') == ''  # Defaults to ""
+    assert ent.get('target', 'default') == 'the_target'  # Unused default.
+    assert ent.get('not_here', obj) is obj  # Default can be anything.
+
+    ent['health'] = 42  # Integer, converted to string.
+    assert ent['health'] == '42'
+    ent['Range'] = 45.75
+    assert ent['Range'] == '45.75'
+    ent['allowRespawn'] = True  # Special case, bools become 1/0.
+    assert ent['allowrespawn'] == '1'
+    ent['canKill'] = False
+    assert ent['canKill'] == '0'
+    ent['movedirection'] = Angle(0, 90, 0)  # Angles convert.
+    assert ent['movedirection'] == '0 90 0'
+
+    # Order not guaranteed.
+    assert len(ent) == 7
+    assert list(ent) == IsList('classname', 'target', 'health', 'Range', 'allowRespawn', 'canKill', 'movedirection', check_order=False)
+    with pytest.warns(DeprecationWarning):
+        keys = ent.keys()
+    assert list(keys) == IsList('classname', 'target', 'health', 'Range', 'allowRespawn', 'canKill', 'movedirection', check_order=False)
+    assert list(ent.values()) == IsList('info_null', 'the_target', '42', '45.75', '1', '0', '0 90 0', check_order=False)
+    assert list(ent.items()) == IsList(
+        ('classname', 'info_null'),
+        ('target', 'the_target'),
+        ('health', '42'),
+        ('Range', '45.75'),
+        ('allowRespawn', '1'),
+        ('canKill', '0'),
+        ('movedirection', '0 90 0'),
+        check_order=False,
+    )
+    # Keys/values/items should have the same order.
+    assert list(ent.fixup.items()) == list(zip(ent.fixup.keys(), ent.fixup.values()))
 
 
 def test_fixup_basic() -> None:
