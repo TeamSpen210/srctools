@@ -61,18 +61,18 @@ def test_fixup_basic() -> None:
 
     ent.fixup['$test'] = 'hello'
 
-    assert ent.fixup['$test'] == 'hello', 'Standard'
-    assert ent.fixup['$teSt'] == 'hello', 'Case-insentive'
-    assert ent.fixup['test'] == 'hello', 'No $ sign is allowed'
+    assert ent.fixup['$test'] == 'hello'  # Standard
+    assert ent.fixup['$teSt'] == 'hello'  # Case-insensitive
+    assert ent.fixup['test'] == 'hello'  # No $ sign is allowed
 
-    assert ent.fixup['$notPresent'] == '', 'Defaults to ""'
-    assert ent.fixup['$test', 'default'] == 'hello', 'Unused default.'
-    assert ent.fixup['not_here', 'default'] == 'default', 'Used default.'
-    assert ent.fixup['not_here', obj] is obj, 'Default can be anything.'
+    assert ent.fixup['$notPresent'] == ''  # Defaults to ""
+    assert ent.fixup['$test', 'default'] == 'hello'  # Unused default.
+    assert ent.fixup['not_here', 'default'] == 'default'  # Used default.
+    assert ent.fixup['not_here', obj] is obj  # Default can be anything.
 
-    assert ent.fixup.get('$notPresent') == '', 'Defaults to ""'
-    assert ent.fixup.get('$test', 'default') == 'hello', 'Unused default.'
-    assert ent.fixup.get('not_here', obj) is obj, 'Default can be anything.'
+    assert ent.fixup.get('$notPresent') == ''  # Defaults to ""
+    assert ent.fixup.get('$test', 'default') == 'hello'  # Unused default.
+    assert ent.fixup.get('not_here', obj) is obj  # Default can be anything.
 
     ent.fixup['$VALUE'] = 42  # Integer, converted to string.
     assert ent.fixup['$value'] == '42'
