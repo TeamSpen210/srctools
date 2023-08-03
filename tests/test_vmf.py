@@ -2,7 +2,7 @@
 from typing import Any
 
 import pytest
-from dirty_equals import IsList
+from dirty_equals import IsDict, IsList
 
 from srctools import Angle, Keyvalues, Vec
 from srctools.vmf import VMF, Entity, Output
@@ -106,6 +106,30 @@ def test_entkey_basic() -> None:
     )
     # Keys/values/items should have the same order.
     assert list(ent.fixup.items()) == list(zip(ent.fixup.keys(), ent.fixup.values()))
+
+
+def test_by_target() -> None:
+    """Test the behaviour of the by_target lookup mechanism."""
+    vmf = VMF()
+    assert vmf.by_target == {None: {vmf.spawn}}
+    ent1 = vmf.create_ent('info_target')
+    assert vmf.by_target == {None: {ent1, vmf.spawn}}
+
+    ent1['targetname'] = 'some_name'
+    assert list(vmf.by_target) == IsList('some_name', None, check_order=False)
+    assert list(vmf.by_target.keys()) == IsList('some_name', None, check_order=False)
+    assert vmf.by_target['some_name'] == {ent1}
+    assert vmf.by_target == {'some_name': {ent1}, None: {vmf.spawn}}
+
+    ent2 = Entity(vmf, {'classname': 'info_target', 'targetname': 'some_name'})
+    assert vmf.by_target == {'some_name': {ent1}, None: {vmf.spawn}} # Not yet included.
+    vmf.add_ent(ent2)
+    assert vmf.by_target == {'some_name': {ent1, ent2}, None: {vmf.spawn}}
+
+    ent1['targetname'] = 'another'
+    assert vmf.by_target == {'some_name': {ent2}, 'another': {ent1}, None: {vmf.spawn}}
+    del ent2['targetname']
+    assert vmf.by_target == {'another': {ent1}, None: {vmf.spawn, ent2}, 'some_name': set()}
 
 
 def test_fixup_basic() -> None:
