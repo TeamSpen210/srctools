@@ -420,6 +420,7 @@ class VMF:
 
         # The worldspawn entity should always be worldspawn.
         self.spawn['classname'] = 'worldspawn'
+        self.by_target[None].add(self.spawn)
 
         self.format_ver = srctools.conv_int(
             map_info.get('formatversion', '100'), 100)
@@ -587,10 +588,15 @@ class VMF:
             Cordon.parse(map_obj, ent)
 
         map_spawn = tree.find_block('world', or_blank=True)
-        map_obj.spawn = Entity.parse(map_obj, map_spawn, _worldspawn=True)
-
-        if map_obj.spawn.solids is not None:
-            map_obj.brushes = map_obj.spawn.solids
+        map_obj.spawn = worldspawn = Entity.parse(map_obj, map_spawn, _worldspawn=True)
+        # Ensure the correct classname, which adds to by_class as a side effect. It is possible
+        # to name worldspawn, kinda pointless though.
+        worldspawn['classname'] = 'worldspawn'
+        map_obj.by_target[worldspawn['targetname'].casefold() or None].add(worldspawn)
+        # Always a brush entity.
+        if worldspawn.solids is None:
+            worldspawn.solids = []
+        map_obj.brushes = worldspawn.solids
 
         for ent in tree.find_all('Entity'):
             map_obj.add_ent(

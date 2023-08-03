@@ -130,6 +130,9 @@ def test_by_target() -> None:
     assert vmf.by_target == {'some_name': {ent2}, 'another': {ent1}, None: {vmf.spawn}}
     del ent2['targetname']
     assert vmf.by_target == {'another': {ent1}, None: {vmf.spawn, ent2}, 'some_name': set()}
+    ent2['targetname'] = 'some_name'
+    ent1.remove()
+    assert vmf.by_target == {'another': set(), 'some_name': {ent2}, None: {vmf.spawn}}
 
 
 def test_fixup_basic() -> None:
