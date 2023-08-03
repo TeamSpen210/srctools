@@ -2485,6 +2485,22 @@ class Entity(MutableMapping[str, str]):
 
         return self
 
+    def __repr__(self) -> str:
+        """Produce a short string identifying this entity."""
+        desc: List[str] = []
+        if classname := self['classname']:
+            desc.append(classname)
+        desc.append('Entity')
+        if name := self['targetname']:
+            desc.append(f'"{name}"({classname})')
+        else:
+            desc.append(classname)
+        if hammerid := self['hammerid']:
+            desc.append(f'#{hammerid}')
+        if origin := self['origin']:
+            desc.append(f'@ ({origin})')
+        return f'<{" ".join(desc)}>'
+
     def __str__(self) -> str:
         """Dump a user-friendly representation of the entity."""
         st = "<Entity>: \n{\n"
