@@ -2438,9 +2438,8 @@ class Entity(MutableMapping[str, str]):
 
     def sides(self) -> Iterable['Side']:
         """Iterate through all our brush sides."""
-        if self.is_brush():
-            for solid in self.solids:
-                yield from solid
+        for solid in self.solids:
+            yield from solid
 
     def add_out(self, *outputs: 'Output') -> None:
         """Add the outputs to our list."""
