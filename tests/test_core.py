@@ -3,6 +3,7 @@ from typing import Any
 
 import pytest
 
+from helpers import ExactType
 from srctools import (
     EmptyMapping, _cy_conv_bool, _cy_conv_float, _cy_conv_int, _py_conv_bool,
     _py_conv_float, _py_conv_int,
@@ -81,6 +82,15 @@ def check_empty_iterable(obj: Any, name: str, item: object = 'x') -> None:
             next(iterator)
         with pytest.raises(StopIteration):
             next(iterator)
+
+
+def test_exacttype_helper() -> None:
+    """Check this helper does the right thing."""
+    assert 45 == ExactType(45)
+    assert 45 != ExactType(45.0)
+    assert 48 != ExactType(45)
+    truth = True
+    assert truth != ExactType(1)
 
 
 def test_bool_as_int() -> None:

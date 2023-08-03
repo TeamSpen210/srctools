@@ -11,6 +11,7 @@ import pickle
 import re
 
 import pytest
+from dirty_equals import IsFloat
 
 from helpers import *
 from srctools import Vec_tuple, math as vec_mod
@@ -279,13 +280,13 @@ def test_with_axes_conv(frozen_thawed_vec: VecClass) -> None:
     """Test with_axes() converts values properly."""
     Vec = frozen_thawed_vec
     vec = Vec.with_axes('y', 8, 'z', -45, 'x', 32)
-    assert vec.x == ExactType(32.0)
-    assert vec.y == ExactType(8.0)
-    assert vec.z == ExactType(-45.0)
+    assert vec.x == IsFloat(exactly=32.0)
+    assert vec.y == IsFloat(exactly=8.0)
+    assert vec.z == IsFloat(exactly=-45.0)
     vec = Vec.with_axes('z', Fraction(8, 2), 'x', Fraction(1, 4), 'y', Fraction(-23, 16))
-    assert vec.x == ExactType(0.25)
-    assert vec.y == ExactType(-1.4375)
-    assert vec.z == ExactType(4.0)
+    assert vec.x == IsFloat(exactly=0.25)
+    assert vec.y == IsFloat(exactly=-1.4375)
+    assert vec.z == IsFloat(exactly=4.0)
 
 
 @pytest.mark.parametrize('clsname', ['Vec', 'FrozenVec', 'Angle', 'FrozenAngle'])
@@ -1114,7 +1115,7 @@ def test_setitem(py_c_vec) -> None:
         assert vec1.other_axes(axis) == (0.0, 0.0), axis
 
         vec1[axis] = Fraction(15, 12)
-        assert vec1[axis] == ExactType(1.25)
+        assert vec1[axis] == IsFloat(exactly=1.25)
 
         vec2 = Vec()
         vec2[ind] = 1.25

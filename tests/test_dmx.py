@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 import array
 import collections
 
+from dirty_equals import IsFloat, IsInt
 import pytest
 
 from helpers import *
@@ -91,9 +92,9 @@ def _assert_tree_elem(path: str, tree1: Element, tree2: Element, checked: Set[UU
 def test_attr_val_int() -> None:
     """Test integer-type values."""
     elem = Attribute.int('Name', 45)
-    assert elem.val_int == ExactType(45)
+    assert elem.val_int == IsInt(exactly=45)
     assert elem.val_str == '45'
-    assert elem.val_float == ExactType(45.0)
+    assert elem.val_float == IsFloat(exactly=45.0)
     assert elem.val_time == ExactType(Time(45.0))
 
     assert elem.val_vec2 == Vec2(45.0, 45.0)
@@ -113,9 +114,9 @@ def test_attr_array_int() -> None:
     elem: Attribute[int] = Attribute.array('Name', ValueType.INT)
     elem.append(-123)
     elem.append(45)
-    assert list(elem.iter_int()) == [-123, 45]
+    assert list(elem.iter_int()) == [IsInt(exactly=-123), IsInt(exactly=45)]
     assert list(elem.iter_str()) == ['-123', '45']
-    assert list(elem.iter_float()) == [-123.0, 45.0]
+    assert list(elem.iter_float()) == [IsFloat(exactly=-123.0), IsFloat(exactly=45.0)]
     assert list(elem.iter_time()) == [Time(-123.0), Time(45.0)]
 
     assert list(elem.iter_vec2()) == [Vec2(-123.0, -123.0), Vec2(45.0, 45.0)]
@@ -132,10 +133,10 @@ def test_attr_array_int() -> None:
 def test_attr_val_float() -> None:
     """Test float-type values."""
     elem = Attribute.float('Name', 32.25)
-    assert elem.val_int == ExactType(32)
-    assert Attribute.float('Name', -32.25).val_int == ExactType(-32)
+    assert elem.val_int == IsInt(exactly=32)
+    assert Attribute.float('Name', -32.25).val_int == IsInt(exactly=-32)
     assert elem.val_str == '32.25'
-    assert elem.val_float == ExactType(32.25)
+    assert elem.val_float == IsFloat(exactly=32.25)
     assert elem.val_time == ExactType(Time(32.25))
 
     assert elem.val_vec2 == Vec2(32.25, 32.25)
@@ -174,16 +175,16 @@ def test_attr_val_str() -> None:
     assert Attribute.string('', '').val_str == ''
     assert Attribute.string('', 'testing str\ning').val_str == 'testing str\ning'
 
-    assert Attribute.string('Name', '45').val_int == ExactType(45)
-    assert Attribute.string('Name', '-45').val_int == ExactType(-45)
-    assert Attribute.string('Name', '0').val_int == ExactType(0)
+    assert Attribute.string('Name', '45').val_int == IsInt(exactly=45)
+    assert Attribute.string('Name', '-45').val_int == IsInt(exactly=-45)
+    assert Attribute.string('Name', '0').val_int == IsInt(exactly=0)
 
-    assert Attribute.string('', '45').val_float == ExactType(45.0)
-    assert Attribute.string('', '45.0').val_float == ExactType(45.0)
-    assert Attribute.string('', '45.375').val_float == ExactType(45.375)
-    assert Attribute.string('', '-45.375').val_float == ExactType(-45.375)
-    assert Attribute.string('', '.25').val_float == ExactType(0.25)
-    assert Attribute.string('', '0').val_float == ExactType(0.0)
+    assert Attribute.string('', '45').val_float == IsFloat(exactly=45.0)
+    assert Attribute.string('', '45.0').val_float == IsFloat(exactly=45.0)
+    assert Attribute.string('', '45.375').val_float == IsFloat(exactly=45.375)
+    assert Attribute.string('', '-45.375').val_float == IsFloat(exactly=-45.375)
+    assert Attribute.string('', '.25').val_float == IsFloat(exactly=0.25)
+    assert Attribute.string('', '0').val_float == IsFloat(exactly=0.0)
 
     assert Attribute.string('', '1').val_bool is True
     assert Attribute.string('', '0').val_bool is False
@@ -203,14 +204,14 @@ def test_attr_val_bool() -> None:
     false = Attribute.bool('false', False)
 
     assert truth.val_bool is True
-    assert truth.val_int == ExactType(1)
-    assert truth.val_float == ExactType(1.0)
+    assert truth.val_int == IsInt(exactly=1)
+    assert truth.val_float == IsFloat(exactly=1.0)
     assert truth.val_str == '1'
     assert truth.val_bytes == b'\x01'
 
     assert false.val_bool is False
-    assert false.val_int == ExactType(0)
-    assert false.val_float == ExactType(0.0)
+    assert false.val_int == IsInt(exactly=0)
+    assert false.val_float == IsFloat(exactly=0.0)
     assert false.val_str == '0'
     assert false.val_bytes == b'\x00'
 
@@ -231,10 +232,10 @@ def test_attr_array_bool() -> None:
 def test_attr_val_time() -> None:
     """Test time value conversions."""
     elem = Attribute.time('Time', 32.25)
-    assert elem.val_int == ExactType(32)
-    assert Attribute.time('Time', -32.25).val_int == ExactType(-32)
+    assert elem.val_int == IsInt(exactly=32)
+    assert Attribute.time('Time', -32.25).val_int == IsInt(exactly=-32)
     assert elem.val_str == '32.25'
-    assert elem.val_float == ExactType(32.25)
+    assert elem.val_float == IsFloat(exactly=32.25)
     assert elem.val_time == ExactType(Time(32.25))
 
     assert Attribute.time('Blah', 32.25).val_bool is True
@@ -276,8 +277,14 @@ def test_attr_array_vector_2() -> None:
     elem.append(Vec2(5.0, -2.0))
     assert list(elem.iter_vec2()) == [Vec2(4.5, 38.2), Vec2(5.0, -2.0)]
     assert list(elem.iter_str()) == ['4.5 38.2', '5 -2']
-    assert list(elem.iter_vec3()) == [ExactType(FrozenVec(4.5, 38.2, 0.0)), FrozenVec(5.0, -2.0, 0.0)]
-    assert list(elem.iter_vec4()) == [Vec4(4.5, 38.2, 0.0, 0.0), Vec4(5.0, -2.0, 0.0, 0.0)]
+    assert list(elem.iter_vec3()) == [
+        ExactType(FrozenVec(4.5, 38.2, 0.0)),
+        ExactType(FrozenVec(5.0, -2.0, 0.0)),
+    ]
+    assert list(elem.iter_vec4()) == [
+        ExactType(Vec4(4.5, 38.2, 0.0, 0.0)),
+        ExactType(Vec4(5.0, -2.0, 0.0, 0.0)),
+    ]
 
     elem.append(Vec2(3.4, 0.0))
     elem.append(Vec2(0.0, -3.4))

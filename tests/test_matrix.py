@@ -5,6 +5,7 @@ import itertools
 import pickle
 
 import pytest
+from dirty_equals import IsFloat
 
 from helpers import *
 
@@ -210,9 +211,9 @@ def test_invalid_setitem(py_c_vec: PyCVec) -> None:
     Matrix = vec_mod.Matrix
     mat = Matrix()
     mat[1, 1] = 3
-    assert mat[1, 1] == ExactType(3.0)
+    assert mat[1, 1] == IsFloat(exactly=3.0)
     mat[0, 2] = fractions.Fraction(1, 2)
-    assert mat[0, 2] == ExactType(0.5)
+    assert mat[0, 2] == IsFloat(exactly=0.5)
     with pytest.raises(TypeError):
         mat[2, 0] = '1'
     with pytest.raises(TypeError):

@@ -4,7 +4,7 @@ import math
 import pickle
 
 import pytest
-
+from dirty_equals import IsFloat
 from helpers import *
 
 
@@ -156,13 +156,13 @@ def test_with_axes_conv(frozen_thawed_angle: AngleClass) -> None:
     """Test with_axes() converts values properly."""
     Angle = frozen_thawed_angle
     ang = Angle.with_axes('yaw', 8, 'roll', -45, 'pitch', 32)
-    assert ang.pitch == ExactType(32.0)
-    assert ang.yaw == ExactType(8.0)
-    assert ang.roll == ExactType(315.0)
+    assert ang.pitch == IsFloat(exactly=32.0)
+    assert ang.yaw == IsFloat(exactly=8.0)
+    assert ang.roll == IsFloat(exactly=315.0)
     ang = Angle.with_axes('roll', Fraction(38, 25), 'pitch', Fraction(6876, 12), 'yaw', Fraction(-237, 16))
-    assert ang.pitch == ExactType(213.0)
-    assert ang.yaw == ExactType(345.1875)
-    assert ang.roll == ExactType(1.52)
+    assert ang.pitch == IsFloat(exactly=213.0)
+    assert ang.yaw == IsFloat(exactly=345.1875)
+    assert ang.roll == IsFloat(exactly=1.52)
 
 
 def test_thaw_freezing(py_c_vec: PyCVec) -> None:
