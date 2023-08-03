@@ -135,6 +135,34 @@ def test_by_target() -> None:
     assert vmf.by_target == {'another': set(), 'some_name': {ent2}, None: {vmf.spawn}}
 
 
+def test_by_class() -> None:
+    """Test the behaviour of the by_class lookup mechanism."""
+    vmf = VMF()
+    assert vmf.by_class == {'': set(), 'worldspawn': {vmf.spawn}}
+
+    ent1 = vmf.create_ent('info_target')
+    assert vmf.by_class == {'': set(), 'worldspawn': {vmf.spawn}, 'info_target': {ent1}}
+    assert list(vmf.by_class) == IsList('', 'worldspawn', 'info_target', check_order=False)
+    assert list(vmf.by_class.keys()) == IsList('', 'worldspawn', 'info_target', check_order=False)
+    assert vmf.by_class['info_target'] == {ent1}
+
+    ent2 = Entity(vmf, {'classname': 'info_target'})
+    assert vmf.by_class == {'': set(), 'worldspawn': {vmf.spawn}, 'info_target': {ent1}}  # Not yet included.
+    vmf.add_ent(ent2)
+    assert vmf.by_class == {'': set(), 'worldspawn': {vmf.spawn}, 'info_target': {ent1, ent2}}
+
+    ent1['classname'] = 'math_counter'
+    assert vmf.by_class == {'': set(), 'worldspawn': {vmf.spawn}, 'info_target': {ent2}, 'math_counter': {ent1}}
+    with pytest.raises(KeyError):  # Not allowed.
+        del ent2['classname']
+    ent2.remove()
+    assert vmf.by_class == {
+        '': set(), 'info_target': set(),
+        'worldspawn': {vmf.spawn},
+        'math_counter': {ent1},
+    }
+
+
 def test_fixup_basic() -> None:
     """Test ent.fixup functionality."""
     obj = object()  # Arbitrary example object.
