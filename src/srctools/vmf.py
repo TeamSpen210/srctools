@@ -11,7 +11,6 @@ from typing import (
 from typing_extensions import Literal, TypeAlias, deprecated
 from array import ArrayType as Array
 from collections import defaultdict
-from contextlib import suppress
 from enum import Flag
 from sys import intern
 import builtins
