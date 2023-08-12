@@ -336,8 +336,7 @@ class Material(MutableMapping[str, str]):
             parent_file = fsys[filename]
         except FileNotFoundError:
             raise ValueError(
-                'Material file "{}" does not exist when'
-                ' patching!'.format(filename)
+                f'Material file "{filename}" does not exist when patching!'
             ) from None
 
         if parent_func is not None:

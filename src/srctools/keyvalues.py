@@ -421,7 +421,7 @@ class Keyvalues:
                             if (
                                 can_flag_replace and
                                 cur_block_contents[-1]._real_name == token_value and
-                                type(cur_block_contents[-1].value) == str
+                                isinstance(cur_block_contents[-1].value, str)
                             ):
                                 cur_block_contents[-1] = keyvalue
                             else:

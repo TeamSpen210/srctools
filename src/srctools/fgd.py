@@ -772,11 +772,9 @@ class KVDef(EntAttribute):
                         spawnflag = int(choices_value)
                     except ValueError:
                         raise tok.error(
-                            'SpawnFlags must be integer values, '
-                            'not "{}" (in {})!'.format(
-                                choices_value,
-                                entity.classname,
-                            )
+                            'SpawnFlags must be integer values, not "{}" (in {})!',
+                            choices_value,
+                            entity.classname,
                         ) from None
                     try:
                         power = math.log2(spawnflag)

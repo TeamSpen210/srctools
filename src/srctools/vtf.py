@@ -854,10 +854,7 @@ class VTF:
 
         if version_major != 7 or not (0 <= version_minor <= 5):
             raise ValueError(
-                "VTF version {}.{} is not "
-                "between 7.0-7.5!".format(
-                    version_major, version_minor,
-                )
+                f"VTF version {version_major}.{version_minor} is not between 7.0-7.5!"
             )
         file.write(struct.pack('<II', version_major, version_minor))
 
