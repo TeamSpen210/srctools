@@ -1,0 +1,6 @@
+UnlitGeneric
+	{
+	// Allow viewing ingame
+	$basetexture "test_vtf/sample_uvwq8888"
+	$model 0
+	}
