@@ -1,6 +1,0 @@
-UnlitGeneric
-	{
-	// Allow viewing ingame
-	$basetexture "test_vtf/test_save_cython_uv88_"
-	$model 0
-	}

@@ -80,7 +80,7 @@ def test_save(
         buf.getvalue(),
         binary=True,
         extension=".vtf",
-        # basename=f"test_save_{fmt.name.lower()}",
+        basename=f"test_save_{cy_py_format_funcs}_{fmt.name.lower()}"
     )
 
 
@@ -107,5 +107,5 @@ def test_load(
 
     image_regression.check(
         buf.getvalue(),
-        # basename=f"test_load_{fmt.name.lower()}",
+        basename=f"test_load_{cy_py_format_funcs}_{fmt.name.lower()}"
     )
