@@ -421,8 +421,8 @@ cdef bint save_bgra5551(const byte[::1] pixels, byte[::1] data, uint width, uint
         b = pixels[4 * offset + B]
         a = pixels[4 * offset + A]
         #BBBBBGGG  GGRRRRRA
-        data[2 * offset + 0] = (b & 0b11111000) | (g >> 5)
-        data[2 * offset + 1] = ((g << 6) & 0b11000000) | ((r >> 2) & 0b00111110) | (a >> 7)
+        data[2 * offset + 0] = ((g << 2) & 0b11100000) | (b >> 3)
+        data[2 * offset + 1] = (a & 0b10000000) | ((r >> 1) & 0b01111100) | (g >> 6)
 
 
 cdef bint load_bgrx5551(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
@@ -447,8 +447,8 @@ cdef bint save_bgrx5551(const byte[::1] pixels, byte[::1] data, uint width, uint
         g = pixels[4 * offset + G]
         b = pixels[4 * offset + B]
         #BBBBBGGG  GGRRRRRX
-        data[2 * offset + 0] = (b & 0b11111000) | (g >> 5)
-        data[2 * offset + 1] = ((g << 6) & 0b11000000) | ((r >> 2) & 0b00111110)
+        data[2 * offset + 0] = ((g << 2) & 0b11100000) | (b >> 3)
+        data[2 * offset + 1] = ((r >> 1) & 0b01111100) | (g >> 6)
 
 
 cdef bint load_i8(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:

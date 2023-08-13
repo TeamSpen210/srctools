@@ -338,6 +338,18 @@ def load_bgra5551(pixels: Array, data: bytes, width: int, height: int) -> None:
         pixels[4 * offset+3] = 255 if b & 0b10000000 else 0
 
 
+def save_bgra5551(pixels: Array, data: bytearray, width: int, height: int) -> None:
+    """BGRA format, 5 bits per color plus 1 bit of alpha."""
+    for offset in range(width * height):
+        r = pixels[4 * offset]
+        g = pixels[4 * offset + 1]
+        b = pixels[4 * offset + 2]
+        a = pixels[4 * offset + 3]
+        #GGGBBBBB  ARRRRRGG
+        data[2 * offset + 0] = ((g << 2) & 0b11100000) | (b >> 3)
+        data[2 * offset + 1] = (a & 0b10000000) | ((r >> 1) & 0b01111100) | (g >> 6)
+
+
 def load_bgrx5551(pixels: Array, data: bytes, width: int, height: int) -> None:
     """BGR format, 5 bits per color, alpha ignored."""
     for offset in range(width * height):
@@ -347,6 +359,17 @@ def load_bgrx5551(pixels: Array, data: bytes, width: int, height: int) -> None:
         pixels[4 * offset+1] = upsample(5, (a & 0b11100000) >> 2 | (b & 0b00000011) << 6)
         pixels[4 * offset+2] = upsample(5, (a & 0b00011111) << 3)
         pixels[4 * offset+3] = 255
+
+
+def save_bgrx5551(pixels: Array, data: bytearray, width: int, height: int) -> None:
+    """BGR format, 5 bits per color, alpha ignored."""
+    for offset in range(width * height):
+        r = pixels[4 * offset]
+        g = pixels[4 * offset + 1]
+        b = pixels[4 * offset + 2]
+        #GGGBBBBB  XRRRRRGG
+        data[2 * offset + 0] = ((g << 2) & 0b11100000) | (b >> 3)
+        data[2 * offset + 1] = ((r >> 1) & 0b01111100) | (g >> 6)
 
 
 def load_i8(pixels: Array, data: bytes, width: int, height: int) -> None:
