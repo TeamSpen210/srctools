@@ -148,10 +148,11 @@ class ImageFormats(Enum):
     BGRA5551 = _mk_fmt(5, 5, 5, 1)
     UV88 = _mk_fmt(size=16)
     UVWQ8888 = _mk_fmt(size=32)
+    # Not implemented, these two don't fit in 8-bit RGBA.
     RGBA16161616F = _mk_fmt(16, 16, 16, 16)
     RGBA16161616 = _mk_fmt(16, 16, 16, 16)
-    UVLX8888 = _mk_fmt(size=32)
 
+    UVLX8888 = _mk_fmt(size=32)
     NONE = _mk_fmt()
     # These two aren't supported by VTEX & VTFEdit, but are by the engine.
     # They're useful for normal maps.
