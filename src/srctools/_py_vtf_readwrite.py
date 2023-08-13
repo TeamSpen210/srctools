@@ -219,10 +219,10 @@ def saveload_rgba(mode: str) -> Tuple[
 
         def saver_rgba(pixels: Array, data: bytearray, width: int, height: int) -> None:
             for offset in range(width * height):
-                data[3 * offset + r_off] = pixels[4 * offset]
-                data[3 * offset + g_off] = pixels[4 * offset + 1]
-                data[3 * offset + b_off] = pixels[4 * offset + 2]
-                data[3 * offset + a_off] = pixels[4 * offset + 3]
+                data[4 * offset + r_off] = pixels[4 * offset]
+                data[4 * offset + g_off] = pixels[4 * offset + 1]
+                data[4 * offset + b_off] = pixels[4 * offset + 2]
+                data[4 * offset + a_off] = pixels[4 * offset + 3]
 
         loader_rgba.__name__ = 'load_' + mode
         saver_rgba.__name__ = 'save_' + mode
