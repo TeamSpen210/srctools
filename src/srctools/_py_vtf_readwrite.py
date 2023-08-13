@@ -193,40 +193,40 @@ def saveload_rgba(mode: str) -> Tuple[
     try:
         a_off = mode.index('a')
     except ValueError:
-        def loader_rgba(pixels: Array, data: bytes, width: int, height: int) -> None:
+        def loader_rgb(pixels: Array, data: bytes, width: int, height: int) -> None:
             for offset in range(width * height):
                 pixels[4 * offset] = data[3 * offset + r_off]
                 pixels[4 * offset + 1] = data[3 * offset + g_off]
                 pixels[4 * offset + 2] = data[3 * offset + b_off]
                 pixels[4 * offset + 3] = 255
 
-        def saver_rgba(pixels: Array, data: bytearray, width: int, height: int) -> None:
+        def saver_rgb(pixels: Array, data: bytearray, width: int, height: int) -> None:
             for offset in range(width * height):
                 data[3 * offset + r_off] = pixels[4 * offset]
                 data[3 * offset + g_off] = pixels[4 * offset + 1]
                 data[3 * offset + b_off] = pixels[4 * offset + 2]
 
-        loader_rgba.__name__ = 'load_' + mode
-        saver_rgba.__name__ = 'save_' + mode
-        return loader_rgba, saver_rgba
+        loader_rgb.__name__ = 'load_' + mode
+        saver_rgb.__name__ = 'save_' + mode
+        return loader_rgb, saver_rgb
     else:
-        def loader_rgb(pixels: Array, data: bytes, width: int, height: int) -> None:
+        def loader_rgba(pixels: Array, data: bytes, width: int, height: int) -> None:
             for offset in range(width * height):
                 pixels[4 * offset] = data[4 * offset + r_off]
                 pixels[4 * offset + 1] = data[4 * offset + g_off]
                 pixels[4 * offset + 2] = data[4 * offset + b_off]
                 pixels[4 * offset + 3] = data[4 * offset + a_off]
 
-        def saver_rgb(pixels: Array, data: bytearray, width: int, height: int) -> None:
+        def saver_rgba(pixels: Array, data: bytearray, width: int, height: int) -> None:
             for offset in range(width * height):
                 data[3 * offset + r_off] = pixels[4 * offset]
                 data[3 * offset + g_off] = pixels[4 * offset + 1]
                 data[3 * offset + b_off] = pixels[4 * offset + 2]
                 data[3 * offset + a_off] = pixels[4 * offset + 3]
 
-        loader_rgb.__name__ = 'load_' + mode
-        saver_rgb.__name__ = 'save_' + mode
-        return loader_rgb, saver_rgb
+        loader_rgba.__name__ = 'load_' + mode
+        saver_rgba.__name__ = 'save_' + mode
+        return loader_rgba, saver_rgba
 
 
 load_rgba8888, save_rgba8888 = saveload_rgba('rgba')
