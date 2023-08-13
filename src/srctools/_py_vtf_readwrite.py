@@ -345,7 +345,7 @@ def save_bgra5551(pixels: Array, data: bytearray, width: int, height: int) -> No
         g = pixels[4 * offset + 1]
         b = pixels[4 * offset + 2]
         a = pixels[4 * offset + 3]
-        #GGGBBBBB  ARRRRRGG
+        # GGGBBBBB  ARRRRRGG
         data[2 * offset + 0] = ((g << 2) & 0b11100000) | (b >> 3)
         data[2 * offset + 1] = (a & 0b10000000) | ((r >> 1) & 0b01111100) | (g >> 6)
 
@@ -367,7 +367,7 @@ def save_bgrx5551(pixels: Array, data: bytearray, width: int, height: int) -> No
         r = pixels[4 * offset]
         g = pixels[4 * offset + 1]
         b = pixels[4 * offset + 2]
-        #GGGBBBBB  XRRRRRGG
+        # GGGBBBBB  XRRRRRGG
         data[2 * offset + 0] = ((g << 2) & 0b11100000) | (b >> 3)
         data[2 * offset + 1] = ((r >> 1) & 0b01111100) | (g >> 6)
 

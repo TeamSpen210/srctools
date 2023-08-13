@@ -86,6 +86,7 @@ def test_save(
 
 @pytest.mark.parametrize("fmt", FORMATS, ids=lambda fmt: fmt.name.lower())
 def test_load(
+    cy_py_format_funcs,
     fmt: ImageFormats,
     datadir: Path,
     image_regression: ImageRegressionFixture,
