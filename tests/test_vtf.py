@@ -5,9 +5,8 @@ from pathlib import Path
 from typing import Generator
 
 import pytest
-from PIL import Image
+from PIL import Image, ImageChops
 from pytest_regressions.file_regression import FileRegressionFixture
-from pytest_regressions.image_regression import ImageRegressionFixture
 
 from srctools.vtf import ImageFormats, VTF
 from srctools import vtf as vtf_mod
@@ -18,6 +17,17 @@ FORMATS = [
     fmt for fmt in ImageFormats
     if fmt.name not in ["NONE", "P8", "RGBA16161616", "RGBA16161616F", "ATI1N", "ATI2N"]
 ]
+
+
+def compare_img(obtained_fname: Path, expected_fname: Path) -> None:
+    """Compare two images to ensure they are the same."""
+    obtained = Image.open(obtained_fname)
+    expected = Image.open(expected_fname)
+    assert obtained.size == expected.size
+    # If abs(a-b) == 0, images are the same.
+    extrema = ImageChops.difference(obtained, expected).getextrema()
+    if any(mins > 0 or maxes > 0 for mins, maxes in extrema):
+        pytest.fail(f"{obtained_fname} and {expected_fname} do not match: {extrema!r}")
 
 
 # noinspection PyProtectedMember
@@ -56,7 +66,7 @@ def sample_image() -> Image.Image:
 
 @pytest.mark.parametrize("fmt", FORMATS, ids=lambda fmt: fmt.name.lower())
 def test_save(
-    cy_py_format_funcs,
+    cy_py_format_funcs: str,
     fmt: ImageFormats,
     sample_image: Image.Image,
     file_regression: FileRegressionFixture,
@@ -86,10 +96,10 @@ def test_save(
 
 @pytest.mark.parametrize("fmt", FORMATS, ids=lambda fmt: fmt.name.lower())
 def test_load(
-    cy_py_format_funcs,
+    cy_py_format_funcs: str,
     fmt: ImageFormats,
     datadir: Path,
-    image_regression: ImageRegressionFixture,
+    file_regression: FileRegressionFixture,
 ) -> None:
     """Test loading the specified format.
 
@@ -106,7 +116,10 @@ def test_load(
     buf = BytesIO()
     img.save(buf, "png")
 
-    image_regression.check(
+    file_regression.check(
         buf.getvalue(),
-        basename=f"test_load_{cy_py_format_funcs}_{fmt.name.lower()}"
+        binary=True,
+        extension=".png",
+        basename=f"test_load_{cy_py_format_funcs}_{fmt.name.lower()}",
+        check_fn=compare_img,
     )

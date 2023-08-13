@@ -1,5 +1,5 @@
 pytest>=7.3.2
 pytest-datadir>=1.4.1
-pytest-regressions[image]>=2.4.2
+pytest-regressions>=2.4.2
 dirty_equals >= 0.6
 Pillow == 9.5.0  # 10.0 removes 32-bit wheels.
