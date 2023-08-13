@@ -3,7 +3,10 @@
 This is designed to be used with the `Python Imaging Library`_ to do the editing of pixels or
 saving/loading standard image files.
 
+To compress to DXT formats, this uses the `libsquish`_ library.
+
 .. _`Python Imaging Library`: https://pillow.readthedocs.io/en/stable/
+.. _`libsquish`: https://sourceforge.net/projects/libsquish/
 """
 from typing import (
     IO, TYPE_CHECKING, Any, Collection, Dict, Iterable, Iterator, List, Mapping, Optional,
@@ -41,14 +44,17 @@ from . import _py_vtf_readwrite as _py_format_funcs
 
 
 _cy_format_funcs = _format_funcs = _py_format_funcs
+LIBSQUISH_LICENSE = ""
 
 if not TYPE_CHECKING:
     try:
         # noinspection PyUnresolvedReferences, PyProtectedMember
         from . import _cy_vtf_readwrite as _cy_format_funcs
-        _format_funcs = _cy_format_funcs
     except ImportError:
         pass
+    else:
+        _format_funcs = _cy_format_funcs
+        LIBSQUISH_LICENSE = _cy_format_funcs.LIBSQUISH_LICENSE
 
 
 # The _vtf_readwrite module contains save/load functions which
