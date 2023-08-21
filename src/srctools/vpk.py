@@ -474,9 +474,9 @@ class VPK:
 
     def __exit__(
         self,
-        exc_type: Type[BaseException],
-        exc_value: BaseException,
-        exc_trace: TracebackType,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        exc_trace: Optional[TracebackType],
     ) -> None:
         """When exiting a context sucessfully, the index will be saved."""
         if exc_type is None and self.mode.writable:

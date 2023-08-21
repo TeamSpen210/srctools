@@ -354,7 +354,7 @@ class PackList:
     # folder, ext, data -> filename used
     _inject_files: Dict[Tuple[str, str, bytes], str]
     # Cache of the models used for breakable chunks.
-    _break_chunks: Dict[str, List[str]]
+    _break_chunks: Optional[Dict[str, List[str]]]
     # For each model, defines the skins the model uses. None means at least
     # one use is unknown, so all skins could potentially be used.
     skinsets: Dict[str, Optional[Set[int]]]
