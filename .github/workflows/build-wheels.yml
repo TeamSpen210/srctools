@@ -31,6 +31,12 @@ jobs:
           # Need full depth to have tags.
           fetch-depth: 0
 
+      - name: Install PIL dependencies
+        # https://pillow.readthedocs.io/en/latest/installation.html#building-from-source
+        # We only need basic PNG support.
+        run: sudo apt-get install libjpeg8-dev zlib1g-dev
+        if: ${{ contains(matrix.os, 'ubuntu') }}
+
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.12.1
 
