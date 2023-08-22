@@ -33,7 +33,7 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.12.1
-        with:
+        env:
           # Install PIL dependencies
           # https://pillow.readthedocs.io/en/latest/installation.html#building-from-source
           # We only need basic PNG support.
