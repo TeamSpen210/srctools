@@ -37,7 +37,7 @@ jobs:
           # Install PIL dependencies
           # https://pillow.readthedocs.io/en/latest/installation.html#building-from-source
           # We only need basic PNG support.
-          CIBW_BEFORE_ALL_LINUX: "sudo apt-get install libjpeg8-dev zlib1g-dev"
+          CIBW_BEFORE_ALL_LINUX: "sudo apk add tiff-dev jpeg-dev openjpeg-dev zlib-dev freetype-dev lcms2-dev libwebp-dev tcl-dev tk-dev harfbuzz-dev fribidi-dev libimagequant-dev libxcb-dev libpng-dev"
 
       - uses: actions/upload-artifact@v3
         with:
