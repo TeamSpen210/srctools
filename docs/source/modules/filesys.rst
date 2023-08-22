@@ -9,6 +9,11 @@ srctools.filesys
 
 .. autofunction:: get_filesystem
 
+.. py:data:: CACHE_KEY_INVALID
+   :value: -1
+
+   This is returned from :py:meth:`FileSystem.cache_key()` to indicate no key could be computed.
+
 .. autoclass:: FileSystem
    :members:
    :private-members:

@@ -74,7 +74,7 @@ Version 2.3.9
 Version 2.3.8
 -------------
 
-* Fix :py:mod:`srctools.logger` discarding :external:py:class:`MultiError` (or its backport) if it
+* Fix :py:mod:`srctools.logger` discarding :external:py:class:`!trio.MultiError` (or its backport) if it
   bubbles up to the toplevel.
 * Tweak VMF :py:meth:`localise() <srctools.vmf.Solid.localise>` and
   :py:meth:`translate()  <srctools.vmf.Solid.translate>` type hints to allow
@@ -236,7 +236,7 @@ Version 2.3.0
 * Upgrade plugin finding logic to ensure each source is mounted under a persistent ID.
 * Add missing :py:attr:`srctools.bsp.Primitive.dynamic_shadows`.
 * Deprecate :py:class:`srctools.AtomicWriter`, use the ``atomicwrites`` module.
-* :py:mod:`srctools._class_resources` is now only imported when required.
+* :py:mod:`!srctools._class_resources` is now only imported when required.
 * Use Cython when building, instead of including sources.
 * :py:attr:`srctools.vmf.Entity.fixup` will instantiate the :py:class:`~srctools.vmf.EntityFixup`
   object only when actually required.
@@ -308,7 +308,7 @@ Version 2.1.0
 -------------
 
 * Fix ``%``-formatted logs breaking when :py:mod:`srctools.logger` is used.
-* Add :py:meth:`Property.extend()`, instead of using ``+`` or :py:meth:`Property.append()` with a block. That usage is deprecated.
+* Add :py:meth:`Property.extend() <Keyvalues.extend>`, instead of using ``+`` or :py:meth:`<Property.append() <Keyvalues.append>` with a block. That usage is deprecated.
 * Deprecate creating root properties with ``name=None``.
 * :py:class:`srctools.filesys.FileSystemChain` is no longer generic, this is not useful.
 * Add functions which embed a Keyvalues1 tree in a DMX tree.
