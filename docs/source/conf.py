@@ -44,6 +44,8 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+maximum_signature_line_length = 56
+
 # -- Intersphinx ------
 
 intersphinx_mapping = {
@@ -74,7 +76,6 @@ html_css_files = [
 
 sys.path.append(str(Path(__file__).parent))
 from enum_class import EnumDocumenter, EnumMemberDocumenter
-from html_gen import SrctoolsHTMLTranslator
 from missing_refs import on_missing_reference
 
 
@@ -82,5 +83,4 @@ def setup(app: Sphinx) -> None:
     """Perform modifications."""
     app.add_autodocumenter(EnumDocumenter)
     app.add_autodocumenter(EnumMemberDocumenter)
-    app.set_translator('html', SrctoolsHTMLTranslator)
     app.connect('missing-reference', on_missing_reference, -10)
