@@ -4,7 +4,8 @@ from typing import Iterator, Optional, Tuple
 
 from pathlib import Path
 
-from sphinx.addnodes import pending_xref, Element
+from docutils.nodes import Element
+from sphinx.addnodes import pending_xref
 from sphinx.application import Sphinx
 from sphinx.environment import BuildEnvironment
 from sphinx.errors import NoUri

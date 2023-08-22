@@ -1,12 +1,12 @@
 """Implements a documenter for Enum classes."""
 from collections import defaultdict
 
-from typing import Any, Dict, List, Tuple, Type
+from typing import Any, Dict, Iterable, List, Tuple, Type
 from dataclasses import dataclass
 import enum
 import functools
 
-from sphinx.ext.autodoc import ClassDocumenter, AttributeDocumenter, ObjectMembers, bool_option
+from sphinx.ext.autodoc import ClassDocumenter, AttributeDocumenter, ObjectMember, bool_option
 
 
 @dataclass
@@ -53,7 +53,7 @@ class EnumDocumenter(ClassDocumenter):
         """We can only document Enums."""
         return isinstance(member, type) and issubclass(member, enum.Enum)
 
-    def filter_members(self, members: ObjectMembers, want_all: bool) -> List[Tuple[str, Any, bool]]:
+    def filter_members(self, members: Iterable[ObjectMember], want_all: bool) -> List[Tuple[str, Any, bool]]:
         """Specially handle enum members."""
         results: List[Tuple[str, object, bool]] = []
 
