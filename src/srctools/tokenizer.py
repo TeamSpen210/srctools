@@ -15,7 +15,7 @@ the current line number as data is read, letting you ``raise BaseTokenizer.error
 produce an exception listing the relevant line number and filename.
 """
 from typing import Any, Final, Iterable, Iterator, List, Optional, Tuple, Type, Union
-from typing_extensions import Self, overload
+from typing_extensions import Self, TypeAlias, overload
 from enum import Enum
 from os import fspath as _conv_path
 import abc
@@ -741,12 +741,16 @@ def escape_text(text: str) -> str:
 # This is available as both C and Python versions, plus the unprefixed
 # best version.
 # For static typing, make it think they're the same.
-Py_BaseTokenizer = Cy_BaseTokenizer = BaseTokenizer
-Py_Tokenizer = Cy_Tokenizer = Tokenizer
-Py_IterTokenizer = Cy_IterTokenizer = IterTokenizer
+Py_BaseTokenizer: TypeAlias = BaseTokenizer
+Cy_BaseTokenizer: TypeAlias = BaseTokenizer
+Py_Tokenizer: TypeAlias = Tokenizer
+Cy_Tokenizer: TypeAlias = Tokenizer
+Py_IterTokenizer: TypeAlias = IterTokenizer
+Cy_IterTokenizer: TypeAlias = IterTokenizer
 
 # Maintain this for testing.
-_py_escape_text = cy_escape_text = escape_text
+_py_escape_text = escape_text
+cy_escape_text = escape_text
 
 # Do it this way, so static analysis ignores this.
 _glob = globals()

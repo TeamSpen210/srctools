@@ -368,7 +368,7 @@ class Sound:
         for snd_prop in file:
             volume = split_float(
                 snd_prop, 'volume',
-                VOLUME,
+                VOLUME.__getitem__,
                 1.0,
             )
             pitch = split_float(

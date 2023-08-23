@@ -2910,9 +2910,12 @@ Cy_Matrix: TypeAlias = Matrix
 Py_Matrix: TypeAlias = Matrix
 Cy_FrozenMatrix: TypeAlias = FrozenMatrix
 Py_FrozenMatrix: TypeAlias = FrozenMatrix
-Cy_parse_vec_str = Py_parse_vec_str = parse_vec_str
-Cy_to_matrix = Py_to_matrix = to_matrix
-Cy_lerp = Py_lerp = lerp
+Cy_parse_vec_str = parse_vec_str
+Py_parse_vec_str = parse_vec_str
+Cy_to_matrix = to_matrix
+Py_to_matrix = to_matrix
+Cy_lerp = lerp
+Py_lerp = lerp
 
 # Do it this way, so static analysis ignores this.
 if not TYPE_CHECKING:

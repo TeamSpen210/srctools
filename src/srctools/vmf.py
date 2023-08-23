@@ -2249,9 +2249,19 @@ class Entity(MutableMapping[str, str]):
         return self._fixup
 
     # Override MutableMapping, we compare by identity.
-    __eq__ = object.__eq__
-    __ne__ = object.__ne__
-    __hash__ = object.__hash__
+    if TYPE_CHECKING:
+        def __eq__(self, other: object) -> bool:
+            return self is other
+
+        def __ne__(self, other: object) -> bool:
+            return self is not other
+
+        def __hash__(self) -> int:
+            return object.__hash__(self)
+    else:  # Directly assign for efficiency
+        __eq__ = object.__eq__
+        __ne__ = object.__ne__
+        __hash__ = object.__hash__
 
     def copy(
         self,

@@ -332,6 +332,27 @@ class Model:
     _sys: FileSystem[Any]
     _file: File[Any]
 
+    name: str
+    version: int
+    checksum: bytes
+    flags: Flags
+    phys_keyvalues: Keyvalues
+    eye_pos: Vec
+    illum_pos: Vec
+    hull_min: Vec
+    hull_max: Vec
+    view_min: Vec
+    view_max: Vec
+    mass: float
+    contents: Any  # TODO
+    numAllowedRootLods: int
+    cdmaterials: List[str]
+    skins: List[List[str]]
+    surfaceprop: str
+    keyvalues: str
+    included_models: List[IncludedMDL]
+    sequences: List[Sequence]
+
     def __init__(self, filesystem: FileSysT, file: File[FileSysT]) -> None:
         """Parse a model from a file."""
         self._file = file
@@ -357,6 +378,7 @@ class Model:
         assert f.tell() == 0, "Doesn't begin at start?"
         if f.read(4) != b'IDST':
             raise ValueError('Not a model!')
+        name: bytes
         (
             self.version,
             self.checksum,
@@ -550,7 +572,7 @@ class Model:
         # Now parse through the family table, to match skins to textures.
         f.seek(skinref_ind)
         ref_data = f.read(2 * skinref_count * skin_count)
-        self.skins: List[List[str]] = []
+        self.skins = []
         skin_group = Struct(f'<{skinref_count}H')
         offset = 0
         for ind in range(skin_count):

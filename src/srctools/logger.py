@@ -4,8 +4,8 @@ Wrapper around logging to provide our own functionality.
 This adds the ability to log using str.format() instead of %.
 """
 from typing import (
-    Any, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping, Optional, TextIO,
-    Tuple, Type, Union, cast, overload,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping,
+    Optional, TextIO, Tuple, Type, Union, cast, overload,
 )
 from io import StringIO
 from types import TracebackType
@@ -85,9 +85,13 @@ _SysExcInfoType = Union[
     Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
     Tuple[None, None, None]
 ]
+if TYPE_CHECKING: # Only generic in stubs.
+    _AdapterBase = logging.LoggerAdapter[logging.Logger]
+else:
+    _AdapterBase = logging.LoggerAdapter
 
 
-class LoggerAdapter(logging.LoggerAdapter):  # type: ignore[type-arg]  # Only generic in stubs.
+class LoggerAdapter(_AdapterBase):
     """Fix loggers to use str.format().
 
     """
@@ -312,6 +316,7 @@ class NewLogRecord(logging.LogRecord):
     _srctools_alias: Optional[str] = None
     # Can be used by formatters.
     srctools_context: str = ''
+    module: str
 
     def getMessage(self) -> str:
         """We have to hook here to change the value of .module.

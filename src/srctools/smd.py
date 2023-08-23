@@ -28,6 +28,8 @@ class _BinaryFile(Protocol):
 class Bone:
     """Represents a single bone."""
     __slots__ = ('name', 'parent')
+    name: str
+    parent: Optional['Bone']
 
     def __init__(self, name: str, parent: Optional['Bone']) -> None:
         self.name = name
