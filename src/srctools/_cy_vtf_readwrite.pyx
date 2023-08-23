@@ -3,7 +3,7 @@
 from cpython.bytes cimport PyBytes_FromStringAndSize
 from cython.parallel cimport parallel, prange
 from libc.stdint cimport uint8_t as byte, uint_fast8_t as fastbyte, uint_fast16_t
-from libc.stdio cimport sprintf
+from libc.stdio cimport snprintf
 from libc.string cimport memcpy, memset, strcmp
 
 
@@ -67,10 +67,11 @@ cdef enum:
     B = 2
     A = 3
 
+cdef char *EMPTY_BUFFER = b""
+
+
 # We specify all the arrays are C-contiguous, since we're the only one using
 # these functions directly.
-
-
 def ppm_convert(const byte[::1] pixels, uint width, uint height, tuple bg or None):
     """Convert a frame into a PPM-format bytestring, for passing to tkinter."""
     cdef float r, g, b
@@ -78,14 +79,18 @@ def ppm_convert(const byte[::1] pixels, uint width, uint height, tuple bg or Non
     cdef Py_ssize_t off
     cdef Py_ssize_t size = 3 * width * height
 
+    if size == 0:  # snprintf() wants to write a null terminator
+        size = 1
+
     cdef const char * PPM_HEADER = b'P6 %u %u 255\n'
-    cdef uint header_size = sprintf(NULL, PPM_HEADER, width, height)
+    cdef Py_ssize_t header_size = snprintf(EMPTY_BUFFER, 0, PPM_HEADER, width, height)
+    assert header_size > 0, "Bad format string"
     # Allocate an uninitialised bytes object, that we can write to it.
     # That's allowed as long as we don't give anyone else access.
     cdef bytes result = PyBytes_FromStringAndSize(NULL, size + header_size)
     cdef byte *buffer = result
 
-    sprintf(<char *>buffer, PPM_HEADER, width, height)
+    snprintf(<char *>buffer, header_size + 1, PPM_HEADER, width, height)
     if bg is not None:
         if len(bg) != 3:
             raise ValueError('Background must be a 3-tuple!')
@@ -798,7 +803,7 @@ FORMATS[29] = Format("ATI2N", &load_ati2n, &save_ati2n)
 
 def init(formats: 'srctools.vtf.ImageFormats') -> None:
     """Verify that the Python enum matches our array of functions."""
-    cdef int index
+    cdef size_t index
     cdef bytes name
     for fmt in formats:
         index = fmt.ind
@@ -808,7 +813,7 @@ def init(formats: 'srctools.vtf.ImageFormats') -> None:
 
 def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:
     """Load pixels from data in the given format."""
-    cdef int index = fmt.ind
+    cdef size_t index = fmt.ind
     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:
         FORMATS[index].load(pixels, data, width, height)
@@ -817,7 +822,7 @@ def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[:
 
 
 def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:
-    cdef int index = fmt.ind
+    cdef size_t index = fmt.ind
     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:
         FORMATS[index].save(pixels, data, width, height)
     else:
