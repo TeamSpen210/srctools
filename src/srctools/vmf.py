@@ -1577,6 +1577,15 @@ class UVAxis:
 DispPower: TypeAlias = Literal[0, 1, 2, 3, 4]
 
 
+class _FloatSetter:
+    """Helps type checkers know that UVAxis.offset/scale are settable only.
+
+    TODO: Can be removed if/when generic properties are available, perhaps.
+    """
+    def __set__(self, instance: object, value: float) -> None:
+        ...
+
+
 class Side:
     """A brush face."""
     __slots__ = [
@@ -2130,8 +2139,12 @@ class Side:
         self.uaxis.offset = value
         self.vaxis.offset = value
 
-    scale = property(fset=_scale_setter, doc='Set both scale attributes easily.')
-    offset = property(fset=_offset_setter, doc='Set both offset attributes easily.')
+    if TYPE_CHECKING:
+        scale = _FloatSetter()
+        offset = _FloatSetter()
+    else:
+        scale = property(fset=_scale_setter, doc='Set both scale attributes easily.')
+        offset = property(fset=_offset_setter, doc='Set both offset attributes easily.')
     del _scale_setter, _offset_setter
 
 
