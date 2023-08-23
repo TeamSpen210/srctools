@@ -4,8 +4,8 @@ import fractions
 import itertools
 import pickle
 
-import pytest
 from dirty_equals import IsFloat
+import pytest
 
 from helpers import *
 

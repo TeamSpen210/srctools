@@ -1,15 +1,15 @@
 """Test the VTF library."""
-import colorsys
+from typing import Generator
 from io import BytesIO
 from pathlib import Path
-from typing import Generator
+import colorsys
 
-import pytest
 from PIL import Image, ImageChops
 from pytest_regressions.file_regression import FileRegressionFixture
+import pytest
 
-from srctools.vtf import ImageFormats, VTF
 from srctools import vtf as vtf_mod
+from srctools.vtf import VTF, ImageFormats
 
 
 # A few formats aren't implemented by us/Valve.

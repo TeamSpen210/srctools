@@ -3,8 +3,9 @@ import copy
 import math
 import pickle
 
-import pytest
 from dirty_equals import IsFloat
+import pytest
+
 from helpers import *
 
 

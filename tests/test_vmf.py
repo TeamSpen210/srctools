@@ -1,8 +1,8 @@
 """Tests for the VMF library."""
 from typing import Any
 
-import pytest
 from dirty_equals import IsDict, IsList
+import pytest
 
 from srctools import Angle, Keyvalues, Vec
 from srctools.vmf import VMF, Entity, Output

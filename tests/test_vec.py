@@ -10,8 +10,8 @@ import operator as op
 import pickle
 import re
 
-import pytest
 from dirty_equals import IsFloat
+import pytest
 
 from helpers import *
 from srctools import Vec_tuple, math as vec_mod

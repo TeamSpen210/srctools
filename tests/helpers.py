@@ -1,15 +1,13 @@
 """Helpers for performing tests."""
 from typing import (
-    Any, Callable, Generator, Iterable, Iterator, Optional, Tuple, Type, TypeVar,
-    Union,
+    Any, Callable, Generator, Iterable, Iterator, Optional, Tuple, Type, TypeVar, Union,
 )
-
-from dirty_equals import DirtyEquals
 from typing_extensions import TypeAlias
 import builtins
 import itertools
 import math
 
+from dirty_equals import DirtyEquals
 import pytest
 
 from srctools import math as vec_mod
