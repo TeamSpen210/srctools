@@ -1106,7 +1106,7 @@ class Keyvalues:
 
     def has_children(self) -> builtins.bool:
         """Does this have child properties?"""
-        return type(self._value) is list
+        return isinstance(self._value, list)
 
     def is_root(self) -> builtins.bool:
         """Check if the keyvalue is a root, returned from the parse() method.

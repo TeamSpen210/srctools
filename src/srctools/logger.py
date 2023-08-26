@@ -85,7 +85,7 @@ _SysExcInfoType = Union[
     Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
     Tuple[None, None, None]
 ]
-if TYPE_CHECKING: # Only generic in stubs.
+if TYPE_CHECKING:  # Only generic in stubs.
     _AdapterBase = logging.LoggerAdapter[logging.Logger]
 else:
     _AdapterBase = logging.LoggerAdapter
