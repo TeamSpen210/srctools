@@ -1813,7 +1813,7 @@ class MatrixBase:
         mat_r: List[Vec] = [omat_r[0], omat_r[1], omat_r[2]]
 
         # Get it into row echelon form
-        for n in range(0, 2):
+        for n in [0, 1]:
             # Find pivots
             la = 0.0
             pivrow = -1
@@ -1844,8 +1844,8 @@ class MatrixBase:
                 mat_r[m] -= mat_r[pivrow] * v
 
         # Get it into reduced row echelon form
-        for n in range(2, 0, -1):
-            for m in range(n - 1, -1, -1):
+        for n in [2, 1]:
+            for m in reversed(range(n)):
                 # Get the multiplier
                 v = mat_l[m][n] / mat_l[n][n]
 
@@ -1854,7 +1854,7 @@ class MatrixBase:
                 mat_r[m] -= mat_r[n] * v
 
         # Clean up our diagonal
-        for n in range(0, 3):
+        for n in range(3):
             v = mat_l[n][n]
 
             # Check for zeros along the diagonal
