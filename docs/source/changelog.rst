@@ -5,6 +5,11 @@ Changelog
 	:local:
 	:backlinks: none
 
+-------------
+Version (dev)
+-------------
+* [HammerAddons#237](https://github.com/TeamSpen210/HammerAddons/issues/237): FGD model helpers should override each other.
+
 --------------
 Version 2.3.14
 --------------

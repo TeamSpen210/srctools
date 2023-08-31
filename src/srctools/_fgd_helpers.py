@@ -510,12 +510,15 @@ class HelperModel(Helper):
 
     def overrides(self) -> Collection[HelperTypes]:
         """Avoid some issues where other helpers break this one."""
+        # If multiple model helpers are provided, rotating the entity in the views causes Hammer
+        # to apply the transform multiple times to `angles` which is very undesirable.
         if self.model is None:
             # If no model is provided, line() and similar helpers make
-            # the default cube size break
-            return [HelperTypes.LINE]
+            # the default cube size break.
+            return [HelperTypes.LINE, HelperTypes.MODEL, HelperTypes.MODEL_NEG_PITCH, HelperTypes.MODEL_PROP]
         else:
-            return [HelperTypes.CUBE]
+            # If we provide a model, CUBE is useless.
+            return [HelperTypes.CUBE, HelperTypes.MODEL, HelperTypes.MODEL_NEG_PITCH, HelperTypes.MODEL_PROP]
 
     @classmethod
     def parse(cls, args: List[str]) -> Self:
