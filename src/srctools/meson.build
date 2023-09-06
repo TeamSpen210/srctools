@@ -37,6 +37,13 @@ pure_python += files(
     'fgd.lzma',
 )
 
+vcs_tag(
+    fallback: '<dev>',
+    input: '_version.input.py',
+    output: '_version.py',
+)
+pure_python += files('_version.py')
+
 py.install_sources(pure_python, subdir: 'srctools')
 
 subdir('_pyinstaller')
