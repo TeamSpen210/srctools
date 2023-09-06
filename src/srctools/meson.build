@@ -37,12 +37,10 @@ pure_python += files(
     'fgd.lzma',
 )
 
-vcs_tag(
-    fallback: '<dev>',
+pure_python += vcs_tag(
     input: '_version.input.py',
     output: '_version.py',
-)
-pure_python += files('_version.py')
+).full_path()
 
 py.install_sources(pure_python, subdir: 'srctools')
 
