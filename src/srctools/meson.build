@@ -71,3 +71,17 @@ py.extension_module(
     install: true,
     subdir: 'srctools',
 )
+
+py.extension_module(
+    '_cy_vtf_readwrite',
+    files(
+        '_cy_vtf_readwrite.pyx',
+    ),
+    override_options: ['cython_language=cpp'],
+    link_with: [lib_squish],
+    include_directories: inc_libsquish,
+
+    dependencies: dep_py,
+    install: true,
+    subdir: 'srctools',
+)
