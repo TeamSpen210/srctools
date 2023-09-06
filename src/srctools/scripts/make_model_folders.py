@@ -1,15 +1,14 @@
 """For older engines, HLMV requires the actual folder path to exist in order to read VPKs.
 
 This generates those."""
-from typing import List
+from typing import Optional, List
 from pathlib import Path
 import argparse
-import sys
 
 from srctools.vpk import VPK
 
 
-def main(args: List[str]) -> None:
+def main(args: Optional[List[str]] = None) -> None:
     """Create empty folders for all models in a VPK."""
     parser = argparse.ArgumentParser(description=__doc__)
 
@@ -34,4 +33,4 @@ def main(args: List[str]) -> None:
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()

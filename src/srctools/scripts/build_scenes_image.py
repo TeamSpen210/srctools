@@ -1,6 +1,6 @@
 """Builds a ``scenes.image`` file. Unlike the original this allows merging into an existing image."""
 from __future__ import annotations
-from typing import Literal, cast
+from typing import List, Literal, Optional, cast
 from pathlib import Path
 import argparse
 import sys
@@ -65,7 +65,7 @@ def load_scene(root: Path, filename: Path, encoding: str) -> Entry:
     return entry
 
 
-def main(args: list[str]) -> None:
+def main(args: Optional[List[str]] = None) -> None:
     """Main script."""
     opts = cast(ParsedArgs, parser.parse_args(args))
     scenes: dict[CRC, Entry] = {}
