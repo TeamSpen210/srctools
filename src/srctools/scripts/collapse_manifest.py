@@ -11,7 +11,7 @@ from srctools.keyvalues import Keyvalues
 from srctools.vmf import VMF, VisGroup
 
 
-def main(args: List[str]) -> None:
+def main(args: Optional[List[str]] = None) -> None:
     """Main script."""
     parser = argparse.ArgumentParser(description=__doc__)
 
@@ -60,4 +60,4 @@ def main(args: List[str]) -> None:
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
