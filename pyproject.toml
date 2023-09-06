@@ -56,6 +56,7 @@ test = [
 srctools_dump_parms = "srctools.scripts.dump_parms:main"
 srctools_diff = "srctools.scripts.diff:main"
 srctools_find_deps = "srctools.scripts.find_deps:main"
+srctools_make_model_folders = "srctools.scripts.make_model_folders:main"
 
 [project.entry-points]
 pyinstaller40 = {hook-dirs="srctools._pyinstaller:get_hook_dirs"}

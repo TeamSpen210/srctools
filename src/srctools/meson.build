@@ -47,6 +47,7 @@ pure_python += files('_version.py')
 py.install_sources(pure_python, subdir: 'srctools')
 
 subdir('_pyinstaller')
+subdir('scripts')
 
 py.extension_module(
     '_math',
