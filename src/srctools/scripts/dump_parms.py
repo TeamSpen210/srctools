@@ -203,8 +203,10 @@ def dump(folder: str) -> None:
                     CONFLICTS[var_name] |= {var, other_var}
 
 
-def main(args: List[str]) -> None:
+def main(args: Optional[List[str]] = None) -> None:
     """Run this script."""
+    if args is None:
+        args = sys.argv[1:]
     for folder in args:
         print("Reading from", folder)
         dump(folder)
@@ -244,4 +246,4 @@ def main(args: List[str]) -> None:
 
 
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    main()
