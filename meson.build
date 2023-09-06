@@ -19,4 +19,22 @@ lib_quickhull = static_library(
     include_directories: inc_quickhull,
 )
 
+# Build libsquish
+inc_libsquish = include_directories('src' / 'libsquish')
+lib_squish = static_library(
+    'libsquish',
+    files(
+        'src' / 'libsquish' / 'alpha.cpp',
+        'src' / 'libsquish' / 'clusterfit.cpp',
+        'src' / 'libsquish' / 'colourblock.cpp',
+        'src' / 'libsquish' / 'colourfit.cpp',
+        'src' / 'libsquish' / 'colourset.cpp',
+        'src' / 'libsquish' / 'maths.cpp',
+        'src' / 'libsquish' / 'rangefit.cpp',
+        'src' / 'libsquish' / 'singlecolourfit.cpp',
+        'src' / 'libsquish' / 'squish.cpp',
+    ),
+    include_directories: inc_libsquish,
+)
+
 subdir('src' / 'srctools')
