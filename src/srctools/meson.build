@@ -47,3 +47,13 @@ pure_python += files('_version.py')
 py.install_sources(pure_python, subdir: 'srctools')
 
 subdir('_pyinstaller')
+
+
+py.extension_module(
+    '_tokenizer',
+    files(
+        '_tokenizer.pyx',
+    ),
+    install: true,
+    subdir: 'srctools',
+)
