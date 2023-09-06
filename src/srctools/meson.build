@@ -48,6 +48,20 @@ py.install_sources(pure_python, subdir: 'srctools')
 
 subdir('_pyinstaller')
 
+py.extension_module(
+    '_math',
+    files(
+        '_math.pyx',
+        '_math_matrix.cpp',
+    ),
+    override_options: ['cython_language=cpp'],
+    link_with: [lib_quickhull],
+    include_directories: inc_quickhull,
+
+    dependencies: dep_py,
+    install: true,
+    subdir: 'srctools',
+)
 
 py.extension_module(
     '_tokenizer',
