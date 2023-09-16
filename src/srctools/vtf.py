@@ -1029,8 +1029,9 @@ class VTF:
 
         # Also regenerate the low-res format.
         if self.low_format is not ImageFormats.NONE:
+            side = CubeSide.FRONT if VTFFlags.ENVMAP in self.flags else None
             for mipmap in range(self.mipmap_count):
-                frame = self.get(mipmap=mipmap)
+                frame = self.get(mipmap=mipmap, side=side)
                 if (
                     frame.width // 2 == self._low_res.width and
                     frame.height // 2 == self._low_res.height
