@@ -25,7 +25,7 @@ from srctools.filesys import (
     VPKFileSystem,
 )
 from srctools.keyvalues import KeyValError, Keyvalues, NoKeyError
-from srctools.mdl import MDL_EXTS, AnimEvents, Model
+from srctools.mdl import MDL_EXTS, AnimEvents, MDL_EXTS_EXTRA, Model
 from srctools.particles import FORMAT_NAME as PARTICLE_FORMAT_NAME, Particle
 from srctools.sndscript import SND_CHARS, Sound
 from srctools.tokenizer import TokenSyntaxError
@@ -471,30 +471,35 @@ class PackList:
         if data_type is FileType.MODEL:
             if not filename.startswith('models/'):
                 filename = 'models/' + filename
-            # Allow passing skinsets via filename. This isn't useful if read from entities,
-            # but is good for filenames in resource lists.
-            if '.mdl#' in filename:
-                filename, skinset_int = filename.rsplit('.mdl#', 1)
-                try:
-                    skinset = set(map(int, skinset_int.split(',')))
-                except (TypeError, ValueError):
-                    LOGGER.warning(
-                        'Invalid skinset for "{}.mdl": {} should be comma-separated skins!',
-                        filename, skinset_int,
-                    )
-            filename = strip_extension(filename) + '.mdl'
-            if skinset is None:
-                # It's dynamic, this overrides any previous specific skins.
-                self.skinsets[filename] = None
+            if filename.endswith(MDL_EXTS_EXTRA):
+                # It's a .vvd, .vtx etc file. Treat as generic, don't check for skinsets
+                # or force the extension to be .mdl!!
+                data_type = FileType.GENERIC
             else:
-                try:
-                    existing_skins = self.skinsets[filename]
-                except KeyError:
-                    self.skinsets[filename] = skinset.copy()
+                # Allow passing skinsets via filename. This isn't useful if read from entities,
+                # but is good for filenames in resource lists.
+                if '.mdl#' in filename:
+                    filename, skinset_int = filename.rsplit('.mdl#', 1)
+                    try:
+                        skinset = set(map(int, skinset_int.split(',')))
+                    except (TypeError, ValueError):
+                        LOGGER.warning(
+                            'Invalid skinset for "{}.mdl": {} should be comma-separated skins!',
+                            filename, skinset_int,
+                        )
+                filename = strip_extension(filename) + '.mdl'
+                if skinset is None:
+                    # It's dynamic, this overrides any previous specific skins.
+                    self.skinsets[filename] = None
                 else:
-                    # Merge the two.
-                    if existing_skins is not None:
-                        self.skinsets[filename] = existing_skins | skinset
+                    try:
+                        existing_skins = self.skinsets[filename]
+                    except KeyError:
+                        self.skinsets[filename] = skinset.copy()
+                    else:
+                        # Merge the two.
+                        if existing_skins is not None:
+                            self.skinsets[filename] = existing_skins | skinset
 
         if not data and filename.endswith(('.wav', '.mp3')) and '$gender' in filename:
             # Special case for raw sounds, they can have gendered files.
@@ -1156,11 +1161,10 @@ class PackList:
 
         # Some of these are optional, so just skip. Do not re-pack the MDL itself, that's
         # pointless and will also erase the skinset!
-        for ext in MDL_EXTS:
-            if ext != '.mdl':
-                component = filename + ext
-                if component in self.fsys:
-                    self.pack_file(component)
+        for ext in MDL_EXTS_EXTRA:
+            component = filename + ext
+            if component in self.fsys:
+                self.pack_file(component)
 
         if file.data is not None:
             # We need to add that file onto the system, so it's loaded.

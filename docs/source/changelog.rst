@@ -10,6 +10,7 @@ Version (dev)
 -------------
 * [HammerAddons#237](https://github.com/TeamSpen210/HammerAddons/issues/237): FGD model helpers should override each other.
 * Fix #20: VTF.compute_mipmaps() not working for cubemaps.
+* Correctly handle `.vvd`/`.vtx` etc files being packed as :py:class:`MODEL <srctools.packlist.FileType.GENERIC`.
 
 --------------
 Version 2.3.14

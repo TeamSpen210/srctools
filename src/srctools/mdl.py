@@ -17,13 +17,12 @@ from srctools.math import Vec
 
 
 __all__ = [
-    'MDL_EXTS', 'Flags', 'Model',
+    'MDL_EXTS', 'MDL_EXTS_EXTRA', 'Flags', 'Model',
     'AnimEventTypes', 'CL', 'SV', 'AnimEvents',
     'IncludedMDL', 'SeqEvent', 'Sequence',
 ]
-# All the file extensions used for models.
-MDL_EXTS: SequenceType[str] = [
-    '.mdl',
+# All the file extensions used for models, other than .mdl.
+MDL_EXTS_EXTRA: Tuple[str, ...] = (
     '.phy',
     '.vvd',
     '.ani',
@@ -31,7 +30,12 @@ MDL_EXTS: SequenceType[str] = [
     '.dx80.vtx',
     '.sw.vtx',
     '.vtx',
-]
+)
+# All the file extensions used for models.
+MDL_EXTS: Tuple[str, ...] = (
+    '.mdl',
+    *MDL_EXTS_EXTRA,
+)
 FileSysT = TypeVar('FileSysT', bound=FileSystem[Any])
 
 
