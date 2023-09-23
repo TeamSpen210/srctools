@@ -2,6 +2,8 @@
 from typing_extensions import assert_type
 
 from srctools.math import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Matrix, Vec
+# + is not concatenation here, don't suggest (*Vec, x, y, z)
+# ruff: noqa: RUF005
 
 
 def test_addition() -> None:

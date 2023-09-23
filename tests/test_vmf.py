@@ -1,7 +1,7 @@
 """Tests for the VMF library."""
-from typing import Any
+from typing import Any, Optional
 
-from dirty_equals import IsDict, IsList
+from dirty_equals import IsList
 import pytest
 
 from srctools import Angle, Keyvalues, Vec
@@ -17,8 +17,8 @@ def assert_output(
     delay: float = 0.0,
     *,
     times: int = -1,
-    inst_out: str = None,
-    inst_in: str = None,
+    inst_out: Optional[str] = None,
+    inst_in: Optional[str] = None,
     comma_sep: bool = False,
 ) -> None:
     """Assert that the output matches the provided values."""
@@ -54,7 +54,8 @@ def test_entkey_basic() -> None:
     obj = object()  # Arbitrary example object.
 
     ent = VMF().create_ent('info_null')
-    internal_keys = ent._keys  # If an assertion fails, include the internal state with --showlocals.
+    # If an assertion fails, include the internal state with --showlocals.
+    internal_keys = ent._keys  # noqa
     assert len(ent) == 1
     assert list(ent) == ['classname']
     with pytest.warns(DeprecationWarning):
@@ -89,11 +90,20 @@ def test_entkey_basic() -> None:
 
     # Order not guaranteed.
     assert len(ent) == 7
-    assert list(ent) == IsList('classname', 'target', 'health', 'Range', 'allowRespawn', 'canKill', 'movedirection', check_order=False)
+    assert list(ent) == IsList(
+        'classname', 'target', 'health', 'Range', 'allowRespawn', 'canKill', 'movedirection',
+        check_order=False,
+    )
     with pytest.warns(DeprecationWarning):
         keys = ent.keys()
-    assert list(keys) == IsList('classname', 'target', 'health', 'Range', 'allowRespawn', 'canKill', 'movedirection', check_order=False)
-    assert list(ent.values()) == IsList('info_null', 'the_target', '42', '45.75', '1', '0', '0 90 0', check_order=False)
+    assert list(keys) == IsList(
+        'classname', 'target', 'health', 'Range', 'allowRespawn', 'canKill', 'movedirection',
+        check_order=False,
+    )
+    assert list(ent.values()) == IsList(
+        'info_null', 'the_target', '42', '45.75', '1', '0', '0 90 0',
+        check_order=False,
+    )
     assert list(ent.items()) == IsList(
         ('classname', 'info_null'),
         ('target', 'the_target'),

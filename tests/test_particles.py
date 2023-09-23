@@ -1,9 +1,8 @@
 """Test particle system parsing."""
 from pathlib import Path
 
-from srctools.dmx import Attribute, Element, ValueType
+from srctools.dmx import Attribute, Element
 from srctools.particles import FORMAT_NAME, Operator, Particle
-import srctools
 
 
 def test_parsing(datadir: Path) -> None:

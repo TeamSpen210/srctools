@@ -15,7 +15,7 @@ VALID_NUMS = [
 ]
 VALID_NUMS += [-x for x in VALID_NUMS]
 
-VALID_ZERONUMS = VALID_NUMS + [0, -0]
+VALID_ZERONUMS = [*VALID_NUMS, 0, -0]
 
 
 def test_construction(frozen_thawed_angle: AngleClass) -> None:
@@ -369,7 +369,7 @@ def test_equality(py_c_vec, frozen_thawed_angle: AngleClass) -> None:
         assert ((p1, y1, r1) != ang2) != equal, comp + ' tup != ang'
 
     # Test the absolute accuracy.
-    values = VALID_ZERONUMS + [38.0, (38.0 + 1.1e6), (38.0 + 1e7)]
+    values = [*VALID_ZERONUMS, 38.0, (38.0 + 1.1e6), (38.0 + 1e7)]
 
     for num in values:
         for num2 in values:

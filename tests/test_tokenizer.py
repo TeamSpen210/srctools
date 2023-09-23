@@ -159,16 +159,12 @@ def check_tokens(
     for i, (token, comp_token) in enumerate(zip_longest(tokenizer_iter, tok_test_iter, fillvalue=sentinel), start=1):
         # Check if either is too short - we need zip_longest() for that.
         if token is sentinel:
-            pytest.fail('{}: Tokenizer ended early - needed {}, got {}!'.format(
-                i,
-                [comp_token] + list(tok_test_iter),
-                list(tokenizer_backup),
-            ))
+            pytest.fail(
+                f'{i}: Tokenizer ended early - needed {[comp_token, *tok_test_iter]}, '
+                f'got {list(tokenizer_backup)}!'
+            )
         if comp_token is sentinel:
-            pytest.fail('{}: Tokenizer had too many values - extra = {}!'.format(
-                i,
-                [token] + list(tokenizer_iter),
-            ))
+            pytest.fail(f'{i}: Tokenizer had too many values - extra = {[token, *tokenizer_iter]}!')
         assert len(token) == 2
         assert isinstance(token, tuple)
         if isinstance(comp_token, tuple):
@@ -194,7 +190,7 @@ def test_prop_tokens(py_c_token: Type[Tokenizer]) -> None:
     # Test a list of lines.
     test_list = prop_parse_test.splitlines(keepends=True)
     # Break this line up semi-randomly, to help test the chunk code.
-    test_list[27:28] = [''] + list(test_list[27].partition('"')) + ['', '', '']
+    test_list[27:28] = ['', *test_list[27].partition('"'), '', '', '']
     # They should be the same text though!
     assert ''.join(test_list) == prop_parse_test, "Bad test code!"
 
@@ -287,8 +283,9 @@ def test_call_next(py_c_token: Type[Tokenizer]) -> None:
     """Test that tok() functions, and it can be mixed with iteration."""
     tok: Tokenizer = py_c_token('''{ "test" } "test" { + } ''', 'file')
 
-    tok_type, tok_value = tok()
-    assert tok_type is Token.BRACE_OPEN and tok_value == '{'
+    tok_type, tok_value = tok_tup = tok()
+    assert tok_type is Token.BRACE_OPEN, tok_tup
+    assert tok_value == '{', tok_tup
 
     it1 = iter(tok)
 

@@ -325,7 +325,7 @@ def test_EmptyMapping_set_ops(view) -> None:
 
 def test_quote_escape() -> None:
     """Test escaping various quotes."""
-    assert srctools.escape_quote_split('abcdef') ==['abcdef']
+    assert srctools.escape_quote_split('abcdef') == ['abcdef']
     # No escapes, equivalent to str.split
     assert (
         srctools.escape_quote_split('"abcd"ef""  " test') ==

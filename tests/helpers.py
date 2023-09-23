@@ -1,6 +1,6 @@
 """Helpers for performing tests."""
 from typing import (
-    Any, Callable, Generator, Iterable, Iterator, Optional, Tuple, Type, TypeVar, Union,
+    Callable, Generator, Iterable, Iterator, Optional, Tuple, Type, TypeVar, Union,
 )
 from typing_extensions import TypeAlias
 import builtins
@@ -44,7 +44,7 @@ VALID_NUMS = [
 ]
 VALID_NUMS += [-x for x in VALID_NUMS]
 
-VALID_ZERONUMS = VALID_NUMS + [0, -0]
+VALID_ZERONUMS = [*VALID_NUMS, 0, -0]
 
 # In SMD files the maximum precision is this, so it should be a good reference.
 EPSILON = 1e-6
@@ -159,7 +159,7 @@ def assert_vec(
 
 def assert_rot(
     rot: vec_mod.MatrixBase, exp_rot: vec_mod.MatrixBase,
-    msg: object = '', type: type = None,
+    msg: object = '', type: Optional[type] = None,
 ) -> None:
     """Asserts that the two rotations are the same."""
     # Don't show in pytest tracebacks.
