@@ -25,7 +25,7 @@ from srctools.filesys import (
     VPKFileSystem,
 )
 from srctools.keyvalues import KeyValError, Keyvalues, NoKeyError
-from srctools.mdl import MDL_EXTS, AnimEvents, MDL_EXTS_EXTRA, Model
+from srctools.mdl import MDL_EXTS_EXTRA, AnimEvents, Model
 from srctools.particles import FORMAT_NAME as PARTICLE_FORMAT_NAME, Particle
 from srctools.sndscript import SND_CHARS, Sound
 from srctools.tokenizer import TokenSyntaxError
