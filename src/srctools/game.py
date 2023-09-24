@@ -50,7 +50,7 @@ class Game:
             if exp_path.name == '*':
                 try:
                     self.search_paths.extend(
-                        map(exp_path.parent.joinpath, os.listdir(exp_path.parent))
+                        filter(Path.is_dir, exp_path.parent.iterdir())
                     )
                 except FileNotFoundError:
                     pass
@@ -186,10 +186,11 @@ def find_gameinfo(argv: Optional[List[str]] = None) -> Game:
         if Path(path, GINFO).exists():
             return Game(path)
     else:
-        if Path(os.getcwd(), GINFO).exists():
-            return Game(os.getcwd())
+        workdir = Path.cwd()
+        if Path(workdir, GINFO).exists():
+            return Game(workdir)
 
-        for folder in Path(os.getcwd()).parents:
+        for folder in workdir.parents:
             if Path(folder / GINFO).exists():
                 return Game(folder)
 

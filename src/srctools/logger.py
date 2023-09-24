@@ -8,6 +8,7 @@ from typing import (
     Optional, TextIO, Tuple, Type, Union, cast, overload,
 )
 from io import StringIO
+from pathlib import Path
 from types import TracebackType
 import contextlib
 import contextvars
@@ -191,26 +192,23 @@ class Formatter(logging.Formatter):
 
 def get_handler(filename: 'str | os.PathLike[str]') -> logging.FileHandler:
     """Cycle log files, then give the required file handler."""
-    name, ext = os.path.splitext(filename)
-
+    path = Path(filename)
+    ext = ''.join(path.suffixes)
     suffixes = ('.5', '.4', '.3', '.2', '.1', '')
 
     try:
         # Remove the oldest one.
-        try:
-            os.remove(name + suffixes[0] + ext)
-        except FileNotFoundError:
-            pass
+        path.with_suffix(suffixes[0] + ext).unlink(missing_ok=True)
 
         # Go in reverse, moving each file over to give us space.
         for frm, to in zip(suffixes[1:], suffixes):
             try:
-                os.rename(name + frm + ext, name + to + ext)
+                path.with_suffix(frm + ext).rename(path.with_suffix(to + ext))
             except FileNotFoundError:
                 pass
 
         try:
-            return logging.FileHandler(filename, mode='x')
+            return logging.FileHandler(path, mode='x')
         except FileExistsError:
             pass
     except PermissionError:
@@ -222,7 +220,7 @@ def get_handler(filename: 'str | os.PathLike[str]') -> logging.FileHandler:
     ind = 1
     while True:
         try:
-            return logging.FileHandler(f'{name}.{ind}{ext}', mode='x')
+            return logging.FileHandler(path.with_suffix(f'.{ind}{ext}'), mode ='x')
         except (FileExistsError, PermissionError):
             pass
         ind += 1
