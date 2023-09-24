@@ -1,6 +1,8 @@
 """Test functionality in srctools.__init__."""
+from pathlib import Path
 from typing import Any
 
+from dirty_equals import IsList
 import pytest
 
 from helpers import ExactType
@@ -341,3 +343,55 @@ def test_quote_escape() -> None:
         srctools.escape_quote_split(r'"test\"\"" blah"') ==
         ['', 'test""', ' blah', '']
     )
+
+
+def test_atomic_writer_bytes(tmp_path: Path) -> None:
+    """Test the atomic writer functionality, with bytes."""
+    filename = tmp_path / 'filename.txt'
+    filename.write_bytes(b'existing_data')
+    writer = srctools.AtomicWriter(filename, is_bytes=True)
+    assert filename.read_bytes() == b'existing_data'
+    assert list(tmp_path.iterdir()) == [filename]  # No other files yet.
+    with writer as dest:
+        assert filename.read_bytes() == b'existing_data'  # Still not altered.
+        # Tempfile appears.
+        assert list(tmp_path.iterdir()) == IsList(filename, Path(dest.name), check_order=False)
+        dest.write(b'the new data 1234')
+        assert filename.read_bytes() == b'existing_data'
+    assert list(tmp_path.iterdir()) == [filename]   # Overwritten.
+    assert filename.read_bytes() == b'the new data 1234'
+
+
+def test_atomic_writer_text(tmp_path: Path) -> None:
+    """Test the atomic writer functionality, with text."""
+    filename = tmp_path / 'filename.txt'
+    filename.write_text('existing_data', encoding='utf16')
+    writer = srctools.AtomicWriter(filename, is_bytes=False, encoding='utf16')
+    assert filename.read_text('utf16') == 'existing_data'
+    assert list(tmp_path.iterdir()) == [filename]  # No other files yet.
+    with writer as dest:
+        assert filename.read_text('utf16') == 'existing_data'  # Still not altered.
+        # Tempfile appears.
+        assert list(tmp_path.iterdir()) == IsList(filename, Path(dest.name), check_order=False)
+        dest.write('the new data 1234')
+        assert filename.read_text('utf16') == 'existing_data'
+    assert list(tmp_path.iterdir()) == [filename]  # Overwritten.
+    assert filename.read_text('utf16') == 'the new data 1234'
+
+
+def test_atomic_writer_fails(tmp_path: Path) -> None:
+    """Test that it cleans up on failure."""
+    filename = tmp_path / 'filename.txt'
+    filename.write_bytes(b'existing_data')
+    writer = srctools.AtomicWriter(filename, is_bytes=True)
+    assert filename.read_bytes() == b'existing_data'
+    assert list(tmp_path.iterdir()) == [filename]  # No other files yet.
+    with pytest.raises(ZeroDivisionError):
+        with writer as dest:
+            dest.write(b'some partial new data')
+            # File was created.
+            assert list(tmp_path.iterdir()) == IsList(filename, Path(dest.name), check_order=False)
+            raise ZeroDivisionError
+    assert list(tmp_path.iterdir()) == [filename]   # Temp file is removed.
+    # And data wasn't changed.
+    assert filename.read_bytes() == b'existing_data'
