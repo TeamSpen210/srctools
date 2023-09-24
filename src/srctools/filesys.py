@@ -162,7 +162,7 @@ class FileSystem(Generic[_FileDataT]):
     def _check_open(self) -> None:
         """Ensure self._ref is valid."""
 
-    def read_kv1(self, path: str, encoding: str = 'utf8') -> Keyvalues:
+    def read_kv1(self, path: Union[str, File[Self]], encoding: str = 'utf8') -> Keyvalues:
         """Read a Keyvalues1 file from the filesystem.
 
         This handles opening and closing files.
@@ -170,7 +170,7 @@ class FileSystem(Generic[_FileDataT]):
         with self.open_str(path, encoding) as file:
             return Keyvalues.parse(
                 file,
-                self.path + ':' + path,
+                f'{self.path}:{path.path if isinstance(path, File) else path}',
             )
 
     @deprecated('Use FileSystem.read_kv1() instead.')
