@@ -11,7 +11,6 @@ from io import StringIO
 from types import TracebackType
 import contextlib
 import contextvars
-import itertools
 import logging
 import os
 import sys
@@ -220,13 +219,13 @@ def get_handler(filename: 'str | os.PathLike[str]') -> logging.FileHandler:
     # On windows, we can't touch files opened by other programs (ourselves).
     # If another copy of us is open, it'll hold access.
     # In that case, just keep trying suffixes until we find an empty file.
-    for ind in itertools.count(start=1):
+    ind = 1
+    while True:
         try:
             return logging.FileHandler(f'{name}.{ind}{ext}', mode='x')
         except (FileExistsError, PermissionError):
             pass
-    else:
-        raise AssertionError  # Never terminates
+        ind += 1
 
 
 class NullStream(TextIO):

@@ -589,5 +589,6 @@ def collapse_all(
                 # except FileNotFoundError - fail.
                 file = file_cache[inst.filename] = InstanceFile(VMF.parse(props, preserve_ids=True))
             collapse_one(vmf, inst, file, engine_cache=fgd_cache)
-    else:  # Exhausted the range, we must have too much recursion in the instances.
-        raise RecursionError('Loop in instances!')
+
+    # Exhausted the range, we must have too much recursion in the instances.
+    raise RecursionError('Loop in instances!')

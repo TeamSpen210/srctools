@@ -295,8 +295,7 @@ class Mesh:
         for bone in self.bones.values():
             if bone.parent is None:
                 return bone
-        else:
-            raise ValueError('No root bone?')
+        raise ValueError('No root bone?')
 
     @staticmethod
     def blank(root_name: str) -> 'Mesh':

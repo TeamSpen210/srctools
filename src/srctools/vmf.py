@@ -2589,8 +2589,7 @@ class Entity(MutableMapping[str, str]):
         for k in self._keys:
             if k.casefold() == key:
                 return self._keys[k]
-        else:
-            return default
+        return default
 
     def __setitem__(
         self,
@@ -2674,8 +2673,7 @@ class Entity(MutableMapping[str, str]):
         for k in self._keys:
             if k.casefold() == key:
                 return self._keys[k]
-        else:
-            return default
+        return default
 
     def clear(self) -> None:
         """Remove all keyvalues from an item."""

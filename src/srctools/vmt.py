@@ -233,8 +233,8 @@ class Material(MutableMapping[str, str]):
             else:
                 raise tok.error('EOF while reading options for "{}" proxy', proxy_name)
             yield proxy_name, opts
-        else:
-            raise tok.error('Proxy block not closed!')
+        # We hit EOF, still expecting the }.
+        raise tok.error('Proxy block not closed!')
 
     @staticmethod
     def _parse_block(tok: Tokenizer, name: str) -> Keyvalues:

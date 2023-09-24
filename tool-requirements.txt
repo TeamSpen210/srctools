@@ -2,4 +2,4 @@
 types-Pillow>=8.3.0
 types-pyinstaller>=5.7.0
 mypy == 1.5.0
-ruff == 0.0.286
+ruff == 0.0.291

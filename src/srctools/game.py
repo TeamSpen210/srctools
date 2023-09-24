@@ -179,17 +179,18 @@ def find_gameinfo(argv: Optional[List[str]] = None) -> Game:
                 raise ValueError(f'"{value}" argument has no value!') from None
             if Path(path, GINFO).exists():
                 return Game(path)
-    else:
-        # Check VPROJECT
-        if 'VPROJECT' in os.environ:
-            path = os.environ['VPROJECT']
-            if Path(path, GINFO).exists():
-                return Game(path)
-        else:
-            if Path(os.getcwd(), GINFO).exists():
-                return Game(os.getcwd())
 
-            for folder in Path(os.getcwd()).parents:
-                if Path(folder / GINFO).exists():
-                    return Game(folder)
+    # Check VPROJECT
+    if 'VPROJECT' in os.environ:
+        path = os.environ['VPROJECT']
+        if Path(path, GINFO).exists():
+            return Game(path)
+    else:
+        if Path(os.getcwd(), GINFO).exists():
+            return Game(os.getcwd())
+
+        for folder in Path(os.getcwd()).parents:
+            if Path(folder / GINFO).exists():
+                return Game(folder)
+
     raise ValueError("Couldn't find gameinfo.txt!")
