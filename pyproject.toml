@@ -149,6 +149,9 @@ select = [
 
 	"TCH005",  # Empty type-checking block.
 ]
+allowed-confusables = [
+	"×",  # Multiplication sign
+]
 extend-ignore = [
 	# Allow module level import later in the file.
 	"E402",
@@ -170,8 +173,13 @@ extend-ignore = [
 	"PLW2901",  # Allow redefining loop var inside the loop.
 
 	# Ruff:
-	"RUF001", "RUF002", "RUF003",  # Allow ambiguous Unicode chars
 	"RUF100", # Sometimes use # noqa for other linters
+
+	# Flake8-bugbear:
+	# Loop control var not used, triggers on unpackings.
+	"B007",
+	# Stacklevel parameter required for warnings.warn() - doesn't detect positional args.
+	"B028",
 
 	# Pycodestyle, when out of preview:
 	# "E221",  # Allow multiple spaces before operators if we want to align
