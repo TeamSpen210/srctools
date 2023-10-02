@@ -120,11 +120,12 @@ cdef extern from *:
 cdef extern from *:  # Allow ourselves to access one of the feature flag macros.
     cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"
 
-cdef inline double deg_2_rad(double ang):
+cdef inline double deg_2_rad(double ang) noexcept nogil:
     """Convert a degrees value to radians."""
     return ang * (M_PI / 180.0)
 
-cdef inline double rad_2_deg(double ang):
+@cython.cdivision(True)  # We know M_PI != 0.
+cdef inline double rad_2_deg(double ang) noexcept nogil:
     """Convert a radians value to degrees."""
     return ang * (180.0 / M_PI)
 
@@ -149,7 +150,7 @@ cdef inline double norm_ang(double val) except? NAN:
     return val
 
 
-cdef Py_ssize_t trim_float(char *buf, Py_ssize_t size):
+cdef Py_ssize_t trim_float(char *buf, Py_ssize_t size) except -1:
     """Strip a .0 from the end of a float."""
     while size > 1 and buf[size - 1] == b'0':
         buf[size - 1] = 0
@@ -548,11 +549,11 @@ cdef inline bint conv_angles(vec_t *result, object ang) except False:
             raise TypeError(f'{type(ang)} is not an Angle-like object!')
     return True
 
-cdef inline double _vec_mag_sq(vec_t *vec) except? NAN:
+cdef inline double _vec_mag_sq(vec_t *vec) noexcept nogil:
     # This is faster if you just need to compare.
     return vec.x**2 + vec.y**2 + vec.z**2
 
-cdef inline double _vec_mag(vec_t *vec) except? NAN:
+cdef inline double _vec_mag(vec_t *vec) noexcept nogil:
     return math.sqrt(_vec_mag_sq(vec))
 
 cdef inline bint _vec_normalise(vec_t *out, vec_t *inp) except False:

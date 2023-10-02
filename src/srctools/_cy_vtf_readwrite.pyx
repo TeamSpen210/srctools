@@ -205,7 +205,7 @@ def scale_down(
                 dest[off + channel] = src[off2 + pos_off + channel]
 
 
-cdef inline byte upsample(byte bits, byte data) nogil:
+cdef inline byte upsample(byte bits, byte data) noexcept nogil:
     """Stretch bits worth of data to fill the byte.
 
     This is done by duplicating the MSB to fill the remaining space.
@@ -213,7 +213,7 @@ cdef inline byte upsample(byte bits, byte data) nogil:
     return data | (data >> bits)
 
 
-cdef inline RGB decomp565(byte a, byte b) nogil:
+cdef inline RGB decomp565(byte a, byte b) noexcept nogil:
     """Decompress 565-packed data into RGB triplets."""
     return {
         'r': upsample(5, (a & 0b00011111) << 3),
@@ -222,7 +222,7 @@ cdef inline RGB decomp565(byte a, byte b) nogil:
     }
 
 
-cdef inline (byte, byte) compress565(byte r, byte g, byte b) nogil:
+cdef inline (byte, byte) compress565(byte r, byte g, byte b) noexcept nogil:
     """Compress RGB triplets into 565-packed data."""
     return (
         (g << 3) & 0b11100000 | (b >> 3),
