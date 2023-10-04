@@ -1,4 +1,5 @@
 """Test the VTF library."""
+from array import array
 from typing import Generator
 from io import BytesIO
 from pathlib import Path
@@ -111,6 +112,7 @@ def test_load(
     with open(datadir / f"sample_{fmt.name.lower()}.vtf", "rb") as f:
         vtf = VTF.read(f)
         assert vtf.format is fmt
+        vtf.load()
         img = vtf.get().to_PIL()
 
     buf = BytesIO()
@@ -123,3 +125,50 @@ def test_load(
         basename=f"test_load_{cy_py_format_funcs}_{fmt.name.lower()}",
         check_fn=compare_img,
     )
+
+
+@pytest.mark.parametrize("fmt", FORMATS, ids=lambda fmt: fmt.name.lower())
+def test_save_bad_size(
+    cy_py_format_funcs: str,
+    fmt: ImageFormats,
+) -> None:
+    """Test that the format functions produce errors if the buffers are incorrect."""
+    if cy_py_format_funcs == "python" and fmt.name.startswith(("DXT", "ATI")):
+        pytest.xfail("DXT/ATI compression not implemented in Python code.")
+
+    with pytest.raises(BufferError):  # Wrong pixel size.
+        vtf_mod._format_funcs.save(
+            fmt,
+            array('B'),
+            bytearray(fmt.frame_size(32, 32)),
+            32, 32,
+        )
+    with pytest.raises(BufferError):  # Wrong data size.
+        vtf_mod._format_funcs.save(
+            fmt,
+            array('B', [0, 0, 0, 0xFF]) * (32 * 32),
+            bytearray(),
+            32, 32,
+        )
+
+
+@pytest.mark.parametrize("fmt", FORMATS, ids=lambda fmt: fmt.name.lower())
+def test_load_bad_size(
+    cy_py_format_funcs: str,
+    fmt: ImageFormats,
+) -> None:
+    """Test that the format functions produce errors if the buffers are incorrect."""
+    with pytest.raises(BufferError):  # Wrong pixel size.
+        vtf_mod._format_funcs.load(
+            fmt,
+            array('B'),
+            bytes(fmt.frame_size(32, 32)),
+            32, 32,
+        )
+    with pytest.raises(BufferError):  # Wrong data size.
+        vtf_mod._format_funcs.load(
+            fmt,
+            array('B', [0, 0, 0, 0xFF]) * (32 * 32),
+            b'',
+            32, 32,
+        )

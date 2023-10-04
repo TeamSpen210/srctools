@@ -123,7 +123,10 @@ def load(fmt: ImageFormats, pixels: Array, data: bytes, width: int, height: int)
         func = _LOAD[fmt]
     except KeyError:
         raise NotImplementedError(f"Loading {fmt.name} not implemented!") from None
-    func(pixels, data, width, height)
+    try:
+        func(pixels, data, width, height)
+    except (IndexError, ValueError) as exc:
+        raise BufferError("Bad pixel or data buffer size.") from exc
 
 
 def save(fmt: ImageFormats, pixels: Array, data: bytearray, width: int, height: int) -> None:
@@ -132,7 +135,10 @@ def save(fmt: ImageFormats, pixels: Array, data: bytearray, width: int, height: 
         func = _SAVE[fmt]
     except KeyError:
         raise NotImplementedError(f"Saving {fmt.name} not implemented!") from None
-    func(pixels, data, width, height)
+    try:
+        func(pixels, data, width, height)
+    except (IndexError, ValueError) as exc:
+        raise BufferError("Bad pixel or data buffer size.") from exc
 
 
 def scale_down(
