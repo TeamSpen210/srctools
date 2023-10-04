@@ -1,10 +1,14 @@
 """Functions for reading/writing VTF data."""
+# We don't implement DXT saving, since that's highly complicated (and would be very slow).
+# Wherever possible, use memoryview slicing to copy channels all in one go. This is much faster
+# than a loop.
+
 from typing import TYPE_CHECKING, Callable, Dict, Iterable, List, Optional, Tuple
 from typing_extensions import TypeAlias
 import array
 
 
-if TYPE_CHECKING:
+if TYPE_CHECKING:  # Avoid an import cycle.
     from srctools.vtf import FilterMode, ImageFormats
 else:
     ImageFormats = 'ImageFormats'
@@ -194,35 +198,39 @@ def saveload_rgba(mode: str) -> Tuple[
         a_off = mode.index('a')
     except ValueError:
         def loader_rgb(pixels: Array, data: bytes, width: int, height: int) -> None:
-            for offset in range(width * height):
-                pixels[4 * offset] = data[3 * offset + r_off]
-                pixels[4 * offset + 1] = data[3 * offset + g_off]
-                pixels[4 * offset + 2] = data[3 * offset + b_off]
-                pixels[4 * offset + 3] = 255
+            view_pix = memoryview(pixels)
+            view_dat = memoryview(data)
+            view_pix[0::4] = view_dat[r_off::3]
+            view_pix[1::4] = view_dat[g_off::3]
+            view_pix[2::4] = view_dat[b_off::3]
+            view_pix[3::4] = b'\xFF' * (width * height)
 
         def saver_rgb(pixels: Array, data: bytearray, width: int, height: int) -> None:
-            for offset in range(width * height):
-                data[3 * offset + r_off] = pixels[4 * offset]
-                data[3 * offset + g_off] = pixels[4 * offset + 1]
-                data[3 * offset + b_off] = pixels[4 * offset + 2]
+            view_pix = memoryview(pixels)
+            view_dat = memoryview(data)
+            view_dat[r_off::3] = view_pix[0::4]
+            view_dat[g_off::3] = view_pix[1::4]
+            view_dat[b_off::3] = view_pix[2::4]
 
         loader_rgb.__name__ = 'load_' + mode
         saver_rgb.__name__ = 'save_' + mode
         return loader_rgb, saver_rgb
     else:
         def loader_rgba(pixels: Array, data: bytes, width: int, height: int) -> None:
-            for offset in range(width * height):
-                pixels[4 * offset] = data[4 * offset + r_off]
-                pixels[4 * offset + 1] = data[4 * offset + g_off]
-                pixels[4 * offset + 2] = data[4 * offset + b_off]
-                pixels[4 * offset + 3] = data[4 * offset + a_off]
+            view_pix = memoryview(pixels)
+            view_dat = memoryview(data)
+            view_pix[0::4] = view_dat[r_off::4]
+            view_pix[1::4] = view_dat[g_off::4]
+            view_pix[2::4] = view_dat[b_off::4]
+            view_pix[3::4] = view_dat[a_off::4]
 
         def saver_rgba(pixels: Array, data: bytearray, width: int, height: int) -> None:
-            for offset in range(width * height):
-                data[4 * offset + r_off] = pixels[4 * offset]
-                data[4 * offset + g_off] = pixels[4 * offset + 1]
-                data[4 * offset + b_off] = pixels[4 * offset + 2]
-                data[4 * offset + a_off] = pixels[4 * offset + 3]
+            view_pix = memoryview(pixels)
+            view_dat = memoryview(data)
+            view_dat[r_off::4] = view_pix[0::4]
+            view_dat[g_off::4] = view_pix[1::4]
+            view_dat[b_off::4] = view_pix[2::4]
+            view_dat[a_off::4] = view_pix[3::4]
 
         loader_rgba.__name__ = 'load_' + mode
         saver_rgba.__name__ = 'save_' + mode
@@ -247,19 +255,22 @@ load_uvwq8888, save_uvwq8888 = saveload_rgba('rgba')
 
 def load_bgrx8888(pixels: Array, data: bytes, width: int, height: int) -> None:
     """Strange - skip byte."""
-    for offset in range(width * height):
-        pixels[4 * offset] = data[4 * offset + 2]
-        pixels[4 * offset + 1] = data[4 * offset + 1]
-        pixels[4 * offset + 2] = data[4 * offset + 0]
-        pixels[4 * offset + 3] = 255
+    view_pix = memoryview(pixels)
+    view_dat = memoryview(data)
+    view_pix[0::4] = view_dat[2::4]
+    view_pix[1::4] = view_dat[1::4]
+    view_pix[2::4] = view_dat[0::4]
+    view_pix[3::4] = b'\xFF' * (width * height)
 
 
 def save_bgrx8888(pixels: Array, data: bytearray, width: int, height: int) -> None:
     """Strange - skip byte."""
-    for offset in range(width * height):
-        data[4 * offset + 2] = pixels[4 * offset]
-        data[4 * offset + 1] = pixels[4 * offset + 1]
-        data[4 * offset + 0] = pixels[4 * offset + 2]
+    view_pix = memoryview(pixels)
+    view_dat = memoryview(data)
+    view_dat[3::4] = b'\0' * (width * height)
+    view_dat[2::4] = view_pix[0::4]
+    view_dat[1::4] = view_pix[1::4]
+    view_dat[0::4] = view_pix[2::4]
 
 
 def load_rgb565(pixels: Array, data: bytes, width: int, height: int) -> None:
@@ -374,9 +385,12 @@ def save_bgrx5551(pixels: Array, data: bytearray, width: int, height: int) -> No
 
 def load_i8(pixels: Array, data: bytes, width: int, height: int) -> None:
     """I8 format, R=G=B"""
-    for offset in range(width * height):
-        pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = data[offset]
-        pixels[4*offset+3] = 255
+    view_pix = memoryview(pixels)
+    view_dat = memoryview(data)
+    view_pix[0::4] = view_dat
+    view_pix[1::4] = view_dat
+    view_pix[2::4] = view_dat
+    view_pix[3::4] = b'\xff' * (width * height)
 
 
 def save_i8(pixels: Array, data: bytearray, width: int, height: int) -> None:
@@ -391,9 +405,10 @@ def save_i8(pixels: Array, data: bytearray, width: int, height: int) -> None:
 
 def load_ia88(pixels: Array, data: bytes, width: int, height: int) -> None:
     """I8 format, R=G=B + A"""
-    for offset in range(width * height):
-        pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = data[2*offset]
-        pixels[4*offset+3] = data[2*offset+1]
+    view_pix = memoryview(pixels)
+    view_dat = memoryview(data)
+    view_pix[0::4] = view_pix[1::4] = view_pix[2::4] = view_dat[0::2]
+    view_pix[3::4] = view_dat[1::2]
 
 
 def save_ia88(pixels: Array, data: bytearray, width: int, height: int) -> None:
@@ -404,38 +419,38 @@ def save_ia88(pixels: Array, data: bytearray, width: int, height: int) -> None:
             pixels[4 * offset + 1] +
             pixels[4 * offset + 2]
         ) // 3
-        data[2 * offset + 1] = pixels[4 * offset + 3]
+    memoryview(data)[1::2] = memoryview(pixels)[3::4]
 
 # ImageFormats.P8 is not implemented by Valve either.
 
 
 def load_a8(pixels: Array, data: bytes, width: int, height: int) -> None:
     """Single alpha bytes."""
-    for offset in range(width * height):
-        pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = 0
-        pixels[4*offset+3] = data[offset]
+    view_pix = memoryview(pixels)
+    view_pix[:] = bytes(4 * width * height)
+    view_pix[3::4] = memoryview(data)
 
 
 def save_a8(pixels: Array, data: bytearray, width: int, height: int) -> None:
     """Single alpha bytes."""
-    for offset in range(width * height):
-        data[offset] = pixels[4 * offset + 3]
+    memoryview(data)[:] = memoryview(pixels)[3::4]
 
 
 def load_uv88(pixels: Array, data: bytes, width: int, height: int) -> None:
     """UV-only, which is mapped to RG."""
-    for offset in range(width * height):
-        pixels[4*offset] = data[2*offset]
-        pixels[4*offset+1] = data[2*offset+1]
-        pixels[4*offset+2] = 0
-        pixels[4*offset+3] = 255
+    view_pix = memoryview(pixels)
+    view_dat = memoryview(data)
+    view_pix[:] = b'\0\0\0\xFF' * (width * height)
+    view_pix[0::4] = view_dat[0::2]
+    view_pix[1::4] = view_dat[1::2]
 
 
 def save_uv88(pixels: Array, data: bytearray, width: int, height: int) -> None:
     """UV-only, which is mapped to RG."""
-    for offset in range(width * height):
-        data[2*offset] = pixels[4*offset]
-        data[2*offset+1] = pixels[4*offset+1]
+    view_pix = memoryview(pixels)
+    view_dat = memoryview(data)
+    view_dat[0::2] = view_pix[0::4]
+    view_dat[1::2] = view_pix[1::4]
 
 
 def load_rgb888_bluescreen(pixels: Array, data: bytes, width: int, height: int) -> None:

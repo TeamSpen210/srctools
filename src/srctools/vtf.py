@@ -204,7 +204,8 @@ class ImageFormats(Enum):
 
 
 del _mk_fmt, _mk_fmt_ind
-# Initialise the internal mapping in the format modules.
+# Initialise the internal mapping in the format modules. For Cython, this validates that the enum
+# order matches the C code.
 _format_funcs.init(ImageFormats)
 if _cy_format_funcs is not _py_format_funcs:
     _py_format_funcs.init(ImageFormats)
