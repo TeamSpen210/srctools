@@ -1,5 +1,5 @@
 """Test the Vector object."""
-from typing import Union
+from typing import TypeAlias, Union
 from fractions import Fraction
 from pathlib import Path
 from random import Random
@@ -12,6 +12,7 @@ import re
 
 from dirty_equals import IsFloat
 import pytest
+from typing_extensions import Literal
 
 from helpers import *
 from srctools import Vec_tuple, math as vec_mod
@@ -28,6 +29,7 @@ except ImportError:
 raises_typeerror = pytest.raises(TypeError)
 raises_keyerror = pytest.raises(KeyError)
 raises_zero_div = pytest.raises(ZeroDivisionError)
+Axis: TypeAlias = Literal["x", "y", "z"]
 
 
 @pytest.mark.parametrize('cls', ['Vec', 'FrozenVec', 'Matrix', 'Angle', 'FrozenAngle'])
@@ -450,6 +452,108 @@ def test_vec_lerp(frozen_thawed_vec: VecClass) -> None:
 
     with raises_zero_div:
         Vec.lerp(48.4, -64.0, -64.0, Vec(), Vec())
+
+
+def test_vec_clamped_args(frozen_thawed_vec: VecClass) -> None:
+    """Test Vec.clamped()."""
+    Vec = frozen_thawed_vec
+    vec = Vec(48, 23, 284)
+    with pytest.raises(TypeError, match='not both'):
+        vec.clamped(vec, vec, mins=vec, maxs=vec)
+    with pytest.raises(TypeError, match='missing either'):
+        vec.clamped()
+    with pytest.raises(TypeError, match='missing 1 required positional argument'):
+        vec.clamped(vec)
+    with pytest.raises(TypeError, match='takes 2 positional arguments but 3 were given'):
+        vec.clamped(vec, vec, vec)
+
+    # Unchanged FrozenVec returns self.
+    fvec = vec_mod.FrozenVec(30, 38, 87)
+    assert fvec.clamped(Vec(-80, -80, -80), Vec(120, 120, 120)) is fvec
+
+
+@pytest.mark.parametrize("axis, u, v", [
+    ("x", "y", "z"),
+    ("y", "x", "z"),
+    ("z", "x", "y"),
+])
+def test_vec_clamped_args(frozen_thawed_vec: VecClass, axis: Axis, u: Axis, v: Axis) -> None:
+    """Test each axis is independent and behaves correctly."""
+    Vec = frozen_thawed_vec
+    vec = Vec.with_axes(axis, 400, u, 500, v, 800)
+    unchanged = {axis: 400, u: 500, v: 800}
+    # Unchanged, positional + kw.
+    assert_vec(
+        vec.clamped(
+            Vec.with_axes(axis, 200, u, 300, v, 678),
+            Vec.with_axes(axis, 900, u, 800, v, 1200),
+        ),
+        **unchanged,
+        type=Vec,
+    )
+    assert_vec(vec, **unchanged)  # clamped() must not modify self!
+    assert_vec(
+        vec.clamped(
+            mins=Vec.with_axes(axis, 200, u, 300, v, 678),
+            maxs=Vec.with_axes(axis, 900, u, 800, v, 1200),
+        ),
+        **unchanged,
+        type=Vec,
+    )
+    assert_vec(vec, **unchanged)
+    # Uses mins, positional, kw, both kv.
+    assert_vec(
+        vec.clamped(
+            Vec.with_axes(axis, 448, u, 300, v, 678),
+            Vec.with_axes(axis, 900, u, 800, v, 1200),
+        ),
+        **{axis: 448, u: 500, v: 800},
+        type=Vec,
+    )
+    assert_vec(vec, **unchanged)
+    assert_vec(
+        vec.clamped(
+            mins=Vec.with_axes(axis, 448, u, 300, v, 678),
+        ),
+        **{axis: 448, u: 500, v: 800},
+        type=Vec,
+    )
+    assert_vec(vec, **unchanged)
+    assert_vec(
+        vec.clamped(
+            mins=Vec.with_axes(axis, 448, u, 300, v, 678),
+            maxs=Vec.with_axes(axis, 900, u, 800, v, 1200),
+        ),
+        **{axis: 448, u: 500, v: 800},
+        type=Vec,
+    )
+    # Uses maxes, positional, kw, both kv.
+    assert_vec(
+        vec.clamped(
+            Vec.with_axes(axis, 200, u, 300, v, 678),
+            Vec.with_axes(axis, 321, u, 800, v, 1200),
+        ),
+        **{axis: 321, u: 500, v: 800},
+        type=Vec,
+    )
+    assert_vec(vec, **unchanged)
+    assert_vec(
+        vec.clamped(
+            maxs=Vec.with_axes(axis, 321, u, 800, v, 1200),
+        ),
+        **{axis: 321, u: 500, v: 800},
+        type=Vec,
+    )
+    assert_vec(vec, **unchanged)
+    assert_vec(
+        vec.clamped(
+            mins=Vec.with_axes(axis, 200, u, 300, v, 678),
+            maxs=Vec.with_axes(axis, 321, u, 800, v, 1200),
+        ),
+        **{axis: 321, u: 500, v: 800},
+        type=Vec,
+    )
+    assert_vec(vec, **unchanged)
 
 
 @pytest.mark.slow

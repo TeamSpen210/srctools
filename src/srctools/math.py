@@ -11,12 +11,12 @@ Rotations are performed via the matrix-multiplication operator `@`, where the le
 the right. Vectors can be rotated by matrices and angles and matrices can be rotated by angles,
 but not vice-versa.
 
- - Vec @ Angle -> Vec
- - Vec @ Matrix -> Vec
- - 3-tuple @ Angle -> Vec
- - Angle @ Angle -> Angle
- - Angle @ Matrix -> Angle
- - Matrix @ Matrix -> Matrix
+ - ``Vec @ Angle`` → ``Vec``
+ - ``Vec @ Matrix`` → ``Vec``
+ - ``tuple[x, y, z] @ Angle`` → ``Vec``
+ - ``Angle @ Angle`` → ``Angle``
+ - ``Angle @ Matrix`` → ``Angle``
+ - ``Matrix @ Matrix`` → ``Matrix``
 """
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, Final, Iterable, Iterator, List,
@@ -68,7 +68,7 @@ def parse_vec_str(
     are simply ignored.
 
     If the 'string' is already a :py:class:`VecBase` or :py:class:`AngleBase`, this will be passed through.
-    If you do want a specific class, use :py:meth:`VecBase.from_str`, :py:meth:`VecBase.from_str`
+    If you do want a specific class, use :py:meth:`VecBase.from_str`, :py:meth:`AngleBase.from_str`
     or :py:meth:`MatrixBase.from_angstr`.
     """
     if isinstance(val, str):
@@ -816,6 +816,72 @@ class VecBase:
             out_min.y + (x_off * (out_max._y - out_min._y)) / diff,
             out_min.z + (x_off * (out_max._z - out_min._z)) / diff,
         )
+
+    @overload
+    def clamped(self: VecT, mins: AnyVec, maxs: AnyVec, /) -> VecT: ...
+    @overload
+    def clamped(self: VecT, /, *, mins: AnyVec) -> VecT: ...
+    @overload
+    def clamped(self: VecT, /, *, maxs: AnyVec) -> VecT: ...
+    @overload
+    def clamped(self: VecT, /, *, mins: AnyVec, maxs: AnyVec) -> VecT: ...
+    def clamped(
+        self: VecT, *args: AnyVec,
+        mins: Optional[AnyVec] = None,
+        maxs: Optional[AnyVec] = None,
+    ) -> VecT:
+        """Return a copy of this vector, constrained by the given min/max values.
+
+        Either both can be provided positionally, or at least one can be provided by keyword.
+        """
+        if args:
+            if mins is not None or maxs is not None:
+                raise TypeError('Bounds may not be provided both positionally or by keyword.')
+            if len(args) == 2:
+                mins, maxs = args
+            elif len(args) == 1:
+                raise TypeError(
+                    f"{type(self).__name__}.clamped() missing 1 required positional argument: "
+                    f"'maxs'"
+                )
+            else:
+                raise TypeError(
+                    f"{type(self).__name__}.clamped() takes 2 positional arguments "
+                    f"but {len(args)} were given"
+                )
+        elif mins is None and maxs is None:
+            raise TypeError(
+                f"{type(self)}.__name__.clamped() missing either 2 positional arguments "
+                f"or at least 1 keyword arguments: 'mins' and 'maxs'"
+            )
+        x, y, z = self._x, self._y, self._z
+        return_self = type(self) is Py_FrozenVec
+        if mins is not None:
+            mx, my, mz = mins
+            if x < mx:
+                x = mx
+                return_self = False
+            if y < my:
+                y = my
+                return_self = False
+            if z < mz:
+                z = mz
+                return_self = False
+        if maxs is not None:
+            mx, my, mz = maxs
+            if x > mx:
+                x = mx
+                return_self = False
+            if y > my:
+                y = my
+                return_self = False
+            if z > mz:
+                z = mz
+                return_self = False
+        if return_self:  # Unchanged FrozenVec, return it.
+            return self
+        else:
+            return type(self)(x, y, z)
 
     def __round__(self: VecT, ndigits: int = 0) -> VecT:
         """Performing :external:py:func:`round()` on a vector rounds each axis."""
@@ -2249,11 +2315,13 @@ class AngleBase:
     ) -> AngleT:
         """Create an Angle, given a number of axes and corresponding values.
 
-        This is a convenience for doing the following:
+        This is a convenience for doing the following::
+
             ang = Angle()
             ang[axis1] = val1
             ang[axis2] = val2
             ang[axis3] = val3
+
         The magnitudes can also be Angles, in which case the matching
         axis will be used from the angle.
         """

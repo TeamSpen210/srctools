@@ -1320,6 +1320,78 @@ cdef class VecBase:
             out_min.val.z + (off * (out_max.val.z - out_min.val.z)) / diff,
         )
 
+    def clamped(self, *args, mins = None, maxs = None):
+        """Return a copy of this vector, constrained by the given min/max values.
+
+        Either both can be provided positionally, or at least one can be provided by keyword.
+        """
+        cdef vec_t vec_min, vec_max
+        cdef bint has_mins = False
+        cdef bint has_maxs = False
+
+        if args:
+            if mins is not None or maxs is not None:
+                raise TypeError(
+                    f"{type(self)}.__name__.clamped() accepts either 2 positional arguments "
+                    f"or 1-2 keyword arguments ('mins' and 'maxs'), not both"
+                )
+            if len(args) == 2:
+                conv_vec(&vec_min, args[0], scalar=False)
+                conv_vec(&vec_max, args[1], scalar=False)
+                has_mins = has_maxs = True
+            elif len(args) == 1:
+                raise TypeError(
+                    f"{type(self).__name__}.clamped() missing 1 required positional argument: "
+                    f"'maxs'"
+                )
+            else:
+                raise TypeError(
+                    f"{type(self).__name__}.clamped() takes 2 positional arguments "
+                    f"but {len(args)} were given"
+                )
+        elif mins is None and maxs is None:
+            raise TypeError(
+                f"{type(self)}.__name__.clamped() missing either 2 positional arguments "
+                f"or at least 1 keyword arguments: 'mins' and 'maxs'"
+            )
+        else:
+            if mins is not None:
+                conv_vec(&vec_min, mins, scalar=False)
+                has_mins = True
+            if maxs is not None:
+                conv_vec(&vec_max, maxs, scalar=False)
+                has_maxs = True
+
+        cdef double x = self.val.x
+        cdef double y = self.val.y
+        cdef double z = self.val.z
+        cdef bint return_self = type(self) is FrozenVec
+        if has_mins:
+            if x < vec_min.x:
+                x = vec_min.x
+                return_self = False
+            if y < vec_min.y:
+                y = vec_min.y
+                return_self = False
+            if z < vec_min.z:
+                z = vec_min.z
+                return_self = False
+        if has_maxs:
+            if x > vec_max.x:
+                x = vec_max.x
+                return_self = False
+            if y > vec_max.y:
+                y = vec_max.y
+                return_self = False
+            if z > vec_max.z:
+                z = vec_max.z
+                return_self = False
+
+        if return_self:  # Unchanged FrozenVec, return it.
+            return self
+        else:
+            return _vector(type(self), x, y, z)
+
     def axis(self) -> str:
         """For a normal vector, return the axis it is on."""
         cdef bint x, y, z

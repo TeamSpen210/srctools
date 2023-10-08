@@ -12,6 +12,7 @@ Version (dev)
 * Fix #20: VTF.compute_mipmaps() not working for cubemaps.
 * Correctly handle `.vvd`/`.vtx` etc files being packed as :py:class:`MODEL <srctools.packlist.FileType.GENERIC`.
 * Improve performance of pure-Python VTF save/loading code.
+* Add :py:meth:`Vec.clamped() <srctools.math.VecBase.clamped>`, for applying min/max bounds to a vector.
 
 --------------
 Version 2.3.14
