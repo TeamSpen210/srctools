@@ -41,8 +41,9 @@ ParsedT = TypeVar('ParsedT')
 __all__ = [
     'FileType', 'FileMode', 'SoundScriptMode',
     'PackFile', 'PackList',
-    'unify_path',
-    'entclass_canonicalize', 'entclass_canonicalise', 'entclass_packfunc', 'entclass_resources', 'entclass_iter',
+    'unify_path', 'strip_extension',
+    'entclass_canonicalize', 'entclass_canonicalise', 'entclass_packfunc',
+    'entclass_resources', 'entclass_iter',
 ]
 
 
