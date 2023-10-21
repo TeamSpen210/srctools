@@ -2499,6 +2499,10 @@ class Entity(MutableMapping[str, str]):
         """
         orig_name = self['targetname']
         if orig_name:
+            # If this name is already unique, preserve it.
+            if self.map.by_target[orig_name] == {self}:
+                return self
+
             self['targetname'] = ''  # Remove ourselves from the .by_target[] set.
         else:
             orig_name = unnamed_prefix

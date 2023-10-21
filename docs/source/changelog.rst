@@ -13,6 +13,7 @@ Version (dev)
 * Correctly handle `.vvd`/`.vtx` etc files being packed as :py:class:`MODEL <srctools.packlist.FileType.GENERIC`.
 * Improve performance of pure-Python VTF save/loading code.
 * Add :py:meth:`Vec.clamped() <srctools.math.VecBase.clamped>`, for applying min/max bounds to a vector.
+* Fix :py:meth:`Entity.make_unique() <srctools.vmf.Entity.make_unique>` renaming entities with numeric suffixes which were already unique.
 
 --------------
 Version 2.3.14

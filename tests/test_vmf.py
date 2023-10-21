@@ -397,3 +397,31 @@ def test_regression(file_regression: Any) -> None:
         Output('OnUser1', '!player', 'HolsterWeapon', delay=0.1),
     )
     file_regression.check(vmf.export(), extension='.vmf')
+
+
+def test_make_unique() -> None:
+    """Test the entity.make_unique() method."""
+    vmf = VMF()
+    vmf.create_ent('info_target', targetname='alpha')
+    vmf.create_ent('info_target', targetname='alpha1')
+
+    vmf.create_ent('info_target', targetname='alpha2')
+
+    alpha4 = vmf.create_ent('info_target', targetname='alpha4')
+    alpha4.make_unique()  # Name clear, preserve current name.
+    assert alpha4['targetname'] == 'alpha4'
+
+    alpha3 = vmf.create_ent('info_target')
+    alpha3.make_unique('alpha')
+    assert alpha3['targetname'] == 'alpha3'
+
+    # With overlaps, discard existing numeric suffix.
+    alpha5 = vmf.create_ent('info_target', targetname='alpha2')
+    alpha5.make_unique('beta')
+    assert alpha5['targetname'] == 'alpha5'
+
+    for i in range(6, 12):
+        vmf.create_ent('info_target', targetname=f'alpha{i}')
+    # Check double-digits work.
+    alpha12 = vmf.create_ent('info_target').make_unique('alpha')
+    assert alpha12['targetname'] == 'alpha12'
