@@ -139,14 +139,22 @@ def load(fmt: ImageFormats, pixels: Array, data: bytes, width: int, height: int)
 
 def save(fmt: ImageFormats, pixels: Array, data: bytearray, width: int, height: int) -> None:
     """Save pixels from data in the given format."""
+    if memoryview(pixels).nbytes != 4 * width * height:
+        raise BufferError(
+            f"Incorrect pixel array size. Expected {4 * width * height} bytes, "
+            f"got {memoryview(pixels).nbytes} bytes."
+        )
+    data_size = fmt.frame_size(width, height)
+    if len(data) != data_size:
+        raise BufferError(
+            f"Incorrect data block size. Expected {data_size} bytes, "
+            f"got {len(data)} bytes."
+        )
     try:
         func = _SAVE[fmt]
     except KeyError:
         raise NotImplementedError(f"Saving {fmt.name} not implemented!") from None
-    try:
-        func(pixels, data, width, height)
-    except (IndexError, ValueError) as exc:
-        raise BufferError("Bad pixel or data buffer size.") from exc
+    func(pixels, data, width, height)
 
 
 def scale_down(
