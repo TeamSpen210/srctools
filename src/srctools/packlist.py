@@ -876,7 +876,7 @@ class PackList:
                 ent_class = base_entity
 
             skinset: Optional[Set[int]]
-            if ent['skinset'] != '':
+            if 'skinset' in ent:
                 # Special key for us - if set this is a list of skins this
                 # entity is pledging it will restrict itself to.
                 skinset = {

@@ -995,10 +995,6 @@ class _EntityView(Generic[T]):
         self._attr = attr_name
         self._disp_attr = disp_name
 
-    @property
-    def __name__(self) -> str:
-        return self._disp_attr
-
     def __repr__(self) -> str:
         return f'{self._ent!r}.{self._disp_attr}'
 

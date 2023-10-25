@@ -171,6 +171,8 @@ extend-ignore = [
 	"PLC0414",  # import x as x is used for type checking.
 	"PLE1205",  # Too many arguments for logging, doesn't handle our format
 	"PLW2901",  # Allow redefining loop var inside the loop.
+	"PLC1901",  # Allow compare to empty string, can be more clear.
+	"PLW1641",  # __hash__ is defined automatically by attrs.
 
 	# Ruff:
 	"RUF100", # Sometimes use # noqa for other linters
@@ -182,8 +184,8 @@ extend-ignore = [
 	"B028",
 
 	# Pycodestyle, when out of preview:
-	# "E221",  # Allow multiple spaces before operators if we want to align
-	# "E226",  # Allow no spaces like "1+1", sometimes useful to indicate precedence
+	"E221",  # Allow multiple spaces before operators if we want to align
+	"E226",  # Allow no spaces like "1+1", sometimes useful to indicate precedence
 
 	# Pyupgrade:
 	# Keep using typing types even with __future__.annotations.

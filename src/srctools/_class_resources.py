@@ -772,12 +772,12 @@ class CitizenTypes(IntEnum):
 
 CIT_MAPNAMES = [
     ("trainstation", CitizenTypes.DOWNTRODDEN),
-    ("canals",       CitizenTypes.REFUGEE),
-    ("town",         CitizenTypes.REFUGEE),
-    ("coast",        CitizenTypes.REFUGEE),
-    ("prison",       CitizenTypes.DOWNTRODDEN),
-    ("c17",          CitizenTypes.REBEL),
-    ("citadel",      CitizenTypes.DOWNTRODDEN),
+    ("canals", CitizenTypes.REFUGEE),
+    ("town", CitizenTypes.REFUGEE),
+    ("coast", CitizenTypes.REFUGEE),
+    ("prison", CitizenTypes.DOWNTRODDEN),
+    ("c17", CitizenTypes.REBEL),
+    ("citadel",  CitizenTypes.DOWNTRODDEN),
 ]
 
 CIT_FOLDERS = {
