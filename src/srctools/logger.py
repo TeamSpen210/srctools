@@ -220,7 +220,7 @@ def get_handler(filename: 'str | os.PathLike[str]') -> logging.FileHandler:
     ind = 1
     while True:
         try:
-            return logging.FileHandler(path.with_suffix(f'.{ind}{ext}'), mode ='x')
+            return logging.FileHandler(path.with_suffix(f'.{ind}{ext}'), mode='x')
         except (FileExistsError, PermissionError):
             pass
         ind += 1

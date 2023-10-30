@@ -777,7 +777,7 @@ CIT_MAPNAMES = [
     ("coast", CitizenTypes.REFUGEE),
     ("prison", CitizenTypes.DOWNTRODDEN),
     ("c17", CitizenTypes.REBEL),
-    ("citadel",  CitizenTypes.DOWNTRODDEN),
+    ("citadel", CitizenTypes.DOWNTRODDEN),
 ]
 
 CIT_FOLDERS = {
