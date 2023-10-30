@@ -546,7 +546,7 @@ class VMF:
         """
         if not isinstance(tree, Keyvalues):
             # if not a tree, try to read the file
-            with open(tree) as file:
+            with open(tree, encoding='cp1251') as file:
                 tree = Keyvalues.parse(file)
 
         map_info = {}

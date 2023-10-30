@@ -23,13 +23,13 @@ class Game:
     fgd_loc: Optional[str]
     search_paths: List[Path]
 
-    def __init__(self, path: Union[str, Path]) -> None:
+    def __init__(self, path: Union[str, Path], encoding: str = 'utf8') -> None:
         """Parse a game from a folder."""
         if isinstance(path, Path):
             self.path = path
         else:
             self.path = Path(path)
-        with open(self.path / GINFO) as f:
+        with open(self.path / GINFO, encoding=encoding) as f:
             gameinfo = Keyvalues.parse(
                 f,
                 allow_escapes=False,  # Allow backslashes in paths.
