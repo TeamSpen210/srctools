@@ -70,6 +70,7 @@ import os
 import sys
 import types
 import warnings
+import weakref
 
 from srctools import BOOL_LOOKUP, EmptyMapping, StringPath
 from srctools.math import Vec as _Vec
@@ -162,10 +163,11 @@ class Keyvalues:
     The name should be a string, or None for a root object.
     Root objects export each child at the topmost indent level. This is produced from ``Keyvalues.parse()`` calls.
     """
-    __slots__ = ('_folded_name', '_real_name', '_value', '__weakref__')
+    __slots__ = ('_folded_name', '_real_name', '_value', '_parents', '__weakref__')
     _folded_name: Optional[str]
     _real_name: Optional[str]
     _value: _KV_Value
+    _parents: Union[weakref.ref['Keyvalues'], List[weakref.ref['Keyvalues']], None]
 
     @overload
     def __init__(self, name: str, value: Union[List['Keyvalues'], str]) -> None: ...
@@ -183,6 +185,7 @@ class Keyvalues:
             self._folded_name = sys.intern(name.casefold())
 
         self._value = value
+        self._parents = None
 
     @property
     def value(self) -> str:
@@ -245,15 +248,51 @@ class Keyvalues:
             self._value = value
         return self
 
+    def _add_parent(self, ref: weakref.ref['Keyvalues']) -> None:
+        """Add the specified reference to our parents list."""
+        # We take care to preserve the existing weakref, so sibling props can share it.
+        if self._parents is None:
+            self._parents = ref
+        elif isinstance(self._parents, weakref.ref):
+            # One parent - check it's not our new ref.
+            existing = self._parents()
+            if existing is None:  # Dead.
+                self._parents = ref
+            elif existing is not ref():  # Upgrade to list.
+                self._parents = [self._parents, ref]
+            # else: both the same, nothing to do.
+        else:
+            # Multiple existing parents. Avoid doubling up, and clear out any dead refs.
+            parents: List[weakref.ref['Keyvalues']] = []
+            add = True
+            to_add = ref()
+            for exist_ref in self._parents:
+                existing = exist_ref()
+                if existing is None:
+                    continue
+                if existing is to_add:
+                    add = False
+                parents.append(exist_ref)
+            if add:
+                parents.append(ref)
+            if len(parents) == 1:
+                [self._parents] = parents
+            else:
+                self._parents = parents
+
     @classmethod
     def root(cls, *children: 'Keyvalues') -> 'Keyvalues':
         """Return a new 'root' keyvalues."""
-        kv = cls.__new__(cls)
+        kv: Keyvalues = cls.__new__(cls)
         kv._folded_name = kv._real_name = None
         for child in children:
             if not isinstance(child, Keyvalues):
                 raise TypeError(f'{type(kv).__name__} is not a Keyvalues!')
         kv._value = list(children)
+        kv._parents = None
+        ref = weakref.ref(kv)
+        for child in kv._value:
+            child._add_parent(ref)
         return kv
 
     @staticmethod
