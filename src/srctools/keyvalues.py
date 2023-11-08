@@ -162,8 +162,7 @@ class Keyvalues:
     The name should be a string, or None for a root object.
     Root objects export each child at the topmost indent level. This is produced from ``Keyvalues.parse()`` calls.
     """
-    # Helps decrease memory footprint with lots of Keyvalues values.
-    __slots__ = ('_folded_name', '_real_name', '_value')
+    __slots__ = ('_folded_name', '_real_name', '_value', '__weakref__')
     _folded_name: Optional[str]
     _real_name: Optional[str]
     _value: _KV_Value
