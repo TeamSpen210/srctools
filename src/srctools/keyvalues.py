@@ -184,8 +184,14 @@ class Keyvalues:
             self._real_name = sys.intern(name)
             self._folded_name = sys.intern(name.casefold())
 
-        self._value = value
         self._parents = None
+        if isinstance(value, list):
+            self._value = list(value)
+            self_ref = weakref.ref(self)
+            for child in self._value:
+                child._add_parent(self_ref)
+        else:
+            self._value = value
 
     @property
     def value(self) -> str:
@@ -338,6 +344,10 @@ class Keyvalues:
         # And the line numbers of each of these, for error reporting.
         open_properties: List[Tuple[Keyvalues, int]] = [(cur_block, 1)]
 
+        # Cache keyvalue -> weakref, so we can share those among siblings.
+        # The value is none in the case that a block gets skipped.
+        block_refs: Dict[int, weakref.ref[Keyvalues] | None] = {id(cur_block): weakref.ref(cur_block)}
+
         # Grab a reference to the token values, so we avoid global lookups.
         STRING: Final = Token.STRING
         PROP_FLAG: Final = Token.PROP_FLAG
@@ -382,10 +392,12 @@ class Keyvalues:
                     # and discarded.
                     cur_block = Keyvalues.__new__(Keyvalues)
                     cur_block._folded_name = cur_block.real_name = '<skipped>'
+                    block_refs[id(cur_block)] = None  # Don't need a ref.
                 else:
                     cur_block = cur_block_contents[-1]
                 cur_block_contents = cur_block._value = []
                 open_properties.append((cur_block, block_line))
+                block_refs[id(cur_block)] = weakref.ref(cur_block)
                 block_line = BLOCK_LINE_NONE
                 continue
             # Something else, but followed by '{'
@@ -406,6 +418,7 @@ class Keyvalues:
                 keyvalue = Keyvalues.__new__(Keyvalues)
                 keyvalue._folded_name = sys.intern(token_value.casefold())
                 keyvalue.real_name = sys.intern(token_value)
+                keyvalue._parents = None
 
                 # We need to check the next token to figure out what kind of
                 # prop it is.
@@ -413,7 +426,7 @@ class Keyvalues:
 
                 # It's a block followed by flag. ("name" [stuff])
                 if prop_type is PROP_FLAG:
-                    # That must be the end of the line..
+                    # That must be the end of the line...
                     tokenizer.expect(NEWLINE)
                     if _read_flag(flags, prop_value):
                         block_line = tokenizer.line_num
@@ -429,6 +442,7 @@ class Keyvalues:
                             cur_block_contents[-1] = keyvalue
                         else:
                             cur_block_contents.append(keyvalue)
+                            keyvalue._parents = block_refs[id(cur_block)]
                         # Can't do twice in a row
                         can_flag_replace = False
                     else:
@@ -464,6 +478,7 @@ class Keyvalues:
                                 cur_block_contents[-1] = keyvalue
                             else:
                                 cur_block_contents.append(keyvalue)
+                            keyvalue._parents = block_refs[id(cur_block)]
                             # Can't do twice in a row
                             can_flag_replace = False
                     elif flag_token is STRING:
@@ -472,6 +487,7 @@ class Keyvalues:
                         # ("name" "value" "name2" "value2")
                         if single_line:
                             cur_block_contents.append(keyvalue)
+                            keyvalue._parents = block_refs[id(cur_block)]
                             tokenizer.push_back(flag_token, flag_val)
                             continue
                         else:
@@ -484,6 +500,7 @@ class Keyvalues:
                         # in the next loop. This allows braces to be
                         # on the same line.
                         cur_block_contents.append(keyvalue)
+                        keyvalue._parents = block_refs[id(cur_block)]
                         can_flag_replace = True
                         tokenizer.push_back(flag_token, flag_val)
                     continue
@@ -495,6 +512,7 @@ class Keyvalues:
                     block_line = tokenizer.line_num
                     can_flag_replace = False
                     cur_block_contents.append(keyvalue)
+                    keyvalue._parents = block_refs[id(cur_block)]
                     tokenizer.push_back(prop_type, prop_value)
                     continue
 
@@ -769,9 +787,14 @@ class Keyvalues:
         result = Keyvalues.__new__(Keyvalues)
         result._real_name = self._real_name
         result._folded_name = self._folded_name
+        result._parents = None  # We're a new root.
         if isinstance(self._value, list):
             # This recurses if needed
             result._value = [child.copy() for child in self._value]
+            # Then add the backref.
+            parent_ref = weakref.ref(result)
+            for child in result._value:
+                child._parents = parent_ref
         else:
             result._value = self._value
         return result
@@ -946,6 +969,7 @@ class Keyvalues:
         - If given a string, it will set the last Keyvalue with that name.
         - If none are found, it appends the value to the tree.
         """
+        self_ref = weakref.ref(self)
         if not isinstance(self._value, list):
             raise LeafKeyvalueError(self, 'set a child in')
         if isinstance(index, int):
@@ -958,14 +982,16 @@ class Keyvalues:
             for prop in value:
                 if isinstance(prop, Keyvalues):
                     prop_list.append(prop)
+                    prop._add_parent(self_ref)
                 else:
                     raise TypeError(f'Must assign Keyvalues to positions, not {type(prop).__name__}!')
             self._value[index] = prop_list
         elif isinstance(index, str):
             if isinstance(value, Keyvalues):
                 # We don't want to assign properties, we want to add them under
-                # this name!,
+                # this name!
                 value.name = index
+                value._add_parent(self_ref)
                 try:
                     # Replace at the same location.
                     pos = self._value.index(self.find_key(index))
@@ -978,9 +1004,11 @@ class Keyvalues:
                     self.find_key(index)._value = value
                 except NoKeyError:
                     if isinstance(value, str):
-                        self._value.append(Keyvalues(index, value))
+                        new_kv = Keyvalues(index, value)
                     else:
-                        self._value.append(Keyvalues(index, list(value)))
+                        new_kv = Keyvalues(index, list(value))
+                    new_kv._add_parent(self_ref)
+                    self._value.append(new_kv)
         else:
             raise TypeError(f'Unknown key type: {index!r}')
 
@@ -1004,6 +1032,8 @@ class Keyvalues:
         """Delete the contents of a block."""
         if isinstance(self._value, list):
             self._value.clear()
+            # TODO?: Don't bother clearing parent refs here. The children are likely
+            #        to be destroyed now, and it doesn't really cause any harm.
         else:
             raise LeafKeyvalueError(self, 'clear')
 
@@ -1016,6 +1046,7 @@ class Keyvalues:
         """
         if isinstance(self._value, list):
             copy = self.copy()
+            copy_ref = weakref.ref(copy)
             assert isinstance(copy._value, list)
             if isinstance(other, Keyvalues) and other._folded_name is not None:
                 # Deprecated behaviour, add the other keyvalue to ourselves,
@@ -1024,12 +1055,16 @@ class Keyvalues:
                     "Using + to add a single Keyvalue is confusing, use append() instead.",
                     DeprecationWarning, 2,
                 )
-                copy._value.append(other.copy())
+                child = other.copy()
+                copy._value.append(child)
+                child._add_parent(copy_ref)
             else:  # Assume a sequence.
-                for prop in other:
-                    if not isinstance(prop, Keyvalues):
-                        raise TypeError(f'{type(prop).__name__} is not a Keyvalue!')
-                    self._value.append(prop.copy())
+                for kv in other:
+                    if not isinstance(kv, Keyvalues):
+                        raise TypeError(f'{type(kv).__name__} is not a Keyvalue!')
+                    child = kv.copy()
+                    copy._value.append(child)
+                    child._add_parent(copy_ref)
             return copy
         else:
             return NotImplemented
@@ -1048,12 +1083,7 @@ class Keyvalues:
                     "Using += to add a single Keyvalue is confusing, use append() instead.",
                     DeprecationWarning, 2,
                 )
-                self._value.append(other.copy())
-            else:
-                for prop in other:
-                    if not isinstance(prop, Keyvalues):
-                        raise TypeError(f'{type(prop).__name__} is not a Keyvalue!')
-                    self._value.append(prop.copy())
+            self.extend(other)
             return self
         else:
             raise LeafKeyvalueError(self, 'extend')
@@ -1073,7 +1103,7 @@ class Keyvalues:
                     )
                     if isinstance(other._value, str):
                         raise ValueError('A leaf root Keyvalue should not exist!')
-                    self._value.extend(other._value)
+                    self.extend(other._value)
                 else:
                     self._value.append(other)
             else:
@@ -1081,10 +1111,7 @@ class Keyvalues:
                     "Use extend() for appending iterables of Keyvalues, not append().",
                     DeprecationWarning, 2,
                 )
-                for prop in other:
-                    if not isinstance(prop, Keyvalues):
-                        raise TypeError(f'{type(prop).__name__} is not a Keyvalue!')
-                    self._value.append(prop)
+                self.extend(other)
         else:
             raise LeafKeyvalueError(self, 'append to')
 
@@ -1093,10 +1120,13 @@ class Keyvalues:
         if not isinstance(self._value, list):
             raise LeafKeyvalueError(self, 'extend')
 
-        for prop in other:
-            if not isinstance(prop, Keyvalues):
-                raise TypeError(f'{type(prop)} is not a Keyvalue!')
-            self._value.append(prop.copy())
+        self_ref = weakref.ref(self)
+        for kv in other:
+            if not isinstance(kv, Keyvalues):
+                raise TypeError(f'{type(kv)} is not a Keyvalue!')
+            child = kv.copy()
+            self._value.append(child)
+            child._add_parent(self_ref)
 
     def merge_children(self, *names: str) -> None:
         """Merge together any children of ours with the given names.
@@ -1138,9 +1168,10 @@ class Keyvalues:
         try:
             return self.find_key(key)
         except NoKeyError:
-            prop = Keyvalues(key, [])
-            self._value.append(prop)
-            return prop
+            kv = Keyvalues(key, [])
+            self._value.append(kv)
+            kv._parents = weakref.ref(self)
+            return kv
 
     def has_children(self) -> builtins.bool:
         """Does this have child properties?"""
