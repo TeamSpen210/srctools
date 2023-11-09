@@ -82,7 +82,6 @@ __all__ = ['KeyValError', 'NoKeyError', 'LeafKeyvalueError', 'Keyvalues']
 # Sentinel value to indicate that no default was given to find_key()
 _NO_KEY_FOUND = cast(str, object())
 
-_KV_Value = Union[List['Keyvalues'], str, Any]
 _As_Dict_Ret: TypeAlias = Union[str, Dict[str, '_As_Dict_Ret']]
 
 T = TypeVar('T')
@@ -159,15 +158,21 @@ def _read_flag(flags: Mapping[str, bool], flag_val: str) -> bool:
 class Keyvalues:
     """Represents Valve's Keyvalues 1 file format.
 
-    Value should be a string (for leaf properties), or a list of children Keyvalues objects.
     The name should be a string, or None for a root object.
     Root objects export each child at the topmost indent level. This is produced from ``Keyvalues.parse()`` calls.
+    Each KV contains either single string for leaf keyvalues, or a block of child keyvalues for blocks.
     """
     __slots__ = ('_folded_name', '_real_name', '_value', '_parents', '__weakref__')
     _folded_name: Optional[str]
     _real_name: Optional[str]
-    _value: _KV_Value
+    # A reference to the parents, required if we change name. For efficency, store a 1-long list
+    # directly.
     _parents: Union[weakref.ref['Keyvalues'], List[weakref.ref['Keyvalues']], None]
+    # The value can be in three forms:
+    # * A string for leaf keyvalues.
+    # * A dict mapping folded-name -> kv if all keyvalues have distinct names. That optimises lookups.
+    # * A list of keyvalues, if any names repeat. We fall back to this if repeated KVs are added.
+    _value: Union[str, Dict[str, 'Keyvalues'], List['Keyvalues']]
 
     @overload
     def __init__(self, name: str, value: Union[List['Keyvalues'], str]) -> None: ...
@@ -186,10 +191,9 @@ class Keyvalues:
 
         self._parents = None
         if isinstance(value, list):
-            self._value = list(value)
-            self_ref = weakref.ref(self)
-            for child in self._value:
-                child._add_parent(self_ref)
+            self._value = []
+            if value:  # Leave as empty list if empty.
+                self.extend(value)
         else:
             self._value = value
 
@@ -237,21 +241,14 @@ class Keyvalues:
 
     @real_name.setter
     def real_name(self, new_name: str) -> None:
-        if new_name is None:
-            warnings.warn("Root properties will change to a new class.", DeprecationWarning, 2)
-            self._folded_name = self._real_name = None
-        else:
-            # Intern names to help reduce duplicates in memory.
-            self._real_name = sys.intern(new_name)
-            self._folded_name = sys.intern(new_name.casefold())
+        self.name = new_name  # Delegate, same behaviour either way.
 
     def edit(self, name: Optional[str] = None, value: Optional[str] = None) -> 'Keyvalues':
         """Simultaneously modify the name and value."""
         if name is not None:
-            self._real_name = name
-            self._folded_name = name.casefold()
+            self.name = name
         if value is not None:
-            self._value = value
+            self.value = value
         return self
 
     def _add_parent(self, ref: weakref.ref['Keyvalues']) -> None:
@@ -286,6 +283,22 @@ class Keyvalues:
             else:
                 self._parents = parents
 
+    def _raw_append(self, self_ref: weakref.ref['Keyvalues'], child: 'Keyvalues') -> None:
+        """Internal method to add a child keyvalue."""
+        if isinstance(self._value, str):
+            raise LeafKeyvalueError(self, 'append')
+        elif isinstance(self._value, dict):
+            # Does this one overlap?
+            if child._folded_name is not None and child._folded_name not in self._value:
+                self._value[child._folded_name] = child
+            else:
+                # Overlap, we need to convert to list first.
+                self._value = list(self._value.values())
+                self._value.append(child)
+        else:  # List, just add to the end.
+            self._value.append(child)
+        child._add_parent(self_ref)
+
     @classmethod
     def root(cls, *children: 'Keyvalues') -> 'Keyvalues':
         """Return a new 'root' keyvalues."""
@@ -294,11 +307,10 @@ class Keyvalues:
         for child in children:
             if not isinstance(child, Keyvalues):
                 raise TypeError(f'{type(kv).__name__} is not a Keyvalues!')
-        kv._value = list(children)
         kv._parents = None
-        ref = weakref.ref(kv)
-        for child in kv._value:
-            child._add_parent(ref)
+        if children:
+            kv._value = []
+            kv.extend(children)
         return kv
 
     @staticmethod
@@ -337,16 +349,12 @@ class Keyvalues:
         cur_block = root = Keyvalues.__new__(Keyvalues)
         cur_block._folded_name = cur_block._real_name = None
 
-        # Cache off the value list.
-        cur_block_contents: List[Keyvalues]
-        cur_block_contents = cur_block._value = []
         # A queue of the properties we are currently in (outside to inside).
         # And the line numbers of each of these, for error reporting.
         open_properties: List[Tuple[Keyvalues, int]] = [(cur_block, 1)]
 
         # Cache keyvalue -> weakref, so we can share those among siblings.
-        # The value is none in the case that a block gets skipped.
-        block_refs: Dict[int, weakref.ref[Keyvalues] | None] = {id(cur_block): weakref.ref(cur_block)}
+        block_refs: Dict[int, weakref.ref[Keyvalues]] = {id(cur_block): weakref.ref(cur_block)}
 
         # Grab a reference to the token values, so we avoid global lookups.
         STRING: Final = Token.STRING
@@ -392,10 +400,10 @@ class Keyvalues:
                     # and discarded.
                     cur_block = Keyvalues.__new__(Keyvalues)
                     cur_block._folded_name = cur_block.real_name = '<skipped>'
-                    block_refs[id(cur_block)] = None  # Don't need a ref.
+                    block_refs[id(cur_block)] = weakref.ref(cur_block)  # Useless, but this isn't really common.
                 else:
-                    cur_block = cur_block_contents[-1]
-                cur_block_contents = cur_block._value = []
+                    cur_block = cur_block[-1]
+                cur_block._value = []
                 open_properties.append((cur_block, block_line))
                 block_refs[id(cur_block)] = weakref.ref(cur_block)
                 block_line = BLOCK_LINE_NONE
@@ -436,13 +444,12 @@ class Keyvalues:
                         # keyvalue with this name, replace it instead.
                         if (
                             can_flag_replace and
-                            cur_block_contents[-1]._real_name == token_value and
-                            cur_block_contents[-1].has_children()
+                            cur_block[-1]._real_name == token_value and
+                            cur_block[-1].has_children()
                         ):
-                            cur_block_contents[-1] = keyvalue
+                            cur_block[-1] = keyvalue
                         else:
-                            cur_block_contents.append(keyvalue)
-                            keyvalue._parents = block_refs[id(cur_block)]
+                            cur_block._raw_append(block_refs[id(cur_block)], keyvalue)
                         # Can't do twice in a row
                         can_flag_replace = False
                     else:
@@ -472,13 +479,12 @@ class Keyvalues:
                             # keyvalue with this name, replace it instead.
                             if (
                                 can_flag_replace and
-                                cur_block_contents[-1]._real_name == token_value and
-                                isinstance(cur_block_contents[-1].value, str)
+                                cur_block[-1]._real_name == token_value and
+                                cur_block[-1].has_children()
                             ):
-                                cur_block_contents[-1] = keyvalue
+                                cur_block[-1] = keyvalue
                             else:
-                                cur_block_contents.append(keyvalue)
-                            keyvalue._parents = block_refs[id(cur_block)]
+                                cur_block._raw_append(block_refs[id(cur_block)], keyvalue)
                             # Can't do twice in a row
                             can_flag_replace = False
                     elif flag_token is STRING:
@@ -486,8 +492,7 @@ class Keyvalues:
                         # normally.
                         # ("name" "value" "name2" "value2")
                         if single_line:
-                            cur_block_contents.append(keyvalue)
-                            keyvalue._parents = block_refs[id(cur_block)]
+                            cur_block._raw_append(block_refs[id(cur_block)], keyvalue)
                             tokenizer.push_back(flag_token, flag_val)
                             continue
                         else:
@@ -499,8 +504,7 @@ class Keyvalues:
                         # So insert the keyvalue, and check the token
                         # in the next loop. This allows braces to be
                         # on the same line.
-                        cur_block_contents.append(keyvalue)
-                        keyvalue._parents = block_refs[id(cur_block)]
+                        cur_block._raw_append(block_refs[id(cur_block)], keyvalue)
                         can_flag_replace = True
                         tokenizer.push_back(flag_token, flag_val)
                     continue
@@ -511,8 +515,7 @@ class Keyvalues:
 
                     block_line = tokenizer.line_num
                     can_flag_replace = False
-                    cur_block_contents.append(keyvalue)
-                    keyvalue._parents = block_refs[id(cur_block)]
+                    cur_block._raw_append(block_refs[id(cur_block)], keyvalue)
                     tokenizer.push_back(prop_type, prop_value)
                     continue
 
@@ -528,8 +531,6 @@ class Keyvalues:
                         'An extra closing bracket was added which would '
                         'close the outermost level.',
                     ) from None
-                # We know this isn't a leaf prop, we made it earlier.
-                cur_block_contents = cur_block._value  # type: ignore
                 # For replacing the block.
                 can_flag_replace = True
             else:
@@ -804,10 +805,10 @@ class Keyvalues:
 
         This keeps only the last if multiple items have the same name.
         """
-        if isinstance(self._value, list):
-            return {item.name: item.as_dict() for item in self}
-        else:
+        if isinstance(self._value, str):
             return self._value
+        else:
+            return {item.name: item.as_dict() for item in self}
 
     @overload
     def as_array(self) -> List[str]: ...
@@ -821,19 +822,19 @@ class Keyvalues:
         yielded. Otherwise, each child must be a single value and each
         of those will be yielded. The name is ignored.
         """
-        if isinstance(self._value, list):
-            arr: List[T] = []
-            child: Keyvalues
-            for child in self._value:
-                if not isinstance(child._value, str):
-                    raise ValueError(
-                        'Cannot have sub-children in a '
-                        f'"{self.real_name}" array of values!'
-                    )
-                arr.append(conv(child._value))
-            return arr
-        else:
+        if isinstance(self._value, str):
             return [conv(self._value)]
+
+        arr: List[T] = []
+        child: Keyvalues
+        for child in self:
+            if not isinstance(child._value, str):
+                raise ValueError(
+                    'Cannot have sub-children in a '
+                    f'"{self.real_name}" array of values!'
+                )
+            arr.append(conv(child._value))
+        return arr
 
     def __eq__(self, other: Any) -> builtins.bool:
         """Compare two items and determine if they are equal.
@@ -1107,7 +1108,7 @@ class Keyvalues:
                     raise ValueError('A leaf root Keyvalue should not exist!')
                 self.extend(other)
             else:
-                self._value.append(other)
+                self._raw_append(weakref.ref(self), other)
         else:
             warnings.warn(
                 "Use extend() for appending iterables of Keyvalues, not append().",
@@ -1121,12 +1122,36 @@ class Keyvalues:
             raise LeafKeyvalueError(self, 'extend')
 
         self_ref = weakref.ref(self)
-        for kv in other:
+        other_iter = iter(other)
+        if not self._value:  # Convert [] -> {} when appending.
+            self._value = {}
+
+        if isinstance(self._value, dict):
+            # We can add to the dict.
+            for kv in other_iter:
+                if not isinstance(kv, Keyvalues):
+                    raise TypeError(f'{type(kv)} is not a Keyvalue!')
+                child = kv.copy()
+                child.parents = self_ref
+                # Does this one overlap?
+                if child._folded_name is not None and child._folded_name not in self._value:
+                    self._value[child._folded_name] = other
+                else:
+                    # Overlap, we need to convert to list first.
+                    self._value = list(self._value.values())
+                    self._value.append(child)
+                    break  # We're no longer a dict.
+            else:
+                # Gone through all values without converting, keep as a dict.
+                return
+
+        assert isinstance(self._value, list)
+        for kv in other_iter:
             if not isinstance(kv, Keyvalues):
                 raise TypeError(f'{type(kv)} is not a Keyvalue!')
             child = kv.copy()
+            child._parents = self_ref
             self._value.append(child)
-            child._add_parent(self_ref)
 
     def merge_children(self, *names: str) -> None:
         """Merge together any children of ours with the given names.
@@ -1169,8 +1194,7 @@ class Keyvalues:
             return self.find_key(key)
         except NoKeyError:
             kv = Keyvalues(key, [])
-            self._value.append(kv)
-            kv._parents = weakref.ref(self)
+            self._raw_append(weakref.ref(self), kv)
             return kv
 
     def has_children(self) -> builtins.bool:
