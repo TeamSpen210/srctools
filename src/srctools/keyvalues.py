@@ -196,15 +196,15 @@ class Keyvalues:
     @property
     def value(self) -> str:
         """Return the value of a leaf keyvalue."""
-        if isinstance(self._value, list):
-            warnings.warn("Accessing internal keyvalues block list is deprecated", DeprecationWarning, 2)
-        return cast(str, self._value)
+        if isinstance(self._value, str):
+            return self._value
+        raise ValueError('Cannot access value on block properties.')
 
     @value.setter
     def value(self, value: str) -> None:
         """Set the value of a leaf keyvalue."""
         if not isinstance(value, str):
-            warnings.warn("Setting keyvalues to non-string values will be fixed soon.", DeprecationWarning, 2)
+            raise TypeError(f'Value must be set to a string, not {value!r}!')
         self._value = value
 
     @property
