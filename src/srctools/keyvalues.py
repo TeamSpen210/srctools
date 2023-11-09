@@ -1094,30 +1094,30 @@ class Keyvalues:
         Deprecated behaviour: Accept an iterable of properties or a root keyvalue
         which are merged into this one.
         """
-        if isinstance(self._value, list):
-            if isinstance(other, Keyvalues):
-                if other._folded_name is None:
-                    warnings.warn(
-                        "Append()ing a root Keyvalue is confusing, use extend() instead.",
-                        DeprecationWarning, 2,
-                    )
-                    if isinstance(other._value, str):
-                        raise ValueError('A leaf root Keyvalue should not exist!')
-                    self.extend(other._value)
-                else:
-                    self._value.append(other)
-            else:
+        if isinstance(self._value, str):
+            raise LeafKeyvalueError(self, 'append to')
+
+        if isinstance(other, Keyvalues):
+            if other._folded_name is None:
                 warnings.warn(
-                    "Use extend() for appending iterables of Keyvalues, not append().",
+                    "Append()ing a root Keyvalue is confusing, use extend() instead.",
                     DeprecationWarning, 2,
                 )
+                if isinstance(other._value, str):
+                    raise ValueError('A leaf root Keyvalue should not exist!')
                 self.extend(other)
+            else:
+                self._value.append(other)
         else:
-            raise LeafKeyvalueError(self, 'append to')
+            warnings.warn(
+                "Use extend() for appending iterables of Keyvalues, not append().",
+                DeprecationWarning, 2,
+            )
+            self.extend(other)
 
     def extend(self, other: Iterable['Keyvalues']) -> None:
         """Extend this keyvalue with the contents of another, or an iterable."""
-        if not isinstance(self._value, list):
+        if isinstance(self._value, str):
             raise LeafKeyvalueError(self, 'extend')
 
         self_ref = weakref.ref(self)
@@ -1134,7 +1134,7 @@ class Keyvalues:
         After execution, this tree will have only one sub-Keyvalue for each of the given names.
         Direct leaf keyvalues will be left unchanged, even if they happen to match the given names.
         """
-        if not isinstance(self._value, list):
+        if isinstance(self._value, str):
             raise LeafKeyvalueError(self, 'merge children in')
         folded_names = [name.casefold() for name in names]
         new_list = []
@@ -1163,7 +1163,7 @@ class Keyvalues:
 
     def ensure_exists(self, key: str) -> 'Keyvalues':
         """Ensure a Keyvalue block exists with this name, and return it."""
-        if not isinstance(self._value, list):
+        if isinstance(self._value, str):
             raise LeafKeyvalueError(self, 'add children to')
         try:
             return self.find_key(key)
@@ -1175,7 +1175,7 @@ class Keyvalues:
 
     def has_children(self) -> builtins.bool:
         """Does this have child properties?"""
-        return isinstance(self._value, list)
+        return not isinstance(self._value, str)
 
     def is_root(self) -> builtins.bool:
         """Check if the keyvalue is a root, returned from the parse() method.
@@ -1186,7 +1186,10 @@ class Keyvalues:
         return self._real_name is None
 
     def __repr__(self) -> str:
-        return f'Keyvalues({self._real_name!r}, {self._value!r})'
+        if isinstance(self._value, dict):
+            return f'Keyvalues({self._real_name!r}, {list(self._value.values())!r})'
+        else:
+            return f'Keyvalues({self._real_name!r}, {self._value!r})'
 
     def __str__(self) -> str:
         return ''.join(self.export())
@@ -1196,11 +1199,15 @@ class Keyvalues:
 
         Recursively calls itself for all child properties.
         """
-        if isinstance(self._value, list):
+        if isinstance(self._value, str):
+            # We need to escape quotes and backslashes, so they don't get detected.
+            assert self._real_name is not None, repr(self)
+            yield f'"{escape_text(self._real_name)}" "{escape_text(self._value)}"\n'
+        else:
             if self._real_name is None:
                 # If the name is None, we just output the children
                 # without a "Name" { } surround. These Keyvalue objects represent the root.
-                for prop in self._value:
+                for prop in self:
                     yield from prop.export()
             else:
                 assert self._real_name is not None, repr(self)
@@ -1208,14 +1215,10 @@ class Keyvalues:
                 yield '\t{\n'
                 yield from (
                     '\t' + line
-                    for prop in self._value
+                    for prop in self
                     for line in prop.export()
                 )
                 yield '\t}\n'
-        else:
-            # We need to escape quotes and backslashes, so they don't get detected.
-            assert self._real_name is not None, repr(self)
-            yield f'"{escape_text(self._real_name)}" "{escape_text(self._value)}"\n'
 
     def build(self) -> '_Builder':
         """Allows appending a tree to this keyvalue in a convenient way.
