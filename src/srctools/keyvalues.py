@@ -65,6 +65,7 @@ from typing import (
 )
 from typing_extensions import TypeAlias, deprecated, overload
 import builtins  # Keyvalues.bool etc shadows these.
+import itertools
 import keyword
 import os
 import sys
@@ -231,6 +232,22 @@ class Keyvalues:
             # Intern names to help reduce duplicates in memory.
             self._real_name = sys.intern(new_name)
             self._folded_name = sys.intern(new_name.casefold())
+        # Go through parents, re-insert everything to keep them consistent.
+        if self._parents is None:
+            pass
+        elif isinstance(self._parents, weakref.ref):
+            parent = self._parents()
+            if parent is not None:
+                siblings = list(parent)
+                parent._value = []
+                parent.extend(siblings)
+        elif isinstance(self._parents, list):
+            for parent_ref in self._parents:
+                parent = parent_ref()
+                if parent is not None:
+                    siblings = list(parent)
+                    parent._value = []
+                    parent.extend(siblings)
 
     @property
     def real_name(self) -> str:
@@ -611,10 +628,18 @@ class Keyvalues:
         if not isinstance(self._value, list):
             raise LeafKeyvalueError(self, 'find a key in')
         key = key.casefold()
-        prop: Keyvalues
-        for prop in reversed(self._value):
-            if prop._folded_name == key:
-                return prop
+        child: Keyvalues
+        if isinstance(self._value, dict):
+            try:
+                return self._value[key]
+            except KeyError:
+                pass
+        else:
+            # Otherwise, we have to check each value.
+            for child in reversed(self._value):
+                if child._folded_name == key:
+                    return child
+
         if or_blank:
             return Keyvalues(key, [])
         elif def_ is _NO_KEY_FOUND:
@@ -624,20 +649,31 @@ class Keyvalues:
             return Keyvalues(key, def_)
 
     def find_block(self, key: str, or_blank: bool = False) -> 'Keyvalues':
-        """Obtain the child Keyvalue block with a given name.
+        """Obtain the child Keyvalue block with a given name, ignoring leafs.
 
         - If no child is found with the given name and `or_blank` is true, a
-          blank Keyvalue block will be returned. Otherwise NoKeyError will
+          blank Keyvalue block will be returned. Otherwise, NoKeyError will
           be raised.
         - This prefers keys located closer to the end of the value list.
         """
-        if not isinstance(self._value, list):
+        if isinstance(self._value, str):
             raise LeafKeyvalueError(self, 'find a sub-block in')
         key = key.casefold()
-        prop: Keyvalues
-        for prop in reversed(self._value):
-            if prop._folded_name == key and prop.has_children():
-                return prop
+        child: Keyvalues
+        if isinstance(self._value, dict):
+            try:
+                child = self._value[key]
+            except KeyError:
+                pass
+            else:
+                if child.has_children():
+                    return child
+        else:
+            # Otherwise, we have to check each value.
+            for child in reversed(self._value):
+                if child._folded_name == key and child.has_children():
+                    return child
+
         if or_blank:
             return Keyvalues(key, [])
         else:
@@ -652,18 +688,31 @@ class Keyvalues:
           default value, or raise NoKeyError if none is provided.
         - This prefers keys located closer to the end of the value list.
         """
-        if not isinstance(self._value, list):
+        if isinstance(self._value, str):
             raise LeafKeyvalueError(self, 'find a key in')
         key = key.casefold()
-        prop: Keyvalues
-        block_prop = False
-        for prop in reversed(self._value):
-            if prop._folded_name == key:
-                if prop.has_children():
-                    block_prop = True
+        child: Keyvalues
+        found_block = False
+
+        if isinstance(self._value, dict):
+            try:
+                child = self._value[key]
+            except KeyError:
+                pass
+            else:
+                if isinstance(child._value, str):
+                    return child._value
                 else:
-                    return cast(str, prop._value)
-        if block_prop:
+                    found_block = True
+        else:
+            # Otherwise, we have to check each value.
+            for child in reversed(self._value):
+                if child._folded_name == key:
+                    if isinstance(child._value, str):
+                        return child._value
+                    else:
+                        found_block = True
+        if found_block:
             warnings.warn('This will ignore block properties!', DeprecationWarning, stacklevel=3)
         if def_ is _NO_KEY_FOUND:
             raise NoKeyError(key)
@@ -716,7 +765,7 @@ class Keyvalues:
     def bool(self, key: str, def_: T) -> Union[builtins.bool, T]: ...
 
     def bool(self, key: str, def_: Union[builtins.bool, T] = False) -> Union[builtins.bool, T]:
-        """Return the value of an boolean key.
+        """Return the value of a boolean key.
 
         The value may be case-insensitively 'true', 'false', '1', '0', 'T',
         'F', 'y', 'n', 'yes', or 'no'.
@@ -762,16 +811,9 @@ class Keyvalues:
         if isinstance(path, tuple):
             # Search through each item in the tree!
             for key in path[:-1]:
-                folded_key = key.casefold()
-                # We can't use find_key() here because we also need to check that the keyvalue
-                # has children to search through.
-                for prop in reversed(self._value):
-                    if (prop.name is not None and
-                            prop.name == folded_key and
-                            prop.has_children()):
-                        current_prop = prop
-                        break
-                else:
+                try:
+                    current_prop = current_prop.find_block(key)
+                except NoKeyError:
                     # No matching keyvalue found
                     new_prop = Keyvalues(key, [])
                     current_prop.append(new_prop)
@@ -871,6 +913,10 @@ class Keyvalues:
         """
         if isinstance(self._value, list):
             return iter(self._value)
+        elif isinstance(self._value, dict):
+            # Make a copy we want to allow append() etc to work.
+            # Should be fairly rare since KVs you iterate probably have duplicate keys.
+            return iter(list(self._value.values()))
         else:
             raise LeafKeyvalueError(self, 'iterate')
 
@@ -889,19 +935,21 @@ class Keyvalues:
 
     def _iter_tree(self, blocks: builtins.bool) -> Iterator['Keyvalues']:
         """Implementation of iter_tree(). This assumes self has children."""
-        assert isinstance(self._value, list)
-        prop: Keyvalues
-        for prop in self._value:
-            if prop.has_children():
+        assert not isinstance(self._value, str)
+        kv: Keyvalues
+        for kv in self:
+            if kv.has_children():
                 if blocks:
-                    yield prop
-                yield from prop._iter_tree(blocks)
+                    yield kv
+                yield from kv._iter_tree(blocks)
             else:
-                yield prop
+                yield kv
 
     def __contains__(self, key: str) -> builtins.bool:
         """Check to see if a name is present in the children."""
         key = key.casefold()
+        if isinstance(self._value, dict):
+            return key in self._value
         if isinstance(self._value, list):
             prop: Keyvalues
             for prop in self._value:
@@ -933,20 +981,34 @@ class Keyvalues:
 
         - If given an index, it will return the properties in that position.
         - If given a string, it will find the last Keyvalue with that name.
-          (Default can be chosen by passing a 2-tuple like Prop[key, default])
+          A default can be chosen by passing a 2-tuple like kv[key, default].
         - If none are found, it raises IndexError.
         """
-        if isinstance(self._value, list):
+        if isinstance(index, str):
+            return self._get_value(index)
+        elif isinstance(index, tuple):
+            # With default value
+            if len(index) != 2:
+                raise TypeError(f'Expected a 2-tuple (key, value), but got: {index!r}')
+            return self._get_value(index[0], def_=index[1])
+
+        if isinstance(self._value, dict):
+            if isinstance(index, int):
+                try:
+                    # Skip to that index.
+                    if index < 0:
+                        index += len(self._value)
+                    return next(itertools.islice(self._value.values(), index, None))
+                except StopIteration:
+                    raise IndexError
+            elif isinstance(index, slice):
+                # Just convert to list, rare.
+                return list(self._value.values())[index]
+            else:
+                raise TypeError(f'Unknown key type: {index!r}')
+        elif isinstance(self._value, list):
             if isinstance(index, (int, slice)):
                 return self._value[index]
-            elif isinstance(index, tuple):
-                # With default value
-                return self._get_value(index[0], def_=index[1])
-            elif isinstance(index, str):
-                try:
-                    return self._get_value(index)
-                except NoKeyError as no_key:
-                    raise IndexError(no_key) from no_key
             else:
                 raise TypeError(f'Unknown key type: {index!r}')
         else:
@@ -1132,10 +1194,10 @@ class Keyvalues:
                 if not isinstance(kv, Keyvalues):
                     raise TypeError(f'{type(kv)} is not a Keyvalue!')
                 child = kv.copy()
-                child.parents = self_ref
+                child._parents = self_ref
                 # Does this one overlap?
                 if child._folded_name is not None and child._folded_name not in self._value:
-                    self._value[child._folded_name] = other
+                    self._value[child._folded_name] = child
                 else:
                     # Overlap, we need to convert to list first.
                     self._value = list(self._value.values())
@@ -1171,7 +1233,11 @@ class Keyvalues:
         assert None not in merge, 'Names cannot be none!'
 
         item: Keyvalues
-        for item in self._value[:]:
+        if isinstance(self._value, list):
+            existing = self._value[:]
+        else:
+            existing = list(self._value.values())
+        for item in existing:
             if isinstance(item._value, list) and item._folded_name in folded_names:
                 prop = merge[item._folded_name]
                 assert isinstance(prop._value, list)
@@ -1184,7 +1250,8 @@ class Keyvalues:
             if len(prop._value) > 0:
                 new_list.append(prop)
 
-        self._value = new_list
+        self._value = []
+        self.extend(new_list)
 
     def ensure_exists(self, key: str) -> 'Keyvalues':
         """Ensure a Keyvalue block exists with this name, and return it."""
