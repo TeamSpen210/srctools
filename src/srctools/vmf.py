@@ -2619,10 +2619,17 @@ class Entity(MutableMapping[str, str]):
         # Update the by_class/target dicts with our new value
         if key_fold == 'classname':
             _remove_copyset(self.map.by_class, orig_val or '', self)
-            self.map.by_class[str_val].add(self)
+            if self in self.map.entities:
+                self.map.by_class[str_val.casefold()].add(self)
+            elif self is self.map.spawn:
+                if val.casefold() != 'worldspawn':
+                    self['classname'] = 'worldspawn'  # Revert the change.
+                    raise ValueError('The worldspawn entity must remain worldspawn!')
+                self.map.by_class['worldspawn'].add(self)
         elif key_fold == 'targetname':
             _remove_copyset(self.map.by_target, orig_val, self)
-            self.map.by_target[str_val].add(self)
+            if self in self.map.entities:
+                self.map.by_target[str_val].add(self)
         elif key_fold == 'nodeid':
             try:
                 node_id = int(orig_val)  # type: ignore  # Using as a cast

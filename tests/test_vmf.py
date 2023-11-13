@@ -171,6 +171,9 @@ def test_by_class() -> None:
         'math_counter': {ent1},
     }
 
+    with pytest.raises(TypeError):  # Not allowed to change this.
+        vmf.spawn['classname'] = 'func_brush'
+
 
 def test_fixup_basic() -> None:
     """Test ent.fixup functionality."""
