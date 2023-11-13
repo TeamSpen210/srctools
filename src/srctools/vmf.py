@@ -2195,11 +2195,7 @@ class Entity(MutableMapping[str, str]):
     ) -> None:
         """Construct an entity from scratch."""
         self.map = vmf_file
-        self._keys = _KeyDict({
-            k: conv_kv(v)
-            for k, v in
-            keys.items()
-        })
+        self._keys = _KeyDict()
         self._fixup = EntityFixup(fixup) if fixup else None
         self.outputs = list(outputs)
         self.solids = list(solids)
@@ -2213,6 +2209,9 @@ class Entity(MutableMapping[str, str]):
         self.editor_color = Vec(editor_color)
         self.logical_pos = logical_pos or f'[0 {self.id}]'
         self.comments = comments
+
+        for k, v in keys.items():
+            self[k] = v
 
     if TYPE_CHECKING:
         # To type checkers, treat as a regular method.
@@ -2361,7 +2360,7 @@ class Entity(MutableMapping[str, str]):
                 try:
                     index = int(ind_str)
                 except ValueError:  # Not a replace value!
-                    keys[name] = item.value
+                    keys[item.real_name] = item.value
                 else:
                     # Parse the $replace value
                     try:
@@ -2372,12 +2371,12 @@ class Entity(MutableMapping[str, str]):
                         except IndexError:
                             # Might happen if entirely blank.
                             value = ''
-                        fixup.append(FixupValue(var, value, int(index)))
+                        fixup.append(FixupValue(var, value, index))
                     except ValueError:
                         # Failed!
-                        keys[name] = item.value
+                        keys[item.real_name] = item.value
             else:
-                keys[item.name] = item.value
+                keys[item.real_name] = item.value
 
         return Entity(
             vmf_file,
@@ -2599,7 +2598,6 @@ class Entity(MutableMapping[str, str]):
 
         - It is case-insensitive, so it will overwrite a key which only
           differs by case.
-        - Booleans are treated specially, all other types are stringified.
         """
         str_val = conv_kv(val)
         key_fold = key.casefold()

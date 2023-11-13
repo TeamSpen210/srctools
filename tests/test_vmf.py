@@ -118,6 +118,39 @@ def test_entkey_basic() -> None:
     assert list(ent.fixup.items()) == list(zip(ent.fixup.keys(), ent.fixup.values()))
 
 
+def test_parse_entity() -> None:
+    """Test parsing entities from keyvalues."""
+    vmf = VMF()
+    ent = Entity.parse(vmf, Keyvalues('Entity', [
+        Keyvalues('claSSname', 'info_target'),  # Check these are case-insensitive.
+        Keyvalues('tarGetname', 'a_target'),
+        Keyvalues('origin', '384 -63 278.125'),
+        Keyvalues('sOmeValue', '48'),
+        Keyvalues('multiplyDefined', 'first'),
+        Keyvalues('multiplydefined', 'second'),
+        Keyvalues('repLace04', '$pOs 1 2 3'),  # Fixup value.
+        Keyvalues('replaceNo', 'this is a regular kv'),
+        Keyvalues('replace01', '$var '),  # Special case, blank keyvalue.
+    ]))
+    assert list(ent.items()) == IsList(
+        ('claSSname', 'info_target'),
+        ('tarGetname', 'a_target'),
+        ('origin', '384 -63 278.125'),
+        ('sOmeValue', '48'),
+        ('multiplyDefined', 'second'),
+        ('replaceNo', 'this is a regular kv'),
+        check_order=False,
+    )
+    assert list(ent.fixup.items()) == IsList(
+        ('pOs', '1 2 3'),
+        ('var', ''),
+        check_order=False,
+    )
+    vmf.add_ent(ent)
+    assert vmf.by_class['info_target'] == {ent}
+    assert vmf.by_target['a_target'] == {ent}
+
+
 def test_by_target() -> None:
     """Test the behaviour of the by_target lookup mechanism."""
     vmf = VMF()

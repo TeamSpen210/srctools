@@ -4,6 +4,11 @@ Changelog
 .. contents::
 	:local:
 	:backlinks: none
+--------------
+Version (dev)
+--------------
+
+* Fix entity keyvalues being lowercased when parsed from files.
 
 --------------
 Version 2.3.15
