@@ -204,7 +204,7 @@ def test_by_class() -> None:
         'math_counter': {ent1},
     }
 
-    with pytest.raises(TypeError):  # Not allowed to change this.
+    with pytest.raises(ValueError):  # Not allowed to change this.
         vmf.spawn['classname'] = 'func_brush'
 
 
