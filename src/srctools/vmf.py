@@ -2620,7 +2620,7 @@ class Entity(MutableMapping[str, str]):
             if self in self.map.entities:
                 self.map.by_class[str_val.casefold()].add(self)
             elif self is self.map.spawn:
-                if val.casefold() != 'worldspawn':
+                if str_val.casefold() != 'worldspawn':
                     self['classname'] = 'worldspawn'  # Revert the change.
                     raise ValueError('The worldspawn entity must remain worldspawn!')
                 self.map.by_class['worldspawn'].add(self)

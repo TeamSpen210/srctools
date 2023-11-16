@@ -94,10 +94,10 @@ def _get_file_parts(value: FileName, relative_to: str = '') -> Tuple[str, str, s
         path, filename = os.path.split(value)
         ext = ''
     elif len(value) == 2:
-        path, filename = value  # type: ignore  # len() can't narrow.
+        path, filename = value
         ext = ''
     else:
-        path, filename, ext = value  # type: ignore  # len() can't narrow.
+        path, filename, ext = value
 
     if not ext and '.' in filename:
         filename, ext = filename.rsplit('.', 1)
