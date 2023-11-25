@@ -582,6 +582,8 @@ class AutoVisgroup:
         return f'<AutoVisgroup "{self.name}">'
 
 
+SpawnFlags = Tuple[int, str, bool, TagsSet]
+Choices = Tuple[str, str, TagsSet]
 class EntAttribute:
     """Common base class for IODef and KVDef."""
     name: str
@@ -605,16 +607,12 @@ class KVDef(EntAttribute):
     disp_name: str
     default: str = ''
     desc: str = ''
-    val_list: Union[
-        None,
-        List[Tuple[int, str, bool, TagsSet]],
-        List[Tuple[str, str, TagsSet]],
-    ] = None
+    val_list: Union[List[SpawnFlags], List[Choices], None] = None
     readonly: bool = False
     reportable: bool = False
 
     @property
-    def choices_list(self) -> List[Tuple[str, str, TagsSet]]:
+    def choices_list(self) -> List[Choices]:
         """Check that the keyvalues are CHOICES type, and then return val_list.
 
         This isolates the type ambiguity of the attr.
@@ -624,10 +622,10 @@ class KVDef(EntAttribute):
         if self.val_list is None:
             lst: List[Tuple[str, str, TagsSet]] = []
             self.val_list = lst
-        return cast('List[Tuple[str, str, TagsSet]]', self.val_list)
+        return cast('List[Choices]', self.val_list)
 
     @property
-    def flags_list(self) -> List[Tuple[int, str, bool, TagsSet]]:
+    def flags_list(self) -> List[SpawnFlags]:
         """Check that the keyvalues are SPAWNFLAGS type, and then return val_list.
 
         This isolates the type ambiguity of the attr.
@@ -635,9 +633,9 @@ class KVDef(EntAttribute):
         if self.type is not ValueTypes.SPAWNFLAGS:
             raise TypeError
         if self.val_list is None:
-            lst: List[Tuple[int, str, bool, TagsSet]] = []
+            lst: List[SpawnFlags] = []
             self.val_list = lst
-        return cast('List[Tuple[int, str, bool, TagsSet]]', self.val_list)
+        return cast('List[SpawnFlags]', self.val_list)
 
     def copy(self) -> 'KVDef':
         """Create a duplicate of this keyvalue."""
