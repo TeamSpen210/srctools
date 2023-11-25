@@ -582,8 +582,11 @@ class AutoVisgroup:
         return f'<AutoVisgroup "{self.name}">'
 
 
+SnippetDict: TypeAlias = Dict[PurePosixPath, Dict[str, T]]
 SpawnFlags = Tuple[int, str, bool, TagsSet]
 Choices = Tuple[str, str, TagsSet]
+
+
 class EntAttribute:
     """Common base class for IODef and KVDef."""
     name: str
@@ -1631,6 +1634,13 @@ class FGD:
     # has a parent (or None for auto), and then a list of the ents it contains.
     auto_visgroups: Dict[str, AutoVisgroup]
 
+    # Snippets are named sections of syntax that can be reused.
+    # Each is identified by a source filename, and a lookup key.
+    snippet_desc: SnippetDict[str] = attrs.Factory(dict)
+    snippet_choices: SnippetDict[Sequence[Choices]]
+    snippet_flags: SnippetDict[Sequence[SpawnFlags]]
+
+
     def __init__(self) -> None:
         """Create a FGD."""
         self._parse_list = set()
@@ -1639,6 +1649,9 @@ class FGD:
         self.mat_exclusions = set()
         self.tagged_mat_exclusions = defaultdict(set)
         self.auto_visgroups = {}
+        self.snippet_desc = {}
+        self.snippet_choices = {}
+        self.snippet_flags = {}
 
     @classmethod
     def parse(
@@ -2001,6 +2014,10 @@ class FGD:
                         elif tok is not Token.NEWLINE:
                             raise tokeniser.error(tok)
 
+                elif token_value == '@snippet':
+                    snippet_kind = tokeniser.expect(Token.STRING)
+                    # TODO
+
                 # Entity definition...
                 elif token_value[:1] == '@':
                     try:
@@ -2013,6 +2030,24 @@ class FGD:
                     EntityDef.parse(self, tokeniser, ent_type, eval_bases)
                 else:
                     raise tokeniser.error('Bad keyword {!r}', token_value)
+
+    def _lookup_snippet(self, mapping: SnippetDict[T], cur_file: PurePosixPath, specifier: str) -> T:
+        """Locate a snippet using the specified mapping, parsing the FGD file if necessary.
+
+        The mapping should be an attribute on this class.
+        """
+        try:
+            [path_str, key] = specifier.rsplit(':', 1)
+        except ValueError:
+            raise ValueError(
+                f'Invalid snippet reference - expected "path/to/file.fgd:id", got "{specifier}".'
+            ) from None
+        path = cur_file.parent / PurePosixPath(path_str)
+        try:
+            return mapping[path][key.casefold()]
+        except KeyError:
+            # TODO
+            raise
 
     @classmethod
     def engine_dbase(cls) -> 'FGD':
