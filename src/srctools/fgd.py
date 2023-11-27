@@ -378,17 +378,15 @@ def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
     file.write((' +\n' + indent).join(sections))
 
 
-def _parse_kvals_flags(tok: BaseTokenizer, error_desc: str) -> List[SpawnFlags]:
-    """Parse the list of values for flags-type keyvalues."""
-    val_list = []
+def _parse_colon_array(tok: BaseTokenizer) -> Iterator[Tuple[str, List[str], TagsSet]]:
+    """Parse through an array of colon-separated values, like in choices/flags keyvalues."""
     tok.expect(Token.BRACK_OPEN)
-    for choices_token, choices_value in tok:
-        if choices_token is Token.NEWLINE:
-            continue
-        if choices_token is Token.BRACK_CLOSE:
-            break
-        elif choices_token is not Token.STRING:
-            raise tok.error(choices_token)
+    for token, first_value in tok.skipping_newlines():
+        if token is Token.BRACK_CLOSE:
+            return
+        elif token is not Token.STRING:
+            raise tok.error(token, first_value)
+
         vals = _read_colon_list(tok, had_colon=False)
 
         end_token, tok_value = tok()
@@ -397,14 +395,22 @@ def _parse_kvals_flags(tok: BaseTokenizer, error_desc: str) -> List[SpawnFlags]:
         else:
             val_tags = frozenset()
             tok.push_back(end_token, tok_value)
+        yield first_value, vals, val_tags
+    else:
+        raise tok.error(Token.EOF)
 
+
+def _parse_kvals_flags(tok: BaseTokenizer, error_desc: str) -> List[SpawnFlags]:
+    """Parse the list of values for flags-type keyvalues."""
+    val_list = []
+    for first_value, vals, tags in _parse_colon_array(tok):
         # The first value is an integer.
         try:
-            spawnflag = int(choices_value)
+            spawnflag = int(first_value)
         except ValueError:
             raise tok.error(
                 'SpawnFlags must be integer values, not "{}" (in {})!',
-                choices_value,
+                first_value,
                 error_desc,
             ) from None
         try:
@@ -419,53 +425,32 @@ def _parse_kvals_flags(tok: BaseTokenizer, error_desc: str) -> List[SpawnFlags]:
             ) from None
         # Spawnflags can have a default, others may not.
         if len(vals) == 2:
-            val_list.append((spawnflag, vals[0], vals[1].strip() == '1', val_tags))
+            val_list.append((spawnflag, vals[0], vals[1].strip() == '1', tags))
         elif len(vals) == 1:
-            val_list.append((spawnflag, vals[0], True, val_tags))
+            val_list.append((spawnflag, vals[0], True, tags))
         elif len(vals) == 0:
             raise tok.error('Expected value for spawnflags, got none!')
         else:
-            raise tok.error('Too many values!\n{!r}', vals)
-
-        # Handle ] at the end of a : : line.
-        if end_token is Token.BRACK_CLOSE:
-            break
-    else:
-        raise tok.error(Token.EOF)
+            raise tok.error(
+                'Too many values for spawnflags definition in ({}):\n{}',
+                error_desc, vals,
+            )
     return val_list
 
 
 def _parse_kvals_choices(tok: BaseTokenizer, error_desc: str) -> List[Choices]:
     """Parse the list of values for choices keyvalues."""
     val_list = []
-    tok.expect(Token.BRACK_OPEN)
-    for choices_token, choices_value in tok:
-        if choices_token is Token.NEWLINE:
-            continue
-        if choices_token is Token.BRACK_CLOSE:
-            break
-        elif choices_token is not Token.STRING:
-            raise tok.error(choices_token)
-        vals = _read_colon_list(tok, had_colon=False)
-
-        end_token, tok_value = tok()
-        if end_token is Token.BRACK_OPEN:
-            val_tags = read_tags(tok)
-        else:
-            val_tags = frozenset()
-            tok.push_back(end_token, tok_value)
-
+    for first_value, vals, tags in _parse_colon_array(tok):
         if len(vals) == 1:
-            val_list.append((choices_value, vals[0], val_tags))
+            val_list.append((first_value, vals[0], tags))
         elif len(vals) == 0:
             raise tok.error('Expected value for choices, got none (in {})!', error_desc)
         else:
             raise tok.error(
-                'Too many values for choices defition in ({}):\n{}',
+                'Too many values for choices definition in ({}):\n{}',
                 error_desc, vals,
             )
-    else:
-        raise tok.error(Token.EOF)
     return val_list
 
 
