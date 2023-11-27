@@ -314,8 +314,13 @@ def _engine_db_stats() -> str:
 def _read_colon_list(
     tok: BaseTokenizer,
     had_colon: bool = False,
+    desc_offset: int = -1,
+    snippet_desc: Mapping[str, Snippet[str]] = srctools.EmptyMapping,
 ) -> List[str]:
-    """Read strings seperated by colons, up to the end of the line."""
+    """Read strings seperated by colons, up to the end of the line.
+
+    If desc_offset is provided, this position in the list can be a @snippet reference.
+    """
     strings = []
     ready_for_string = had_colon  # Did we have a colon before?
     token = Token.EOF
@@ -334,8 +339,18 @@ def _read_colon_list(
             if ready_for_string or not strings:
                 raise tok.error('"+" without a string before it!')
             strings[-1] += tok.expect(Token.STRING)
+        elif token is Token.DIRECTIVE and tok_value == 'snippet':
+            # Allow a @snippet directive to fetch a description, but only in that spot.
+            if len(strings) != desc_offset:
+                raise tok.error('@snippet may only be used for the description value.')
+            desc_key = tok.expect(Token.STRING)
+
+            if not ready_for_string:
+                raise tok.error('Too many strings (#snippet "{}")!', desc_key)
+            strings.append(Snippet.lookup('description', snippet_desc, desc_key))
+            ready_for_string = False
         elif ready_for_string and token is Token.NEWLINE:
-            continue  # skip over this in particular..
+            continue  # skip over this in particular...
         else:
             if ready_for_string:
                 raise tok.error(token)
@@ -548,10 +563,10 @@ class Snippet(Generic[ValueT]):
     value: ValueT
 
     @classmethod
-    def lookup(cls, kind: str, mapping: SnippetDict[T], key: str) -> 'Snippet[T]':
+    def lookup(cls, kind: str, mapping: Mapping[str, 'Snippet[T]'], key: str) -> T:
         """Locate a snippet using the specified mapping."""
         try:
-            return mapping[key.casefold()]
+            return mapping[key.casefold()].value
         except KeyError:
             names = [snip.name for snip in mapping.values()]
             names.sort()
@@ -615,19 +630,19 @@ class Snippet(Generic[ValueT]):
             cls._add(
                 'keyvalue', fgd.snippet_keyvalue,
                 path, definition_line, snippet_id,
-                KVDef._parse(kv_name, tokeniser, f'snippet "{path}:{snippet_id}'),
+                KVDef._parse(fgd, kv_name, tokeniser, f'snippet "{path}:{snippet_id}'),
             )
         elif snippet_kind == 'input':
             cls._add(
                 'input', fgd.snippet_input,
                 path, definition_line, snippet_id,
-                IODef._parse(tokeniser),
+                IODef._parse(fgd, tokeniser),
             )
         elif snippet_kind == 'output':
             cls._add(
                 'output', fgd.snippet_output,
                 path, definition_line, snippet_id,
-                IODef._parse(tokeniser),
+                IODef._parse(fgd, tokeniser),
             )
         else:
             raise ValueError(
@@ -854,7 +869,7 @@ class KVDef(EntAttribute):
             yield self.default
 
     @classmethod
-    def _parse(cls, name: str, tok: BaseTokenizer, error_desc: str) -> Tuple[TagsSet, 'KVDef']:
+    def _parse(cls, fgd: FGD, name: str, tok: BaseTokenizer, error_desc: str) -> Tuple[TagsSet, 'KVDef']:
         """Parse a keyvalue definition."""
         is_readonly = show_in_report = had_colon = False
         # Next is either the value type parens, or a tags brackets.
@@ -901,7 +916,7 @@ class KVDef(EntAttribute):
         else:
             raise tok.error(next_token)
         if kv_vals is None:
-            kv_vals = _read_colon_list(tok, had_colon)
+            kv_vals = _read_colon_list(tok, had_colon, 2, fgd.snippet_desc)
             has_equal, _ = tok()
         attr_len = len(kv_vals)
         kv_desc = default = ''
@@ -1038,7 +1053,7 @@ class IODef(EntAttribute):
         return IODef(self.name, self.type, self.desc)
 
     @classmethod
-    def _parse(cls, tok: BaseTokenizer) -> Tuple[TagsSet, 'IODef']:
+    def _parse(cls, fgd: FGD, tok: BaseTokenizer) -> Tuple[TagsSet, 'IODef']:
         """Parse I/O definitions in an entity."""
         name = tok.expect(Token.STRING)
 
@@ -1061,7 +1076,7 @@ class IODef(EntAttribute):
                 raise tok.error('Unknown keyvalue type "{}"!', raw_value_type) from None
 
         # Read desc
-        io_vals = _read_colon_list(tok)
+        io_vals = _read_colon_list(tok, False, 0, fgd.snippet_desc)
 
         tok.expect(Token.NEWLINE)
 
@@ -1353,18 +1368,38 @@ class EntityDef:
             elif doc_token is Token.STRING:
                 if desc is None or desc:
                     # No colon yet, or we have text without '+' between
-                    raise tok.error(doc_token)
+                    raise tok.error(doc_token, token_value)
                 desc.append(token_value)
+            elif doc_token is Token.DIRECTIVE and token_value == 'snippet':
+                if desc is None or desc:
+                    # No colon yet, or we have text without '+' between
+                    raise tok.error(doc_token, token_value)
+                # Included from an earlier snippet.
+                desc.append(Snippet.lookup(
+                    'description', fgd.snippet_desc,
+                    tok.expect(Token.STRING),
+                ))
             elif doc_token is Token.PLUS:
                 if not desc:
                     raise tok.error('+ without string before it!')
-                desc.append(tok.expect(Token.STRING))
+                tok_typ, tok_val = tok()
+                while tok_typ is Token.NEWLINE:
+                    tok_typ, tok_val = tok()
+                if tok_typ is Token.STRING:
+                    desc.append(tok_val)
+                elif tok_typ is Token.DIRECTIVE and tok_val == 'snippet':
+                    desc.append(Snippet.lookup(
+                        'description', fgd.snippet_desc,
+                        tok.expect(Token.STRING),
+                    ))
+                else:
+                    raise tok.error(tok_typ, tok_val)
             elif doc_token is Token.BRACK_OPEN:
                 if desc:
                     entity.desc = ''.join(desc)
                 break
             else:
-                raise tok.error(doc_token)
+                raise tok.error(doc_token, token_value)
 
         fgd.entities[entity.classname.casefold()] = entity
 
@@ -1417,12 +1452,12 @@ class EntityDef:
             io_type = token_value.casefold()
             if io_type == 'input':
                 # noinspection PyProtectedMember
-                tags, io_def = IODef._parse(tok)
+                tags, io_def = IODef._parse(fgd, tok)
                 io_tags_map = entity.inputs.setdefault(io_def.name.casefold(), {})
                 io_tags_map[tags] = io_def
             elif io_type == 'output':
                 # noinspection PyProtectedMember
-                tags, io_def = IODef._parse(tok)
+                tags, io_def = IODef._parse(fgd, tok)
                 io_tags_map = entity.outputs.setdefault(io_def.name.casefold(), {})
                 io_tags_map[tags] = io_def
             elif io_type == '@resources':  # @resource block, format extension
@@ -1448,7 +1483,7 @@ class EntityDef:
                 entity.resources = resources
             else:
                 # noinspection PyProtectedMember
-                tags, kv_def = KVDef._parse(io_type, tok, entity.classname)
+                tags, kv_def = KVDef._parse(fgd, io_type, tok, entity.classname)
                 kv_tags_map = entity.keyvalues.setdefault(kv_def.name.casefold(), {})
                 if not kv_tags_map:
                     # New, add to the ordering.

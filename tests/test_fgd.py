@@ -169,14 +169,25 @@ def test_snippet_desc() -> None:
     " Another line of description.\\n" +
     "And another."
 @snippet description Another = "Some description"
+@snippet description EntDesc = "This is an entity that does things."
 """,
-        'secondfile.fgd': """\
+        'overlap.fgd': """\
 @snippet desc first_desc = "Different text"
+""",
+        'ent_def.fgd': """\
+
+@PointClass = test_entity: "First line. " + 
+    #snippet EntDesc +
+    " Last line."
+    [
+    keyvalue(string): "Has desc" : "..." : #snippet "anOther"
+    input SomeInput(void): #snippet first_desc
+    ]
 """
     })
     fgd.parse_file(fsys, fsys['snippets.fgd'])
     with pytest.raises(ValueError, match="^Two description snippets were defined"):
-        fgd.parse_file(fsys, fsys['secondfile.fgd'])
+        fgd.parse_file(fsys, fsys['overlap.fgd'])
     assert fgd.snippet_desc == {
         'first_desc': Snippet(
             'first_Desc', 'snippets.fgd', 1,
@@ -186,7 +197,27 @@ def test_snippet_desc() -> None:
             'Another', 'snippets.fgd', 4,
             'Some description',
         ),
+        'entdesc': Snippet(
+            'EntDesc', 'snippets.fgd', 5,
+            'This is an entity that does things.',
+        ),
     }
+    fgd.parse_file(fsys, fsys['ent_def.fgd'])
+
+    ent = fgd['test_entity']
+    assert ent.desc == 'First line. This is an entity that does things. Last line.'
+    assert ent.kv['keyvalue'] == KVDef(
+        name="keyvalue",
+        disp_name="Has desc",
+        default="...",
+        type=ValueTypes.STRING,
+        desc="Some description",
+    )
+    assert ent.inp['SomeInput'] == IODef(
+        name="SomeInput",
+        type=ValueTypes.VOID,
+        desc='Some text. Another line of description.\nAnd another.',
+    )
 
 
 def test_snippet_choices() -> None:
