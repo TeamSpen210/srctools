@@ -1640,7 +1640,6 @@ class FGD:
     snippet_choices: SnippetDict[Sequence[Choices]]
     snippet_flags: SnippetDict[Sequence[SpawnFlags]]
 
-
     def __init__(self) -> None:
         """Create a FGD."""
         self._parse_list = set()
@@ -1649,6 +1648,7 @@ class FGD:
         self.mat_exclusions = set()
         self.tagged_mat_exclusions = defaultdict(set)
         self.auto_visgroups = {}
+
         self.snippet_desc = {}
         self.snippet_choices = {}
         self.snippet_flags = {}
@@ -1913,6 +1913,7 @@ class FGD:
             return
 
         self._parse_list.add(file)
+        path = PurePosixPath(file.path)
 
         with file.open_str(encoding) as f:
             tokeniser = Tokenizer(
@@ -2015,8 +2016,7 @@ class FGD:
                             raise tokeniser.error(tok)
 
                 elif token_value == '@snippet':
-                    snippet_kind = tokeniser.expect(Token.STRING)
-                    # TODO
+                    self._parse_snippet(path, tokeniser)
 
                 # Entity definition...
                 elif token_value[:1] == '@':
@@ -2030,6 +2030,31 @@ class FGD:
                     EntityDef.parse(self, tokeniser, ent_type, eval_bases)
                 else:
                     raise tokeniser.error('Bad keyword {!r}', token_value)
+
+    def _parse_snippet(self, path: PurePosixPath, tokeniser: Tokenizer) -> None:
+        """Parse a snippet definition."""
+        snippet_kind = tokeniser.expect(Token.STRING).casefold()
+        snippet_id = tokeniser.expect(Token.STRING).casefold()
+        tokeniser.expect(Token.EQUALS)
+
+        if snippet_kind in ('desc', 'description'):
+            desc = tokeniser.expect(Token.STRING)
+            while True:
+                tok_type, tok_value = tokeniser()
+                if tok_type is Token.PLUS:
+                    desc += tokeniser.expect(Token.STRING)
+                elif tok_type is Token.NEWLINE:
+                    break
+                else:
+                    raise tokeniser.error(tok_type, tok_value)
+            try:
+                self.snippet_desc[path][snippet_id] = desc
+            except KeyError:
+                self.snippet_desc[path] = {snippet_id: desc}
+        else:
+            raise ValueError(
+                f'Unknown snippet type "{snippet_kind}" for snippet "{path}:{snippet_id}"!'
+            )
 
     def _lookup_snippet(self, mapping: SnippetDict[T], cur_file: PurePosixPath, specifier: str) -> T:
         """Locate a snippet using the specified mapping, parsing the FGD file if necessary.

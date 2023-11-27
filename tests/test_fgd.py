@@ -1,4 +1,5 @@
 """Test the FGD module."""
+from pathlib import PurePosixPath
 from typing import Callable
 import copy
 import io
@@ -156,6 +157,33 @@ def test_parse_kv_flags(code, is_readonly, is_report) -> None:
 
     assert kv.readonly is is_readonly, kv
     assert kv.reportable is is_report, kv
+
+
+def test_snippet_desc() -> None:
+    """Test snippet descriptions."""
+    fgd = FGD()
+    fsys = VirtualFileSystem({
+        'snippets.fgd': """\
+@snippet desc first_desc = "Some text." +
+    " Another line of description.\\n" +
+    "And another."
+@snippet description Another = "Some description"
+""",
+        'secondfile.fgd': """\
+@snippet desc first_desc = "Different text"
+"""
+    })
+    fgd.parse_file(fsys, fsys['snippets.fgd'])
+    fgd.parse_file(fsys, fsys['secondfile.fgd'])
+    assert fgd.snippet_desc == {
+        PurePosixPath('snippets.fgd'): {
+            'first_desc': 'Some text. Another line of description.\nAnd another.',
+            'another': 'Some description',
+        },
+        PurePosixPath('secondfile.fgd'): {
+            'first_desc': 'Different text',
+        },
+    }
 
 
 def test_export_regressions(file_regression) -> None:
