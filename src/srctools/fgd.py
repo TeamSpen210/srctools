@@ -1400,6 +1400,31 @@ class EntityDef:
             if token is Token.NEWLINE:
                 continue
 
+            if token is Token.DIRECTIVE and token_value == 'snippet':
+                value_kind = tok.expect(Token.STRING).casefold()
+                key = tok.expect(Token.STRING)
+                if value_kind == 'input':
+                    tags, io_def = Snippet.lookup('input', fgd.snippet_input, key)
+                    io_tags_map = entity.inputs.setdefault(io_def.name.casefold(), {})
+                    io_tags_map[tags] = io_def
+                elif value_kind == 'output':
+                    tags, io_def = Snippet.lookup('output', fgd.snippet_output, key)
+                    io_tags_map = entity.outputs.setdefault(io_def.name.casefold(), {})
+                    io_tags_map[tags] = io_def
+                elif value_kind == 'keyvalue':
+                    tags, kv_def = Snippet.lookup('keyvalue', fgd.snippet_keyvalue, key)
+                    kv_tags_map = entity.keyvalues.setdefault(kv_def.name.casefold(), {})
+                    if not kv_tags_map:
+                        # New, add to the ordering.
+                        entity.kv_order.append(kv_def.name.casefold())
+                    kv_tags_map[tags] = kv_def
+                else:
+                    raise tok.error(
+                        'Unknown snippet type "{}". Valid in this context: '
+                        'input, output, keyvalue',
+                        value_kind,
+                    )
+
             # IO - keyword at the start.
             if token is not Token.STRING:
                 raise tok.error(token, token_value)
