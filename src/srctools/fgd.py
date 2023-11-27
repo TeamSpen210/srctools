@@ -393,12 +393,19 @@ def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
     file.write((' +\n' + indent).join(sections))
 
 
-def _parse_colon_array(tok: BaseTokenizer) -> Iterator[Tuple[str, List[str], TagsSet]]:
-    """Parse through an array of colon-separated values, like in choices/flags keyvalues."""
+def _parse_colon_array(
+    tok: BaseTokenizer, error_desc: str,
+    parse: Callable[[BaseTokenizer, str, str, List[str], TagsSet], T],
+) -> List[T]:
+    """Parse through an array of colon-separated values, like in choices/flags keyvalues.
+
+    The function provided is used to parse each line into the desired object.
+    """
+    val_list: List[T] = []
     tok.expect(Token.BRACK_OPEN)
     for token, first_value in tok.skipping_newlines():
         if token is Token.BRACK_CLOSE:
-            return
+            return val_list
         elif token is not Token.STRING:
             raise tok.error(token, first_value)
 
@@ -410,63 +417,62 @@ def _parse_colon_array(tok: BaseTokenizer) -> Iterator[Tuple[str, List[str], Tag
         else:
             val_tags = frozenset()
             tok.push_back(end_token, tok_value)
-        yield first_value, vals, val_tags
+        val_list.append(parse(tok, error_desc, first_value, vals, val_tags))
     else:
         raise tok.error(Token.EOF)
 
 
-def _parse_kvals_flags(tok: BaseTokenizer, error_desc: str) -> List[SpawnFlags]:
-    """Parse the list of values for flags-type keyvalues."""
-    val_list = []
-    for first_value, vals, tags in _parse_colon_array(tok):
-        # The first value is an integer.
-        try:
-            spawnflag = int(first_value)
-        except ValueError:
-            raise tok.error(
-                'SpawnFlags must be integer values, not "{}" (in {})!',
-                first_value,
-                error_desc,
-            ) from None
-        try:
-            power = math.log2(spawnflag)
-        except ValueError:
-            power = 0.5  # Force the following code to raise
-        if power != round(power):
-            raise tok.error(
-                'SpawnFlags must be powers of two, not {} (in {})!',
-                spawnflag,
-                error_desc,
-            ) from None
-        # Spawnflags can have a default, others may not.
-        if len(vals) == 2:
-            val_list.append((spawnflag, vals[0], vals[1].strip() == '1', tags))
-        elif len(vals) == 1:
-            val_list.append((spawnflag, vals[0], True, tags))
-        elif len(vals) == 0:
-            raise tok.error('Expected value for spawnflags, got none!')
-        else:
-            raise tok.error(
-                'Too many values for spawnflags definition in ({}):\n{}',
-                error_desc, vals,
-            )
-    return val_list
+def _parse_flags(
+    tok: BaseTokenizer, error_desc: str,
+    first_value: str, vals: List[str], tags: TagsSet,
+) -> SpawnFlags:
+    """Parse a line into a flags array member."""
+    try:
+        spawnflag = int(first_value)
+    except ValueError:
+        raise tok.error(
+            'SpawnFlags must be integer values, not "{}" (in {})!',
+            first_value,
+            error_desc,
+        ) from None
+    try:
+        power = math.log2(spawnflag)
+    except ValueError:
+        power = 0.5  # Force the following code to raise
+    if power != round(power):
+        raise tok.error(
+            'SpawnFlags must be powers of two, not {} (in {})!',
+            spawnflag,
+            error_desc,
+        )
+    # Spawnflags can have a default, others may not.
+    if len(vals) == 2:
+        return (spawnflag, vals[0], vals[1].strip() == '1', tags)
+    elif len(vals) == 1:
+        return (spawnflag, vals[0], True, tags)
+    elif len(vals) == 0:
+        raise tok.error('Expected value for spawnflags, got none!')
+    else:
+        raise tok.error(
+            'Too many values for spawnflags definition in ({}):\n{}',
+            error_desc, vals,
+        )
 
 
-def _parse_kvals_choices(tok: BaseTokenizer, error_desc: str) -> List[Choices]:
-    """Parse the list of values for choices keyvalues."""
-    val_list = []
-    for first_value, vals, tags in _parse_colon_array(tok):
-        if len(vals) == 1:
-            val_list.append((first_value, vals[0], tags))
-        elif len(vals) == 0:
-            raise tok.error('Expected value for choices, got none (in {})!', error_desc)
-        else:
-            raise tok.error(
-                'Too many values for choices definition in ({}):\n{}',
-                error_desc, vals,
-            )
-    return val_list
+def _parse_choices(
+    tok: BaseTokenizer, error_desc: str,
+    first_value: str, vals: List[str], tags: TagsSet,
+) -> Choices:
+    """Parse a line into a choices array member."""
+    if len(vals) == 1:
+        return (first_value, vals[0], tags)
+    elif len(vals) == 0:
+        raise tok.error('Expected value for choices, got none (in {})!', error_desc)
+    else:
+        raise tok.error(
+            'Too many values for choices definition in ({}):\n{}',
+            error_desc, vals,
+        )
 
 
 def read_tags(tok: BaseTokenizer) -> TagsSet:
@@ -595,6 +601,7 @@ class Snippet(Generic[ValueT]):
         snippet_kind = tokeniser.expect(Token.STRING).casefold()
         snippet_id = tokeniser.expect(Token.STRING)
         tokeniser.expect(Token.EQUALS)
+        error_desc = f'snippet "{path}:{snippet_id}'
 
         if snippet_kind in ('desc', 'description'):
             desc = tokeniser.expect(Token.STRING)
@@ -612,25 +619,23 @@ class Snippet(Generic[ValueT]):
                 desc,
             )
         elif snippet_kind == 'choices':
-            choices = _parse_kvals_choices(tokeniser, f'snippet "{path}:{snippet_id}')
             cls._add(
                 'choices list', fgd.snippet_choices,
                 path, definition_line, snippet_id,
-                choices,
+                _parse_colon_array(tokeniser, error_desc, _parse_choices),
             )
         elif snippet_kind in ('flags', 'spawnflags'):
-            flags = _parse_kvals_flags(tokeniser, f'snippet "{path}:{snippet_id}')
             cls._add(
                 'flags list', fgd.snippet_flags,
                 path, definition_line, snippet_id,
-                flags,
+                _parse_colon_array(tokeniser, error_desc, _parse_flags),
             )
         elif snippet_kind in ('kv', 'keyvalue'):
             kv_name = tokeniser.expect(Token.STRING)
             cls._add(
                 'keyvalue', fgd.snippet_keyvalue,
                 path, definition_line, snippet_id,
-                KVDef._parse(fgd, kv_name, tokeniser, f'snippet "{path}:{snippet_id}'),
+                KVDef._parse(fgd, kv_name, tokeniser, error_desc),
             )
         elif snippet_kind == 'input':
             cls._add(
@@ -942,9 +947,9 @@ class KVDef(EntAttribute):
             if has_equal is not Token.EQUALS:
                 raise tok.error('No list provided for "{}" value type!', val_typ.name)
             if val_typ is ValueTypes.CHOICES:
-                val_list = _parse_kvals_choices(tok, error_desc)
+                val_list = _parse_colon_array(tok, error_desc, _parse_choices)
             elif val_typ is ValueTypes.SPAWNFLAGS:
-                val_list = _parse_kvals_flags(tok, error_desc)
+                val_list = _parse_colon_array(tok, error_desc, _parse_flags)
             else:  # No others have a list.
                 raise AssertionError(val_typ)
         else:
