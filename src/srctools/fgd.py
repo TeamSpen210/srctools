@@ -624,6 +624,25 @@ class Snippet(Generic[ValueT]):
                 path, definition_line, snippet_id,
                 flags,
             )
+        elif snippet_kind in ('kv', 'keyvalue'):
+            kv_name = tokeniser.expect(Token.STRING)
+            cls._add(
+                'keyvalue', fgd.snippet_keyvalue,
+                path, definition_line, snippet_id,
+                KVDef._parse(kv_name, tokeniser, f'snippet "{path}:{snippet_id}'),
+            )
+        elif snippet_kind == 'input':
+            cls._add(
+                'input', fgd.snippet_input,
+                path, definition_line, snippet_id,
+                IODef._parse(tokeniser),
+            )
+        elif snippet_kind == 'output':
+            cls._add(
+                'output', fgd.snippet_output,
+                path, definition_line, snippet_id,
+                IODef._parse(tokeniser),
+            )
         else:
             raise ValueError(
                 f'Unknown snippet type "{snippet_kind}" for snippet "{path}:{snippet_id}"!'
@@ -1760,6 +1779,9 @@ class FGD:
     snippet_desc: SnippetDict[str] = attrs.Factory(dict)
     snippet_choices: SnippetDict[Sequence[Choices]]
     snippet_flags: SnippetDict[Sequence[SpawnFlags]]
+    snippet_input: SnippetDict[Tuple[TagsSet, IODef]]
+    snippet_output: SnippetDict[Tuple[TagsSet, IODef]]
+    snippet_keyvalue: SnippetDict[Tuple[TagsSet, KVDef]]
 
     def __init__(self) -> None:
         """Create a FGD."""
@@ -1773,6 +1795,9 @@ class FGD:
         self.snippet_desc = {}
         self.snippet_choices = {}
         self.snippet_flags = {}
+        self.snippet_input = {}
+        self.snippet_output = {}
+        self.snippet_keyvalue = {}
 
     @classmethod
     def parse(

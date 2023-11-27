@@ -245,6 +245,65 @@ def test_snippet_spawnflags() -> None:
     }
 
 
+def test_snippet_keyvalues() -> None:
+    """Test parsing snippet keyvalues."""
+    fgd = FGD()
+    fsys = VirtualFileSystem({'snippets.fgd': """\
+
+    @snippet keyvalue InvStartEnabled = start_enabled[-engine](choices) : "Start Enabled" : 0 : "Start it." = [
+        0: "Yes"
+        1: "No"
+    ]
+    """})
+    fgd.parse_file(fsys, fsys['snippets.fgd'])
+    assert fgd.snippet_keyvalue == {
+        'invstartenabled': Snippet(
+            'InvStartEnabled', 'snippets.fgd', 2,
+            (frozenset(['-ENGINE']), KVDef(
+                'start_enabled', ValueTypes.CHOICES,
+                disp_name='Start Enabled',
+                default='0',
+                desc='Start it.',
+                val_list=[
+                    ('0', 'Yes', frozenset()),
+                    ('1', 'No', frozenset()),
+                ]
+            ))
+        )
+    }
+
+
+def test_snippet_io() -> None:
+    """Test parsing snippet i/o."""
+    fgd = FGD()
+    fsys = VirtualFileSystem({'snippets.fgd': """\
+
+    @snippet input uSer1 = FireUser1[+tag](void) : "Causes this entity's OnUser1 output to be fired." 
+    @snippet output uSer1 = OnUser1[-tag](void) : "Fired in response to FireUser1 input."
+    """})
+    fgd.parse_file(fsys, fsys['snippets.fgd'])
+    assert fgd.snippet_input == {
+        'user1': Snippet(
+            'uSer1', 'snippets.fgd', 2,
+            (frozenset(['+TAG']), IODef(
+                name='FireUser1',
+                type=ValueTypes.VOID,
+                desc="Causes this entity's OnUser1 output to be fired.",
+            ))
+        )
+    }
+    assert fgd.snippet_output == {
+        'user1': Snippet(
+            'uSer1', 'snippets.fgd', 3,
+            (frozenset(['-TAG']), IODef(
+                name='OnUser1',
+                type=ValueTypes.VOID,
+                desc="Fired in response to FireUser1 input.",
+            ))
+        )
+    }
+
+
 def test_export_regressions(file_regression) -> None:
     """Generate a FGD file to ensure code doesn't unintentionally alter output."""
     fgd = FGD()
