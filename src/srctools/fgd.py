@@ -57,7 +57,7 @@ SpawnFlags = Tuple[int, str, bool, TagsSet]
 Choices = Tuple[str, str, TagsSet]
 
 # Cached engine DB parsing functions.
-_ENGINE_DB: Optional['_EngineDBProto'] = None
+_ENGINE_DB: Optional[_EngineDBProto] = None
 
 
 class FGDParseError(TokenSyntaxError):
@@ -289,7 +289,7 @@ class HelperTypes(Enum):
         return self.name.startswith('EXT_')
 
 
-def _load_engine_db() -> '_EngineDBProto':
+def _load_engine_db() -> _EngineDBProto:
     """Load our engine database."""
     # It's pretty expensive to parse, so keep the original privately,
     # returning a deep-copy.
@@ -431,8 +431,7 @@ def _parse_colon_array(
             val_tags = frozenset()
             tok.push_back(end_token, tok_value)
         val_list.append(parse(tok, error_desc, first_value, vals, val_tags))
-    else:
-        raise tok.error(Token.EOF)
+    raise tok.error(Token.EOF)
 
 
 def _parse_flags(
@@ -582,7 +581,7 @@ class Snippet(Generic[ValueT_co]):
     value: ValueT_co
 
     @classmethod
-    def lookup(cls, kind: str, mapping: Mapping[str, 'Snippet[T]'], key: str) -> T:
+    def lookup(cls, kind: str, mapping: Mapping[str, Snippet[T]], key: str) -> T:
         """Locate a snippet using the specified mapping."""
         try:
             return mapping[key.casefold()].value
@@ -608,7 +607,7 @@ class Snippet(Generic[ValueT_co]):
 
     # noinspection PyProtectedMember
     @classmethod
-    def parse(cls, fgd: 'FGD', path: str, tokeniser: BaseTokenizer) -> None:
+    def parse(cls, fgd: FGD, path: str, tokeniser: BaseTokenizer) -> None:
         """Parse snippet definitions in a FGD."""
         definition_line = tokeniser.line_num  # Before further parsing.
         snippet_kind = tokeniser.expect(Token.STRING).casefold()
@@ -687,27 +686,27 @@ class Resource:
     tags: TagsSet = frozenset()
 
     @classmethod
-    def mdl(cls, filename: str, tags: TagsSet = frozenset()) -> 'Resource':
+    def mdl(cls, filename: str, tags: TagsSet = frozenset()) -> Resource:
         """Create a resource definition for a model."""
         return cls(filename, FileType.MODEL, tags)
 
     @classmethod
-    def mat(cls, filename: str, tags: TagsSet = frozenset()) -> 'Resource':
+    def mat(cls, filename: str, tags: TagsSet = frozenset()) -> Resource:
         """Create a resource definition for a material."""
         return cls(filename, FileType.MATERIAL, tags)
 
     @classmethod
-    def snd(cls, filename: str, tags: TagsSet = frozenset()) -> 'Resource':
+    def snd(cls, filename: str, tags: TagsSet = frozenset()) -> Resource:
         """Create a resource definition for a soundscript."""
         return cls(filename, FileType.GAME_SOUND, tags)
 
     @classmethod
-    def part(cls, filename: str, tags: TagsSet = frozenset()) -> 'Resource':
+    def part(cls, filename: str, tags: TagsSet = frozenset()) -> Resource:
         """Create a resource definition for a particle system."""
         return cls(filename, FileType.PARTICLE_SYSTEM, tags)
 
     @classmethod
-    def weapon_script(cls, filename: str, tags: TagsSet = frozenset()) -> 'Resource':
+    def weapon_script(cls, filename: str, tags: TagsSet = frozenset()) -> Resource:
         """Create a resource definition for a weapon script."""
         return cls(filename, FileType.WEAPON_SCRIPT, tags)
 
@@ -725,7 +724,7 @@ class Helper:
     IS_EXTENSION: ClassVar[bool] = False  # true for our extensions to the format.
 
     @classmethod
-    def parse(cls: Type['HelperT'], args: List[str]) -> 'HelperT':
+    def parse(cls: Type[HelperT], args: List[str]) -> HelperT:
         """Parse this helper from the given arguments.
 
         The default implementation expects no arguments.
@@ -739,7 +738,7 @@ class Helper:
         """Produce the argument text to recreate this helper type."""
         return []
 
-    def get_resources(self, entity: 'EntityDef') -> Iterable[str]:
+    def get_resources(self, entity: EntityDef) -> Iterable[str]:
         """Return the resources used by this helper."""
         return ()
 
@@ -853,7 +852,7 @@ class KVDef(EntAttribute):
             self.val_list = lst
         return cast('List[SpawnFlags]', self.val_list)
 
-    def copy(self) -> 'KVDef':
+    def copy(self) -> KVDef:
         """Create a duplicate of this keyvalue."""
         return KVDef(
             self.name,
@@ -869,7 +868,7 @@ class KVDef(EntAttribute):
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'KVDef':
+    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> KVDef:
         return KVDef(
             self.name,
             self.type,
@@ -894,7 +893,7 @@ class KVDef(EntAttribute):
             yield self.default
 
     @classmethod
-    def _parse(cls, fgd: FGD, name: str, tok: BaseTokenizer, error_desc: str) -> Tuple[TagsSet, 'KVDef']:
+    def _parse(cls, fgd: FGD, name: str, tok: BaseTokenizer, error_desc: str) -> Tuple[TagsSet, KVDef]:
         """Parse a keyvalue definition."""
         is_readonly = show_in_report = had_colon = False
         # Next is either the value type parens, or a tags brackets.
@@ -1074,17 +1073,17 @@ class IODef(EntAttribute):
     type: ValueTypes = ValueTypes.VOID  # Most IO has no parameter.
     desc: str = ''
 
-    def copy(self) -> 'IODef':
+    def copy(self) -> IODef:
         """Create a duplicate of this IODef."""
         return IODef(self.name, self.type, self.desc)
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'IODef':
+    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> IODef:
         return IODef(self.name, self.type, self.desc)
 
     @classmethod
-    def _parse(cls, fgd: FGD, tok: BaseTokenizer) -> Tuple[TagsSet, 'IODef']:
+    def _parse(cls, fgd: FGD, tok: BaseTokenizer) -> Tuple[TagsSet, IODef]:
         """Parse I/O definitions in an entity."""
         name = tok.expect(Token.STRING)
 
@@ -1153,7 +1152,7 @@ class _EntityView(Generic[T]):
     __slots__ = ['_ent', '_attr', '_disp_attr']
 
     # Note, we expect the maps to have casefolded their keys.
-    def __init__(self, ent: 'EntityDef', attr_name: str, disp_name: str) -> None:
+    def __init__(self, ent: EntityDef, attr_name: str, disp_name: str) -> None:
         self._ent = ent
         self._attr = attr_name
         self._disp_attr = disp_name
@@ -1169,7 +1168,7 @@ class _EntityView(Generic[T]):
 
     def _maps(
         self,
-        ent: Optional['EntityDef'] = None,
+        ent: Optional[EntityDef] = None,
     ) -> Iterator[Mapping[str, Mapping[TagsSet, T]]]:
         """Yield all the mappings which we need to look through."""
         if ent is None:
@@ -1251,7 +1250,7 @@ class EntityDef:
     kv_order: List[str] = attrs.field(kw_only=True, factory=list)
 
     #: The parent entity classes defined using ``base()`` helpers.
-    bases: List[Union['EntityDef', str]] = attrs.field(kw_only=True, factory=list)
+    bases: List[Union[EntityDef, str]] = attrs.field(kw_only=True, factory=list)
     #: All other helpers defined on the entity.
     helpers: List[Helper] = attrs.field(kw_only=True, factory=list)
     desc: str = attrs.field(default='', kw_only=True)
@@ -1277,7 +1276,7 @@ class EntityDef:
     @classmethod
     def parse(
         cls,
-        fgd: 'FGD',
+        fgd: FGD,
         tok: BaseTokenizer,
         ent_type: EntityTypes,
         eval_bases: bool = True,
@@ -1522,7 +1521,7 @@ class EntityDef:
                 kv_tags_map[tags] = kv_def
 
     @classmethod
-    def engine_def(cls, classname: str) -> 'EntityDef':
+    def engine_def(cls, classname: str) -> EntityDef:
         """Return the specified entity from an internal copy of the Hammer Addons database.
 
         This can be used to identify the kind of keys/inputs/outputs present on an entity, as well
@@ -1544,7 +1543,7 @@ class EntityDef:
         else:
             return f'<Entity {self.classname}>'
 
-    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'EntityDef':
+    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> EntityDef:
         """Handle copying ourselves, to eliminate lookups when not required."""
         copy = EntityDef.__new__(EntityDef)
         copy.type = self.type
@@ -1625,7 +1624,7 @@ class EntityDef:
 
     def get_resources(
         self,
-        ctx: 'ResourceCtx',
+        ctx: ResourceCtx,
         *,
         ent: Optional[Entity],
         on_error: Callable[[str], object] = lambda err: None,
@@ -1812,7 +1811,7 @@ class EntityDef:
                     out.export(file, 'output', tags)
         file.write('\t]\n')
 
-    def iter_bases(self, _done: Optional[Set['EntityDef']] = None) -> Iterator['EntityDef']:
+    def iter_bases(self, _done: Optional[Set[EntityDef]] = None) -> Iterator[EntityDef]:
         """Yield all base entities for this one.
 
         If an entity is repeated, it will only be yielded once.
@@ -1853,7 +1852,7 @@ class FGD:
 
     # Snippets are named sections of syntax that can be reused.
     # Each is identified by a source filename, and a lookup key.
-    snippet_desc: SnippetDict[str] = attrs.Factory(dict)
+    snippet_desc: SnippetDict[str]
     snippet_choices: SnippetDict[Sequence[Choices]]
     snippet_flags: SnippetDict[Sequence[SpawnFlags]]
     snippet_input: SnippetDict[Tuple[TagsSet, IODef]]
@@ -1881,7 +1880,7 @@ class FGD:
         cls,
         file: Union[File[Any], str],
         filesystem: Optional[FileSystem[Any]] = None,
-    ) -> 'FGD':
+    ) -> FGD:
         """Parse an FGD file.
 
         :param file: A :py:class:filesystem.File` representing the file to read, or a file path.
@@ -2254,7 +2253,7 @@ class FGD:
                     raise tokeniser.error('Bad keyword {!r}', token_value)
 
     @classmethod
-    def engine_dbase(cls) -> 'FGD':
+    def engine_dbase(cls) -> FGD:
         """Load and return a database of entity keyvalues and I/O.
 
         This can be used to identify the kind of keys present on an entity. If you only need
@@ -2323,11 +2322,11 @@ class ResourceCtx:
     fsys: FileSystem[Any]
     #: The BSP/VMF map name, like what is passed to :command:`map` in-game.
     mapname: str
-    get_entdef: Callable[[str], 'EntityDef']
+    get_entdef: Callable[[str], EntityDef]
 
     # For use of get_resources() only.
     _functions: Mapping[str, Callable[
-        ['ResourceCtx', Entity],
+        [ResourceCtx, Entity],
         Iterator[Union[Resource, Entity]]
     ]]
 
@@ -2338,7 +2337,7 @@ class ResourceCtx:
         fgd: Union[FGD, Mapping[str, EntityDef], _GetFGDFunc] = EntityDef.engine_def,
         mapname: str = '',
         funcs: Mapping[str, Callable[
-            ['ResourceCtx', Entity],
+            [ResourceCtx, Entity],
             Iterator[Union[Resource, Entity]]
         ]] = srctools.EmptyMapping,
     ) -> None:
