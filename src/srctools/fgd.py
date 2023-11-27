@@ -847,8 +847,8 @@ class KVDef(EntAttribute):
             yield self.default
 
     @classmethod
-    def _parse(cls, entity: 'EntityDef', name: str, tok: BaseTokenizer) -> None:
-        """Parse a keyvalue out of an entity."""
+    def _parse(cls, name: str, tok: BaseTokenizer, error_desc: str) -> Tuple[TagsSet, 'KVDef']:
+        """Parse a keyvalue definition."""
         is_readonly = show_in_report = had_colon = False
         # Next is either the value type parens, or a tags brackets.
         val_token, raw_value_type = tok()
@@ -919,20 +919,17 @@ class KVDef(EntAttribute):
             if has_equal is not Token.EQUALS:
                 raise tok.error('No list for "{}" value type!', val_typ.name)
             if val_typ is ValueTypes.CHOICES:
-                val_list = _parse_kvals_choices(tok, entity.classname)
+                val_list = _parse_kvals_choices(tok, error_desc)
             elif val_typ is ValueTypes.SPAWNFLAGS:
-                val_list = _parse_kvals_flags(tok, entity.classname)
+                val_list = _parse_kvals_flags(tok, error_desc)
             else:  # No others have a list.
                 raise AssertionError(val_typ)
         else:
             val_list = None
             if has_equal is Token.EQUALS:
                 raise tok.error('"{}" value types can\'t have lists!', val_typ.name)
-        tags_map = entity.keyvalues.setdefault(name.casefold(), {})
-        if not tags_map:
-            # New, add to the ordering.
-            entity.kv_order.append(name.casefold())
-        tags_map[tags] = KVDef(
+
+        return tags, KVDef(
             name=name,
             type=val_typ,
             desc=kv_desc,
@@ -1389,13 +1386,13 @@ class EntityDef:
             if io_type == 'input':
                 # noinspection PyProtectedMember
                 tags, io_def = IODef._parse(tok)
-                tags_map = entity.inputs.setdefault(io_def.name.casefold(), {})
-                tags_map[tags] = io_def
+                io_tags_map = entity.inputs.setdefault(io_def.name.casefold(), {})
+                io_tags_map[tags] = io_def
             elif io_type == 'output':
                 # noinspection PyProtectedMember
                 tags, io_def = IODef._parse(tok)
-                tags_map = entity.outputs.setdefault(io_def.name.casefold(), {})
-                tags_map[tags] = io_def
+                io_tags_map = entity.outputs.setdefault(io_def.name.casefold(), {})
+                io_tags_map[tags] = io_def
             elif io_type == '@resources':  # @resource block, format extension
                 tok.expect(Token.BRACK_OPEN, skip_newline=True)
                 # Append to existing, in case there's multiple blocks.
@@ -1407,7 +1404,7 @@ class EntityDef:
                         except KeyError:
                             raise tok.error('Unknown resource type "{}"!', res_tok_val) from None
                         filename = tok.expect(Token.STRING)
-                        tags: TagsSet = frozenset()
+                        tags = frozenset()
                         token, tok_val = tok()
                         if token is Token.BRACK_OPEN:
                             tags = read_tags(tok)
@@ -1419,7 +1416,12 @@ class EntityDef:
                 entity.resources = resources
             else:
                 # noinspection PyProtectedMember
-                KVDef._parse(entity, io_type, tok)
+                tags, kv_def = KVDef._parse(io_type, tok, entity.classname)
+                kv_tags_map = entity.keyvalues.setdefault(kv_def.name.casefold(), {})
+                if not kv_tags_map:
+                    # New, add to the ordering.
+                    entity.kv_order.append(kv_def.name.casefold())
+                kv_tags_map[tags] = kv_def
 
     @classmethod
     def engine_def(cls, classname: str) -> 'EntityDef':
