@@ -608,6 +608,20 @@ class Snippet(Generic[ValueT]):
                 path, definition_line, snippet_id,
                 desc,
             )
+        elif snippet_kind == 'choices':
+            choices = _parse_kvals_choices(tokeniser, f'snippet "{path}:{snippet_id}')
+            cls._add(
+                'choices list', fgd.snippet_choices,
+                path, definition_line, snippet_id,
+                choices,
+            )
+        elif snippet_kind == 'flags':
+            flags = _parse_kvals_flags(tokeniser, f'snippet "{path}:{snippet_id}')
+            cls._add(
+                'flags list', fgd.snippet_flags,
+                path, definition_line, snippet_id,
+                flags,
+            )
         else:
             raise ValueError(
                 f'Unknown snippet type "{snippet_kind}" for snippet "{path}:{snippet_id}"!'
