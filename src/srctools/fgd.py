@@ -50,6 +50,9 @@ FileSysT = TypeVar('FileSysT', bound=FileSystem[Any])
 _fake_vmf = VMF(preserve_ids=False)
 # Collections of tags.
 TagsSet: TypeAlias = FrozenSet[str]
+SnippetDict: TypeAlias = Dict[PurePosixPath, Dict[str, T]]
+SpawnFlags = Tuple[int, str, bool, TagsSet]
+Choices = Tuple[str, str, TagsSet]
 
 # Cached engine DB parsing functions.
 _ENGINE_DB: Optional['_EngineDBProto'] = None
@@ -372,6 +375,97 @@ def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
     file.write((' +\n' + indent).join(sections))
 
 
+def _parse_kvals_flags(tok: BaseTokenizer, error_desc: str) -> List[SpawnFlags]:
+    """Parse the list of values for flags-type keyvalues."""
+    val_list = []
+    tok.expect(Token.BRACK_OPEN)
+    for choices_token, choices_value in tok:
+        if choices_token is Token.NEWLINE:
+            continue
+        if choices_token is Token.BRACK_CLOSE:
+            break
+        elif choices_token is not Token.STRING:
+            raise tok.error(choices_token)
+        vals, end_token = read_colon_list(tok, had_colon=False)
+
+        if end_token is Token.BRACK_OPEN:
+            val_tags = read_tags(tok)
+        else:
+            val_tags = frozenset()
+
+        # The first value is an integer.
+        try:
+            spawnflag = int(choices_value)
+        except ValueError:
+            raise tok.error(
+                'SpawnFlags must be integer values, not "{}" (in {})!',
+                choices_value,
+                error_desc,
+            ) from None
+        try:
+            power = math.log2(spawnflag)
+        except ValueError:
+            power = 0.5  # Force the following code to raise
+        if power != round(power):
+            raise tok.error(
+                'SpawnFlags must be powers of two, not {} (in {})!',
+                spawnflag,
+                error_desc,
+            ) from None
+        # Spawnflags can have a default, others may not.
+        if len(vals) == 2:
+            val_list.append((spawnflag, vals[0], vals[1].strip() == '1', val_tags))
+        elif len(vals) == 1:
+            val_list.append((spawnflag, vals[0], True, val_tags))
+        elif len(vals) == 0:
+            raise tok.error('Expected value for spawnflags, got none!')
+        else:
+            raise tok.error('Too many values!\n{}', vals)
+
+        # Handle ] at the end of a : : line.
+        if end_token is Token.BRACK_CLOSE:
+            break
+    else:
+        raise tok.error(Token.EOF)
+    return val_list
+
+
+def _parse_kvals_choices(tok: BaseTokenizer, error_desc: str) -> List[Choices]:
+    """Parse the list of values for choices keyvalues."""
+    val_list = []
+    tok.expect(Token.BRACK_OPEN)
+    for choices_token, choices_value in tok:
+        if choices_token is Token.NEWLINE:
+            continue
+        if choices_token is Token.BRACK_CLOSE:
+            break
+        elif choices_token is not Token.STRING:
+            raise tok.error(choices_token)
+        vals, end_token = read_colon_list(tok, had_colon=False)
+
+        if end_token is Token.BRACK_OPEN:
+            val_tags = read_tags(tok)
+        else:
+            val_tags = frozenset()
+
+        if len(vals) == 1:
+            val_list.append((choices_value, vals[0], val_tags))
+        elif len(vals) == 0:
+            raise tok.error('Expected value for choices, got none (in {})!', error_desc)
+        else:
+            raise tok.error(
+                'Too many values for choices defition in ({}):\n{}',
+                error_desc, vals,
+            )
+
+        # Handle "]" at the end of a : : line.
+        if end_token is Token.BRACK_CLOSE:
+            break
+    else:
+        raise tok.error(Token.EOF)
+    return val_list
+
+
 def read_tags(tok: BaseTokenizer) -> TagsSet:
     """Parse a set of tags from the file.
 
@@ -582,11 +676,6 @@ class AutoVisgroup:
         return f'<AutoVisgroup "{self.name}">'
 
 
-SnippetDict: TypeAlias = Dict[PurePosixPath, Dict[str, T]]
-SpawnFlags = Tuple[int, str, bool, TagsSet]
-Choices = Tuple[str, str, TagsSet]
-
-
 class EntAttribute:
     """Common base class for IODef and KVDef."""
     name: str
@@ -747,70 +836,17 @@ class KVDef(EntAttribute):
                 default = '1'
             elif default.casefold() == 'no':
                 default = '0'
-        # Read the choices in the [].  There's two kinds of tuples here, typing this
-        # doesn't work right.
-        val_list: Optional[List[Any]]
+        # Read the choices in the [].
+        val_list: Union[List[Choices], List[SpawnFlags], None]
         if val_typ.has_list:
             if has_equal is not Token.EQUALS:
                 raise tok.error('No list for "{}" value type!', val_typ.name)
-            val_list = []
-            tok.expect(Token.BRACK_OPEN)
-            for choices_token, choices_value in tok:
-                if choices_token is Token.NEWLINE:
-                    continue
-                if choices_token is Token.BRACK_CLOSE:
-                    break
-                elif choices_token is not Token.STRING:
-                    raise tok.error(choices_token)
-                vals, end_token = read_colon_list(tok, had_colon=False)
-
-                if end_token is Token.BRACK_OPEN:
-                    val_tags = read_tags(tok)
-                else:
-                    val_tags = frozenset()
-
-                if val_typ is ValueTypes.SPAWNFLAGS:
-                    # The first value is an integer.
-                    try:
-                        spawnflag = int(choices_value)
-                    except ValueError:
-                        raise tok.error(
-                            'SpawnFlags must be integer values, not "{}" (in {})!',
-                            choices_value,
-                            entity.classname,
-                        ) from None
-                    try:
-                        power = math.log2(spawnflag)
-                    except ValueError:
-                        power = 0.5  # Force the following code to raise
-                    if power != round(power):
-                        raise tok.error(
-                            'SpawnFlags must be powers of two, not {} (in {})!',
-                            spawnflag,
-                            entity.classname,
-                        ) from None
-                    # Spawnflags can have a default, others may not.
-                    if len(vals) == 2:
-                        val_list.append((spawnflag, vals[0], vals[1].strip() == '1', val_tags))
-                    elif len(vals) == 1:
-                        val_list.append((spawnflag, vals[0], True, val_tags))
-                    elif len(vals) == 0:
-                        raise tok.error('Expected value for spawnflags, got none!')
-                    else:
-                        raise tok.error('Too many values!\n{}', vals)
-                else:  # Choices.
-                    if len(vals) == 1:
-                        val_list.append((choices_value, vals[0], val_tags))
-                    elif len(vals) == 0:
-                        raise tok.error('Expected value for choices, got none!')
-                    else:
-                        raise tok.error('Too many values!\n{}', vals)
-
-                # Handle ] at the end of a : : line.
-                if end_token is Token.BRACK_CLOSE:
-                    break
-            else:
-                raise tok.error(Token.EOF)
+            if val_typ is ValueTypes.CHOICES:
+                val_list = _parse_kvals_choices(tok, entity.classname)
+            elif val_typ is ValueTypes.SPAWNFLAGS:
+                val_list = _parse_kvals_flags(tok, entity.classname)
+            else:  # No others have a list.
+                raise AssertionError(val_typ)
         else:
             val_list = None
             if has_equal is Token.EQUALS:
