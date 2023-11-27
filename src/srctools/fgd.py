@@ -1019,8 +1019,7 @@ class IODef(EntAttribute):
         return IODef(self.name, self.type, self.desc)
 
     @classmethod
-    # TODO: io_type = Literal['input', 'output']
-    def _parse(cls, entity: 'EntityDef', io_type: str, tok: BaseTokenizer) -> None:
+    def _parse(cls, tok: BaseTokenizer) -> Tuple[TagsSet, 'IODef']:
         """Parse I/O definitions in an entity."""
         name = tok.expect(Token.STRING)
 
@@ -1056,9 +1055,7 @@ class IODef(EntAttribute):
         else:
             io_desc = ''
 
-        # entity.inputs or entity.outputs
-        tags_map = getattr(entity, io_type + 's').setdefault(name.casefold(), {})
-        tags_map[tags] = IODef(name, val_typ, io_desc)
+        return tags, cls(name, val_typ, io_desc)
 
     def export(
         self,
@@ -1375,9 +1372,16 @@ class EntityDef:
                 raise tok.error(token, token_value)
 
             io_type = token_value.casefold()
-            if io_type in ('input', 'output'):
+            if io_type == 'input':
                 # noinspection PyProtectedMember
-                IODef._parse(entity, io_type, tok)
+                tags, io_def = IODef._parse(tok)
+                tags_map = entity.inputs.setdefault(io_def.name.casefold(), {})
+                tags_map[tags] = io_def
+            elif io_type == 'output':
+                # noinspection PyProtectedMember
+                tags, io_def = IODef._parse(tok)
+                tags_map = entity.outputs.setdefault(io_def.name.casefold(), {})
+                tags_map[tags] = io_def
             elif io_type == '@resources':  # @resource block, format extension
                 tok.expect(Token.BRACK_OPEN, skip_newline=True)
                 # Append to existing, in case there's multiple blocks.
