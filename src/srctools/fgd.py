@@ -1,4 +1,5 @@
 """Parse FGD files, used to describe Hammer entities."""
+from __future__ import annotations
 from typing import (
     IO, TYPE_CHECKING, AbstractSet, Any, Callable, ClassVar, Collection, Container, Dict,
     FrozenSet, Generic, Iterable, Iterator, List, Mapping, Optional, Sequence, Set,
@@ -585,12 +586,13 @@ class Snippet(Generic[ValueT]):
                 f'- {path}:{line}'
             )
 
+    # noinspection PyProtectedMember
     @classmethod
     def parse(cls, fgd: 'FGD', path: str, tokeniser: BaseTokenizer) -> None:
         """Parse snippet definitions in a FGD."""
         definition_line = tokeniser.line_num  # Before further parsing.
         snippet_kind = tokeniser.expect(Token.STRING).casefold()
-        snippet_id = tokeniser.expect(Token.STRING).casefold()
+        snippet_id = tokeniser.expect(Token.STRING)
         tokeniser.expect(Token.EQUALS)
 
         if snippet_kind in ('desc', 'description'):
@@ -615,7 +617,7 @@ class Snippet(Generic[ValueT]):
                 path, definition_line, snippet_id,
                 choices,
             )
-        elif snippet_kind == 'flags':
+        elif snippet_kind in ('flags', 'spawnflags'):
             flags = _parse_kvals_flags(tokeniser, f'snippet "{path}:{snippet_id}')
             cls._add(
                 'flags list', fgd.snippet_flags,

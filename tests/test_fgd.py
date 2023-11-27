@@ -1,5 +1,4 @@
 """Test the FGD module."""
-from pathlib import PurePosixPath
 from typing import Callable
 import copy
 import io
@@ -13,6 +12,7 @@ from srctools.filesys import VirtualFileSystem
 with pytest.deprecated_call(match=r'srctools\.fgd\.KeyValues is renamed to srctools\.fgd\.KVDef'):
     from srctools.fgd import *
     from srctools.fgd import Snippet
+
 
 @pytest.mark.parametrize('name1', ['alpha', 'beta', 'gamma'])
 @pytest.mark.parametrize('name2', ['alpha', 'beta', 'gamma'])
@@ -186,6 +186,62 @@ def test_snippet_desc() -> None:
             'Another', 'snippets.fgd', 4,
             'Some description',
         ),
+    }
+
+
+def test_snippet_choices() -> None:
+    """Test parsing snippet choices."""
+    fgd = FGD()
+    fsys = VirtualFileSystem({'snippets.fgd': """\
+
+    @snippet choices TRInary = [
+        -1: "EOF" [+srctools]
+        0: "No"
+        1: "Yes"
+    ]
+    """})
+    fgd.parse_file(fsys, fsys['snippets.fgd'])
+    assert fgd.snippet_choices == {
+        'trinary': Snippet(
+            'TRInary', 'snippets.fgd', 2,
+            [
+                ('-1', 'EOF', frozenset({'+SRCTOOLS'})),
+                ('0', 'No', frozenset()),
+                ('1', 'Yes', frozenset()),
+            ]
+        )
+    }
+
+
+def test_snippet_spawnflags() -> None:
+    """Test parsing snippet spawnflags."""
+    fgd = FGD()
+    fsys = VirtualFileSystem({'snippets.fgd': """\
+
+    @snippet flags Trigger = [
+        1: "Clients (Players/Bots)" : 1 [TF2, CSGO, CSS, MESA]
+        1: "Clients (Players)" : 1 [!TF2, !CSGO, !CSS, !MESA]
+        2: "NPCs" : 0 [!ASW]
+        2: "Marines and Aliens" : 0 [ASW]
+        4: "func_pushable" : 0
+        8: "VPhysics Objects" : 0
+        8192: "Items (weapons, items, projectiles)" : 0 [MBase]
+    ]
+    """})
+    fgd.parse_file(fsys, fsys['snippets.fgd'])
+    assert fgd.snippet_flags == {
+        'trigger': Snippet(
+            'Trigger', 'snippets.fgd', 2,
+            [
+                (1, 'Clients (Players/Bots)', True, frozenset({'TF2', 'CSGO', 'CSS', 'MESA'})),
+                (1, 'Clients (Players)', True, frozenset({'!TF2', '!CSGO', '!CSS', '!MESA'})),
+                (2, 'NPCs', False, frozenset({'!ASW'})),
+                (2, 'Marines and Aliens', False, frozenset({'ASW'})),
+                (4, 'func_pushable', False, frozenset()),
+                (8, 'VPhysics Objects', False, frozenset()),
+                (8192, 'Items (weapons, items, projectiles)', False, frozenset({'MBASE'})),
+            ]
+        )
     }
 
 
