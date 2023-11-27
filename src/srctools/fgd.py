@@ -311,11 +311,11 @@ def _engine_db_stats() -> str:
         return _ENGINE_DB.stats()
 
 
-def read_colon_list(tok: BaseTokenizer, had_colon: bool = False) -> Tuple[List[str], Token]:
-    """Read strings seperated by colons, up to the end of the line.
-
-    The token found at the end is returned.
-    """
+def _read_colon_list(
+    tok: BaseTokenizer,
+    had_colon: bool = False,
+) -> List[str]:
+    """Read strings seperated by colons, up to the end of the line."""
     strings = []
     ready_for_string = had_colon  # Did we have a colon before?
     token = Token.EOF
@@ -339,7 +339,8 @@ def read_colon_list(tok: BaseTokenizer, had_colon: bool = False) -> Tuple[List[s
         else:
             if ready_for_string:
                 raise tok.error(token)
-            return strings, token
+            tok.push_back(token, tok_value)
+            return strings
     raise tok.error(token)
 
 
@@ -388,12 +389,14 @@ def _parse_kvals_flags(tok: BaseTokenizer, error_desc: str) -> List[SpawnFlags]:
             break
         elif choices_token is not Token.STRING:
             raise tok.error(choices_token)
-        vals, end_token = read_colon_list(tok, had_colon=False)
+        vals = _read_colon_list(tok, had_colon=False)
 
+        end_token, tok_value = tok()
         if end_token is Token.BRACK_OPEN:
             val_tags = read_tags(tok)
         else:
             val_tags = frozenset()
+            tok.push_back(end_token, tok_value)
 
         # The first value is an integer.
         try:
@@ -422,7 +425,7 @@ def _parse_kvals_flags(tok: BaseTokenizer, error_desc: str) -> List[SpawnFlags]:
         elif len(vals) == 0:
             raise tok.error('Expected value for spawnflags, got none!')
         else:
-            raise tok.error('Too many values!\n{}', vals)
+            raise tok.error('Too many values!\n{!r}', vals)
 
         # Handle ] at the end of a : : line.
         if end_token is Token.BRACK_CLOSE:
@@ -443,12 +446,14 @@ def _parse_kvals_choices(tok: BaseTokenizer, error_desc: str) -> List[Choices]:
             break
         elif choices_token is not Token.STRING:
             raise tok.error(choices_token)
-        vals, end_token = read_colon_list(tok, had_colon=False)
+        vals = _read_colon_list(tok, had_colon=False)
 
+        end_token, tok_value = tok()
         if end_token is Token.BRACK_OPEN:
             val_tags = read_tags(tok)
         else:
             val_tags = frozenset()
+            tok.push_back(end_token, tok_value)
 
         if len(vals) == 1:
             val_list.append((choices_value, vals[0], val_tags))
@@ -459,10 +464,6 @@ def _parse_kvals_choices(tok: BaseTokenizer, error_desc: str) -> List[Choices]:
                 'Too many values for choices defition in ({}):\n{}',
                 error_desc, vals,
             )
-
-        # Handle "]" at the end of a : : line.
-        if end_token is Token.BRACK_CLOSE:
-            break
     else:
         raise tok.error(Token.EOF)
     return val_list
@@ -915,7 +916,8 @@ class KVDef(EntAttribute):
         else:
             raise tok.error(next_token)
         if kv_vals is None:
-            kv_vals, has_equal = read_colon_list(tok, had_colon)
+            kv_vals = _read_colon_list(tok, had_colon)
+            has_equal, _ = tok()
         attr_len = len(kv_vals)
         kv_desc = default = ''
         if attr_len == 3:
@@ -938,7 +940,7 @@ class KVDef(EntAttribute):
         val_list: Union[List[Choices], List[SpawnFlags], None]
         if val_typ.has_list:
             if has_equal is not Token.EQUALS:
-                raise tok.error('No list for "{}" value type!', val_typ.name)
+                raise tok.error('No list provided for "{}" value type!', val_typ.name)
             if val_typ is ValueTypes.CHOICES:
                 val_list = _parse_kvals_choices(tok, error_desc)
             elif val_typ is ValueTypes.SPAWNFLAGS:
@@ -1074,10 +1076,9 @@ class IODef(EntAttribute):
                 raise tok.error('Unknown keyvalue type "{}"!', raw_value_type) from None
 
         # Read desc
-        io_vals, token = read_colon_list(tok)
+        io_vals = _read_colon_list(tok)
 
-        if token is Token.EQUALS:
-            raise tok.error(token)
+        tok.expect(Token.NEWLINE)
 
         if io_vals:
             try:
