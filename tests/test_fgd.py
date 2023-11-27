@@ -12,6 +12,7 @@ from srctools.filesys import VirtualFileSystem
 
 with pytest.deprecated_call(match=r'srctools\.fgd\.KeyValues is renamed to srctools\.fgd\.KVDef'):
     from srctools.fgd import *
+    from srctools.fgd import Snippet
 
 @pytest.mark.parametrize('name1', ['alpha', 'beta', 'gamma'])
 @pytest.mark.parametrize('name2', ['alpha', 'beta', 'gamma'])
@@ -164,7 +165,7 @@ def test_snippet_desc() -> None:
     fgd = FGD()
     fsys = VirtualFileSystem({
         'snippets.fgd': """\
-@snippet desc first_desc = "Some text." +
+@snippet desc first_Desc = "Some text." +
     " Another line of description.\\n" +
     "And another."
 @snippet description Another = "Some description"
@@ -174,15 +175,17 @@ def test_snippet_desc() -> None:
 """
     })
     fgd.parse_file(fsys, fsys['snippets.fgd'])
-    fgd.parse_file(fsys, fsys['secondfile.fgd'])
+    with pytest.raises(ValueError, match="^Two description snippets were defined"):
+        fgd.parse_file(fsys, fsys['secondfile.fgd'])
     assert fgd.snippet_desc == {
-        PurePosixPath('snippets.fgd'): {
-            'first_desc': 'Some text. Another line of description.\nAnd another.',
-            'another': 'Some description',
-        },
-        PurePosixPath('secondfile.fgd'): {
-            'first_desc': 'Different text',
-        },
+        'first_desc': Snippet(
+            'first_Desc', 'snippets.fgd', 1,
+            'Some text. Another line of description.\nAnd another.',
+        ),
+        'another': Snippet(
+            'Another', 'snippets.fgd', 4,
+            'Some description',
+        ),
     }
 
 

@@ -46,11 +46,12 @@ __all__ = [
 ]
 
 T = TypeVar('T')
+ValueT = TypeVar('ValueT')
 FileSysT = TypeVar('FileSysT', bound=FileSystem[Any])
 _fake_vmf = VMF(preserve_ids=False)
 # Collections of tags.
 TagsSet: TypeAlias = FrozenSet[str]
-SnippetDict: TypeAlias = Dict[PurePosixPath, Dict[str, T]]
+SnippetDict: TypeAlias = 'Dict[str, Snippet[T]]'
 SpawnFlags = Tuple[int, str, bool, TagsSet]
 Choices = Tuple[str, str, TagsSet]
 
@@ -549,6 +550,68 @@ def match_tags(search: Container[str], tags: Collection[str]) -> bool:
                 matched = True
 
     return matched is not False
+
+
+@attrs.define
+class Snippet(Generic[ValueT]):
+    """A part of some definition which has been given a name to be reused."""
+    name: str
+    source_path: str  # File it was defined in.
+    source_line: int  # Line number.
+    value: ValueT
+
+    @classmethod
+    def lookup(cls, kind: str, mapping: SnippetDict[T], key: str) -> 'Snippet[T]':
+        """Locate a snippet using the specified mapping."""
+        try:
+            return mapping[key.casefold()]
+        except KeyError:
+            names = [snip.name for snip in mapping.values()]
+            names.sort()
+            raise ValueError(f'Snippet "{key}" does not exist. Known {kind} snippets: {names}') from None
+
+    @classmethod
+    def _add(cls, kind: str, mapping: SnippetDict[T], path: str, line: int, name: str, value: T) -> None:
+        """Create and add a snippet to the mapping, raising an error on collisions."""
+        key = name.casefold()
+        try:
+            existing = mapping[key]
+        except KeyError:
+            mapping[key] = Snippet(name, path, line, value)
+        else:
+            raise ValueError(
+                f'Two {kind} snippets were defined with the name "{name}":\n'
+                f'- {existing.source_path}:{existing.source_line}'
+                f'- {path}:{line}'
+            )
+
+    @classmethod
+    def parse(cls, fgd: 'FGD', path: str, tokeniser: BaseTokenizer) -> None:
+        """Parse snippet definitions in a FGD."""
+        definition_line = tokeniser.line_num  # Before further parsing.
+        snippet_kind = tokeniser.expect(Token.STRING).casefold()
+        snippet_id = tokeniser.expect(Token.STRING).casefold()
+        tokeniser.expect(Token.EQUALS)
+
+        if snippet_kind in ('desc', 'description'):
+            desc = tokeniser.expect(Token.STRING)
+            while True:
+                tok_type, tok_value = tokeniser()
+                if tok_type is Token.PLUS:
+                    desc += tokeniser.expect(Token.STRING)
+                elif tok_type is Token.NEWLINE:
+                    break
+                else:
+                    raise tokeniser.error(tok_type, tok_value)
+            cls._add(
+                'description', fgd.snippet_desc,
+                path, definition_line, snippet_id,
+                desc,
+            )
+        else:
+            raise ValueError(
+                f'Unknown snippet type "{snippet_kind}" for snippet "{path}:{snippet_id}"!'
+            )
 
 
 @attrs.frozen
@@ -1949,7 +2012,6 @@ class FGD:
             return
 
         self._parse_list.add(file)
-        path = PurePosixPath(file.path)
 
         with file.open_str(encoding) as f:
             tokeniser = Tokenizer(
@@ -2052,7 +2114,7 @@ class FGD:
                             raise tokeniser.error(tok)
 
                 elif token_value == '@snippet':
-                    self._parse_snippet(path, tokeniser)
+                    Snippet.parse(self, file.path, tokeniser)
 
                 # Entity definition...
                 elif token_value[:1] == '@':
@@ -2066,49 +2128,6 @@ class FGD:
                     EntityDef.parse(self, tokeniser, ent_type, eval_bases)
                 else:
                     raise tokeniser.error('Bad keyword {!r}', token_value)
-
-    def _parse_snippet(self, path: PurePosixPath, tokeniser: Tokenizer) -> None:
-        """Parse a snippet definition."""
-        snippet_kind = tokeniser.expect(Token.STRING).casefold()
-        snippet_id = tokeniser.expect(Token.STRING).casefold()
-        tokeniser.expect(Token.EQUALS)
-
-        if snippet_kind in ('desc', 'description'):
-            desc = tokeniser.expect(Token.STRING)
-            while True:
-                tok_type, tok_value = tokeniser()
-                if tok_type is Token.PLUS:
-                    desc += tokeniser.expect(Token.STRING)
-                elif tok_type is Token.NEWLINE:
-                    break
-                else:
-                    raise tokeniser.error(tok_type, tok_value)
-            try:
-                self.snippet_desc[path][snippet_id] = desc
-            except KeyError:
-                self.snippet_desc[path] = {snippet_id: desc}
-        else:
-            raise ValueError(
-                f'Unknown snippet type "{snippet_kind}" for snippet "{path}:{snippet_id}"!'
-            )
-
-    def _lookup_snippet(self, mapping: SnippetDict[T], cur_file: PurePosixPath, specifier: str) -> T:
-        """Locate a snippet using the specified mapping, parsing the FGD file if necessary.
-
-        The mapping should be an attribute on this class.
-        """
-        try:
-            [path_str, key] = specifier.rsplit(':', 1)
-        except ValueError:
-            raise ValueError(
-                f'Invalid snippet reference - expected "path/to/file.fgd:id", got "{specifier}".'
-            ) from None
-        path = cur_file.parent / PurePosixPath(path_str)
-        try:
-            return mapping[path][key.casefold()]
-        except KeyError:
-            # TODO
-            raise
 
     @classmethod
     def engine_dbase(cls) -> 'FGD':
