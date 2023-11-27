@@ -47,7 +47,7 @@ __all__ = [
 ]
 
 T = TypeVar('T')
-ValueT = TypeVar('ValueT')
+ValueT_co = TypeVar('ValueT_co', covariant=True)
 FileSysT = TypeVar('FileSysT', bound=FileSystem[Any])
 _fake_vmf = VMF(preserve_ids=False)
 # Collections of tags.
@@ -394,18 +394,31 @@ def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
 
 
 def _parse_colon_array(
-    tok: BaseTokenizer, error_desc: str,
+    tok: BaseTokenizer, error_desc: str, kind: str,
+    snippet_mapping: Mapping[str, Snippet[Sequence[T]]],
     parse: Callable[[BaseTokenizer, str, str, List[str], TagsSet], T],
 ) -> List[T]:
     """Parse through an array of colon-separated values, like in choices/flags keyvalues.
 
     The function provided is used to parse each line into the desired object.
     """
+    tok_typ, tok_value = tok()
+    if tok_typ is Token.DIRECTIVE and tok_value == "snippet":
+        # A line like "... = #snippet" - include a single array, no additional values.
+        return list(Snippet.lookup(kind, snippet_mapping, tok.expect(Token.STRING)))
+    else:
+        tok.push_back(tok_typ, tok_value)
+
     val_list: List[T] = []
     tok.expect(Token.BRACK_OPEN)
     for token, first_value in tok.skipping_newlines():
         if token is Token.BRACK_CLOSE:
             return val_list
+        elif token is Token.DIRECTIVE and first_value == 'snippet':
+            # Include an existing list of values, maybe with inline values.
+            key = tok.expect(Token.STRING)
+            val_list.extend(Snippet.lookup(kind, snippet_mapping, key))
+            continue
         elif token is not Token.STRING:
             raise tok.error(token, first_value)
 
@@ -560,13 +573,13 @@ def match_tags(search: Container[str], tags: Collection[str]) -> bool:
     return matched is not False
 
 
-@attrs.define
-class Snippet(Generic[ValueT]):
+@attrs.frozen
+class Snippet(Generic[ValueT_co]):
     """A part of some definition which has been given a name to be reused."""
     name: str
     source_path: str  # File it was defined in.
     source_line: int  # Line number.
-    value: ValueT
+    value: ValueT_co
 
     @classmethod
     def lookup(cls, kind: str, mapping: Mapping[str, 'Snippet[T]'], key: str) -> T:
@@ -618,17 +631,24 @@ class Snippet(Generic[ValueT]):
                 path, definition_line, snippet_id,
                 desc,
             )
+        # These two can both use and produce snippets, producing a bit of redundancy.
         elif snippet_kind == 'choices':
             cls._add(
                 'choices list', fgd.snippet_choices,
                 path, definition_line, snippet_id,
-                _parse_colon_array(tokeniser, error_desc, _parse_choices),
+                _parse_colon_array(
+                    tokeniser, error_desc,
+                    'choices list', fgd.snippet_choices, _parse_choices,
+                ),
             )
         elif snippet_kind in ('flags', 'spawnflags'):
             cls._add(
                 'flags list', fgd.snippet_flags,
                 path, definition_line, snippet_id,
-                _parse_colon_array(tokeniser, error_desc, _parse_flags),
+                _parse_colon_array(
+                    tokeniser, error_desc,
+                    'flags list', fgd.snippet_flags, _parse_flags,
+                ),
             )
         elif snippet_kind in ('kv', 'keyvalue'):
             kv_name = tokeniser.expect(Token.STRING)
@@ -947,9 +967,15 @@ class KVDef(EntAttribute):
             if has_equal is not Token.EQUALS:
                 raise tok.error('No list provided for "{}" value type!', val_typ.name)
             if val_typ is ValueTypes.CHOICES:
-                val_list = _parse_colon_array(tok, error_desc, _parse_choices)
+                val_list = _parse_colon_array(
+                    tok, error_desc,
+                    'choices list', fgd.snippet_choices, _parse_choices,
+                )
             elif val_typ is ValueTypes.SPAWNFLAGS:
-                val_list = _parse_colon_array(tok, error_desc, _parse_flags)
+                val_list = _parse_colon_array(
+                    tok, error_desc,
+                    'flags list', fgd.snippet_flags, _parse_flags,
+                )
             else:  # No others have a list.
                 raise AssertionError(val_typ)
         else:
