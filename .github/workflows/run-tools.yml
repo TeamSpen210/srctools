@@ -21,10 +21,10 @@ jobs:
     - uses: actions/checkout@v3
       with:
         submodules: true
-    - name: Set up Python 3.11
+    - name: Set up Python 3.12
       uses: actions/setup-python@v4
       with:
-        python-version: '3.11'
+        python-version: '3.12'
         cache: 'pip'
         cache-dependency-path: |
           test-requirements.txt
@@ -61,4 +61,8 @@ jobs:
     - name: MyPy - Python 3.11
       run: |
         mypy --python-version 3.11 src/srctools/ type_tests/
+      if: (success() || failure()) && steps.install_deps.outcome == 'success'
+    - name: MyPy - Python 3.12
+      run: |
+        mypy --python-version 3.12 src/srctools/ type_tests/
       if: (success() || failure()) && steps.install_deps.outcome == 'success'
