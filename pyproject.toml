@@ -173,7 +173,6 @@ extend-ignore = [
 	"PLC1901",  # Allow compare to empty string, can be more clear.
 	"PLE1205",  # Too many arguments for logging, doesn't handle our format
 	"PLW0603",  # Allow use of global statement.
-	"PLW1641",  # __hash__ is defined automatically by attrs.
 	"PLW2901",  # Allow redefining loop var inside the loop.
 
 	# Ruff:
@@ -192,12 +191,6 @@ extend-ignore = [
 	# Pyupgrade:
 	# Keep using typing types even with __future__.annotations.
 	"UP006", "UP007",
-
-	# Flake8-bugbear:
-	# Loop control var not used, triggers on unpackings.
-	"B007",
-	# Stacklevel parameter required for warnings.warn() - doesn't detect positional args.
-	"B028",
 
 	# Flake8-pie:
 	# Prefer to use pass in empty functions, even if docstring is present
