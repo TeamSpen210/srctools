@@ -3,5 +3,5 @@ pytest-datadir>=1.4.1
 pytest-regressions>=2.4.2
 dirty_equals >= 0.6
 # 10.0+ removes 32-bit wheels.
-Pillow == 9.5.0; python_version = '3.8'
+Pillow == 9.5.0; python_version == '3.8'
 Pillow > 10.0.0; python_version > '3.8'
