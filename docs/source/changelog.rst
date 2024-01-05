@@ -9,6 +9,7 @@ Version (dev)
 --------------
 
 * Fix entity keyvalues being lowercased when parsed from files.
+* Allow VMTs to use ``/* */`` comments.
 
 --------------
 Version 2.3.15

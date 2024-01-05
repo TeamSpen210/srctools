@@ -133,7 +133,12 @@ class Material(MutableMapping[str, str]):
     def parse(cls, data: Iterable[str], filename: str = '') -> 'Material':
         """Parse a VMT from the file."""
         # Block escapes, so "files\test\tex" doesn't have a tab in it.
-        tok = Tokenizer(data, filename, string_bracket=True, allow_escapes=False)
+        tok = Tokenizer(
+            data, filename,
+            string_bracket=True,
+            allow_escapes=False,
+            allow_star_comments=True,
+        )
 
         # First look for the shader name -
         # which must be the first string
