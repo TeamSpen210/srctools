@@ -88,6 +88,8 @@ CUBES: Sequence[CubeSide] = CUBES_WITH_SPHERE[:-1]
 # One black, opaque pixel for creating blank images.
 _BLANK_PIXEL = array('B', [0, 0, 0, 0xFF])
 
+# Valid values for vtf.strata_compression
+VALID_STRATA_COMPRESS: Sequence[int] = range(-1, 10)
 
 def _mk_fmt(
     r: int = 0, g: int = 0, b: int = 0,
@@ -268,7 +270,7 @@ class VTFFlags(Flag):
 class ResourceID(bytes, Enum):
     """For VTF format 7.3+, there is an extensible resource system.
 
-    These are the IDs defined by Valve, but any 4-byte ID may be used.
+    Any 3-byte ID may be used, but this defines various known IDs.
     """
     LOW_RES = b'\x01\0\0'  #: The low-res thumbnail. This is in a fixed position in earlier versions.
     HIGH_RES = b'\x30\0\0'  # The main image. This is in a fixed position in earlier versions.
@@ -286,6 +288,10 @@ class ResourceID(bytes, Enum):
 
     #: Block of keyvalues data.
     KEYVALUES = b'KVD'
+
+    #: `Strata Source <https://stratasource.org/>`_ introduces the ability to use the DEFLATE
+    #: algorithm to compress VTFs. This resource specifies the required settings.
+    STRATA_DEFLATE = b'AXC'
 
 
 class FilterMode(Enum):
@@ -599,7 +605,7 @@ class VTF:
     depth: int
     mipmap_count: int  #: The total number of mipmaps in the image.
 
-    #: The version number of the file. Supported versions vary from ``(7, 2) - (7, 5)``.
+    #: The version number of the file. Supported versions vary from ``(7, 2) - (7, 6)``.
     version: Tuple[int, int]
     #: An average of the colors in the texture, used to tint light bounced off surfaces.
     reflectivity: Vec
@@ -617,6 +623,14 @@ class VTF:
     #: The image format to use for a small thumbnail, usually ≤ 16×16.
     #: This is usually :py:attr:`DXT1 <srctools.vtf.ImageFormats.DXT1>`.
     low_format: ImageFormats
+    #: `Strata Source <https://stratasource.org/>`_ introduces the ability to use the DEFLATE
+    #: algorithm to compress VTFs in version 7.6. This attribute controls whether this behaviour is
+    #: enabled:
+    #:
+    #: * `0`: No compression.
+    #: * `-1`: Use a default compression level.
+    #: * `1`-`9`: Use the specified compression level.
+    strata_compression: int
 
     _frames: Dict[Tuple[int, Union[CubeSide, int], int], Frame]
     _low_res: Frame
@@ -636,8 +650,8 @@ class VTF:
         depth: int = 1,
     ) -> None:
         """Create a blank VTF file."""
-        if not ((7, 2) <= version <= (7, 5)):
-            raise ValueError(f'Version must be between 7.2 and 7.5! ({version!r})')
+        if not ((7, 2) <= version <= (7, 6)):
+            raise ValueError(f'Version must be between 7.2 and 7.6! ({version!r})')
         if not math.log2(width).is_integer():
             raise ValueError(f"Width must be a power of 2! ({width!r}x{height!r})")
         if not math.log2(height).is_integer():
@@ -664,6 +678,7 @@ class VTF:
         self.flags = flags
         self.frame_count = frames
         self.first_frame_index = 0  # Appears almost unused.
+        self.strata_compression = 0
         self.format = fmt
         self.low_format = thumb_fmt
 
@@ -741,6 +756,7 @@ class VTF:
         vtf.format = fmt = FORMAT_ORDER[high_format]
         vtf.version = version_major, version_minor
         vtf.low_format = low_fmt = FORMAT_ORDER[low_format]
+        vtf.strata_compression = 0
 
         if fmt is ImageFormats.NONE:
             raise ValueError('High-res format cannot be missing!')
@@ -888,7 +904,15 @@ class VTF:
         elif self.depth > 1:
             raise ValueError('Cannot use volumetric textures with versions before 7.2!')
 
-        # Read resources.
+        if version_minor < 6 and self.strata_compression != 0:
+            raise ValueError('Strata-style DEFLATE compression cannot be used for non-7.6 version VTFs!')
+        if self.strata_compression not in VALID_STRATA_COMPRESS:
+            raise ValueError(
+                f'Invalid Strata-style compression level: {self.strata_compression} '
+                f'must be -1, 0, or 1-9!'
+            )
+
+        # Write resources
         if version_minor >= 3:
             res_count = len(self.resources) + 2  # low/high format are always present.
             if self.sheet_info:
