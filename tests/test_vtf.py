@@ -18,6 +18,7 @@ FORMATS = [
     fmt for fmt in ImageFormats
     if fmt.name not in ["NONE", "P8", "RGBA16161616", "RGBA16161616F", "ATI1N", "ATI2N"]
 ]
+STRATA_LEVELS = [-1, 0, 9]
 
 
 def compare_img(obtained_fname: Path, expected_fname: Path) -> None:
@@ -172,3 +173,58 @@ def test_load_bad_size(
             b'',
             32, 32,
         )
+
+
+@pytest.mark.parametrize("level", STRATA_LEVELS)
+def test_load_strata_compression(
+    cy_py_format_funcs: str,
+    datadir: Path,
+    file_regression: FileRegressionFixture,
+    level: int,
+) -> None:
+    """Test loading Strata Source's DEFLATE compressed VTFs."""
+
+    with open(datadir / f"sample_strata_comp_{level}.vtf", "rb") as f:
+        vtf = VTF.read(f)
+        assert vtf.version == (7, 6)
+        assert vtf.strata_compression == level
+        vtf.load()
+        img = vtf.get().to_PIL()
+
+    buf = BytesIO()
+    img.save(buf, "png")
+
+    file_regression.check(
+        buf.getvalue(),
+        binary=True,
+        extension=".png",
+        basename=f"test_strata_load_comp_{level}",
+        check_fn=compare_img,
+    )
+
+@pytest.mark.parametrize("level", STRATA_LEVELS)
+def test_save_strata_compression(
+    cy_py_format_funcs: str,
+    sample_image: Image.Image,
+    file_regression: FileRegressionFixture,
+    level: int,
+) -> None:
+    """Test saving with Strata Source's DEFLATE compression."""
+    vtf = VTF(
+        64, 64,
+        version=(7, 6),
+        # The image format isn't being tested.
+        fmt=ImageFormats.RGB888,
+        thumb_fmt=ImageFormats.RGB888,
+        strata_compression=level,
+    )
+    vtf.get().copy_from(sample_image.tobytes())
+
+    buf = BytesIO()
+    vtf.save(buf)
+    file_regression.check(
+        buf.getvalue(),
+        binary=True,
+        extension=".vtf",
+        basename=f"test_save_{cy_py_format_funcs}_{fmt.name.lower()}"
+    )
