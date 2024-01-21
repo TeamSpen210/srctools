@@ -198,7 +198,7 @@ def test_load_strata_compression(
         buf.getvalue(),
         binary=True,
         extension=".png",
-        basename=f"test_strata_load_comp_{level}",
+        basename=f"test_{cy_py_format_funcs}_strata_load_comp_{level}",
         check_fn=compare_img,
     )
 
@@ -226,5 +226,5 @@ def test_save_strata_compression(
         buf.getvalue(),
         binary=True,
         extension=".vtf",
-        basename=f"test_save_{cy_py_format_funcs}_{fmt.name.lower()}"
+        basename=f"test_{cy_py_format_funcs}_strata_save_comp_{level}"
     )

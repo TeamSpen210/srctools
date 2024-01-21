@@ -846,8 +846,8 @@ class VTF:
                     vtf.strata_compression = deflate_data
                 else:
                     offset = 0
-                    [vtf.strata_compression] = struct.unpack_from('<I', deflate_data, 0)
-                    compress_iter = struct.iter_unpack('<i', deflate_data)
+                    [vtf.strata_compression] = struct.unpack_from('<i', deflate_data, 0)
+                    compress_iter = struct.iter_unpack('<I', deflate_data)
                     next(compress_iter)  # Skip compression level, it's signed, the rest is unsigned.
                     compressed_size = {}
                     for data_mipmap in reversed(range(mipmap_count)):
@@ -976,6 +976,7 @@ class VTF:
             file.write(bytes(15))  # Pad to 80 bytes.
 
         deferred.set_data('header_size', file.tell())
+        depth_seq = self._depth_range()
 
         if version_minor >= 3:
             # Write the data itself.
@@ -992,14 +993,15 @@ class VTF:
                 file.write(particle_data)
             if self.strata_compression != 0:
                 deferred.set_data('strata_compress_pos', file.tell())
+                frames = len(depth_seq) * self.mipmap_count * self.frame_count
                 file.write(struct.pack(
                     '<Ii',
                     # The size of the compression info. This is an int for the compression level,
                     # followed by an additional int for every frame.
-                    4 + 4 * len(self._frames),
+                    4 + 4 * frames,
                     self.strata_compression,
                 ))
-                deferred.defer('strata_compress_sizes', f'<{len(self._frames)}I', write=True)
+                deferred.defer('strata_compress_sizes', f'<{frames}I', write=True)
 
         self.compute_mipmaps()
         self._low_res.load()
@@ -1013,7 +1015,6 @@ class VTF:
             file.write(data)
 
         strata_compress: list[int] = []
-        depth_seq = self._depth_range()
 
         if version_minor >= 3:
             deferred.set_data('high_res', file.tell())
@@ -1034,10 +1035,12 @@ class VTF:
                         compressed = zlib.compress(data, self.strata_compression, STRATA_WINDOW_BITS)
                         strata_compress.append(len(compressed))
                         file.write(compressed)
+                        del compressed
                     else:
                         file.write(data)
+                    del data
         if self.strata_compression != 0:
-            deferred.set_data('strata_compress_sizes', binformat.write_array('<I', strata_compress))
+            deferred.set_data('strata_compress_sizes', *strata_compress)
         deferred.write()
 
     def __enter__(self) -> 'VTF':
