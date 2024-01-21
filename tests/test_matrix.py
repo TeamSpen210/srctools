@@ -240,6 +240,20 @@ def test_inverse_known(frozen_thawed_matrix: MatrixClass) -> None:
 
     assert_rot(invert, correct, type=frozen_thawed_matrix)
 
+    # Test for matrix with known inverse
+    mat[0, 0], mat[0, 1], mat[0, 2] = ( 0.0,  0.0, -1.0)
+    mat[1, 0], mat[1, 1], mat[1, 2] = (-1.0,  0.0,  0.0)
+    mat[2, 0], mat[2, 1], mat[2, 2] = ( 0.0,  1.0,  0.0)
+
+    correct[0, 0], correct[0, 1], correct[0, 2] = ( 0.0, -1.0,  0.0)
+    correct[1, 0], correct[1, 1], correct[1, 2] = ( 0.0,  0.0,  1.0)
+    correct[2, 0], correct[2, 1], correct[2, 2] = (-1.0,  0.0,  0.0)
+
+    to_invert = frozen_thawed_matrix(mat)
+    invert = to_invert.inverse()
+
+    assert_rot(invert, correct, type=frozen_thawed_matrix)
+
 
 def test_inverse_fail(frozen_thawed_matrix: MatrixClass) -> None:
     """Test the matrix inverse() method for known failure. """

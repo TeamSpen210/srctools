@@ -1933,9 +1933,9 @@ class MatrixBase:
         cls: Type[MatrixT] = type(self)
         out = cls.__new__(cls)
 
-        out._aa, out._ab, out._ac = omat_r[0][0], omat_r[0][1], omat_r[0][2]
-        out._ba, out._bb, out._bc = omat_r[1][0], omat_r[1][1], omat_r[1][2]
-        out._ca, out._cb, out._cc = omat_r[2][0], omat_r[2][1], omat_r[2][2]
+        out._aa, out._ab, out._ac = mat_r[0][0], mat_r[0][1], mat_r[0][2]
+        out._ba, out._bb, out._bc = mat_r[1][0], mat_r[1][1], mat_r[1][2]
+        out._ca, out._cb, out._cc = mat_r[2][0], mat_r[2][1], mat_r[2][2]
 
         return out
 
