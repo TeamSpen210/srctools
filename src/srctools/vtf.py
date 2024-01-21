@@ -12,6 +12,7 @@ from typing import (
     IO, TYPE_CHECKING, Any, Collection, Dict, Iterable, Iterator, List, Mapping, Optional,
     Sequence, Tuple, Type, Union, overload,
 )
+from typing_extensions import Final
 from array import array
 from enum import Enum, Flag
 from io import BytesIO
@@ -90,6 +91,8 @@ _BLANK_PIXEL = array('B', [0, 0, 0, 0xFF])
 
 # Valid values for vtf.strata_compression
 VALID_STRATA_COMPRESS: Sequence[int] = range(-1, 10)
+# If a resource has this flag, the data is an inline int, instead of the position of data elsewhere.
+RES_INLINE: Final = 0x02
 
 def _mk_fmt(
     r: int = 0, g: int = 0, b: int = 0,
@@ -798,7 +801,7 @@ class VTF:
                     vtf.resources[res_id] = Resource(res_flags, data)
 
             for res_id, resource in vtf.resources.items():
-                if not resource.flags & 0x02:
+                if not resource.flags & RES_INLINE:
                     # There's actual data elsewhere in the file.
                     offset = resource.data
                     assert isinstance(offset, int)
@@ -921,11 +924,11 @@ class VTF:
             for res_id, res in self.resources.items():
                 if isinstance(res.data, bytes):
                     # It's later in the file.
-                    file.write(struct.pack('<3sB', getattr(res_id, 'value', res_id), res.flags & ~0x02))
+                    file.write(struct.pack('<3sB', getattr(res_id, 'value', res_id), res.flags & ~RES_INLINE))
                     deferred.defer(('res', res_id), '<I', write=True)
                 else:
                     # Just here.
-                    file.write(struct.pack('<3sBI', res_id, res.flags | 0x02, res.data))
+                    file.write(struct.pack('<3sBI', res_id, res.flags | RES_INLINE, res.data))
 
             # These are always present in the resource.
             file.write(struct.pack('<3sB', ResourceID.LOW_RES.value, 0))
