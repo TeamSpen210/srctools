@@ -9,8 +9,8 @@ To compress to DXT formats, this uses the `libsquish`_ library.
 .. _`libsquish`: https://sourceforge.net/projects/libsquish/
 """
 from typing import (
-    IO, TYPE_CHECKING, Any, Collection, Dict, Iterable, Iterator, List, Mapping, Optional,
-    Sequence, Tuple, Type, Union, overload,
+    IO, MutableMapping, TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence,
+    Tuple, Type, Union, overload,
 )
 from typing_extensions import Final
 from array import array
@@ -21,6 +21,7 @@ import math
 import struct
 import types
 import warnings
+import zlib
 
 import attrs
 
@@ -91,6 +92,8 @@ _BLANK_PIXEL = array('B', [0, 0, 0, 0xFF])
 
 # Valid values for vtf.strata_compression
 VALID_STRATA_COMPRESS: Sequence[int] = range(-1, 10)
+# From MiniZ's source: https://github.com/StrataSource/VTFLib/blob/1dd6ad7302fb986abda8c459c26837f5a69255f5/thirdparty/miniz/miniz.h#L276
+STRATA_WINDOW_BITS: Final = 15
 # If a resource has this flag, the data is an inline int, instead of the position of data elsewhere.
 RES_INLINE: Final = 0x02
 
@@ -359,7 +362,12 @@ class Frame:
     width: int
     height: int
     _data: Optional['array[int]']  # Only generic in stubs!
-    _fileinfo: Optional[Tuple[IO[bytes], int, ImageFormats]]
+    # If set, the data is not present yet, we haven't yet read from the file. The elements are:
+    # * The open file
+    # * An offset to read from
+    # * Optionally, the compressed size, if Strata-style DEFLATE compression is used.
+    # * The image format to load.
+    _fileinfo: Optional[Tuple[IO[bytes], int, Optional[int], ImageFormats]]
 
     def __init__(
         self,
@@ -380,7 +388,7 @@ class Frame:
         if self._fileinfo is None:
             return
 
-        stream, file_off, fmt = self._fileinfo
+        stream, file_off, comp_size, fmt = self._fileinfo
         self._fileinfo = None
 
         if getattr(stream, 'closed', False):
@@ -392,8 +400,16 @@ class Frame:
                 source=stream,
             )
 
+        frame_size = fmt.frame_size(self.width, self.height)
+
         stream.seek(file_off)
-        data = stream.read(fmt.frame_size(self.width, self.height))
+
+        if comp_size is not None:
+            # Strata Source's DEFLATE compression.
+            data = stream.read(comp_size)
+            data = zlib.decompress(data, STRATA_WINDOW_BITS, frame_size)
+        else:
+            data = stream.read(frame_size)
         _format_funcs.load(fmt, self._data, data, self.width, self.height)
 
     def clear(self) -> None:
@@ -651,6 +667,7 @@ class VTF:
         fmt: ImageFormats = ImageFormats.RGBA8888,
         thumb_fmt: ImageFormats = ImageFormats.DXT1,
         depth: int = 1,
+        strata_compression: int=0,
     ) -> None:
         """Create a blank VTF file."""
         if not ((7, 2) <= version <= (7, 6)):
@@ -661,6 +678,8 @@ class VTF:
             raise ValueError("Height must be a power of 2! ({width!r}x{height!r})")
         if frames < 1:
             raise ValueError(f"Invalid frame count, must be positive! ({frames!r})")
+        if strata_compression != 0 and version != (7, 6):
+            raise ValueError('Strata Source DEFLATE compression is only supported with version 7.6!')
 
         # If it's a cubemap, depth must be 1.
         if VTFFlags.ENVMAP in flags:
@@ -681,7 +700,7 @@ class VTF:
         self.flags = flags
         self.frame_count = frames
         self.first_frame_index = 0  # Appears almost unused.
-        self.strata_compression = 0
+        self.strata_compression = strata_compression
         self.format = fmt
         self.low_format = thumb_fmt
 
@@ -689,19 +708,12 @@ class VTF:
         self._frames = {}
         self._low_res = Frame(16, 16)
 
-        depth_iter: Iterable[Union[int, CubeSide]]
-        if VTFFlags.ENVMAP in flags:
-            if version[1] == 5:
-                depth_iter = CUBES
-            else:
-                depth_iter = CUBES_WITH_SPHERE
-        else:
-            depth_iter = range(depth)
+        depth_seq = self._depth_range()
 
         mip_count = 0
         for mip_count in itertools.count():
             for frame in range(frames):
-                for cube_or_depth in depth_iter:
+                for cube_or_depth in depth_seq:
                     self._frames[frame, cube_or_depth, mip_count] = Frame(width, height)
 
             # Once either is 1 large, we have no more mipmaps.
@@ -721,9 +733,9 @@ class VTF:
             raise ValueError('Bad file signature!')
         version_major, version_minor = struct.unpack('II', file.read(8))
 
-        if version_major != 7 or not (0 <= version_minor <= 5):
+        if version_major != 7 or not (0 <= version_minor <= 6):
             raise ValueError(
-                f"VTF version {version_major}.{version_minor} is not between 7.0-7.5!"
+                f"VTF version {version_major}.{version_minor} is not between 7.0-7.6!"
             )
 
         vtf = cls.__new__(cls)
@@ -777,6 +789,12 @@ class VTF:
         vtf.resources = {}
         vtf.sheet_info = {}
 
+        # If Strata Source's compression is enabled, the size of each frame.
+        compressed_size: MutableMapping[Tuple[int, Union[CubeSide, int], int], int] = EmptyMapping
+
+        # If cubemaps are present, we iterate that instead of depth.
+        depth_seq = vtf._depth_range()
+
         # Read resources.
         if version_minor >= 3:
             [num_resources] = struct.unpack('<3xI8x', file.read(15))
@@ -814,7 +832,29 @@ class VTF:
                 if isinstance(sheet_data, int):
                     raise ValueError(f'Integer for particle data? {sheet_data!r}')
                 vtf.sheet_info = SheetSequence.from_resource(sheet_data)
-
+            if ResourceID.STRATA_DEFLATE in vtf.resources:
+                deflate_data = vtf.resources.pop(ResourceID.STRATA_DEFLATE).data
+                # The first value is the compression level. This can be provided inline, but
+                # only for level zero (no compression). Otherwise, this should then contain
+                # the compressed sizes of each image frame.
+                if isinstance(deflate_data, int):
+                    if deflate_data != 0:
+                        raise ValueError(
+                            f'Strata Source DEFLATE compression level was set to {deflate_data}, '
+                            f'but no compressed image size data was provided!'
+                        )
+                    vtf.strata_compression = deflate_data
+                else:
+                    offset = 0
+                    [vtf.strata_compression] = struct.unpack_from('<I', deflate_data, 0)
+                    compress_iter = struct.iter_unpack('<i', deflate_data)
+                    next(compress_iter)  # Skip compression level, it's signed, the rest is unsigned.
+                    compressed_size = {}
+                    for data_mipmap in reversed(range(mipmap_count)):
+                        for frame_ind in range(frame_count):
+                            for depth_or_cube in depth_seq:
+                                key = (frame_ind, depth_or_cube, data_mipmap)
+                                [compressed_size[key]] = next(compress_iter)
         else:
             low_res_offset = header_size
             high_res_offset = low_res_offset + low_fmt.frame_size(low_width, low_height)
@@ -830,32 +870,17 @@ class VTF:
         if low_fmt is not ImageFormats.NONE:
             if low_res_offset < 0:
                 raise ValueError('Missing low-res thumbnail resource!')
-            vtf._low_res._fileinfo = (file, low_res_offset, low_fmt)
-
-        # If cubemaps are present, we iterate that for depth.
-        # Otherwise, it's the depth value.
-        depth_iter: Iterable[Union[int, CubeSide]]
-        if VTFFlags.ENVMAP in vtf.flags:
-            # For version 7.5, the spheremap is skipped.
-            if version_minor == 5:
-                depth_iter = CUBES
-            else:
-                depth_iter = CUBES_WITH_SPHERE
-        else:
-            depth_iter = range(vtf.depth)
+            vtf._low_res._fileinfo = (file, low_res_offset, None, low_fmt)
 
         for data_mipmap in reversed(range(mipmap_count)):
             mip_width = max(width >> data_mipmap, 1)
             mip_height = max(height >> data_mipmap, 1)
             for frame_ind in range(frame_count):
-                for depth_or_cube in depth_iter:
-                    frame = vtf._frames[
-                        frame_ind,
-                        depth_or_cube,
-                        data_mipmap,
-                    ] = Frame(mip_width, mip_height)
+                for depth_or_cube in depth_seq:
+                    key = (frame_ind, depth_or_cube, data_mipmap)
+                    frame = vtf._frames[key] = Frame(mip_width, mip_height)
                     # noinspection PyProtectedMember
-                    frame._fileinfo = (file, high_res_offset, fmt)
+                    frame._fileinfo = (file, high_res_offset, compressed_size.get(key), fmt)
                     high_res_offset += fmt.frame_size(mip_width, mip_height)
         return vtf
 
@@ -879,9 +904,9 @@ class VTF:
             version = self.version
         version_major, version_minor = version
 
-        if version_major != 7 or not (0 <= version_minor <= 5):
+        if version_major != 7 or not (0 <= version_minor <= 6):
             raise ValueError(
-                f"VTF version {version_major}.{version_minor} is not between 7.0-7.5!"
+                f"VTF version {version_major}.{version_minor} is not between 7.0-7.6!"
             )
         file.write(struct.pack('<II', version_major, version_minor))
 
@@ -920,6 +945,8 @@ class VTF:
             res_count = len(self.resources) + 2  # low/high format are always present.
             if self.sheet_info:
                 res_count += 1
+            if version_minor >= 6:
+                res_count += 1
             file.write(struct.pack('<3xI8x', res_count))
             for res_id, res in self.resources.items():
                 if isinstance(res.data, bytes):
@@ -938,10 +965,18 @@ class VTF:
             if self.sheet_info:
                 file.write(struct.pack('<3sB', ResourceID.PARTICLE_SHEET.value, 0))
                 deferred.defer('particle', '<I', write=True)
+            if version_minor == 6:  # Strata Source.
+                # Do uncompressed inline, otherwise write it in later.
+                if self.strata_compression == 0:
+                    file.write(struct.pack('<3sBI', ResourceID.STRATA_DEFLATE.value, RES_INLINE, 0))
+                else:
+                    file.write(struct.pack('<3sB', ResourceID.STRATA_DEFLATE.value, 0))
+                    deferred.defer('strata_compress_pos', '<I', write=True)
         else:
             file.write(bytes(15))  # Pad to 80 bytes.
 
         deferred.set_data('header_size', file.tell())
+
         if version_minor >= 3:
             # Write the data itself.
             for res_id, res in self.resources.items():
@@ -955,6 +990,16 @@ class VTF:
                 deferred.set_data('particle', file.tell())
                 file.write(struct.pack('<I', len(particle_data)))
                 file.write(particle_data)
+            if self.strata_compression != 0:
+                deferred.set_data('strata_compress_pos', file.tell())
+                file.write(struct.pack(
+                    '<Ii',
+                    # The size of the compression info. This is an int for the compression level,
+                    # followed by an additional int for every frame.
+                    4 + 4 * len(self._frames),
+                    self.strata_compression,
+                ))
+                deferred.defer('strata_compress_sizes', f'<{len(self._frames)}I', write=True)
 
         self.compute_mipmaps()
         self._low_res.load()
@@ -967,23 +1012,14 @@ class VTF:
                 _format_funcs.save(self.low_format, self._low_res._data, data, self._low_res.width, self._low_res.height)
             file.write(data)
 
-        # If cubemaps are present, we iterate that for depth.
-        # Otherwise it's the depth value.
-        depth_iter: Iterable[Union[int, CubeSide]]
-        if VTFFlags.ENVMAP in self.flags:
-            # For version 7.5, the spheremap is skipped.
-            if version_minor == 5:
-                depth_iter = CUBES
-            else:
-                depth_iter = CUBES_WITH_SPHERE
-        else:
-            depth_iter = range(self.depth)
+        strata_compress: list[int] = []
+        depth_seq = self._depth_range()
 
         if version_minor >= 3:
             deferred.set_data('high_res', file.tell())
         for data_mipmap in reversed(range(self.mipmap_count)):
             for frame_ind in range(self.frame_count):
-                for depth_or_cube in depth_iter:
+                for depth_or_cube in depth_seq:
                     frame = self._frames[
                         frame_ind,
                         depth_or_cube,
@@ -993,7 +1029,15 @@ class VTF:
                     data = bytearray(self.format.frame_size(frame.width, frame.height))
                     if frame._data is not None:
                         _format_funcs.save(self.format, frame._data, data, frame.width, frame.height)
-                    file.write(data)
+                    if self.strata_compression != 0:
+                        # Compress and write that.
+                        compressed = zlib.compress(data, self.strata_compression, STRATA_WINDOW_BITS)
+                        strata_compress.append(len(compressed))
+                        file.write(compressed)
+                    else:
+                        file.write(data)
+        if self.strata_compression != 0:
+            deferred.set_data('strata_compress_sizes', binformat.write_array('<I', strata_compress))
         deferred.write()
 
     def __enter__(self) -> 'VTF':
@@ -1011,6 +1055,19 @@ class VTF:
         for frame in self._frames.values():
             frame._fileinfo = None
 
+    def _depth_range(self) -> Sequence[Union[int, CubeSide]]:
+        """Return the appopriate sequence for iterating over the _frames dict.
+
+        Depending on the type of VTF, frames may either be per cubemap side, or per depth.
+        """
+        if VTFFlags.ENVMAP in self.flags:
+            if self.version[1] >= 5:  # Spheremaps were removed in 7.5+
+                return CUBES
+            else:
+                return CUBES_WITH_SPHERE
+        else:
+            return range(self.depth)
+
     def load(self) -> None:
         """Fully load all image frames from the VTF.
 
@@ -1025,7 +1082,7 @@ class VTF:
 
         When saved or compute_mipmaps() is called, these empty mipmaps will
         be recomputed from the largest mipmap.
-        By default this clears all but the largest mipmap.
+        By default, this clears all but the largest mipmap.
         """
         for (ind, depth_side, mipmap), frame in self._frames.items():
             if mipmap > after:
@@ -1034,17 +1091,9 @@ class VTF:
 
     def compute_mipmaps(self, filter: FilterMode = FilterMode.BILINEAR) -> None:
         """Regenerate all mipmaps that have previously been cleared."""
-        depth_iter: Collection[Union[int, CubeSide]]
-        if VTFFlags.ENVMAP in self.flags:
-            # For version 7.5, the spheremap is skipped.
-            if self.version == (7, 5):
-                depth_iter = CUBES
-            else:
-                depth_iter = CUBES_WITH_SPHERE
-        else:
-            depth_iter = range(self.depth)
+        depth_seq = self._depth_range()
         for frame_num in range(self.frame_count):
-            for depth_side in depth_iter:
+            for depth_side in depth_seq:
                 # Force to blank if cleared, we can't load it from aynthing.
                 self._frames[frame_num, depth_side, 0].load()
                 for mipmap in range(1, self.mipmap_count):
