@@ -361,7 +361,7 @@ class Keyvalues:
             if token_type is NEWLINE:
                 continue
             if token_type is STRING:   # "string"
-                if not newline_keys and '\n' in token_value or '\r' in token_value:
+                if not newline_keys and ('\n' in token_value or '\r' in token_value):
                     raise tokenizer.error('Illegal newline found in key "{}"!', token_value)
                 # Skip calling __init__ for speed. Value needs to be set
                 # before using this, since it's unset here.
@@ -405,7 +405,7 @@ class Keyvalues:
                             'A value like "name" "value" must be on the same '
                             'line.'
                         )
-                    if not newline_values and '\n' in prop_value or '\r' in prop_value:
+                    if not newline_values and ('\n' in prop_value or '\r' in prop_value):
                         raise tokenizer.error('Illegal newline found in value "{}"!', prop_value)
 
                     keyvalue._value = prop_value
