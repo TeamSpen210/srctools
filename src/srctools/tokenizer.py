@@ -48,8 +48,8 @@ class TokenSyntaxError(Exception):
     def __init__(
         self,
         message: str,
-        file: Optional[StringPath],
-        line: Optional[int],
+        file: Optional[StringPath] = None,
+        line: Optional[int] = None,
     ) -> None:
         super().__init__()
         self.mess = message
@@ -58,6 +58,8 @@ class TokenSyntaxError(Exception):
 
     def __repr__(self) -> str:
         return f'TokenSyntaxError({self.mess!r}, {self.file!r}, {self.line_num!r})'
+
+    __hash__ = None  # This is mutable
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, TokenSyntaxError):

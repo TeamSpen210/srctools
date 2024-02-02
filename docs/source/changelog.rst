@@ -10,11 +10,13 @@ Version (dev)
 
 * Fix entity keyvalues being lowercased when parsed from files.
 * Allow VMTs to use ``/* */`` comments.
+* `#24 <https://github.com/TeamSpen210/srctools/pull/24`_: Fixed incorrect :py:func:`matrix.inverse() <srctools.math.MatrixBase.inverse>` being calculated. PR by Ozxybox.
+* Allow omitting file/line number parameters for TokenSyntaxError.
 
 --------------
 Version 2.3.15
 --------------
-* [HammerAddons#237](https://github.com/TeamSpen210/HammerAddons/issues/237): FGD model helpers should override each other.
+* `HammerAddons#237 <https://github.com/TeamSpen210/HammerAddons/issues/237>`_: FGD model helpers should override each other.
 * Fix #20: VTF.compute_mipmaps() not working for cubemaps.
 * Correctly handle `.vvd`/`.vtx` etc files being packed as :py:class:`MODEL <srctools.packlist.FileType.GENERIC`.
 * Improve performance of pure-Python VTF save/loading code.
