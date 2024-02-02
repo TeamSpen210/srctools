@@ -996,7 +996,6 @@ cdef class AngleTransform:
 
 
 @cython.freelist(64)
-@cython.internal
 cdef class VecBase:
     """A 3D Vector. This has most standard Vector functions.
 
@@ -2409,7 +2408,6 @@ cdef class Vec(VecBase):
 
 
 @cython.freelist(16)
-@cython.internal
 cdef class MatrixBase:
     """Common code for both matrices."""
     def __init__(self, MatrixBase matrix = None) -> None:
@@ -2418,6 +2416,9 @@ cdef class MatrixBase:
         If an existing matrix is supplied, it will be copied. Otherwise, an identity matrix is
         produced.
         """
+        if type(self) is MatrixBase:
+            raise TypeError('This class cannot be instantiated!')
+
         if matrix is not None:
             memcpy(self.mat, matrix.mat, sizeof(mat_t))
         else:
@@ -2793,7 +2794,6 @@ cdef class Matrix(MatrixBase):
 
 # Lots of temporaries are expected.
 @cython.freelist(16)
-@cython.internal
 cdef class AngleBase:
     """Common code for pitch/yaw/roll Euler angles."""
     __match_args__ = ('pitch', 'yaw', 'roll')

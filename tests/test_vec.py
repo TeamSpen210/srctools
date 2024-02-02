@@ -49,9 +49,10 @@ def test_matching_apis(cls: str) -> None:
     assert cy_attrs == py_attrs
 
 
-@pytest.mark.parametrize('cls', [vec_mod.AngleBase, vec_mod.VecBase, vec_mod.MatrixBase])
-def test_noconstruct_base(cls: type) -> None:
+@pytest.mark.parametrize('cls_name', ['AngleBase', 'VecBase', 'MatrixBase'])
+def test_noconstruct_base(py_c_vec, cls_name: str) -> None:
     """Test the internal base classes cannot be instantiated."""
+    cls = getattr(vec_mod, cls_name)
     with pytest.raises(TypeError):
         cls()
 

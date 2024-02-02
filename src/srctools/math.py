@@ -2970,14 +2970,20 @@ Cy_Vec: TypeAlias = Vec
 Py_Vec: TypeAlias = Vec
 Cy_FrozenVec: TypeAlias = FrozenVec
 Py_FrozenVec: TypeAlias = FrozenVec
+Cy_VecBase: TypeAlias = VecBase
+Py_VecBase: TypeAlias = VecBase
 Cy_Angle: TypeAlias = Angle
 Py_Angle: TypeAlias = Angle
 Cy_FrozenAngle: TypeAlias = FrozenAngle
 Py_FrozenAngle: TypeAlias = FrozenAngle
+Cy_AngleBase: TypeAlias = AngleBase
+Py_AngleBase: TypeAlias = AngleBase
 Cy_Matrix: TypeAlias = Matrix
 Py_Matrix: TypeAlias = Matrix
 Cy_FrozenMatrix: TypeAlias = FrozenMatrix
 Py_FrozenMatrix: TypeAlias = FrozenMatrix
+Cy_MatrixBase: TypeAlias = MatrixBase
+Py_MatrixBase: TypeAlias = MatrixBase
 Cy_parse_vec_str = parse_vec_str
 Py_parse_vec_str = parse_vec_str
 Cy_to_matrix = to_matrix
@@ -2994,9 +3000,9 @@ if not TYPE_CHECKING:
         pass
     else:
         for _name in [
-            'Vec', 'FrozenVec',
-            'Angle', 'FrozenAngle',
-            'Matrix', 'FrozenMatrix',
+            'Vec', 'VecBase', 'FrozenVec',
+            'Angle', 'AngleBase', 'FrozenAngle',
+            'Matrix', 'MatrixBase', 'FrozenMatrix',
             'parse_vec_str', 'to_matrix', 'lerp', 'format_float',
         ]:
             _glob[_name] = _glob['Cy_' + _name] = getattr(_math, _name)

@@ -181,9 +181,9 @@ def assert_rot(
 
 
 ATTRIBUTES = [
-    'Vec', 'FrozenVec',
-    'Angle', 'FrozenAngle',
-    'Matrix', 'FrozenMatrix',
+    'Vec', 'VecBase', 'FrozenVec',
+    'Angle', 'AngleBase', 'FrozenAngle',
+    'Matrix', 'MatrixBase', 'FrozenMatrix',
     'parse_vec_str', 'to_matrix',
 ]
 if Py_Vec is Cy_Vec:
