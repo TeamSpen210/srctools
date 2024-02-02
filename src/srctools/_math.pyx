@@ -1002,6 +1002,7 @@ cdef class VecBase:
     Many of the functions will accept a 3-tuple for comparison purposes.
     """
     __match_args__ = ('x', 'y', 'z')
+    __hash__ = None
 
     # Various constants.
     INV_AXIS = {
@@ -2053,8 +2054,9 @@ cdef class Vec(VecBase):
 
         return vec
 
+    __hash__ = None
+
     def __richcmp__(self, other_obj, int op):
-        """We have to redeclare this because of FrozenSet's __hash__."""
         return vector_compare(self, other_obj, op)
 
     def norm(self):
@@ -2435,6 +2437,8 @@ cdef class MatrixBase:
             return memcmp(self.mat, (<MatrixBase>other).mat, sizeof(mat_t)) != 0
         return NotImplemented
 
+    __hash__ = None
+
     def __repr__(self) -> str:
         return (
             '<Matrix '
@@ -2797,6 +2801,7 @@ cdef class Matrix(MatrixBase):
 cdef class AngleBase:
     """Common code for pitch/yaw/roll Euler angles."""
     __match_args__ = ('pitch', 'yaw', 'roll')
+    __hash__ = None
 
     def __init__(self, pitch=0.0, yaw=0.0, roll=0.0) -> None:
         """Create an Angle.
@@ -3262,6 +3267,8 @@ cdef class Angle(AngleBase):
             elif key in ('r', 'rol', 'roll'):
                 self.val.z = val
         raise KeyError(f'Invalid axis: {pos!r}')
+
+    __hash__ = None
 
     def __richcmp__(self, other, int op):
         """Rich Comparisons.

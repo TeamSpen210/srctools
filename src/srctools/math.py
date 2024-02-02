@@ -323,6 +323,7 @@ class VecBase:
     """Internal Base class for 3D vectors, implementing common code."""
     __match_args__: Final = ('_x', '_y', '_z')
     __slots__ = ('_x', '_y', '_z')
+    __hash__ = None
 
     #: This is a dictionary containing complementary axes.
     #: ``INV_AXIS["x", "y"]`` gives ``"z"``, and ``INV_AXIS["y"]`` returns ``("x", "z")``.
@@ -1625,6 +1626,8 @@ class MatrixBase:
         self._ca, self._cb, self._cc = ca, cb, cc
         return self
 
+    __hash__ = None
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, MatrixBase):
             return (
@@ -2215,6 +2218,7 @@ class AngleBase:
     # Use the private attrs for matching also, we only hook assignment in the mutable one.
     __match_args__ = ('_pitch', '_yaw', '_roll')
     __slots__ = ('_pitch', '_yaw', '_roll')
+    __hash__ = None
 
     _pitch: float
     _yaw: float

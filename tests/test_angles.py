@@ -19,7 +19,7 @@ VALID_ZERONUMS = [*VALID_NUMS, 0, -0]
 
 
 def test_construction(frozen_thawed_angle: AngleClass) -> None:
-    """Check the Angle() constructor."""
+    """Check the Angle() and FrozenAngle() constructors."""
     Angle = frozen_thawed_angle
 
     for pit, yaw, rol in iter_vec(VALID_ZERONUMS):
@@ -190,8 +190,13 @@ def test_thaw_freezing(py_c_vec: PyCVec) -> None:
 
 
 def test_angle_hash(py_c_vec: PyCVec) -> None:
-    """Test hashing frozen angles"""
+    """Test hashing frozen angles."""
+    Angle = vec_mod.Angle
     FrozenAngle = vec_mod.FrozenAngle
+
+    with pytest.raises(TypeError):
+        hash(Angle())
+
     for pitch, yaw, roll in iter_vec([0.0, 13, 25.8277, 128.474, 278.93]):
         expected = hash((round(pitch, 6), round(yaw, 6), round(roll, 6)))
         assert hash(FrozenAngle(pitch, yaw, roll)) == expected
