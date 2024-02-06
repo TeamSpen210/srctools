@@ -534,6 +534,8 @@ class Helper:
         """
         return ()
 
+    __hash__ = None  # type: ignore[assignment]
+
     def __eq__(self, other: object) -> bool:
         """Define equality as all attributes matching, and only matching types."""
         if not isinstance(other, Helper):
@@ -997,6 +999,8 @@ class _EntityView(Generic[T]):
 
     def __repr__(self) -> str:
         return f'{self._ent!r}.{self._disp_attr}'
+
+    __hash__ = None  # type: ignore[assignment]
 
     def __eq__(self, other: object) -> bool:
         """We're private, so we should be the only instance for a given Entity."""

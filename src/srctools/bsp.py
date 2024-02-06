@@ -111,6 +111,9 @@ class VERSIONS(Enum):
     DESOLATION_OLD = 42  # Old version.
     VITAMINSOURCE = 43  # Desolation's expanded map format.
 
+    def __hash__(self) -> int:
+        return hash(self.value)
+
     def __eq__(self, other: object) -> bool:
         """Versions are equal to their integer value."""
         return self.value == other

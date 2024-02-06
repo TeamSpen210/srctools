@@ -323,7 +323,7 @@ class VecBase:
     """Internal Base class for 3D vectors, implementing common code."""
     __match_args__: Final = ('_x', '_y', '_z')
     __slots__ = ('_x', '_y', '_z')
-    __hash__ = None
+    __hash__ = None  # type: ignore[assignment]
 
     #: This is a dictionary containing complementary axes.
     #: ``INV_AXIS["x", "y"]`` gives ``"z"``, and ``INV_AXIS["y"]`` returns ``("x", "z")``.
@@ -1193,7 +1193,7 @@ class FrozenVec(VecBase):
         """
         return _mk_fvec, (self._x, self._y, self._z)
 
-    def __hash__(self) -> int:
+    def __hash__(self) -> int:  # type: ignore[override]
         """Hashing a frozen vec is the same as hashing the tuple form."""
         return hash((round(self._x, 6), round(self._y, 6), round(self._z, 6)))
 
@@ -1627,7 +1627,7 @@ class MatrixBase:
         self._ca, self._cb, self._cc = ca, cb, cc
         return self
 
-    __hash__ = None
+    __hash__ = None  # type: ignore[assignment]
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, MatrixBase):
@@ -2219,7 +2219,7 @@ class AngleBase:
     # Use the private attrs for matching also, we only hook assignment in the mutable one.
     __match_args__ = ('_pitch', '_yaw', '_roll')
     __slots__ = ('_pitch', '_yaw', '_roll')
-    __hash__ = None
+    __hash__ = None  # type: ignore
 
     _pitch: float
     _yaw: float
@@ -2624,7 +2624,7 @@ class FrozenAngle(AngleBase):
         """
         return _mk_fang, (self._pitch, self._yaw, self._roll)
 
-    def __hash__(self) -> int:
+    def __hash__(self) -> int:  # type: ignore[override]
         """Hashing a frozen angle is the same as hashing the tuple form."""
         return hash((round(self._pitch, 6), round(self._yaw, 6), round(self._roll, 6)))
 

@@ -1042,6 +1042,8 @@ class Attribute(Generic[ValueT], _ValProps):
             value = repr(self._value)
         return f'<{self._typ.name} Attr {self.name!r}: {value}>'
 
+    __hash__ = None  # type: ignore[assignment]
+
     def __eq__(self, other: object) -> builtins.bool:
         if isinstance(other, Attribute):
             return (

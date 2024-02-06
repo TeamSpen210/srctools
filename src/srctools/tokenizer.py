@@ -59,7 +59,8 @@ class TokenSyntaxError(Exception):
     def __repr__(self) -> str:
         return f'TokenSyntaxError({self.mess!r}, {self.file!r}, {self.line_num!r})'
 
-    __hash__ = None  # This is mutable
+    # This is mutable.
+    __hash__ = None  # type: ignore[assignment]
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, TokenSyntaxError):

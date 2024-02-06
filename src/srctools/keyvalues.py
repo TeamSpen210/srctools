@@ -774,6 +774,8 @@ class Keyvalues:
         else:
             return [conv(self._value)]
 
+    __hash__ = None  # type: ignore[assignment]
+
     def __eq__(self, other: Any) -> builtins.bool:
         """Compare two items and determine if they are equal.
 
