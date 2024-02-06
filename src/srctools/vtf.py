@@ -641,7 +641,7 @@ class VTF:
         if not math.log2(width).is_integer():
             raise ValueError(f"Width must be a power of 2! ({width!r}x{height!r})")
         if not math.log2(height).is_integer():
-            raise ValueError("Height must be a power of 2! ({width!r}x{height!r})")
+            raise ValueError(f"Height must be a power of 2! ({width!r}x{height!r})")
         if frames < 1:
             raise ValueError(f"Invalid frame count, must be positive! ({frames!r})")
 

@@ -149,6 +149,8 @@ src_paths = ["src", "tests", "type_tests"]
 
 [tool.ruff]
 line-length = 127
+
+[tool.ruff.lint]
 select = [
 	"E", "UP", "F", "C4", "ANN", "B", "PIE", "RUF",
 	"PLC", "PLE", "PLW",  # Pylint.
@@ -165,6 +167,7 @@ extend-ignore = [
 	"F403",
 	# name may be undefined, or defined from star imports: module
 	"F405",
+	"F841",  # Unused local var, detects tuple unpacks.
 	# Flake8-annotations.
 	# Type annotations for self & cls are not important.
 	"ANN101",
@@ -182,6 +185,8 @@ extend-ignore = [
 
 	# Ruff:
 	"RUF100", # Sometimes use # noqa for other linters
+	"RUF022", # All not sorted
+	"RUF023", # Slots not sorted
 
 	# Flake8-bugbear:
 	# Loop control var not used, triggers on unpackings.
@@ -204,7 +209,7 @@ extend-ignore = [
 	"PIE796",
 	]
 
-[tool.ruff.flake8-bugbear]
+[tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = [
 	"srctools.math.FrozenVec", "srctools.math.FrozenAngle", "srctools.math.FrozenMatrix",
 	"typing.cast", "srctools.logger.get_logger",

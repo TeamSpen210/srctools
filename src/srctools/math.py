@@ -1562,7 +1562,8 @@ class Vec(VecBase):
         mat = to_matrix(angles)
         # noinspection PyProtectedMember
         mat._vec_rot(self)
-        self.__iadd__(origin)
+        # Use method directly, we know where it'll go.
+        self.__iadd__(origin)  # noqa: PLC2801
 
     @contextlib.contextmanager
     def transform(self) -> Iterator['Matrix']:
