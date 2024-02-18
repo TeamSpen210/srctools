@@ -152,7 +152,7 @@ line-length = 127
 
 [tool.ruff.lint]
 select = [
-	"E", "UP", "F", "C4", "ANN", "B", "PIE", "RUF",
+	"UP", "F", "C4", "ANN", "B", "PIE", "RUF",
 	"PLC", "PLE", "PLW",  # Pylint.
 
 	"TCH005",  # Empty type-checking block.
@@ -161,8 +161,6 @@ allowed-confusables = [
 	"×",  # Multiplication sign
 ]
 extend-ignore = [
-	# Allow module level import later in the file.
-	"E402",
 	# Allow *-imports.
 	"F403",
 	# name may be undefined, or defined from star imports: module
