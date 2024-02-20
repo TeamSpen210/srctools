@@ -449,8 +449,10 @@ class VMF:
         self.active_cam = srctools.conv_int(map_info.get('active_cam', '-1'), -1)
         self.quickhide_count = srctools.conv_int(map_info.get('quickhide', '-1'), -1)
 
-    def add_brush(self, item: 'Solid') -> None:
+    def add_brush(self, item: Union['Solid', PrismFace]) -> None:
         """Add a world brush to this map."""
+        if isinstance(item, PrismFace):
+            item = item.solid
         self.brushes.append(item)
 
     def remove_brush(self, brush: 'Solid') -> None:
