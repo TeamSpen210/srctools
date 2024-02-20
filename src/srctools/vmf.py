@@ -328,7 +328,7 @@ class PrismFace:
     east: 'Side'  #: The ``+x`` side of the brush.
     west: 'Side'  #: The ``-x`` side of the brush.
 
-    def __getitem__(self, item: Union[Vec, Tuple[float, float, float]]) -> 'Side':
+    def __getitem__(self, item: AnyVec) -> 'Side':
         """Given an axis-aligned normal, return the matching side."""
         if item == (1, 0, 0):
             return self.east
