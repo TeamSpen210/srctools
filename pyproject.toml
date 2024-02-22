@@ -86,8 +86,7 @@ archs = "auto"
 # Skip building:
 skip = [
 	"{cp,pp}{36,37}-*", # < Python 3.8
-	"*-{many,musl}linux_i686",  # 32-bit linux (all)
-	"pp*_x86_64",  # Pypy 32-bit
+	"*linux_i686",  # 32-bit linux (all)
 	"{cp,pp}{39,310,311,312,313,314,315,316}-win32",  # 32-bit on 3.9+
 ]
 
