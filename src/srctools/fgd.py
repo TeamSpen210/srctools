@@ -53,8 +53,8 @@ _fake_vmf = VMF(preserve_ids=False)
 # Collections of tags.
 TagsSet: TypeAlias = FrozenSet[str]
 SnippetDict: TypeAlias = 'Dict[str, Snippet[T]]'
-SpawnFlags = Tuple[int, str, bool, TagsSet]
-Choices = Tuple[str, str, TagsSet]
+SpawnFlags: TypeAlias = Tuple[int, str, bool, TagsSet]
+Choices: TypeAlias = Tuple[str, str, TagsSet]
 
 # Cached engine DB parsing functions.
 _ENGINE_DB: Optional[_EngineDBProto] = None

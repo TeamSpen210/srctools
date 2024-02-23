@@ -9,6 +9,7 @@ Version (dev)
 --------------
 
 * Fix entity keyvalues being lowercased when parsed from files.
+* Add "snippets" to FGD parsing, allowing reuse of descriptions and other small pieces of data.
 * Allow VMTs to use ``/* */`` comments.
 * `#24 <https://github.com/TeamSpen210/srctools/pull/24`_: Fixed incorrect :py:func:`matrix.inverse() <srctools.math.MatrixBase.inverse>` being calculated. PR by Ozxybox.
 * Allow omitting file/line number parameters for TokenSyntaxError.
