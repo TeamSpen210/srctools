@@ -1700,23 +1700,29 @@ class Side:
         try:
             disp_tree = tree.find_key('dispinfo')
         except LookupError:  # Not a displacement.
-            return side
+            pass
+        else:
+            side._parse_displacement_data(disp_tree)
+        return side
+
+    def _parse_displacement_data(self, disp_tree: Keyvalues) -> None:
+        """Parse displacement data. This is less common, split into its own method."""
 
         # Deal with displacements.
         disp_power = disp_tree.int('power', 4)
         if disp_power in (0, 1, 2, 3, 4):
-            side.disp_power = disp_power  # type: ignore
+            self.disp_power = disp_power  # type: ignore
         else:
             raise ValueError(f'Invalid displacement power {disp_power}!')
-        side.disp_pos = disp_tree.vec('startposition')
-        side.disp_elevation = disp_tree.float('elevation')
+        self.disp_pos = disp_tree.vec('startposition')
+        self.disp_elevation = disp_tree.float('elevation')
         disp_flag_ind = disp_tree.int('flags')
         if 0 <= disp_flag_ind <= 16:
-            side.disp_flags = _DISP_FLAG_TO_COLL[disp_flag_ind]
+            self.disp_flags = _DISP_FLAG_TO_COLL[disp_flag_ind]
         else:
-            raise ValueError(f'Invalid displacement flags {disp_flag_ind} in side {side.id}!')
+            raise ValueError(f'Invalid displacement flags {disp_flag_ind} in side {self.id}!')
         if disp_tree.bool('subdiv'):
-            side.disp_flags |= DispFlag.SUBDIV
+            self.disp_flags |= DispFlag.SUBDIV
 
         # This is 10 int32 numbers. Strata Source alternately uses 5 int64s.
         vert_key = disp_tree.find_key('allowed_verts')
@@ -1732,69 +1738,69 @@ class Side:
             )
         if len(allowed_vert) != 10:
             raise ValueError(
-                f'Displacement allowed_verts in side {side.id} '
+                f'Displacement allowed_verts in side {self.id} '
                 f'must be 10 long!'
             )
-        side.disp_allowed_vert = allowed_vert
+        self.disp_allowed_vert = allowed_vert
 
-        size = side.disp_size
-        side._disp_verts = [
+        size = self.disp_size
+        self._disp_verts = [
             DispVertex(x, y)
             for y in range(size)
             for x in range(size)
         ]
         # Parse all the rows..
-        side._parse_disp_vecrow(disp_tree, 'normals', 'normal')
-        side._parse_disp_vecrow(disp_tree, 'offsets', 'offset')
-        side._parse_disp_vecrow(disp_tree, 'offset_normals', 'offset_norm')
+        self._parse_disp_vecrow(disp_tree, 'normals', 'normal')
+        self._parse_disp_vecrow(disp_tree, 'offsets', 'offset')
+        self._parse_disp_vecrow(disp_tree, 'offset_normals', 'offset_norm')
 
-        for y, row in side._iter_disp_row(disp_tree, 'alphas', size):
+        for y, row in self._iter_disp_row(disp_tree, 'alphas', size):
             try:
                 for x, alpha in enumerate(row):
-                    side._disp_verts[y * size + x].alpha = float(alpha)
+                    self._disp_verts[y * size + x].alpha = float(alpha)
             except ValueError as exc:
                 raise ValueError(
-                    f'Displacement array for alpha in side {side.id}, '
+                    f'Displacement array for alpha in side {self.id}, '
                     f'row {y} had invalid number: {exc.args[0]}'
                 ) from None
 
-        for y, row in side._iter_disp_row(disp_tree, 'distances', size):
+        for y, row in self._iter_disp_row(disp_tree, 'distances', size):
             try:
                 for x, alpha in enumerate(row):
-                    side._disp_verts[y * size + x].distance = float(alpha)
+                    self._disp_verts[y * size + x].distance = float(alpha)
             except ValueError as exc:
                 raise ValueError(
-                    f'Displacement array for distances in side {side.id}, '
+                    f'Displacement array for distances in side {self.id}, '
                     f'row {y} had invalid number: {exc.args[0]}'
                 ) from None
 
         # Not the same, 1 less row and column since it's per-quad.
         tri_tags_count = 2 ** disp_power
-        for y, row in side._iter_disp_row(disp_tree, 'triangle_tags', 2 * tri_tags_count):
+        for y, row in self._iter_disp_row(disp_tree, 'triangle_tags', 2 * tri_tags_count):
             try:
                 for x in range(tri_tags_count):
-                    vert = side._disp_verts[y * size + x]
+                    vert = self._disp_verts[y * size + x]
                     vert.triangle_a = TriangleTag(int(row[2 * x]))
                     vert.triangle_b = TriangleTag(int(row[2 * x + 1]))
             except ValueError as exc:
                 raise ValueError(
-                    f'Displacement array for triangle tags in side {side.id}, '
+                    f'Displacement array for triangle tags in side {self.id}, '
                     f'row {y} had invalid number: {exc.args[0]}'
                 ) from None
 
         if 'multiblend' not in disp_tree:
-            return side
+            return
         # Else: Parse multiblend too.
         # First initialise this list.
-        for vert in side._disp_verts:
+        for vert in self._disp_verts:
             vert.multi_colors = [Vec(1, 1, 1), Vec(1, 1, 1), Vec(1, 1, 1), Vec(1, 1, 1)]
         for i in range(4):
-            side._parse_disp_vecrow(disp_tree, 'multiblend_color_' + str(i), i)
+            self._parse_disp_vecrow(disp_tree, 'multiblend_color_' + str(i), i)
 
-        for y, split in side._iter_disp_row(disp_tree, 'multiblend', 4 * size):
+        for y, split in self._iter_disp_row(disp_tree, 'multiblend', 4 * size):
             try:
                 for x in range(size):
-                    side._disp_verts[y * size + x].multi_blend = Vec4(
+                    self._disp_verts[y * size + x].multi_blend = Vec4(
                         float(split[4*x]),
                         float(split[4*x + 1]),
                         float(split[4*x + 2]),
@@ -1802,14 +1808,14 @@ class Side:
                     )
             except ValueError as exc:
                 raise ValueError(
-                    f'Displacement array for multiblend in side {side.id}, '
+                    f'Displacement array for multiblend in side {self.id}, '
                     f'row {y} had invalid number: {exc.args[0]}'
                 ) from None
 
-        for y, split in side._iter_disp_row(disp_tree, 'alphablend', 4 * size):
+        for y, split in self._iter_disp_row(disp_tree, 'alphablend', 4 * size):
             try:
                 for x in range(size):
-                    side._disp_verts[y * size + x].multi_alpha = Vec4(
+                    self._disp_verts[y * size + x].multi_alpha = Vec4(
                         float(split[4*x]),
                         float(split[4*x + 1]),
                         float(split[4*x + 2]),
@@ -1817,10 +1823,9 @@ class Side:
                     )
             except ValueError as exc:
                 raise ValueError(
-                    f'Displacement array for multiblend in side {side.id}, '
+                    f'Displacement array for multiblend in side {self.id}, '
                     f'row {y} had invalid number: {exc.args[0]}'
                 ) from None
-        return side
 
     def _iter_disp_row(self, tree: Keyvalues, name: str, size: int) -> Iterator[Tuple[int, List[str]]]:
         """Return y, row pairs of values from a displacement array row.
@@ -1937,54 +1942,58 @@ class Side:
             f'{ind}\t"smoothing_groups" "{self.smooth}"\n'
         )
         if self.disp_power > 0:
-            assert self._disp_verts is not None
-            assert self.disp_allowed_vert is not None
-            buffer.write(
-                f'{ind}\tdispinfo\n'
-                f'{ind}\t{{\n'
-                f'{ind}\t\t"power" "{self.disp_power}"\n'
-                f'{ind}\t\t"startposition" "[{self.disp_pos}]"\n'
-                f'{ind}\t\t"flags" "{_DISP_COLL_TO_FLAG[self.disp_flags & DispFlag.COLL_ALL]}"\n'
-                f'{ind}\t\t"elevation" "{self.disp_elevation}"\n'
-                f'{ind}\t\t"subdiv" "{"1" if DispFlag.SUBDIV in self.disp_flags else "0"}"\n'
-            )
-
-            size = self.disp_size
-            self._export_disp_rowset('normals', 'normal', buffer, ind, size)
-            self._export_disp_rowset('distances', 'distance', buffer, ind, size)
-            self._export_disp_rowset('offsets', 'offset', buffer, ind, size)
-            self._export_disp_rowset('offset_normals', 'offset_norm', buffer, ind, size)
-            self._export_disp_rowset('alphas', 'alpha', buffer, ind, size)
-
-            buffer.write(f'{ind}\t\ttriangle_tags\n{ind}\t\t{{\n')
-            for y in range(size):
-                row = [
-                    f'{vert.triangle_a.value} {vert.triangle_b.value}'
-                    for vert in self._disp_verts[size * y:size * (y+1)]
-                ]
-                buffer.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
-            buffer.write(ind + '\t\t}\n')
-
-            buffer.write(ind + '\t\tallowed_verts\n')
-            buffer.write(ind + '\t\t{\n')
-            assert len(self.disp_allowed_vert) == 10, self.disp_allowed_vert
-            buffer.write(f'{ind}\t\t"10" "{" ".join(map(str, self.disp_allowed_vert))}"\n')
-            buffer.write(f'{ind}\t\t}}\n{ind}\t}}\n')
-
-            if disp_multiblend and any(vert.multi_blend for vert in self._disp_verts):
-                self._export_disp_rowset('multiblend', 'multi_blend', buffer, ind, size)
-                self._export_disp_rowset('alphablend', 'multi_alpha', buffer, ind, size)
-                for i in range(4):
-                    buffer.write(f'{ind}\t\tmultiblend_color_{i}\n{ind}\t\t{{\n')
-                    for y in range(size):
-                        row = [
-                            str(vert.multi_colors[i]) if vert.multi_colors is not None else '1'
-                            for vert in self._disp_verts[size * y:size * (y+1)]
-                        ]
-                        buffer.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
-                    buffer.write(ind + '\t\t}\n')
+            self._export_displacement(buffer, ind, disp_multiblend)
 
         buffer.write(ind + '}\n')
+
+    def _export_displacement(self, buffer: IO[str], ind: str, disp_multiblend: bool) -> None:
+        """Export displacement data."""
+        assert self._disp_verts is not None
+        assert self.disp_allowed_vert is not None
+        buffer.write(
+            f'{ind}\tdispinfo\n'
+            f'{ind}\t{{\n'
+            f'{ind}\t\t"power" "{self.disp_power}"\n'
+            f'{ind}\t\t"startposition" "[{self.disp_pos}]"\n'
+            f'{ind}\t\t"flags" "{_DISP_COLL_TO_FLAG[self.disp_flags & DispFlag.COLL_ALL]}"\n'
+            f'{ind}\t\t"elevation" "{self.disp_elevation}"\n'
+            f'{ind}\t\t"subdiv" "{"1" if DispFlag.SUBDIV in self.disp_flags else "0"}"\n'
+        )
+
+        size = self.disp_size
+        self._export_disp_rowset('normals', 'normal', buffer, ind, size)
+        self._export_disp_rowset('distances', 'distance', buffer, ind, size)
+        self._export_disp_rowset('offsets', 'offset', buffer, ind, size)
+        self._export_disp_rowset('offset_normals', 'offset_norm', buffer, ind, size)
+        self._export_disp_rowset('alphas', 'alpha', buffer, ind, size)
+
+        buffer.write(f'{ind}\t\ttriangle_tags\n{ind}\t\t{{\n')
+        for y in range(size):
+            row = [
+                f'{vert.triangle_a.value} {vert.triangle_b.value}'
+                for vert in self._disp_verts[size * y:size * (y+1)]
+            ]
+            buffer.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
+        buffer.write(ind + '\t\t}\n')
+
+        buffer.write(ind + '\t\tallowed_verts\n')
+        buffer.write(ind + '\t\t{\n')
+        assert len(self.disp_allowed_vert) == 10, self.disp_allowed_vert
+        buffer.write(f'{ind}\t\t"10" "{" ".join(map(str, self.disp_allowed_vert))}"\n')
+        buffer.write(f'{ind}\t\t}}\n{ind}\t}}\n')
+
+        if disp_multiblend and any(vert.multi_blend for vert in self._disp_verts):
+            self._export_disp_rowset('multiblend', 'multi_blend', buffer, ind, size)
+            self._export_disp_rowset('alphablend', 'multi_alpha', buffer, ind, size)
+            for i in range(4):
+                buffer.write(f'{ind}\t\tmultiblend_color_{i}\n{ind}\t\t{{\n')
+                for y in range(size):
+                    row = [
+                        str(vert.multi_colors[i]) if vert.multi_colors is not None else '1'
+                        for vert in self._disp_verts[size * y:size * (y+1)]
+                    ]
+                    buffer.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
+                buffer.write(ind + '\t\t}\n')
 
     def _export_disp_rowset(self, name: str, membr: str, f: IO[str], ind: str, size: int) -> None:
         """Write out one of the displacement vertex arrays."""
