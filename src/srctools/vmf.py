@@ -18,6 +18,7 @@ import io
 import operator
 import re
 import warnings
+import struct
 
 import attrs
 
@@ -1677,9 +1678,7 @@ class Side:
         # planes = "(x1 y1 z1) (x2 y2 z2) (x3 y3 z3)"
         verts = tree["plane", "(0 0 0) (0 0 0) (0 0 0)"][1:-1].split(") (")
         if len(verts) != 3:
-            raise ValueError('Wrong number of solid planes in "' +
-                             tree['plane', ''] +
-                             '"')
+            raise ValueError(f'Wrong number of solid planes in "{tree["plane", ""]}"')
         planes = [
             Vec.from_str(verts[0]),
             Vec.from_str(verts[1]),
@@ -1719,9 +1718,18 @@ class Side:
         if disp_tree.bool('subdiv'):
             side.disp_flags |= DispFlag.SUBDIV
 
-        # This always has a key of '10', with 10 '-1's...
+        # This is 10 int32 numbers. Strata Source alternately uses 5 int64s.
         vert_key = disp_tree.find_key('allowed_verts')
-        allowed_vert = Array('i', map(int, vert_key['10'].split()))
+        allowed_vert = Array('i')
+        if '10' in vert_key:
+            allowed_vert.extend(map(int, vert_key['10'].split()))
+        elif '5' in vert_key:
+            # Pull out the two 32-bit ints from a 64-bit int.
+            allowed_vert.extend(
+                val
+                for num in vert_key['5'].split()
+                for val in struct.unpack('<ii', struct.pack('Q', int(num)))
+            )
         if len(allowed_vert) != 10:
             raise ValueError(
                 f'Displacement allowed_verts in side {side.id} '

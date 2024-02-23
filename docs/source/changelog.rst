@@ -14,6 +14,7 @@ Version (dev)
 * `#24 <https://github.com/TeamSpen210/srctools/pull/24`_: Fixed incorrect :py:func:`matrix.inverse() <srctools.math.MatrixBase.inverse>` being calculated. PR by Ozxybox.
 * Allow omitting file/line number parameters for TokenSyntaxError.
 * Allow passing :py:class:`~srctools.vmf.PrismFace` to :py:class:`VMF.add_brush() <srctools.vmf.VMF.add_brush>`.
+* Parse Strata Source's VMF displacement data.
 
 --------------
 Version 2.3.15
