@@ -1,13 +1,15 @@
 """Parses VCD choreo scenes, as well as data in scenes.image."""
 from __future__ import annotations
 from typing import List, IO, NewType, Dict, Tuple
-import attrs
+from typing_extensions import TypeAlias
 
+import attrs
 
 from srctools import binformat
 
 
 CRC = NewType('CRC', int)
+ScenesImage: TypeAlias = Dict[CRC, 'Entry']
 
 
 def checksum_filename(filename: str) -> CRC:
@@ -18,7 +20,7 @@ def checksum_filename(filename: str) -> CRC:
     return CRC(binformat.checksum(filename.encode('ascii')))
 
 
-def _update_checksum(choreo: Choreo, attr: attrs.Attribute[str], value: str) -> None:
+def _update_checksum(choreo: Entry, attr: attrs.Attribute[str], value: str) -> None:
     """When set, the filename attribute automatically recalculates the checksum.
 
     If set to an empty string, the checksum is not changed since that indicates the name is not known.
@@ -28,8 +30,8 @@ def _update_checksum(choreo: Choreo, attr: attrs.Attribute[str], value: str) -> 
 
 
 @attrs.define
-class Choreo:
-    """A choreographed scene."""
+class Entry:
+    """An entry in ``scenes.image``, containing useful metadata about a scene as well as the scene itself."""
     #: The filename of the choreo scene. If parsed from scenes.image, only a CRC is available.
     #: When set, this automatically recalculates the checksum.
     filename: str = attrs.field(validator=_update_checksum)
@@ -37,7 +39,7 @@ class Choreo:
     duration_ms: int  # Duration in milliseconds.
     last_speak_ms: int  # Time at which the last voice line ends.
     sounds: List[str]  # List of sounds it uses.
-    _data: bytes
+    _data: bytes  # Unparsed scene data, or the scene object.
 
     @property
     def duration(self) -> float:
@@ -60,8 +62,8 @@ class Choreo:
         self.last_speak_ms = round(value * 1000.0)
 
 
-def parse_scenes_image(file: IO[bytes]) -> Dict[CRC, Choreo]:
-    """Parse the scenes.image file, extracting all the choreo data."""
+def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
+    """Parse the ``scenes.image`` file, extracting all the choreo data."""
     [
         magic,
         version,
@@ -76,7 +78,7 @@ def parse_scenes_image(file: IO[bytes]) -> Dict[CRC, Choreo]:
 
     string_pool = binformat.read_offset_array(file, string_count)
 
-    scenes: Dict[CRC, Choreo] = {}
+    scenes: ScenesImage = {}
 
     file.seek(scene_off)
     scene_data: List[Tuple[CRC, int, int, int]] = [
@@ -103,7 +105,7 @@ def parse_scenes_image(file: IO[bytes]) -> Dict[CRC, Choreo]:
         data = file.read(data_size)
         if data.startswith(b'LZMA'):
             data = binformat.decompress_lzma(data)
-        scenes[crc] = Choreo(
+        scenes[crc] = Entry(
             '',
             crc,
             duration, last_speak,
