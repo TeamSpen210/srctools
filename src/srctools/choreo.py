@@ -1,9 +1,11 @@
 """Parses VCD choreo scenes, as well as data in scenes.image."""
 from __future__ import annotations
+from typing import ClassVar, List, IO, NewType, Dict, Optional, Tuple
+from typing_extensions import TypeAlias
 
 from io import BytesIO
-from typing import List, IO, NewType, Dict, Tuple
-from typing_extensions import TypeAlias
+import enum
+import struct
 
 import attrs
 
@@ -64,9 +66,228 @@ class Entry:
         self.last_speak_ms = round(value * 1000.0)
 
 
+class Interpolation(enum.Enum):
+    """Kinds of interpolation."""
+    DEFAULT = 0
+    CATMULL_ROM_NORMALIZE_X = 1
+    EASE_IN = 2
+    EASE_OUT = 3
+    EASE_IN_OUT = 4
+    BSP_LINE = 5
+    LINEAR = 6
+    KOCHANEK_BARTELS = 7
+    KOCHANEK_BARTELS_EARLY = 8
+    KOCHANEK_BARTELS_LATE = 9
+    SIMPLE_CUBIC = 10
+    CATMULL_ROM = 11
+    CATMULL_ROM_NORMALIZE = 12
+    CATMULL_ROM_TANGENT = 13
+    EXPONENTIAL_DECAY = 14
+    HOLD = 15
+
+    @classmethod
+    def parse_pair(cls, value: int) -> Tuple[Interpolation, Interpolation]:
+        """Parse two interpolation types, packed into a byte."""
+        return cls((value >> 8) & 0xff), cls(value & 0xff)
+
+
+class EventType(enum.Enum):
+    """Kinds of events."""
+    Unspecified = 0
+    Section = 1
+    Expression = 2
+    LookAt = 3
+    MoveTo = 4
+    Speak = 5
+    Gesture = 6
+    Sequence = 7
+    Face = 8
+    FireTrigger = 9
+    FlexAnimation = 10
+    SubScene = 11
+    Loop = 12
+    Interrupt = 13
+    StopPoint = 14
+    PermitResponses = 15
+    Generic = 16
+    Camera = 17
+    Script = 18
+
+
+class EventFlags(enum.Flag):
+    """Flags for an event."""
+    Resume = 1 << 0
+    LockBodyFacing = 1 << 1
+    FixedLength = 1<<2
+    Active = 1<<3
+    ForceShortMovement = 1<<4
+    PlayOverScript = 1 << 5
+
+
+class CaptionType(enum.Enum):
+    """Kind of closed captions."""
+    Master = 0
+    Slave = 1
+    Disabled = 2
+
+
+@attrs.define
+class ExpressionSample:
+    time: float
+    value: float
+    curve_type: Tuple[Interpolation, Interpolation] = (Interpolation.DEFAULT, Interpolation.DEFAULT)
+
+
+@attrs.define
+class Tag:
+    """A tag labels a particular location in an event."""
+    name: str
+    value: float
+
+    @classmethod
+    def parse(cls, file: IO[bytes], string_pool: List[str], double: bool) -> List[Tag]:
+        """Parse a list of tags from the file. If double is set, the value is 16-bit not 8-bit."""
+        [tag_count] = file.read(1)
+        tags = []
+        divisor = 4096.0 if double else 255.0
+        structure = struct.Struct('<hH' if double else '<hB')
+        for _ in range(tag_count):
+            [name_ind, value] = binformat.struct_read(structure, file)
+            tags.append(Tag(string_pool[name_ind], value / divisor))
+        return tags
+
+
+@attrs.define
+class Curve:
+    """Scene or event ramp data."""
+    BIN_FMT: ClassVar[struct.Struct] = struct.Struct('<fB')
+
+    ramp: List[ExpressionSample]
+    # start, end = ramp edge info
+
+    @classmethod
+    def parse_binary(cls, file: IO[bytes]) -> Curve:
+        """Parse the BVCD form of this data."""
+        [count] = file.read(1)
+        ramp = []
+        for _ in range(count):
+            [time, value] = binformat.struct_read(cls.BIN_FMT, file)
+            ramp.append(ExpressionSample(time, value / 255.0))
+        return cls(ramp)
+
+
 @attrs.define(eq=False, kw_only=True)
 class Event:
-    ...
+    """An event is an action that occurs in a choreo scene's timeline."""
+    type: EventType
+    caption_type: CaptionType = CaptionType.Master
+    name: str
+    parameters: tuple[str, str, str]
+    start_time: float
+    end_time: float
+    gesture_sequence_duration: float = ...
+
+    loop_count: int = 0
+    ramp: Curve
+    tag_name: Optional[str] = None
+    tag_wav_name: Optional[str] = None
+    actor: Actor = ...
+    channel: Channel = ...
+
+    relative_tags: List[Tag] = attrs.Factory(list)
+    timing_tags: List[Tag] = attrs.Factory(list)
+    absolute_playback_tags: List[Tag] = attrs.Factory(list)
+    absolute_original_tags: List[Tag] = attrs.Factory(list)
+    flex_anim_tracks: List[FlexAnimTrack] = attrs.Factory(list)
+    sub_scene: str = ''
+
+    dist_to_targ: float = 0
+    cc_token: str = ''
+    default_curve_type: Tuple[Interpolation, Interpolation] = (Interpolation.DEFAULT, Interpolation.DEFAULT)
+
+    flags: EventFlags = EventFlags(0)
+    suppress_caption_attenuation: bool = False
+    use_combined_file: bool = False
+    use_gender_token: bool = False
+
+    @classmethod
+    def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Event:
+        """Parse the BVCD form of this data."""
+        [
+            type_int, name_ind, start_time, end_time,
+            param_ind1, param_ind2, param_ind3,
+        ] = binformat.struct_read('<bhffhhh', file)
+        event_type = EventType(type_int)
+        ramp = Curve.parse_binary(file)
+        [flags, dist_to_targ] = binformat.struct_read('<BfB', file)
+
+        rel_tags = Tag.parse(file, string_pool, False)
+        timing_tags = Tag.parse(file, string_pool, False)
+        abs_playback_tags = Tag.parse(file, string_pool, True)
+        abs_orig_tags = Tag.parse(file, string_pool, True)
+
+        if event_type is EventType.Gesture:
+            [gesture_sequence_duration] = binformat.struct_read('<f', file)
+        else:
+            gesture_sequence_duration = 0.0
+
+        tag_name: Optional[str]
+        tag_wav_name: Optional[str]
+        if file.read(1) != b'\x00':
+            # Using a relative tag
+            [tag_name_ind, wav_name_ind] = binformat.struct_read('<hh', file)
+            tag_name = string_pool[tag_name_ind]
+            tag_wav_name = string_pool[wav_name_ind]
+        else:
+            tag_name = tag_wav_name = None
+
+        [flex_count] = file.read(1)
+        assert flex_count == 0  # TODO
+
+        if event_type is EventType.Loop:
+            [loop_count] = binformat.struct_read('b', file)
+        else:
+            loop_count = 0.0
+
+        if event_type is EventType.Speak:
+            [
+                cc_type_ind,
+                cc_token_ind,
+                speak_flags,
+            ] = binformat.struct_read('<Bhb', file)
+            cc_type = CaptionType(cc_type_ind)
+            cc_token = string_pool[cc_token_ind]
+            use_combined_file = (speak_flags & 1) != 0
+            use_gender_token = (speak_flags & 2) != 0
+            suppress_caption_attn = (speak_flags & 4) != 0
+        else:
+            cc_type = CaptionType.Master
+            cc_token = ''
+            use_combined_file = use_gender_token = suppress_caption_attn = False
+
+        return Event(
+            type=event_type,
+            name=string_pool[name_ind],
+            start_time=start_time,
+            end_time=end_time,
+            parameters=(string_pool[param_ind1], string_pool[param_ind2], string_pool[param_ind3]),
+            ramp=ramp,
+            flags=EventFlags(flags),
+            dist_to_targ=dist_to_targ,
+            relative_tags=rel_tags,
+            timing_tags=timing_tags,
+            absolute_playback_tags=abs_playback_tags,
+            absolute_original_tags=abs_orig_tags,
+            gesture_sequence_duration=gesture_sequence_duration,
+            tag_name=tag_name,
+            tag_wav_name=tag_wav_name,
+            loop_count=loop_count,
+            caption_type=cc_type,
+            cc_token=cc_token,
+            use_combined_file=use_combined_file,
+            use_gender_token=use_gender_token,
+            suppress_caption_attenuation=suppress_caption_attn,
+        )
 
 
 @attrs.define(eq=False, kw_only=True)
@@ -82,21 +303,21 @@ class Channel:
 @attrs.define(eq=False, kw_only=True)
 class Scene:
     """A choreo scene."""
-    events: List[Event]
-    actors: List[Actor]
-    channels: List[Channel]
-    map_name: str
-    fps: int
-    ramp: object
-    time_zoom_lookup: Dict[int, int]
-    is_background: bool
-    ignore_phonemes: bool
-    is_sub_scene: bool
-    use_frame_snap: bool
+    events: List[Event] = attrs.Factory(list)
+    actors: List[Actor] = attrs.Factory(list)
+    channels: List[Channel] = attrs.Factory(list)
+    map_name: str = ''
+    fps: int = 0
+    ramp: Curve = attrs.Factory(lambda curve: Curve([]))
+    time_zoom_lookup: Dict[int, int] = attrs.Factory(dict)
+    is_background: bool = False
+    ignore_phonemes: bool = False
+    is_sub_scene: bool = False
+    use_frame_snap: bool = False
 
     @classmethod
     def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Scene:
-        """Parse from binary ``scenes.image`` data."""
+        """Parse the BVCD form of this data."""
         if file.read(4) != b'bvcd':
             raise ValueError('File is not a binary VCD scene!')
         version = file.read(1)[0]
@@ -108,6 +329,20 @@ class Scene:
             actor_count,
         ] = binformat.struct_read('<IBB', file)
 
+        ramp = Curve.parse_binary(file)
+        events = [
+            Event.parse_binary(file, string_pool)
+            for _ in range(event_count)
+        ]
+        actors = []
+        ignore_phonemes = file.read(1) != b'\x00'
+
+        return cls(
+            events=events,
+            actors=actors,
+            ramp=ramp,
+            ignore_phonemes=ignore_phonemes,
+        )
 
 
 def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
@@ -153,11 +388,17 @@ def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
         data = file.read(data_size)
         if data.startswith(b'LZMA'):
             data = binformat.decompress_lzma(data)
+        try:
+            scene = Scene.parse_binary(BytesIO(data), string_pool)
+        except Exception:
+            import traceback
+            traceback.print_exc()
+            scene = None
         scenes[crc] = Entry(
             '',
             crc,
             duration, last_speak,
             sounds,
-            Scene.parse_binary(BytesIO(data), string_pool),
+            scene,
         )
     return scenes
