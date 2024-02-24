@@ -1,5 +1,7 @@
 """Parses VCD choreo scenes, as well as data in scenes.image."""
 from __future__ import annotations
+
+from io import BytesIO
 from typing import List, IO, NewType, Dict, Tuple
 from typing_extensions import TypeAlias
 
@@ -39,7 +41,7 @@ class Entry:
     duration_ms: int  # Duration in milliseconds.
     last_speak_ms: int  # Time at which the last voice line ends.
     sounds: List[str]  # List of sounds it uses.
-    _data: bytes  # Unparsed scene data, or the scene object.
+    data: Scene
 
     @property
     def duration(self) -> float:
@@ -60,6 +62,52 @@ class Entry:
     def last_speak(self, value: float) -> None:
         """Set the last-speak time (in seconds). This is rounded to the nearest millisecond."""
         self.last_speak_ms = round(value * 1000.0)
+
+
+@attrs.define(eq=False, kw_only=True)
+class Event:
+    ...
+
+
+@attrs.define(eq=False, kw_only=True)
+class Actor:
+    ...
+
+
+@attrs.define(eq=False, kw_only=True)
+class Channel:
+    ...
+
+
+@attrs.define(eq=False, kw_only=True)
+class Scene:
+    """A choreo scene."""
+    events: List[Event]
+    actors: List[Actor]
+    channels: List[Channel]
+    map_name: str
+    fps: int
+    ramp: object
+    time_zoom_lookup: Dict[int, int]
+    is_background: bool
+    ignore_phonemes: bool
+    is_sub_scene: bool
+    use_frame_snap: bool
+
+    @classmethod
+    def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Scene:
+        """Parse from binary ``scenes.image`` data."""
+        if file.read(4) != b'bvcd':
+            raise ValueError('File is not a binary VCD scene!')
+        version = file.read(1)[0]
+        if version != 4:
+            raise ValueError(f'Unknown version "{version}"!')
+        [
+            crc,
+            event_count,
+            actor_count,
+        ] = binformat.struct_read('<IBB', file)
+
 
 
 def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
@@ -96,7 +144,7 @@ def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
             [duration, last_speak, sound_count] = binformat.struct_read('<3i', file)
         else:
             [duration, sound_count] = binformat.struct_read('<2i', file)
-            last_speak = duration - 1  # Assume it's the whole choreo.
+            last_speak = duration  # Assume it's the whole choreo scene.
         sounds = [
             string_pool[i]
             for i in binformat.struct_read('<{}i'.format(sound_count), file)
@@ -110,6 +158,6 @@ def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
             crc,
             duration, last_speak,
             sounds,
-            data,
+            Scene.parse_binary(BytesIO(data), string_pool),
         )
     return scenes
