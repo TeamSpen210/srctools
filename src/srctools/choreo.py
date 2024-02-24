@@ -1,4 +1,5 @@
 """Parses VCD choreo scenes, as well as data in scenes.image."""
+from __future__ import annotations
 from typing import List, IO, NewType, Dict, Tuple
 import attrs
 
@@ -17,10 +18,21 @@ def checksum_filename(filename: str) -> CRC:
     return CRC(binformat.checksum(filename.encode('ascii')))
 
 
+def _update_checksum(choreo: Choreo, attr: attrs.Attribute[str], value: str) -> None:
+    """When set, the filename attribute automatically recalculates the checksum.
+
+    If set to an empty string, the checksum is not changed since that indicates the name is not known.
+    """
+    if value:
+        choreo.checksum = checksum_filename(value)
+
+
 @attrs.define
 class Choreo:
     """A choreographed scene."""
-    filename: str  # Filename if available.
+    #: The filename of the choreo scene. If parsed from scenes.image, only a CRC is available.
+    #: When set, this automatically recalculates the checksum.
+    filename: str = attrs.field(validator=_update_checksum)
     checksum: CRC  # CRC hash.
     duration_ms: int  # Duration in milliseconds.
     last_speak_ms: int  # Time at which the last voice line ends.
