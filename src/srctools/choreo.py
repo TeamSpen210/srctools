@@ -257,8 +257,9 @@ def _validate_base_event_type(value: Literal[
 @attrs.define(eq=False, kw_only=True)
 class Event:
     """An event is an action that occurs in a choreo scene's timeline."""
-    type: EventType = attrs.field(converter=_validate_base_event_type)
     name: str
+    type: EventType = attrs.field(converter=_validate_base_event_type)
+    flags: EventFlags = EventFlags(0)
     parameters: tuple[str, str, str]
     start_time: float
     end_time: float
@@ -266,18 +267,14 @@ class Event:
     ramp: Curve
     tag_name: Optional[str] = None
     tag_wav_name: Optional[str] = None
+    dist_to_targ: float = 0
 
     relative_tags: List[Tag] = attrs.Factory(list)
     timing_tags: List[Tag] = attrs.Factory(list)
     absolute_playback_tags: List[Tag] = attrs.Factory(list)
     absolute_original_tags: List[Tag] = attrs.Factory(list)
     flex_anim_tracks: List[FlexAnimTrack] = attrs.Factory(list)
-    sub_scene: str = ''
 
-    dist_to_targ: float = 0
-    default_curve_type: Tuple[Interpolation, Interpolation] = (Interpolation.DEFAULT, Interpolation.DEFAULT)
-
-    flags: EventFlags = EventFlags(0)
 
     @classmethod
     def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Event:
