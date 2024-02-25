@@ -185,14 +185,12 @@ class Event:
     parameters: tuple[str, str, str]
     start_time: float
     end_time: float
-    gesture_sequence_duration: float = ...
+    gesture_sequence_duration: float
 
     loop_count: int = 0
     ramp: Curve
     tag_name: Optional[str] = None
     tag_wav_name: Optional[str] = None
-    actor: Actor = ...
-    channel: Channel = ...
 
     relative_tags: List[Tag] = attrs.Factory(list)
     timing_tags: List[Tag] = attrs.Factory(list)
@@ -219,7 +217,7 @@ class Event:
         ] = binformat.struct_read('<bhffhhh', file)
         event_type = EventType(type_int)
         ramp = Curve.parse_binary(file)
-        [flags, dist_to_targ] = binformat.struct_read('<BfB', file)
+        [flags, dist_to_targ] = binformat.struct_read('<Bf', file)
 
         rel_tags = Tag.parse(file, string_pool, False)
         timing_tags = Tag.parse(file, string_pool, False)
@@ -290,14 +288,40 @@ class Event:
         )
 
 
-@attrs.define(eq=False, kw_only=True)
-class Actor:
-    ...
-
-
-@attrs.define(eq=False, kw_only=True)
+@attrs.define(eq=False)
 class Channel:
-    ...
+    name: str
+    active: bool = True
+    events: List[Event] = attrs.Factory(list)
+
+    @classmethod
+    def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Channel:
+        """Parse the BVCD form of this data."""
+        [name_ind, event_count] = binformat.struct_read('<hB', file)
+        name = string_pool[name_ind]
+        events = []
+        for _ in range(event_count):
+            events.append(Event.parse_binary(file, string_pool))
+        active = file.read(1) != b'\x00'
+        return cls(name, active, events)
+
+
+@attrs.define(eq=False)
+class Actor:
+    name: str
+    active: bool = True
+    channels: List[Channel] = attrs.Factory(list)
+
+    @classmethod
+    def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Actor:
+        """Parse the BVCD form of this data."""
+        [name_ind, channel_count] = binformat.struct_read('<hB', file)
+        name = string_pool[name_ind]
+        channels = []
+        for _ in range(channel_count):
+            channels.append(Channel.parse_binary(file, string_pool))
+        active = file.read(1) != b'\x00'
+        return cls(name, active, channels)
 
 
 @attrs.define(eq=False, kw_only=True)
@@ -305,15 +329,17 @@ class Scene:
     """A choreo scene."""
     events: List[Event] = attrs.Factory(list)
     actors: List[Actor] = attrs.Factory(list)
-    channels: List[Channel] = attrs.Factory(list)
-    map_name: str = ''
-    fps: int = 0
-    ramp: Curve = attrs.Factory(lambda curve: Curve([]))
-    time_zoom_lookup: Dict[int, int] = attrs.Factory(dict)
-    is_background: bool = False
+    ramp: Curve = attrs.Factory(lambda: Curve([]))
     ignore_phonemes: bool = False
-    is_sub_scene: bool = False
-    use_frame_snap: bool = False
+
+    # VCD only?
+    # channels: List[Channel] = attrs.Factory(list)
+    # map_name: str = ''
+    # fps: int = 0
+    # time_zoom_lookup: Dict[int, int] = attrs.Factory(dict)
+    # is_background: bool = False
+    # is_sub_scene: bool = False
+    # use_frame_snap: bool = False
 
     @classmethod
     def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Scene:
@@ -323,18 +349,18 @@ class Scene:
         version = file.read(1)[0]
         if version != 4:
             raise ValueError(f'Unknown version "{version}"!')
-        [
-            crc,
-            event_count,
-            actor_count,
-        ] = binformat.struct_read('<IBB', file)
+        [crc, event_count] = binformat.struct_read('<IB', file)
 
-        ramp = Curve.parse_binary(file)
         events = [
             Event.parse_binary(file, string_pool)
             for _ in range(event_count)
         ]
-        actors = []
+        [actor_count] = file.read(1)
+        actors = [
+            Actor.parse_binary(file, string_pool)
+            for _ in range(actor_count)
+        ]
+        ramp = Curve.parse_binary(file)
         ignore_phonemes = file.read(1) != b'\x00'
 
         return cls(
@@ -388,17 +414,11 @@ def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
         data = file.read(data_size)
         if data.startswith(b'LZMA'):
             data = binformat.decompress_lzma(data)
-        try:
-            scene = Scene.parse_binary(BytesIO(data), string_pool)
-        except Exception:
-            import traceback
-            traceback.print_exc()
-            scene = None
         scenes[crc] = Entry(
             '',
             crc,
             duration, last_speak,
             sounds,
-            scene,
+            Scene.parse_binary(BytesIO(data), string_pool),
         )
     return scenes
