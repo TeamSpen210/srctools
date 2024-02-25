@@ -87,7 +87,7 @@ class Interpolation(enum.Enum):
 
     @classmethod
     def parse_pair(cls, value: int) -> Tuple[Interpolation, Interpolation]:
-        """Parse two interpolation types, packed into a byte."""
+        """Parse two interpolation types, packed into a two-byte value."""
         return cls((value >> 8) & 0xff), cls(value & 0xff)
 
 
@@ -133,6 +133,7 @@ class CaptionType(enum.Enum):
 
 @attrs.define
 class ExpressionSample:
+    """Keyframes for animations."""
     time: float
     value: float
     curve_type: Tuple[Interpolation, Interpolation] = (Interpolation.DEFAULT, Interpolation.DEFAULT)
@@ -174,6 +175,51 @@ class Curve:
             [time, value] = binformat.struct_read(cls.BIN_FMT, file)
             ramp.append(ExpressionSample(time, value / 255.0))
         return cls(ramp)
+
+
+@attrs.define
+class FlexAnimTrack:
+    """Flex controller animation data."""
+    name: str
+    active: bool = True
+    min: float = 0.0
+    max: float = 1.0
+    mag_track: List[ExpressionSample] = attrs.Factory(list)
+    dir_track: Optional[List[ExpressionSample]] = None
+
+    @classmethod
+    def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> FlexAnimTrack:
+        """Parse the BVCD form of this data."""
+        [name_ind, flags, mins, maxes, track_count] = binformat.struct_read('<hBffh', file)
+        active = flags & 1 != 0
+        has_direction = flags & 2 != 0
+        mag_track = []
+        for _ in range(track_count):
+            [time, value, curve_type] = binformat.struct_read('<fBH', file)
+            mag_track.append(ExpressionSample(
+                time, value / 255.0,
+                Interpolation.parse_pair(curve_type),
+            ))
+
+        if flags & 2 != 0:
+            dir_track = []
+            [track_count] = binformat.struct_read('<H', file)
+            for _ in range(track_count):
+                [time, value, curve_type] = binformat.struct_read('<fBH', file)
+                dir_track.append(ExpressionSample(
+                    time, value / 255.0,
+                    Interpolation.parse_pair(curve_type),
+                ))
+        else:
+            dir_track = None
+        return cls(
+            name=string_pool[name_ind],
+            active=active,
+            min=mins,
+            max=maxes,
+            mag_track=mag_track,
+            dir_track=dir_track,
+        )
 
 
 # Using a Literal here means Event.__init__() doesn't allow Loop/Speak/Gesture as the type,
@@ -266,7 +312,10 @@ class Event:
             tag_name = tag_wav_name = None
 
         [flex_count] = file.read(1)
-        assert flex_count == 0  # TODO
+        flex_anims = [
+            FlexAnimTrack.parse_binary(file, string_pool)
+            for _ in range(flex_count)
+        ]
 
         if event_type is EventType.Gesture:
             return GestureEvent(
@@ -279,6 +328,7 @@ class Event:
                 dist_to_targ=dist_to_targ,
                 relative_tags=rel_tags,
                 timing_tags=timing_tags,
+                flex_anim_tracks=flex_anims,
                 absolute_playback_tags=abs_playback_tags,
                 absolute_original_tags=abs_orig_tags,
                 tag_name=tag_name,
@@ -299,6 +349,7 @@ class Event:
                 dist_to_targ=dist_to_targ,
                 relative_tags=rel_tags,
                 timing_tags=timing_tags,
+                flex_anim_tracks=flex_anims,
                 absolute_playback_tags=abs_playback_tags,
                 absolute_original_tags=abs_orig_tags,
                 tag_name=tag_name,
@@ -319,6 +370,7 @@ class Event:
                 dist_to_targ=dist_to_targ,
                 relative_tags=rel_tags,
                 timing_tags=timing_tags,
+                flex_anim_tracks=flex_anims,
                 absolute_playback_tags=abs_playback_tags,
                 absolute_original_tags=abs_orig_tags,
                 tag_name=tag_name,
@@ -342,6 +394,7 @@ class Event:
                 dist_to_targ=dist_to_targ,
                 relative_tags=rel_tags,
                 timing_tags=timing_tags,
+                flex_anim_tracks=flex_anims,
                 absolute_playback_tags=abs_playback_tags,
                 absolute_original_tags=abs_orig_tags,
                 tag_name=tag_name,
@@ -385,9 +438,10 @@ class Channel:
         """Parse the BVCD form of this data."""
         [name_ind, event_count] = binformat.struct_read('<hB', file)
         name = string_pool[name_ind]
-        events = []
-        for _ in range(event_count):
-            events.append(Event.parse_binary(file, string_pool))
+        events = [
+            Event.parse_binary(file, string_pool)
+            for _ in range(event_count)
+        ]
         active = file.read(1) != b'\x00'
         return cls(name, active, events)
 
@@ -403,9 +457,10 @@ class Actor:
         """Parse the BVCD form of this data."""
         [name_ind, channel_count] = binformat.struct_read('<hB', file)
         name = string_pool[name_ind]
-        channels = []
-        for _ in range(channel_count):
-            channels.append(Channel.parse_binary(file, string_pool))
+        channels = [
+            Channel.parse_binary(file, string_pool)
+            for _ in range(channel_count)
+        ]
         active = file.read(1) != b'\x00'
         return cls(name, active, channels)
 
@@ -471,8 +526,7 @@ def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
     if version not in (2, 3):
         raise ValueError("Unknown version {}!".format(version))
 
-    string_pool = binformat.read_offset_array(file, string_count)
-
+    string_pool = binformat.read_offset_array(file, string_count, 'latin1')
     scenes: ScenesImage = {}
 
     file.seek(scene_off)
