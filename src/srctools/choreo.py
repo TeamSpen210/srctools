@@ -10,6 +10,7 @@ import struct
 import attrs
 
 from srctools import binformat
+from srctools.tokenizer import BaseTokenizer, escape_text
 
 
 CRC = NewType('CRC', int)
@@ -116,13 +117,22 @@ class EventType(enum.Enum):
 
 class EventFlags(enum.Flag):
     """Flags for an event."""
-    Resume = 1 << 0
+    ResumeCondition = 1 << 0
     LockBodyFacing = 1 << 1
     FixedLength = 1<<2
     Active = 1<<3
     ForceShortMovement = 1<<4
     PlayOverScript = 1 << 5
 
+
+NAME_TO_EVENT_FLAG = {
+    'resumecondition': EventFlags.ResumeCondition,
+    'lockbodyfacing': EventFlags.LockBodyFacing,
+    'fixedlength': EventFlags.FixedLength,
+    'forceshortmovement': EventFlags.ForceShortMovement,
+    'playoverscript': EventFlags.PlayOverScript,
+    # Active is not included, works differently.
+}
 
 class CaptionType(enum.Enum):
     """Kind of closed captions."""
@@ -156,6 +166,17 @@ class Tag:
             [name_ind, value] = binformat.struct_read(structure, file)
             tags.append(Tag(string_pool[name_ind], value / divisor))
         return tags
+
+    @classmethod
+    def export_text(cls, file: IO[str], indent: str, tags: List[Tag], block_name: str) -> None:
+        """Export a list of tags into a text VCD file."""
+        if not tags:
+            return
+        file.write(f'{indent} {block_name}\n{indent}  {{\n')
+        for tag in tags:
+            file.write(f'{indent}  "{escape_text(tag.name)}" {tag.value}\n')
+            # TODO: lockable for timing tags.
+        file.write(f'{indent} }}\n')
 
 
 @attrs.define
@@ -272,9 +293,8 @@ class Event:
     relative_tags: List[Tag] = attrs.Factory(list)
     timing_tags: List[Tag] = attrs.Factory(list)
     absolute_playback_tags: List[Tag] = attrs.Factory(list)
-    absolute_original_tags: List[Tag] = attrs.Factory(list)
+    absolute_shifted_tags: List[Tag] = attrs.Factory(list)
     flex_anim_tracks: List[FlexAnimTrack] = attrs.Factory(list)
-
 
     @classmethod
     def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Event:
@@ -291,7 +311,7 @@ class Event:
         rel_tags = Tag.parse(file, string_pool, False)
         timing_tags = Tag.parse(file, string_pool, False)
         abs_playback_tags = Tag.parse(file, string_pool, True)
-        abs_orig_tags = Tag.parse(file, string_pool, True)
+        abs_shifted_tags = Tag.parse(file, string_pool, True)
 
         if event_type is EventType.Gesture:
             [gesture_sequence_duration] = binformat.struct_read('<f', file)
@@ -327,7 +347,7 @@ class Event:
                 timing_tags=timing_tags,
                 flex_anim_tracks=flex_anims,
                 absolute_playback_tags=abs_playback_tags,
-                absolute_original_tags=abs_orig_tags,
+                absolute_shifted_tags=abs_shifted_tags,
                 tag_name=tag_name,
                 tag_wav_name=tag_wav_name,
 
@@ -348,7 +368,7 @@ class Event:
                 timing_tags=timing_tags,
                 flex_anim_tracks=flex_anims,
                 absolute_playback_tags=abs_playback_tags,
-                absolute_original_tags=abs_orig_tags,
+                absolute_shifted_tags=abs_shifted_tags,
                 tag_name=tag_name,
                 tag_wav_name=tag_wav_name,
 
@@ -369,7 +389,7 @@ class Event:
                 timing_tags=timing_tags,
                 flex_anim_tracks=flex_anims,
                 absolute_playback_tags=abs_playback_tags,
-                absolute_original_tags=abs_orig_tags,
+                absolute_shifted_tags=abs_shifted_tags,
                 tag_name=tag_name,
                 tag_wav_name=tag_wav_name,
 
@@ -393,10 +413,58 @@ class Event:
                 timing_tags=timing_tags,
                 flex_anim_tracks=flex_anims,
                 absolute_playback_tags=abs_playback_tags,
-                absolute_original_tags=abs_orig_tags,
+                absolute_shifted_tags=abs_shifted_tags,
                 tag_name=tag_name,
                 tag_wav_name=tag_wav_name,
             )
+
+    def export_text(self, file: IO[str], indent: str) -> None:
+        """Write this to a text VCD file."""
+        file.write(f'{indent}event {self.type.name.lower()} "{escape_text(self.name)}"\n')
+        file.write(f'{indent} {{\n')
+        file.write(f'{indent} time {self.start_time} {self.end_time}\n')
+        file.write(f'{indent} param "{escape_text(self.parameters[0])}"\n')
+        if self.parameters[1]:
+            file.write(f'{indent} param2 "{escape_text(self.parameters[1])}"\n')
+        if self.parameters[2]:
+            file.write(f'{indent} param3 "{escape_text(self.parameters[2])}"\n')
+        # TODO ramp, pitch, yaw
+        if self.dist_to_targ > 0.0:
+            file.write(f'{indent} distancetotarget {self.dist_to_targ:.2f}\n')
+        for text, flag in NAME_TO_EVENT_FLAG.items():
+            if flag in self.flags:
+                file.write(f'{indent} {text}\n')
+        if EventFlags.Active not in self.flags:
+            file.write(f'{indent} active 0\n')
+        Tag.export_text(file, indent, self.relative_tags, 'tags')
+        Tag.export_text(file, indent, self.timing_tags, 'flextimingtags')
+        Tag.export_text(file, indent, self.absolute_playback_tags, 'absolutetags playback_time')
+        Tag.export_text(file, indent, self.absolute_shifted_tags, 'absolutetags shifted_time')
+
+        if isinstance(self, GestureEvent) and self.gesture_sequence_duration:
+            file.write(f'{indent} sequenceduration {self.gesture_sequence_duration}\n')
+
+        if self.tag_name is not None or self.tag_wav_name is not None:
+            file.write(
+                f'{indent} relativetag '
+                f'"{escape_text(self.tag_name or "")}" '
+                f'"{escape_text(self.tag_wav_name or "")}"\n'
+            )
+        # TODO flex anims
+
+        if isinstance(self, LoopEvent):
+            file.write(f'{indent} loopcount "{self.loop_count}"\n')
+        if isinstance(self, SpeakEvent):
+            file.write(f'{indent} cctype "{self.caption_type.name.lower()}"\n')
+            file.write(f'{indent} cctoken "{self.cc_token}"\n')
+            if self.caption_type is not CaptionType.Disabled and self.use_combined_file:
+                file.write(f'{indent} cc_usingcombinedfile\n')
+            if self.use_gender_token:
+                file.write(f'{indent} cc_combinedusesgender\n')
+            if self.suppress_caption_attenuation:
+                file.write(f'{indent} cc_noattenuate\n')
+
+        file.write(f'{indent} }}\n')
 
 
 @attrs.define(eq=False, kw_only=True)
@@ -442,6 +510,17 @@ class Channel:
         active = file.read(1) != b'\x00'
         return cls(name, active, events)
 
+    def export_text(self, file: IO[str], indent: str) -> None:
+        """Write this to a text VCD file."""
+        file.write(f'{indent}channel "{escape_text(self.name)}"\n')
+        file.write(f'{indent} {{\n')
+        sub_indent = indent + ' '
+        for event in self.events:
+            event.export_text(file, sub_indent)
+        if not self.active:
+            file.write(f'{indent} active "0"\n')
+        file.write(f'{indent} }}\n\n')
+
 
 @attrs.define(eq=False)
 class Actor:
@@ -460,6 +539,18 @@ class Actor:
         ]
         active = file.read(1) != b'\x00'
         return cls(name, active, channels)
+
+    def export_text(self, file: IO[str], indent: str) -> None:
+        """Write this to a text VCD file."""
+        file.write(f'{indent}actor "{escape_text(self.name)}"\n')
+        file.write(f'{indent} {{\n')
+        sub_indent = indent + ' '
+        for channel in self.channels:
+            channel.export_text(file, sub_indent)
+        # Todo Faceposermodel
+        if not self.active:
+            file.write(f'{indent} active "0"\n')
+        file.write(f'{indent} }}\n\n')
 
 
 @attrs.define(eq=False, kw_only=True)
@@ -507,6 +598,13 @@ class Scene:
             ramp=ramp,
             ignore_phonemes=ignore_phonemes,
         )
+
+    def export_text(self, file: IO[str]) -> None:
+        """Write this to a text VCD file."""
+        for event in self.events:
+            event.export_text(file, '')
+        for actor in self.actors:
+            actor.export_text(file, '')
 
 
 def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
