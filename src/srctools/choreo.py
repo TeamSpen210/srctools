@@ -1,7 +1,7 @@
 """Parses VCD choreo scenes, as well as data in scenes.image."""
 from __future__ import annotations
 from typing import ClassVar, List, IO, NewType, Dict, Optional, Tuple
-from typing_extensions import TypeAlias
+from typing_extensions import Literal, TypeAlias
 
 from io import BytesIO
 import enum
@@ -176,18 +176,47 @@ class Curve:
         return cls(ramp)
 
 
+# Using a Literal here means Event.__init__() doesn't allow Loop/Speak/Gesture as the type,
+# but the attribute does allow those as results meaning the subclasses are still valid.
+def _validate_base_event_type(value: Literal[
+    EventType.Unspecified,
+    EventType.Section,
+    EventType.Expression,
+    EventType.LookAt,
+    EventType.MoveTo,
+    EventType.Sequence,
+    EventType.Face,
+    EventType.FireTrigger,
+    EventType.FlexAnimation,
+    EventType.SubScene,
+    EventType.Interrupt,
+    EventType.StopPoint,
+    EventType.PermitResponses,
+    EventType.Generic,
+    EventType.Camera,
+    EventType.Script,
+]) -> EventType:
+    """Validate event types that can be passed to the base Event class.
+
+    We don't allow those that require additional attributes (and therefore a subclass).
+    """
+    if value.name in {'Loop', 'Speak', 'Gesture'}:
+        raise ValueError(
+            'Event() must not be instantiated with '
+            f'event type {value}, use {value.name}Event() instead.'
+        )
+    return value
+
+
 @attrs.define(eq=False, kw_only=True)
 class Event:
     """An event is an action that occurs in a choreo scene's timeline."""
-    type: EventType
-    caption_type: CaptionType = CaptionType.Master
+    type: EventType = attrs.field(converter=_validate_base_event_type)
     name: str
     parameters: tuple[str, str, str]
     start_time: float
     end_time: float
-    gesture_sequence_duration: float
 
-    loop_count: int = 0
     ramp: Curve
     tag_name: Optional[str] = None
     tag_wav_name: Optional[str] = None
@@ -200,13 +229,9 @@ class Event:
     sub_scene: str = ''
 
     dist_to_targ: float = 0
-    cc_token: str = ''
     default_curve_type: Tuple[Interpolation, Interpolation] = (Interpolation.DEFAULT, Interpolation.DEFAULT)
 
     flags: EventFlags = EventFlags(0)
-    suppress_caption_attenuation: bool = False
-    use_combined_file: bool = False
-    use_gender_token: bool = False
 
     @classmethod
     def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Event:
@@ -216,6 +241,7 @@ class Event:
             param_ind1, param_ind2, param_ind3,
         ] = binformat.struct_read('<bhffhhh', file)
         event_type = EventType(type_int)
+        parameters = (string_pool[param_ind1], string_pool[param_ind2], string_pool[param_ind3])
         ramp = Curve.parse_binary(file)
         [flags, dist_to_targ] = binformat.struct_read('<Bf', file)
 
@@ -227,7 +253,7 @@ class Event:
         if event_type is EventType.Gesture:
             [gesture_sequence_duration] = binformat.struct_read('<f', file)
         else:
-            gesture_sequence_duration = 0.0
+            gesture_sequence_duration = 0.0  # Never used.
 
         tag_name: Optional[str]
         tag_wav_name: Optional[str]
@@ -242,50 +268,110 @@ class Event:
         [flex_count] = file.read(1)
         assert flex_count == 0  # TODO
 
+        if event_type is EventType.Gesture:
+            return GestureEvent(
+                name=string_pool[name_ind],
+                start_time=start_time,
+                end_time=end_time,
+                parameters=parameters,
+                ramp=ramp,
+                flags=EventFlags(flags),
+                dist_to_targ=dist_to_targ,
+                relative_tags=rel_tags,
+                timing_tags=timing_tags,
+                absolute_playback_tags=abs_playback_tags,
+                absolute_original_tags=abs_orig_tags,
+                tag_name=tag_name,
+                tag_wav_name=tag_wav_name,
+
+                gesture_sequence_duration=gesture_sequence_duration,
+            )
         if event_type is EventType.Loop:
             [loop_count] = binformat.struct_read('b', file)
-        else:
-            loop_count = 0.0
 
-        if event_type is EventType.Speak:
-            [
-                cc_type_ind,
-                cc_token_ind,
-                speak_flags,
-            ] = binformat.struct_read('<Bhb', file)
-            cc_type = CaptionType(cc_type_ind)
-            cc_token = string_pool[cc_token_ind]
-            use_combined_file = (speak_flags & 1) != 0
-            use_gender_token = (speak_flags & 2) != 0
-            suppress_caption_attn = (speak_flags & 4) != 0
-        else:
-            cc_type = CaptionType.Master
-            cc_token = ''
-            use_combined_file = use_gender_token = suppress_caption_attn = False
+            return LoopEvent(
+                name=string_pool[name_ind],
+                start_time=start_time,
+                end_time=end_time,
+                parameters=parameters,
+                ramp=ramp,
+                flags=EventFlags(flags),
+                dist_to_targ=dist_to_targ,
+                relative_tags=rel_tags,
+                timing_tags=timing_tags,
+                absolute_playback_tags=abs_playback_tags,
+                absolute_original_tags=abs_orig_tags,
+                tag_name=tag_name,
+                tag_wav_name=tag_wav_name,
 
-        return Event(
-            type=event_type,
-            name=string_pool[name_ind],
-            start_time=start_time,
-            end_time=end_time,
-            parameters=(string_pool[param_ind1], string_pool[param_ind2], string_pool[param_ind3]),
-            ramp=ramp,
-            flags=EventFlags(flags),
-            dist_to_targ=dist_to_targ,
-            relative_tags=rel_tags,
-            timing_tags=timing_tags,
-            absolute_playback_tags=abs_playback_tags,
-            absolute_original_tags=abs_orig_tags,
-            gesture_sequence_duration=gesture_sequence_duration,
-            tag_name=tag_name,
-            tag_wav_name=tag_wav_name,
-            loop_count=loop_count,
-            caption_type=cc_type,
-            cc_token=cc_token,
-            use_combined_file=use_combined_file,
-            use_gender_token=use_gender_token,
-            suppress_caption_attenuation=suppress_caption_attn,
-        )
+                loop_count=loop_count,
+            )
+        elif event_type is EventType.Speak:
+            [cc_type_ind, cc_token_ind, speak_flags] = binformat.struct_read('<Bhb', file)
+
+            return SpeakEvent(
+                name=string_pool[name_ind],
+                start_time=start_time,
+                end_time=end_time,
+                parameters=parameters,
+                ramp=ramp,
+                flags=EventFlags(flags),
+                dist_to_targ=dist_to_targ,
+                relative_tags=rel_tags,
+                timing_tags=timing_tags,
+                absolute_playback_tags=abs_playback_tags,
+                absolute_original_tags=abs_orig_tags,
+                tag_name=tag_name,
+                tag_wav_name=tag_wav_name,
+
+                caption_type=CaptionType(cc_type_ind),
+                cc_token=string_pool[cc_token_ind],
+                use_combined_file=(speak_flags & 1) != 0,
+                use_gender_token=(speak_flags & 2) != 0,
+                suppress_caption_attenuation=(speak_flags & 4) != 0,
+            )
+        else:
+            return Event(
+                type=event_type,
+                name=string_pool[name_ind],
+                start_time=start_time,
+                end_time=end_time,
+                parameters=parameters,
+                ramp=ramp,
+                flags=EventFlags(flags),
+                dist_to_targ=dist_to_targ,
+                relative_tags=rel_tags,
+                timing_tags=timing_tags,
+                absolute_playback_tags=abs_playback_tags,
+                absolute_original_tags=abs_orig_tags,
+                tag_name=tag_name,
+                tag_wav_name=tag_wav_name,
+            )
+
+
+@attrs.define(eq=False, kw_only=True)
+class GestureEvent(Event):
+    """Additional parameters for Gesture events."""
+    type: Literal[EventType.Gesture] = attrs.field(default=EventType.Gesture, init=False, repr=False)
+    gesture_sequence_duration: float
+
+
+@attrs.define(eq=False, kw_only=True)
+class LoopEvent(Event):
+    """Additional parameters for Loop events."""
+    type: Literal[EventType.Loop] = attrs.field(default=EventType.Loop, init=False, repr=False)
+    loop_count: int = 0
+
+
+@attrs.define(eq=False, kw_only=True)
+class SpeakEvent(Event):
+    """Additional parameters for Speak events."""
+    type: Literal[EventType.Speak] = attrs.field(default=EventType.Speak, init=False, repr=False)
+    caption_type: CaptionType = CaptionType.Master
+    cc_token: str = ''
+    suppress_caption_attenuation: bool = False
+    use_combined_file: bool = False
+    use_gender_token: bool = False
 
 
 @attrs.define(eq=False)
