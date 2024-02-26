@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from typing import Callable, ClassVar, Iterable, List, IO, NewType, Dict, Optional, Tuple, Union
-from typing_extensions import Literal, TypeAlias
+from typing_extensions import Literal, Self, TypeAlias
 
 from io import BytesIO
 import enum
@@ -218,7 +218,7 @@ class Tag:
     value: float
 
     @classmethod
-    def parse(cls, file: IO[bytes], string_pool: List[str], double: bool) -> List[Tag]:
+    def parse(cls, file: IO[bytes], string_pool: List[str], double: bool) -> List[Self]:
         """Parse a list of tags from the file. If double is set, the value is 16-bit not 8-bit."""
         [tag_count] = file.read(1)
         tags = []
@@ -226,19 +226,28 @@ class Tag:
         structure = struct.Struct('<hH' if double else '<hB')
         for _ in range(tag_count):
             [name_ind, value] = binformat.struct_read(structure, file)
-            tags.append(Tag(string_pool[name_ind], value / divisor))
+            tags.append(cls(string_pool[name_ind], value / divisor))
         return tags
 
     @classmethod
-    def export_text(cls, file: IO[str], indent: str, tags: List[Tag], block_name: str) -> None:
+    def export_text(cls, file: IO[str], indent: str, tags: List[Self], block_name: str) -> None:
         """Export a list of tags into a text VCD file."""
         if not tags:
             return
         file.write(f'{indent} {block_name}\n{indent}  {{\n')
         for tag in tags:
-            file.write(f'{indent}  "{escape_text(tag.name)}" {tag.value}\n')
-            # TODO: lockable for timing tags.
+            if isinstance(tag, TimingTag):
+                lock = ' 1' if tag.locked else ' 0'
+            else:
+                lock = ''
+            file.write(f'{indent}  "{escape_text(tag.name)}" {tag.value}{lock}\n')
         file.write(f'{indent}  }}\n')
+
+
+@attrs.define
+class TimingTag(Tag):
+    """Flex animation timing tags additionally can be locked."""
+    locked: bool = False
 
 
 @attrs.frozen
@@ -260,7 +269,7 @@ class Curve:
     right: CurveEdge = CurveEdge(False)
 
     @classmethod
-    def parse_binary(cls, file: IO[bytes]) -> Curve:
+    def parse_binary(cls, file: IO[bytes]) -> Self:
         """Parse the BVCD form of this data."""
         [count] = file.read(1)
         ramp = []
@@ -407,7 +416,7 @@ class Event:
     dist_to_targ: float = 0
 
     relative_tags: List[Tag] = attrs.Factory(list)
-    timing_tags: List[Tag] = attrs.Factory(list)
+    timing_tags: List[TimingTag] = attrs.Factory(list)
     absolute_playback_tags: List[Tag] = attrs.Factory(list)
     absolute_shifted_tags: List[Tag] = attrs.Factory(list)
     flex_anim_tracks: List[FlexAnimTrack] = attrs.Factory(list)
@@ -430,7 +439,7 @@ class Event:
         [flags, dist_to_targ] = binformat.struct_read('<Bf', file)
 
         rel_tags = Tag.parse(file, string_pool, False)
-        timing_tags = Tag.parse(file, string_pool, False)
+        timing_tags = TimingTag.parse(file, string_pool, False)
         abs_playback_tags = Tag.parse(file, string_pool, True)
         abs_shifted_tags = Tag.parse(file, string_pool, True)
 
@@ -563,7 +572,7 @@ class Event:
         if EventFlags.Active not in self.flags:
             file.write(f'{indent} active 0\n')
         Tag.export_text(file, indent, self.relative_tags, 'tags')
-        Tag.export_text(file, indent, self.timing_tags, 'flextimingtags')
+        TimingTag.export_text(file, indent, self.timing_tags, 'flextimingtags')
         Tag.export_text(file, indent, self.absolute_playback_tags, 'absolutetags playback_time')
         Tag.export_text(file, indent, self.absolute_shifted_tags, 'absolutetags shifted_time')
 
@@ -634,7 +643,7 @@ class Channel:
     events: List[Event] = attrs.Factory(list)
 
     @classmethod
-    def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Channel:
+    def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Self:
         """Parse the BVCD form of this data."""
         [name_ind, event_count] = binformat.struct_read('<hB', file)
         name = string_pool[name_ind]
@@ -666,7 +675,7 @@ class Actor:
     faceposer_model: str = ''
 
     @classmethod
-    def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Actor:
+    def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Self:
         """Parse the BVCD form of this data."""
         [name_ind, channel_count] = binformat.struct_read('<hB', file)
         name = string_pool[name_ind]
@@ -709,7 +718,7 @@ class Scene:
     # use_frame_snap: bool = False
 
     @classmethod
-    def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Scene:
+    def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Self:
         """Parse the BVCD form of this data."""
         if file.read(4) != b'bvcd':
             raise ValueError('File is not a binary VCD scene!')
