@@ -1,13 +1,13 @@
 """Parses VCD choreo scenes, as well as data in scenes.image."""
 from __future__ import annotations
 
-import re
-from typing import ClassVar, List, IO, NewType, Dict, Optional, Tuple
+from typing import Callable, ClassVar, Iterable, List, IO, NewType, Dict, Optional, Tuple, Union
 from typing_extensions import Literal, TypeAlias
 
 from io import BytesIO
 import enum
 import struct
+import re
 
 import attrs
 
@@ -36,9 +36,12 @@ def _update_checksum(choreo: Entry, attr: attrs.Attribute[str], value: str) -> N
         choreo.checksum = checksum_filename(value)
 
 
-@attrs.define
+@attrs.define(eq=False)
 class Entry:
-    """An entry in ``scenes.image``, containing useful metadata about a scene as well as the scene itself."""
+    """An entry in ``scenes.image``, containing useful metadata about a scene.
+
+    The data attribute may be accessed to parse the scene.
+    """
     #: The filename of the choreo scene. If parsed from scenes.image, only a CRC is available.
     #: When set, this automatically recalculates the checksum.
     filename: str = attrs.field(validator=_update_checksum)
@@ -46,7 +49,8 @@ class Entry:
     duration_ms: int  # Duration in milliseconds.
     last_speak_ms: int  # Time at which the last voice line ends.
     sounds: List[str]  # List of sounds it uses.
-    data: Scene = attrs.field(repr=False)
+    # Either an already parsed scene, or the raw bytes plus the whole string pool.
+    _data: Union[Scene, Tuple[bytes, List[str]]] = attrs.field(repr=False)
 
     @property
     def duration(self) -> float:
@@ -67,6 +71,18 @@ class Entry:
     def last_speak(self, value: float) -> None:
         """Set the last-speak time (in seconds). This is rounded to the nearest millisecond."""
         self.last_speak_ms = round(value * 1000.0)
+
+    @property
+    def data(self) -> Scene:
+        """The scene for this entry. When accessed this will parse the data if required."""
+        if isinstance(self._data, tuple):
+            data, string_pool = self._data
+            self._data = Scene.parse_binary(BytesIO(data), string_pool)
+        return self._data
+
+    @data.setter
+    def data(self, scene: Scene) -> None:
+        self._data = scene
 
 
 class Interpolation(enum.Enum):
@@ -530,6 +546,8 @@ class Event:
                 f'"{escape_text(self.tag_wav_name or "")}"\n'
             )
         # TODO flex anims
+        if self.flex_anim_tracks:
+            raise NotImplementedError('Flex animation export')
 
         if isinstance(self, LoopEvent):
             file.write(f'{indent} loopcount "{self.loop_count}"\n')
@@ -689,6 +707,11 @@ class Scene:
         for actor in self.actors:
             actor.export_text(file, '')
 
+    def export_binary(self, add_to_pool: Callable[[str], int]) -> bytes:
+        """Write out BVCD data for this scene."""
+        # TODO
+        raise NotImplementedError('Re-exporting binary scenes.')
+
 
 def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
     """Parse the ``scenes.image`` file, extracting all the choreo data."""
@@ -709,7 +732,7 @@ def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
 
     file.seek(scene_off)
     scene_data: List[Tuple[CRC, int, int, int]] = [
-        binformat.struct_read('<4i', file)
+        binformat.struct_read('<Iiii', file)
         for _ in range(scene_count)
     ]
 
@@ -720,23 +743,112 @@ def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
     ) in scene_data:
         file.seek(summary_off)
         if version == 3:
-            [duration, last_speak, sound_count] = binformat.struct_read('<3i', file)
+            [duration, last_speak, sound_count] = binformat.struct_read('<Iii', file)
         else:
-            [duration, sound_count] = binformat.struct_read('<2i', file)
+            [duration, sound_count] = binformat.struct_read('<Ii', file)
             last_speak = duration  # Assume it's the whole choreo scene.
         sounds = [
             string_pool[i]
             for i in binformat.struct_read('<{}i'.format(sound_count), file)
         ]
         file.seek(data_off)
-        data = file.read(data_size)
-        if data.startswith(b'LZMA'):
-            data = binformat.decompress_lzma(data)
+        data = binformat.decompress_lzma(file.read(data_size))
         scenes[crc] = Entry(
             '',
             crc,
             duration, last_speak,
             sounds,
-            Scene.parse_binary(BytesIO(data), string_pool),
+            (data, string_pool),
         )
     return scenes
+
+
+# noinspection PyProtectedMember
+def save_scenes_image(
+    file: IO[bytes],
+    scenes: Union[ScenesImage, Iterable[Entry]],
+    *,
+    version: Literal[2, 3] = 3,
+    encoding: str = 'latin1',
+) -> None:
+    """Write a new ``scenes.image`` file.
+    
+    Binary scenes use a common string pool, meaning that all unparsed scenes must share their pool
+    to be copied over directly.
+    """
+    if isinstance(scenes, dict):
+        scene_list = list(scenes.values())
+    else:
+        scene_list = list(scenes)
+
+    # First, loop through and see if we do have a string pool to reuse.
+    pool: Optional[List[str]] = None
+    two_pools = False
+    for entry in scene_list:
+        if isinstance(entry._data, Scene):
+            continue
+        data, entry_pool = entry._data
+        if pool is None:
+            pool = entry_pool
+        elif pool is not entry_pool:
+            two_pools = True
+            pool = None
+            break
+    if pool is None:
+        pool = []
+
+    add_to_pool = binformat.find_or_insert(pool)
+    deferred = binformat.DeferredWrites(file)
+
+    # Now, go through every scene, writing their data so our pool is filled.
+    entry_to_data: dict[Entry, bytes] = {}
+    for entry in scene_list:
+        for sound in entry.sounds:
+            add_to_pool(sound)
+        if not two_pools and isinstance(entry._data, tuple):
+            data, entry_pool = entry._data
+            entry_to_data[entry] = data
+            assert entry_pool is pool
+        else:
+            # Parse if required, then export.
+            entry_to_data[entry] = entry.data.export_binary(add_to_pool)
+    # The entry CRCs must be sorted, since the game uses a binary search.
+    scene_list.sort(key=lambda entry: entry.checksum)
+
+    # Finally we can start writing to the file.
+    file.write(struct.pack('<4siii', b'VSIF', version, len(scene_list), len(pool)))
+    deferred.defer('scene_offset', '<i', write=True)
+    # Defer the block of offsets, write the strings, then come back.
+    pool_offset_size = len(pool) * binformat.SIZE_INT
+    deferred.defer('pool_offsets', f'<{len(pool)}s', write=True)
+    offsets = []
+    for string in pool:
+        offsets.append(file.tell())
+        file.write(string.encode(encoding) + b'\x00')
+    deferred.set_data('pool_offsets', binformat.write_array('<i', offsets))
+
+    deferred.set_data('scene_offset', file.tell())
+    for entry in scene_list:
+        file.write(struct.pack('<I', entry.checksum))
+        deferred.defer(('data', entry.checksum), '<ii', write=True)
+        deferred.defer(('summary', entry.checksum), '<i', write=True)
+    # Now write the summaries.
+    for entry in scene_list:
+        deferred.set_data(('summary', entry.checksum), file.tell())
+        if version == 3:
+            file.write(struct.pack('<Iii', entry.duration_ms, entry.last_speak_ms, len(entry.sounds)))
+        else:
+            file.write(struct.pack('<Ii', entry.duration_ms, len(entry.sounds)))
+        for sound in entry.sounds:
+            file.write(struct.pack('<i', add_to_pool(sound)))
+    # Finally, write each data.
+    for entry in scene_list:
+        data = entry_to_data[entry]
+        compressed = binformat.compress_lzma(data)
+        if len(compressed) < len(data):
+            data = compressed
+        deferred.set_data(('data', entry.checksum), file.tell(), len(data))
+        file.write(data)
+
+    deferred.write()
+    assert len(offsets) == len(pool), 'Pool changed size after being written!'
