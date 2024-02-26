@@ -707,6 +707,8 @@ class Scene:
     actors: List[Actor] = attrs.Factory(list)
     ramp: Curve = attrs.Factory(lambda: Curve([]))
     ignore_phonemes: bool = False
+    # CRC for the original VCD that this scene was parsed from.
+    text_crc: int = 0
 
     # VCD only?
     # channels: List[Channel] = attrs.Factory(list)
@@ -725,7 +727,7 @@ class Scene:
         version = file.read(1)[0]
         if version != 4:
             raise ValueError(f'Unknown version "{version}"!')
-        [crc, event_count] = binformat.struct_read('<IB', file)
+        [text_crc, event_count] = binformat.struct_read('<IB', file)
 
         events = [
             Event.parse_binary(file, string_pool)
@@ -743,6 +745,7 @@ class Scene:
             events=events,
             actors=actors,
             ramp=ramp,
+            text_crc=text_crc,
             ignore_phonemes=ignore_phonemes,
         )
 
