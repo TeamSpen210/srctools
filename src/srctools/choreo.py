@@ -1,7 +1,10 @@
 """Parses VCD choreo scenes, as well as data in scenes.image."""
 from __future__ import annotations
 
-from typing import Callable, ClassVar, Iterable, List, IO, NewType, Dict, Optional, Tuple, Union
+from typing import (
+    Callable, ClassVar, Final, Iterable, List, IO, NewType, Dict, Optional, Tuple,
+    Union,
+)
 from typing_extensions import Literal, Self, TypeAlias
 
 from io import BytesIO
@@ -17,6 +20,8 @@ from srctools.tokenizer import BaseTokenizer, escape_text
 
 CRC = NewType('CRC', int)
 ScenesImage: TypeAlias = Dict[CRC, 'Entry']
+# Only known binary version.
+BINARY_VERSION: Final = 4
 
 
 def checksum_filename(filename: str) -> CRC:
@@ -145,6 +150,10 @@ class CurveType:
         """Parse two interpolation types, packed into a two-byte value."""
         return cls(Interpolation((value >> 8) & 0xff), Interpolation(value & 0xff))
 
+    def export_binary(self) -> int:
+        """Return the two interpolation types packed into a two-byte value."""
+        return (self.first.value << 8) | self.second.value
+
     def __str__(self) -> str:
         """Return the associated name for this pair."""
         return f'curve_{INTERP_TO_NAME[self.first]}_to_curve_{INTERP_TO_NAME[self.second]}'
@@ -214,20 +223,31 @@ class ExpressionSample:
 @attrs.define
 class Tag:
     """A tag labels a particular location in an event."""
+    _FMT: ClassVar[struct.Struct] = struct.Struct('<hB')
+    _FACTOR: ClassVar[float] = 255.0
+    _MAX: ClassVar[int] = 255
+
     name: str
-    value: float
+    value: float = attrs.field(validator=[attrs.validators.ge(0.0), attrs.validators.le(1.0)])
 
     @classmethod
     def parse(cls, file: IO[bytes], string_pool: List[str], double: bool) -> List[Self]:
         """Parse a list of tags from the file. If double is set, the value is 16-bit not 8-bit."""
         [tag_count] = file.read(1)
         tags = []
-        divisor = 4096.0 if double else 255.0
-        structure = struct.Struct('<hH' if double else '<hB')
         for _ in range(tag_count):
-            [name_ind, value] = binformat.struct_read(structure, file)
-            tags.append(cls(string_pool[name_ind], value / divisor))
+            [name_ind, value] = binformat.struct_read(cls._FMT, file)
+            tags.append(cls(string_pool[name_ind], value / cls._FACTOR))
         return tags
+
+    @classmethod
+    def export_binary(cls, file: IO[bytes], add_to_pool: Callable[[str], int], tags: List[Self]) -> None:
+        """Write this to a binary BVCD block."""
+        file.write(struct.pack('B', len(tags)))
+        for tag in tags:
+            value = min(cls._MAX, max(0, round(tag.value * cls._FACTOR)))
+            file.write(cls._FMT.pack(add_to_pool(tag.name), value))
+            # Timing tags do not save the locked state.
 
     @classmethod
     def export_text(cls, file: IO[str], indent: str, tags: List[Self], block_name: str) -> None:
@@ -247,7 +267,17 @@ class Tag:
 @attrs.define
 class TimingTag(Tag):
     """Flex animation timing tags additionally can be locked."""
+    # VCD only.
     locked: bool = False
+
+
+class AbsoluteTag(Tag):
+    """Absolute tags have an increased range and precision."""
+    _FMT: ClassVar[struct.Struct] = struct.Struct('<hH')
+    _FACTOR: ClassVar[float] = 4096.0
+    _MAX: ClassVar[int] = 65535
+
+    value: float = attrs.field(validator=[attrs.validators.ge(0.0), attrs.validators.lt(16.0)])
 
 
 @attrs.frozen
@@ -277,6 +307,13 @@ class Curve:
             [time, value] = binformat.struct_read(cls.BIN_FMT, file)
             ramp.append(ExpressionSample(time, value / 255.0))
         return cls(ramp)
+
+    def export_binary(self, file: IO[bytes]) -> None:
+        """Write this to a binary BVCD block."""
+        file.write(struct.pack('B', len(self.ramp)))
+        for sample in self.ramp:
+            value = min(255, max(0, round(sample.value * 255.0)))
+            file.write(self.BIN_FMT.pack(sample.time, value))
 
     def export_text(self, file: IO[str], indent: str, name: str) -> None:
         """Write this to a text VCD file."""
@@ -322,7 +359,7 @@ class FlexAnimTrack:
                 CurveType.parse_binary(curve_type),
             ))
 
-        if flags & 2 != 0:
+        if has_direction:
             dir_track = []
             [track_count] = binformat.struct_read('<H', file)
             for _ in range(track_count):
@@ -341,6 +378,33 @@ class FlexAnimTrack:
             mag_track=mag_track,
             dir_track=dir_track,
         )
+
+    def export_binary(self, file: IO[bytes], add_to_pool: Callable[[str], int]) -> None:
+        """Write this to a binary BVCD block."""
+        flags = 1 * self.active | 2 * (self.dir_track is not None)
+        file.write(struct.pack(
+            '<hBffh',
+            add_to_pool(self.name),
+            flags,
+            self.min, self.max,
+            len(self.mag_track),
+        ))
+        for track in self.mag_track:
+            value = min(255, max(0, round(track.value * 255.0)))
+            file.write(struct.pack(
+                '<fBh',
+                track.time, track.value,
+                track.curve_type.export_binary(),
+            ))
+        if self.dir_track is not None:
+            file.write(struct.pack('<H', len(self.dir_track)))
+            for track in self.dir_track:
+                value = min(255, max(0, round(track.value * 255.0)))
+                file.write(struct.pack(
+                    '<fBh',
+                    track.time, track.value,
+                    track.curve_type.export_binary(),
+                ))
 
     def export_text(self, file: IO[str], indent: str, default_curve: CurveType) -> None:
         """Write this to a text VCD file."""
@@ -417,8 +481,8 @@ class Event:
 
     relative_tags: List[Tag] = attrs.Factory(list)
     timing_tags: List[TimingTag] = attrs.Factory(list)
-    absolute_playback_tags: List[Tag] = attrs.Factory(list)
-    absolute_shifted_tags: List[Tag] = attrs.Factory(list)
+    absolute_playback_tags: List[AbsoluteTag] = attrs.Factory(list)
+    absolute_shifted_tags: List[AbsoluteTag] = attrs.Factory(list)
     flex_anim_tracks: List[FlexAnimTrack] = attrs.Factory(list)
 
     # Only used in VCDs.
@@ -440,8 +504,8 @@ class Event:
 
         rel_tags = Tag.parse(file, string_pool, False)
         timing_tags = TimingTag.parse(file, string_pool, False)
-        abs_playback_tags = Tag.parse(file, string_pool, True)
-        abs_shifted_tags = Tag.parse(file, string_pool, True)
+        abs_playback_tags = AbsoluteTag.parse(file, string_pool, True)
+        abs_shifted_tags = AbsoluteTag.parse(file, string_pool, True)
 
         if event_type is EventType.Gesture:
             [gesture_sequence_duration] = binformat.struct_read('<f', file)
@@ -548,6 +612,52 @@ class Event:
                 tag_wav_name=tag_wav_name,
             )
 
+    def export_binary(self, file: IO[bytes], add_to_pool: Callable[[str], int]) -> None:
+        """Write this to a binary BVCD block."""
+        file.write(struct.pack(
+            '<bhffhhh',
+            self.type.value,
+            add_to_pool(self.name),
+            self.start_time, self.end_time,
+            add_to_pool(self.parameters[0]),
+            add_to_pool(self.parameters[1]),
+            add_to_pool(self.parameters[2]),
+        ))
+        self.ramp.export_binary(file)
+        file.write(struct.pack('<Bf', self.flags.value, self.dist_to_targ))
+        Tag.export_binary(file, add_to_pool, self.relative_tags)
+        TimingTag.export_binary(file, add_to_pool, self.timing_tags)
+        AbsoluteTag.export_binary(file, add_to_pool, self.absolute_playback_tags)
+        AbsoluteTag.export_binary(file, add_to_pool, self.absolute_shifted_tags)
+        if isinstance(self, GestureEvent):
+            file.write(struct.pack('f', self.gesture_sequence_duration))
+        if self.tag_name is not None or self.tag_wav_name is not None:
+            file.write(b'\x01')
+            file.write(struct.pack(
+                '<Bhh', True,
+                add_to_pool(self.tag_name or ''),
+                add_to_pool(self.tag_wav_name or '')
+            ))
+        else:
+            file.write(b'\x00')
+        file.write(struct.pack('<B', len(self.flex_anim_tracks)))
+        for track in self.flex_anim_tracks:
+            track.export_binary(file, add_to_pool)
+        if isinstance(self, LoopEvent):
+            file.write(struct.pack('<b', self.loop_count))
+        elif isinstance(self, SpeakEvent):
+            flags = (
+                1 * (self.caption_type is not CaptionType.Disabled and self.use_combined_file)
+                | 2 * self.use_gender_token
+                | 4 * self.suppress_caption_attenuation
+            )
+            file.write(struct.pack(
+                '<bhb',
+                self.caption_type.value,
+                add_to_pool(self.cc_token),
+                flags,
+            ))
+
     def export_text(self, file: IO[str], indent: str) -> None:
         """Write this to a text VCD file."""
         file.write(f'{indent}event {self.type.name.lower()} "{escape_text(self.name)}"\n')
@@ -573,8 +683,8 @@ class Event:
             file.write(f'{indent} active 0\n')
         Tag.export_text(file, indent, self.relative_tags, 'tags')
         TimingTag.export_text(file, indent, self.timing_tags, 'flextimingtags')
-        Tag.export_text(file, indent, self.absolute_playback_tags, 'absolutetags playback_time')
-        Tag.export_text(file, indent, self.absolute_shifted_tags, 'absolutetags shifted_time')
+        AbsoluteTag.export_text(file, indent, self.absolute_playback_tags, 'absolutetags playback_time')
+        AbsoluteTag.export_text(file, indent, self.absolute_shifted_tags, 'absolutetags shifted_time')
 
         if isinstance(self, GestureEvent) and self.gesture_sequence_duration:
             file.write(f'{indent} sequenceduration {self.gesture_sequence_duration}\n')
@@ -654,6 +764,13 @@ class Channel:
         active = file.read(1) != b'\x00'
         return cls(name, active, events)
 
+    def export_binary(self, file: IO[bytes], add_to_pool: Callable[[str], int]) -> None:
+        """Write this to a binary BVCD block."""
+        file.write(struct.pack('<hB', add_to_pool(self.name), len(self.events)))
+        for channel in self.events:
+            channel.export_binary(file, add_to_pool)
+        file.write(b'\x01' if self.active else b'\x00')
+
     def export_text(self, file: IO[str], indent: str) -> None:
         """Write this to a text VCD file."""
         file.write(f'{indent}channel "{escape_text(self.name)}"\n')
@@ -685,6 +802,13 @@ class Actor:
         ]
         active = file.read(1) != b'\x00'
         return cls(name, active, channels)
+
+    def export_binary(self, file: IO[bytes], add_to_pool: Callable[[str], int]) -> None:
+        """Write this to a binary BVCD block."""
+        file.write(struct.pack('<hB', add_to_pool(self.name), len(self.channels)))
+        for channel in self.channels:
+            channel.export_binary(file, add_to_pool)
+        file.write(b'\x01' if self.active else b'\x00')
 
     def export_text(self, file: IO[str], indent: str) -> None:
         """Write this to a text VCD file."""
@@ -725,7 +849,7 @@ class Scene:
         if file.read(4) != b'bvcd':
             raise ValueError('File is not a binary VCD scene!')
         version = file.read(1)[0]
-        if version != 4:
+        if version != BINARY_VERSION:
             raise ValueError(f'Unknown version "{version}"!')
         [text_crc, event_count] = binformat.struct_read('<IB', file)
 
@@ -749,6 +873,21 @@ class Scene:
             ignore_phonemes=ignore_phonemes,
         )
 
+    def export_binary(self, add_to_pool: Callable[[str], int]) -> bytes:
+        """Write out BVCD data for this scene."""
+        file = BytesIO()
+        file.write(struct.pack(
+            '<4sbIB', b'bvcd', BINARY_VERSION, self.text_crc, len(self.events),
+        ))
+        for event in self.events:
+            event.export_binary(file, add_to_pool)
+        file.write(struct.pack('B', len(self.actors)))
+        for actor in self.actors:
+            actor.export_binary(file, add_to_pool)
+        self.ramp.export_binary(file)
+        file.write(b'\x01' if self.ignore_phonemes else b'\x00')
+        return file.getvalue()
+
     def export_text(self, file: IO[str]) -> None:
         """Write this to a text VCD file."""
         file.write('// Choreo version 1\n')
@@ -757,11 +896,6 @@ class Scene:
         for actor in self.actors:
             actor.export_text(file, '')
         self.ramp.export_text(file, '', 'scene_ramp')
-
-    def export_binary(self, add_to_pool: Callable[[str], int]) -> bytes:
-        """Write out BVCD data for this scene."""
-        # TODO
-        raise NotImplementedError('Re-exporting binary scenes.')
 
 
 def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
