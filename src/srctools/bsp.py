@@ -3,7 +3,7 @@
 Data from a read BSP is lazily parsed when each section is accessed.
 """
 from typing import (
-    Any, Callable, ClassVar, Dict, Generator, Generic, Hashable, Iterator, List, Mapping,
+    Any, Callable, ClassVar, Dict, Generator, Generic, Iterator, List, Mapping,
     Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 from typing_extensions import TypedDict, deprecated
@@ -24,6 +24,7 @@ import attrs
 from srctools import AtomicWriter, StringPath, conv_int, logger
 from srctools.binformat import (
     DeferredWrites, compress_lzma, decompress_lzma, read_array, struct_read, write_array,
+    find_or_insert, find_or_extend,
 )
 from srctools.const import BSPContents as BrushContents, SurfFlags, add_unknown
 from srctools.filesys import FileSystem
@@ -492,10 +493,10 @@ class VisLeafFlags(Flag):
 
     # Undocumented flags, still in maps though?
     # Looks like uninitialised members.
-    _BIT_4 = 1 << 3
-    _BIT_5 = 1 << 4
-    _BIT_6 = 1 << 5
-    _BIT_7 = 1 << 6
+    _BIT_3 = 1 << 3
+    _BIT_4 = 1 << 4
+    _BIT_5 = 1 << 5
+    _BIT_6 = 1 << 6
 
 
 class DetailPropOrientation(Enum):
@@ -1114,74 +1115,6 @@ del _staticprop_lighting_default
 def identity(x: T) -> T:
     """Identity function."""
     return x
-
-
-def _find_or_insert(item_list: List[T], key_func: Callable[[T], Hashable] = id) -> Callable[[T], int]:
-    """Create a function for inserting items in a list if not found.
-
-    This is used to build up the structure arrays which other lumps refer
-    to by index.
-    If the provided argument to the callable is already in the list,
-    the index is returned. Otherwise, it is appended and the new index returned.
-    The key function is used to match existing items.
-
-    """
-    by_index: Dict[Hashable, int] = {key_func(item): i for i, item in enumerate(item_list)}
-
-    def finder(item: T) -> int:
-        """Find or append the item."""
-        key = key_func(item)
-        try:
-            return by_index[key]
-        except KeyError:
-            ind = by_index[key] = len(item_list)
-            item_list.append(item)
-            return ind
-    return finder
-
-
-def _find_or_extend(item_list: List[T], key_func: Callable[[T], Hashable] = id) -> Callable[[List[T]], int]:
-    """Create a function for positioning a sublist inside the larger list, adding it if required.
-
-    This is used to build up structure arrays where other lumps access subsections of it.
-    """
-    # We expect repeated items to be fairly uncommon, so we can skip to all
-    # occurrences of the first index to speed up the search.
-    by_index: Dict[Hashable, List[int]] = {}
-    for k, item in enumerate(item_list):
-        by_index.setdefault(key_func(item), []).append(k)
-
-    def finder(items: List[T]) -> int:
-        """Find or append the items."""
-        if not items:
-            # Array is empty, so the index doesn't matter, it'll never be
-            # dereferenced.
-            return 0
-        try:
-            indices = by_index[key_func(items[0])]
-        except KeyError:
-            pass
-        else:
-            for i in indices:
-                if all(
-                    key_func(a) == key_func(b)
-                    for a, b in
-                    zip(items, itertools.islice(item_list, i, i + len(items)))
-                ):
-                    return i
-        # Not found, append to the end.
-        i = len(item_list)
-        item_list.extend(items)
-        assert all(
-            a is b for a, b in
-            zip(item_list[i: i + len(items)], items)
-        )
-        # Update the index.
-        for j, item2 in enumerate(items):
-            by_index.setdefault(key_func(item2), []).append(i + j)
-        return i
-
-    return finder
 
 
 def runlength_decode(
@@ -1970,8 +1903,8 @@ class BSP:
         edges: List[Edge] = [Edge(first_vert, first_vert)]
 
         # We cannot share vertexes or edges, it breaks VRAD!
-        add_edge = _find_or_insert(edges)
-        add_vert = _find_or_insert(self.vertexes)
+        add_edge = find_or_insert(edges)
+        add_vert = find_or_insert(self.vertexes)
 
         for edge in surf_edges:
             # Check to see if this edge is already defined.
@@ -2145,10 +2078,10 @@ class BSP:
         _find_or_insert(self.orig_faces).
         """
         face_buf = BytesIO()
-        add_texinfo = _find_or_insert(self.texinfo)
-        add_plane = _find_or_insert(self.planes)
-        add_edges = _find_or_extend(self.surfedges)
-        add_prims = _find_or_extend(self.primitives)
+        add_texinfo = find_or_insert(self.texinfo)
+        add_plane = find_or_insert(self.planes)
+        add_edges = find_or_extend(self.surfedges)
+        add_prims = find_or_extend(self.primitives)
         hammer_ids = []
 
         if self.is_vitamin:
@@ -2232,7 +2165,7 @@ class BSP:
         if self.is_vitamin:
             return self._write_faces_common(faces, None)  # No orig faces.
         else:
-            return self._write_faces_common(faces, _find_or_insert(self.orig_faces))
+            return self._write_faces_common(faces, find_or_insert(self.orig_faces))
 
     def _lmp_read_hdr_faces(self, data: bytes) -> Iterator['Face']:
         """Parse the HDR-specific split faces lump."""
@@ -2246,7 +2179,7 @@ class BSP:
         if self.is_vitamin:
             return b''  # Unused.
         else:
-            return self._write_faces_common(faces, _find_or_insert(self.orig_faces))
+            return self._write_faces_common(faces, find_or_insert(self.orig_faces))
 
     def _lmp_read_brushes(self, data: bytes) -> Iterator['Brush']:
         """Parse brush definitions, along with the sides."""
@@ -2268,9 +2201,9 @@ class BSP:
 
     def _lmp_write_brushes(self, brushes: List['Brush']) -> bytes:
         sides: List[BrushSide] = []
-        add_plane = _find_or_insert(self.planes)
-        add_texinfo = _find_or_insert(self.texinfo)
-        add_sides = _find_or_extend(sides)
+        add_plane = find_or_insert(self.planes)
+        add_texinfo = find_or_insert(self.texinfo)
+        add_sides = find_or_extend(sides)
 
         brush_buf = BytesIO()
         sides_buf = BytesIO()
@@ -2310,7 +2243,7 @@ class BSP:
 
     def _lmp_write_water_leaf_info(self, data: List[LeafWaterInfo]) -> Iterator[bytes]:
         """Write data associated with visleafs containing water."""
-        add_texinfo = _find_or_insert(self.texinfo)
+        add_texinfo = find_or_insert(self.texinfo)
         for info in self.water_leaf_info:
             yield self.lump_layout['LEAFWATERDATA'].pack(info.surface_z, info.min_z, add_texinfo(info.surface_texinfo))
 
@@ -2412,10 +2345,10 @@ class BSP:
 
     def _lmp_write_nodes(self, nodes: List['VisTree']) -> bytes:
         """Reconstruct the visleaf/bsp tree data."""
-        add_node = _find_or_insert(nodes)
-        add_plane = _find_or_insert(self.planes)
-        add_leaf = _find_or_insert(self.visleafs)
-        add_faces = _find_or_extend(self.faces)
+        add_node = find_or_insert(nodes)
+        add_plane = find_or_insert(self.planes)
+        add_leaf = find_or_insert(self.visleafs)
+        add_faces = find_or_extend(self.faces)
 
         buf = BytesIO()
 
@@ -2445,8 +2378,8 @@ class BSP:
         leaf_brushes: List[int] = []
         min_water_dists: List[int] = []
 
-        add_face = _find_or_insert(self.faces)
-        add_brush = _find_or_insert(self.brushes)
+        add_face = find_or_insert(self.faces)
+        add_brush = find_or_insert(self.brushes)
 
         buf = BytesIO()
         is_vitamin = self.is_vitamin
@@ -2610,7 +2543,7 @@ class BSP:
 
     def _lmp_write_texinfo(self, texinfos: List['TexInfo']) -> bytes:
         """Rebuild the texinfo and texdata lump."""
-        find_or_add_texture = _find_or_insert(self.textures, str.casefold)
+        find_or_add_texture = find_or_insert(self.textures, str.casefold)
         texdata_ind: Dict[TexData, int] = {}
 
         texdata_list: List[bytes] = []
@@ -2700,8 +2633,8 @@ class BSP:
 
     def _lmp_write_bmodels(self, bmodels: 'WeakKeyDictionary[Entity, BModel]') -> Iterator[bytes]:
         """Write the brush model definitions."""
-        add_node = _find_or_insert(self.nodes)
-        add_faces = _find_or_extend(self.faces)
+        add_node = find_or_insert(self.nodes)
+        add_faces = find_or_extend(self.faces)
 
         phys_buf = BytesIO()
 
@@ -2711,7 +2644,7 @@ class BSP:
             model_list = [bmodels[worldspawn]]
         except KeyError:
             raise ValueError('Worldspawn has no brush model!') from None
-        add_model = _find_or_insert(model_list)
+        add_model = find_or_insert(model_list)
 
         for ent, model in bmodels.items():
             # Apply the brush model to the entity. Worldspawn doesn't actually
@@ -2852,7 +2785,7 @@ class BSP:
 
     def _lmp_write_overlays(self, overlays: List[Overlay]) -> Iterator[bytes]:
         """Write out all overlays."""
-        add_texinfo = _find_or_insert(self.texinfo)
+        add_texinfo = find_or_insert(self.texinfo)
         fade_buf = BytesIO()
         levels_buf = BytesIO()
         for over in overlays:
@@ -3231,8 +3164,8 @@ class BSP:
         # Unfortunately it seems reusing visleaf parts isn't possible.
         leaf_array: List[int] = []
         model_list: List[str] = []
-        add_model = _find_or_insert(model_list, identity)
-        add_leaf = _find_or_insert(self.visleafs)
+        add_model = find_or_insert(model_list, identity)
+        add_leaf = find_or_insert(self.visleafs)
 
         indexes: List[Tuple[int, int]] = []
         for prop in props:
@@ -3449,8 +3382,8 @@ class BSP:
         ]] = []
         models: List[str] = []
 
-        add_sprite = _find_or_insert(sprites, identity)
-        add_model = _find_or_insert(models, identity)
+        add_sprite = find_or_insert(sprites, identity)
+        add_model = find_or_insert(models, identity)
         buf = BytesIO()
 
         for prop in props:

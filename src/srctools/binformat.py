@@ -4,11 +4,13 @@ esentially expanding on :external:mod:`struct`'s functionality.
 
 """
 from typing import (
-    IO, Any, Collection, Dict, Final, Hashable, List, Mapping, Optional, Tuple, TypeVar, Union,
+    Callable, IO, Any, Collection, Dict, Final, Hashable, List, Mapping, Optional, Tuple,
+    TypeVar, Union,
 )
 from binascii import crc32
 from struct import Struct
 import functools
+import itertools
 import lzma
 
 from srctools.math import Vec
@@ -21,6 +23,7 @@ __all__ = [
     'read_array', 'write_array',
     'str_readvec', 'ST_VEC',
     'checksum', 'EMPTY_CHECKSUM',
+    'find_or_insert', 'find_or_extend',
     'DeferredWrites',
     'compress_lzma', 'decompress_lzma',
 ]
@@ -176,6 +179,73 @@ def checksum(data: bytes, prior: int = 0) -> int:
 
 EMPTY_CHECKSUM: Final[int] = checksum(b'')
 """CRC32 checksum of an empty bytes buffer."""
+
+
+def find_or_insert(item_list: List[T], key_func: Callable[[T], Hashable] = id) -> Callable[[T], int]:
+    """Create a function for inserting items in a list if not found.
+
+    This is used to build up a block of data, accessed by index.
+    If the provided argument to the callable is already in the list,
+    the index is returned. Otherwise, it is appended and the new index returned.
+    The key function is used to match existing items.
+
+    """
+    by_index: Dict[Hashable, int] = {key_func(item): i for i, item in enumerate(item_list)}
+
+    def finder(item: T) -> int:
+        """Find or append the item."""
+        key = key_func(item)
+        try:
+            return by_index[key]
+        except KeyError:
+            ind = by_index[key] = len(item_list)
+            item_list.append(item)
+            return ind
+    return finder
+
+
+def find_or_extend(item_list: List[T], key_func: Callable[[T], Hashable] = id) -> Callable[[List[T]], int]:
+    """Create a function for positioning a sublist inside the larger list, adding it if required.
+
+    This is used to build up a block of data, where subsections of it are accessed.
+    """
+    # We expect repeated items to be fairly uncommon, so we can skip to all
+    # occurrences of the first index to speed up the search.
+    by_index: Dict[Hashable, List[int]] = {}
+    for k, item in enumerate(item_list):
+        by_index.setdefault(key_func(item), []).append(k)
+
+    def finder(items: List[T]) -> int:
+        """Find or append the items."""
+        if not items:
+            # Array is empty, so the index doesn't matter, it'll never be
+            # dereferenced.
+            return 0
+        try:
+            indices = by_index[key_func(items[0])]
+        except KeyError:
+            pass
+        else:
+            for i in indices:
+                if all(
+                    key_func(a) == key_func(b)
+                    for a, b in
+                    zip(items, itertools.islice(item_list, i, i + len(items)))
+                ):
+                    return i
+        # Not found, append to the end.
+        i = len(item_list)
+        item_list.extend(items)
+        assert all(
+            a is b for a, b in
+            zip(item_list[i: i + len(items)], items)
+        )
+        # Update the index.
+        for j, item2 in enumerate(items):
+            by_index.setdefault(key_func(item2), []).append(i + j)
+        return i
+
+    return finder
 
 
 class DeferredWrites:
