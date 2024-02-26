@@ -255,6 +255,7 @@ class Curve:
     BIN_FMT: ClassVar[struct.Struct] = struct.Struct('<fB')
 
     ramp: List[ExpressionSample]
+    # VCD only
     left: CurveEdge = CurveEdge(False)
     right: CurveEdge = CurveEdge(False)
 
@@ -294,6 +295,10 @@ class FlexAnimTrack:
     mag_track: List[ExpressionSample] = attrs.Factory(list)
     dir_track: Optional[List[ExpressionSample]] = None
 
+    # VCD only
+    left: CurveEdge = CurveEdge(False)
+    right: CurveEdge = CurveEdge(False)
+
     @classmethod
     def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> FlexAnimTrack:
         """Parse the BVCD form of this data."""
@@ -327,6 +332,31 @@ class FlexAnimTrack:
             mag_track=mag_track,
             dir_track=dir_track,
         )
+
+    def export_text(self, file: IO[str], indent: str, default_curve: CurveType) -> None:
+        """Write this to a text VCD file."""
+        file.write(f'{indent}  "{escape_text(self.name)}"')
+        if not self.active:
+            file.write(' disabled')
+        if self.dir_track is not None:
+            file.write(' combo')
+        if self.min != 0.0 or self.max != 1.0:
+            file.write(f' range {self.min} {self.max}')
+        if self.left.active:
+            file.write(f' leftedge {self.left.curve_type} {self.left.zero_pos}')
+        if self.right.active:
+            file.write(f' rightedge {self.right.curve_type} {self.right.zero_pos}')
+        file.write(f'\n{indent}   {{\n')
+        for sample in self.mag_track:
+            curve = f' "{sample.curve_type}"' if sample.curve_type != default_curve else ''
+            file.write(f'{indent}   {sample.time} {sample.value}{curve}\n')
+        file.write(f'{indent}   }}\n')
+        if self.dir_track is not None:
+            file.write(f'{indent}   {{\n')
+            for sample in self.dir_track:
+                curve = f' "{sample.curve_type}"' if sample.curve_type != default_curve else ''
+                file.write(f'{indent}   {sample.time} {sample.value}{curve}\n')
+            file.write(f'{indent}  }}\n')
 
 
 # Using a Literal here means Event.__init__() doesn't allow Loop/Speak/Gesture as the type,
@@ -383,6 +413,7 @@ class Event:
     flex_anim_tracks: List[FlexAnimTrack] = attrs.Factory(list)
 
     # Only used in VCDs.
+    default_curve_type: CurveType = CURVE_DEFAULT
     pitch: int = 0
     yaw: int = 0
 
@@ -545,9 +576,16 @@ class Event:
                 f'"{escape_text(self.tag_name or "")}" '
                 f'"{escape_text(self.tag_wav_name or "")}"\n'
             )
-        # TODO flex anims
         if self.flex_anim_tracks:
-            raise NotImplementedError('Flex animation export')
+            if self.default_curve_type != CURVE_DEFAULT:
+                default_curve = self.default_curve_type
+                curve = f'defaultcurvetype={self.default_curve_type}'
+            else:
+                default_curve = CURVE_DEFAULT
+                curve = ''
+            file.write(f'{indent} flexanimations samples_use_time{curve}\n{indent}  {{\n')
+            for track in self.flex_anim_tracks:
+                track.export_text(file, indent, default_curve)
 
         if isinstance(self, LoopEvent):
             file.write(f'{indent} loopcount "{self.loop_count}"\n')
@@ -706,6 +744,7 @@ class Scene:
             event.export_text(file, '')
         for actor in self.actors:
             actor.export_text(file, '')
+        self.ramp.export_text(file, '', 'scene_ramp')
 
     def export_binary(self, add_to_pool: Callable[[str], int]) -> bytes:
         """Write out BVCD data for this scene."""
