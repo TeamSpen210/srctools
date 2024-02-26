@@ -1,5 +1,7 @@
 """Parses VCD choreo scenes, as well as data in scenes.image."""
 from __future__ import annotations
+
+import re
 from typing import ClassVar, List, IO, NewType, Dict, Optional, Tuple
 from typing_extensions import Literal, TypeAlias
 
@@ -44,7 +46,7 @@ class Entry:
     duration_ms: int  # Duration in milliseconds.
     last_speak_ms: int  # Time at which the last voice line ends.
     sounds: List[str]  # List of sounds it uses.
-    data: Scene
+    data: Scene = attrs.field(repr=False)
 
     @property
     def duration(self) -> float:
@@ -86,10 +88,53 @@ class Interpolation(enum.Enum):
     EXPONENTIAL_DECAY = 14
     HOLD = 15
 
+INTERP_TO_NAME = {
+    Interpolation.DEFAULT: 'default',
+    Interpolation.CATMULL_ROM_NORMALIZE_X: 'catmullrom_normalize_x',
+    Interpolation.EASE_IN: 'easein',
+    Interpolation.EASE_OUT: 'easeout',
+    Interpolation.EASE_IN_OUT: 'easeinout',
+    Interpolation.BSP_LINE: 'bspline',
+    Interpolation.LINEAR: 'linear_interp',
+    Interpolation.KOCHANEK_BARTELS: 'kochanek',
+    Interpolation.KOCHANEK_BARTELS_EARLY: 'kochanek_early',
+    Interpolation.KOCHANEK_BARTELS_LATE: 'kochanek_late',
+    Interpolation.SIMPLE_CUBIC: 'simple_cubic',
+    Interpolation.CATMULL_ROM: 'catmullrom',
+    Interpolation.CATMULL_ROM_NORMALIZE: 'catmullrom_normalize',
+    Interpolation.CATMULL_ROM_TANGENT: 'catmullrom_tangent',
+    Interpolation.EXPONENTIAL_DECAY: 'exponential_decay',
+    Interpolation.HOLD: 'hold',
+}
+NAME_TO_INTERP = {v: k for k, v in INTERP_TO_NAME.items()}
+
+
+@attrs.frozen
+class CurveType:
+    """A pair of interpolation types."""
+    first: Interpolation
+    second: Interpolation
+
     @classmethod
-    def parse_pair(cls, value: int) -> Tuple[Interpolation, Interpolation]:
+    def parse_text(cls, text: str) -> CurveType:
+        """Parse text in the form 'curve_AAA_to_curve_BBB'."""
+        match = re.match('curve_([a-z_]+)_to_curve_([a-z_]+)', text.casefold())
+        if match is None:
+            raise ValueError('Invalid curve type text.')
+        left, right = match.groups()
+        return cls(NAME_TO_INTERP[left], NAME_TO_INTERP[right])
+
+    @classmethod
+    def parse_binary(cls, value: int) -> CurveType:
         """Parse two interpolation types, packed into a two-byte value."""
-        return cls((value >> 8) & 0xff), cls(value & 0xff)
+        return cls(Interpolation((value >> 8) & 0xff), Interpolation(value & 0xff))
+
+    def __str__(self) -> str:
+        """Return the associated name for this pair."""
+        return f'curve_{INTERP_TO_NAME[self.first]}_to_curve_{INTERP_TO_NAME[self.second]}'
+
+
+CURVE_DEFAULT = CurveType(Interpolation.DEFAULT, Interpolation.DEFAULT)
 
 
 class EventType(enum.Enum):
@@ -134,6 +179,7 @@ NAME_TO_EVENT_FLAG = {
     # Active is not included, works differently.
 }
 
+
 class CaptionType(enum.Enum):
     """Kind of closed captions."""
     Master = 0
@@ -146,7 +192,7 @@ class ExpressionSample:
     """Keyframes for animations."""
     time: float
     value: float
-    curve_type: Tuple[Interpolation, Interpolation] = (Interpolation.DEFAULT, Interpolation.DEFAULT)
+    curve_type: CurveType = CURVE_DEFAULT
 
 
 @attrs.define
@@ -176,7 +222,15 @@ class Tag:
         for tag in tags:
             file.write(f'{indent}  "{escape_text(tag.name)}" {tag.value}\n')
             # TODO: lockable for timing tags.
-        file.write(f'{indent} }}\n')
+        file.write(f'{indent}  }}\n')
+
+
+@attrs.frozen
+class CurveEdge:
+    """Curve data, only saved in the text file."""
+    active: bool
+    zero_pos: float = 0.0
+    curve_type: CurveType = CURVE_DEFAULT
 
 
 @attrs.define
@@ -185,7 +239,8 @@ class Curve:
     BIN_FMT: ClassVar[struct.Struct] = struct.Struct('<fB')
 
     ramp: List[ExpressionSample]
-    # start, end = ramp edge info
+    left: CurveEdge = CurveEdge(False)
+    right: CurveEdge = CurveEdge(False)
 
     @classmethod
     def parse_binary(cls, file: IO[bytes]) -> Curve:
@@ -196,6 +251,21 @@ class Curve:
             [time, value] = binformat.struct_read(cls.BIN_FMT, file)
             ramp.append(ExpressionSample(time, value / 255.0))
         return cls(ramp)
+
+    def export_text(self, file: IO[str], indent: str, name: str) -> None:
+        """Write this to a text VCD file."""
+        if not self.ramp and not self.left.active and not self.right.active:
+            return
+        file.write(f'{indent} {name}')
+        if self.left.active:
+            file.write(f' leftedge {self.left.curve_type} {self.left.zero_pos}')
+        if self.right.active:
+            file.write(f' rightedge {self.right.curve_type} {self.right.zero_pos}')
+        file.write(f'\n{indent}  {{\n')
+        for sample in self.ramp:
+            curve = f' "{sample.curve_type}"' if sample.curve_type != CURVE_DEFAULT else ''
+            file.write(f'{indent}  {sample.time} {sample.value}{curve}\n')
+        file.write(f'{indent}  }}\n')
 
 
 @attrs.define
@@ -219,7 +289,7 @@ class FlexAnimTrack:
             [time, value, curve_type] = binformat.struct_read('<fBH', file)
             mag_track.append(ExpressionSample(
                 time, value / 255.0,
-                Interpolation.parse_pair(curve_type),
+                CurveType.parse_binary(curve_type),
             ))
 
         if flags & 2 != 0:
@@ -229,7 +299,7 @@ class FlexAnimTrack:
                 [time, value, curve_type] = binformat.struct_read('<fBH', file)
                 dir_track.append(ExpressionSample(
                     time, value / 255.0,
-                    Interpolation.parse_pair(curve_type),
+                    CurveType.parse_binary(curve_type),
                 ))
         else:
             dir_track = None
@@ -295,6 +365,10 @@ class Event:
     absolute_playback_tags: List[Tag] = attrs.Factory(list)
     absolute_shifted_tags: List[Tag] = attrs.Factory(list)
     flex_anim_tracks: List[FlexAnimTrack] = attrs.Factory(list)
+
+    # Only used in VCDs.
+    pitch: int = 0
+    yaw: int = 0
 
     @classmethod
     def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Event:
@@ -428,7 +502,12 @@ class Event:
             file.write(f'{indent} param2 "{escape_text(self.parameters[1])}"\n')
         if self.parameters[2]:
             file.write(f'{indent} param3 "{escape_text(self.parameters[2])}"\n')
-        # TODO ramp, pitch, yaw
+        if self.ramp.ramp:
+            self.ramp.export_text(file, indent, 'event_ramp')
+        if self.pitch:
+            file.write(f'{indent} pitch {self.pitch}\n')
+        if self.yaw:
+            file.write(f'{indent} yaw {self.yaw}\n')
         if self.dist_to_targ > 0.0:
             file.write(f'{indent} distancetotarget {self.dist_to_targ:.2f}\n')
         for text, flag in NAME_TO_EVENT_FLAG.items():
@@ -519,14 +598,16 @@ class Channel:
             event.export_text(file, sub_indent)
         if not self.active:
             file.write(f'{indent} active "0"\n')
-        file.write(f'{indent} }}\n\n')
+        file.write(f'{indent} }}\n')
 
 
 @attrs.define(eq=False)
 class Actor:
+    """An actor in a choreo scene."""
     name: str
     active: bool = True
     channels: List[Channel] = attrs.Factory(list)
+    faceposer_model: str = ''
 
     @classmethod
     def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Actor:
@@ -547,10 +628,11 @@ class Actor:
         sub_indent = indent + ' '
         for channel in self.channels:
             channel.export_text(file, sub_indent)
-        # Todo Faceposermodel
+        if self.faceposer_model:
+            file.write(f'{indent} faceposermodel "{escape_text(self.faceposer_model)}"\n')
         if not self.active:
             file.write(f'{indent} active "0"\n')
-        file.write(f'{indent} }}\n\n')
+        file.write(f'{indent} }}\n')
 
 
 @attrs.define(eq=False, kw_only=True)
@@ -601,6 +683,7 @@ class Scene:
 
     def export_text(self, file: IO[str]) -> None:
         """Write this to a text VCD file."""
+        file.write('// Choreo version 1\n')
         for event in self.events:
             event.export_text(file, '')
         for actor in self.actors:
