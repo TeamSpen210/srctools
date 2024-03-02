@@ -363,6 +363,18 @@ def test_vec_ang_stringification(py_c_vec, clsname: str) -> None:
     assert format(obj, '.2%') == '0.00% 3600.00% 6800.00%'
     assert format(obj, '.9f') == '0.000000001 36.000000001 68.000000012'
 
+    # Test -0.0 gets the negative stripped.
+    neg_zero = 0.0/-1.0
+    assert repr(neg_zero) == '-0.0'
+    obj = cls(neg_zero, neg_zero, neg_zero)
+    assert str(obj) == '0 0 0'
+    assert repr(obj) == f'{clsname}(0, 0, 0)'
+    assert obj.join() == '0, 0, 0'
+    assert obj.join(':') == '0:0:0'
+    assert format(obj) == str(obj)
+    assert format(obj, '.2%') == '0.00% 0.00% 0.00%'
+    assert format(obj, '.9f') == '0 0 0'
+
 
 def test_unary_ops(frozen_thawed_vec: VecClass) -> None:
     """Test -vec and +vec."""

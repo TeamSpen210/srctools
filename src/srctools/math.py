@@ -120,10 +120,11 @@ def to_matrix(value: Union['AnyAngle', 'AnyMatrix', 'AnyVec', None]) -> 'Matrix 
 
 def format_float(x: float, places: int = 6) -> str:
     """Convert the specified float to a string, stripping off a .0 if it ends with that."""
-    result = f'{x:.{places}f}'
+    # Add zero to make -0 positive
+    result = f'{x+0.0:.{places}f}'
     if '.' in result:
-        result = result.rstrip('0')
-    return result.rstrip('.')
+        result = result.rstrip('0').rstrip('.')
+    return result
 
 
 def _coerce_float(value: Union[float, SupportsFloat, SupportsIndex]) -> float:
@@ -919,18 +920,18 @@ class VecBase:
         if not format_spec:
             return str(self)
 
-        x = format(self._x, format_spec)
+        x = format(self._x + 0.0, format_spec)
         if '.' in x:
-            x = x.rstrip('0')
+            x = x.rstrip('0').rstrip('.')
 
-        y = format(self._y, format_spec)
+        y = format(self._y + 0.0, format_spec)
         if '.' in y:
-            y = y.rstrip('0')
+            y = y.rstrip('0').rstrip('.')
 
-        z = format(self._z, format_spec)
+        z = format(self._z + 0.0, format_spec)
         if '.' in z:
-            z = z.rstrip('0')
-        return f'{x.rstrip(".")} {y.rstrip(".")} {z.rstrip(".")}'
+            z = z.rstrip('0').rstrip('.')
+        return f'{x} {y} {z}'
 
     def __iter__(self) -> Iterator[float]:
         """Iterating through the vector yields each axis in order."""

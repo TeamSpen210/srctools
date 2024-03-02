@@ -15,6 +15,7 @@ Version (dev)
 * Allow omitting file/line number parameters for TokenSyntaxError.
 * Allow passing :py:class:`~srctools.vmf.PrismFace` to :py:class:`VMF.add_brush() <srctools.vmf.VMF.add_brush>`.
 * Parse Strata Source's VMF displacement data.
+* Remove negative zeros when formatting vector and angle values.
 
 --------------
 Version 2.3.15

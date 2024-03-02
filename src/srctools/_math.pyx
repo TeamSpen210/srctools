@@ -164,7 +164,7 @@ cdef Py_ssize_t trim_float(char *buf, Py_ssize_t size) except -1:
 cdef char * _format_float(double x, int places) except NULL:
     """Convert the specified float to a string, stripping off a .0 if it ends with that."""
     cdef char *buf
-    buf = PyOS_double_to_string(x, b'f', places, 0, NULL)
+    buf = PyOS_double_to_string(x + 0.0, b'f', places, 0, NULL)
     trim_float(buf, len(buf))
     return buf
 
@@ -234,13 +234,13 @@ cdef object _format_vec_wspec(const vec_t *values, str spec):
     if not spec:
         return _format_triple(b'%s %s %s', values)
 
-    x_str = format(values.x, spec)
+    x_str = format(values.x + 0.0, spec)
     x_buf = PyUnicode_AsUTF8AndSize(x_str, &x_size)
 
-    y_str = format(values.y, spec)
+    y_str = format(values.y + 0.0, spec)
     y_buf = PyUnicode_AsUTF8AndSize(y_str, &y_size)
 
-    z_str = format(values.z, spec)
+    z_str = format(values.z + 0.0, spec)
     z_buf = PyUnicode_AsUTF8AndSize(z_str, &z_size)
 
     # Allocate enough for worst-case (no rounding)
