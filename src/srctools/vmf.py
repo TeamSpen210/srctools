@@ -1850,7 +1850,7 @@ class Side:
         """Parse one of the very similar per-vert sections.
 
         If member is a string, it is an attribute to set on the DispVertex.
-        Otherwise if it's an int, it's the channel for multi_colors (which must
+        Otherwise, it's an int specifying the channel for multi_colors (which must
         have been initialised beforehand).
         """
         assert self._disp_verts is not None
@@ -1872,6 +1872,36 @@ class Side:
                     f'Displacement array for {name} in side {self.id}, '
                     f'row {y} had invalid number: {exc.args[0]}'
                 ) from None
+
+    @classmethod
+    def from_plane(
+        cls,
+        vmf: VMF,
+        position: AnyVec,
+        normal: AnyVec,
+        material: str = 'tools/toolsnodraw',
+    ) -> 'Side':
+        """Generate a new brush face, aligned to the specified plane.
+
+        The normal vector points out of the face. This calculates a valid texture alignment, but
+        does not specify an exact result.
+        """
+        # Use this to pick two arbitrary axes for the UVs. TODO: Calculate directly.
+        orient = Matrix.from_angle(FrozenVec(normal).to_angle())
+        point = Vec(position)
+        u = -orient.left()
+        v = -orient.up()
+        return cls(
+            vmf,
+            [
+                point - 16 * u,
+                point,
+                point + 16 * v,
+            ],
+            mat=material,
+            uaxis=UVAxis(*u),
+            vaxis=UVAxis(*v),
+        )
 
     def copy(
         self,
