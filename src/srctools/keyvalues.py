@@ -776,7 +776,7 @@ class Keyvalues:
 
     __hash__ = None  # type: ignore[assignment]
 
-    def __eq__(self, other: Any) -> builtins.bool:
+    def __eq__(self, other: object) -> builtins.bool:
         """Compare two items and determine if they are equal.
 
         This ignores names.
@@ -785,7 +785,7 @@ class Keyvalues:
             return self._value == other._value
         return NotImplemented
 
-    def __ne__(self, other: Any) -> builtins.bool:
+    def __ne__(self, other: object) -> builtins.bool:
         """Not-Equal To comparison. This ignores names.
         """
         if isinstance(other, Keyvalues):

@@ -21,7 +21,7 @@ __all__ = [
 
 class _BinaryFile(Protocol):
     """The methods on files we use."""
-    def write(self, __data: bytes) -> Any:
+    def write(self, __data: bytes) -> object:
         """Writes to the file."""
 
 
@@ -49,14 +49,14 @@ class Bone:
     def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'Bone':
         return Bone(self.name, deepcopy(self.parent, memodict))
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if self is other:
             return True
         if isinstance(other, Bone):
             return self.name == other.name
         return NotImplemented
 
-    def __ne__(self, other: Any) -> bool:
+    def __ne__(self, other: object) -> bool:
         if isinstance(other, Bone):
             return self.name != other.name
         return NotImplemented

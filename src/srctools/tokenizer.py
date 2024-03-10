@@ -14,7 +14,7 @@ token/value pair. One token of lookahead is supported, accessed by the
 the current line number as data is read, letting you ``raise BaseTokenizer.error(...)`` to easily
 produce an exception listing the relevant line number and filename.
 """
-from typing import Any, Final, Iterable, Iterator, List, Optional, Tuple, Type, Union
+from typing import Final, Iterable, Iterator, List, Optional, Tuple, Type, Union, NoReturn
 from typing_extensions import Self, TypeAlias, overload
 from enum import Enum
 from os import fspath as _conv_path
@@ -246,7 +246,7 @@ class BaseTokenizer(abc.ABC):
             self.line_num,
         )
 
-    def __reduce__(self) -> Any:
+    def __reduce__(self) -> NoReturn:
         """Disallow pickling Tokenizers.
 
         The files themselves usually are not pickleable, or are very
