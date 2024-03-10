@@ -17,9 +17,9 @@ the file.
 from typing import (
     IO, TYPE_CHECKING, Any, Callable, Dict, Final, Generic, Iterable, Iterator, KeysView,
     List, Mapping, MutableMapping, NamedTuple, Optional, Sequence, Set, Tuple, Type,
-    TypeVar, Union, ValuesView, cast,
+    Union, ValuesView, cast,
 )
-from typing_extensions import Literal, TypeAlias, deprecated, overload
+from typing_extensions import Literal, TypeAlias, TypeVar, deprecated, overload
 from enum import Enum
 from struct import Struct, error as StructError, pack
 from uuid import UUID, uuid4 as get_uuid
@@ -257,7 +257,7 @@ ValueList = Union[
 # Additional values we convert to valid types.
 ConvValue: TypeAlias = Union[Value, Vec, Matrix, Angle]
 
-ValueT = TypeVar('ValueT', bound=Value)
+ValueT = TypeVar('ValueT', bound=Value, default=Any)
 
 # [from, to] -> conversion.
 # Implementation at the end of the file.

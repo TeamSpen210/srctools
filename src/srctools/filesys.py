@@ -24,9 +24,9 @@ To mount a :py:class:`~srctools.bsp.BSP` file, use ``ZipFileSystem(bsp.pakfile)`
 """
 from typing import (
     Any, BinaryIO, Dict, Final, Generic, Iterator, List, Mapping, Optional, Set, TextIO,
-    Tuple, TypeVar, Union, cast,
+    Tuple, Union, cast,
 )
-from typing_extensions import Self, deprecated
+from typing_extensions import Self, deprecated, TypeVar
 from zipfile import ZipFile, ZipInfo
 import io
 import os
@@ -45,12 +45,12 @@ __all__ = [
     'VirtualFileSystem', 'FileSystemChain',
 ]
 
-FileSysT = TypeVar('FileSysT', bound='FileSystem[Any]')
+FileSysT_co = TypeVar('FileSysT_co', bound='FileSystem', default='FileSystem', covariant=True)
 CACHE_KEY_INVALID: Final = -1
 """This is returned from :py:meth:`FileSystem.cache_key()` to indicate no key could be computed."""
 
 # This is the type of File._data. It should only be used by subclasses.
-_FileDataT = TypeVar('_FileDataT')
+_FileDataT = TypeVar('_FileDataT', default=Any)
 
 
 def get_filesystem(path: str) -> 'FileSystem[Any]':
@@ -85,9 +85,9 @@ class RootEscapeError(ValueError):
         return f'Path "{self.path}" escaped "{self.root}"!'
 
 
-class File(Generic[FileSysT]):
-    """Represents a file in a system. Should only be created by filesystems.."""
-    sys: FileSysT
+class File(Generic[FileSysT_co]):
+    """Represents a file in a system. Should only be created by filesystems."""
+    sys: FileSysT_co
     path: str
     # This is _FileDataT of the filesys, but leave as Any here so the File
     # doesn't need to expose that TypeVar. FileSystem._get_data does the type
@@ -96,7 +96,7 @@ class File(Generic[FileSysT]):
 
     def __init__(
         self,
-        system: FileSysT,
+        system: FileSysT_co,
         path: str,
         data: Any,
     ) -> None:
