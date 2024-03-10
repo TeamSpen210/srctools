@@ -48,7 +48,7 @@ __all__ = [
 
 T = TypeVar('T')
 ValueT_co = TypeVar('ValueT_co', covariant=True)
-FileSysT = TypeVar('FileSysT', bound=FileSystem[Any])
+FileSysT = TypeVar('FileSysT', bound=FileSystem)
 _fake_vmf = VMF(preserve_ids=False)
 # Collections of tags.
 TagsSet: TypeAlias = FrozenSet[str]
@@ -1831,7 +1831,7 @@ class FGD:
     """A FGD set for a game. May be composed of several files."""
     # List of names we have already parsed.
     # We don't parse them again, to prevent infinite loops.
-    _parse_list: Set[File[Any]]
+    _parse_list: Set[File]
     # Entity definitions
     entities: Dict[str, EntityDef]
     # Maximum bounding box of map
@@ -2319,7 +2319,7 @@ _EMPTY_FILESYS = VirtualFileSystem(srctools.EmptyMapping)
 class ResourceCtx:
     """Map information passed to :attr:`FileType.ENTCLASS_FUNC` functions."""
     tags: TagsSet
-    fsys: FileSystem[Any]
+    fsys: FileSystem
     #: The BSP/VMF map name, like what is passed to :command:`map` in-game.
     mapname: str
     get_entdef: Callable[[str], EntityDef]
@@ -2333,7 +2333,7 @@ class ResourceCtx:
     def __init__(
         self,
         tags: Iterable[str] = (),
-        fsys: FileSystem[Any] = _EMPTY_FILESYS,
+        fsys: FileSystem = _EMPTY_FILESYS,
         fgd: Union[FGD, Mapping[str, EntityDef], _GetFGDFunc] = EntityDef.engine_def,
         mapname: str = '',
         funcs: Mapping[str, Callable[

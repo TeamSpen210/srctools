@@ -1,6 +1,6 @@
 """Parses material files."""
 from typing import (
-    Any, Callable, Dict, Iterable, Iterator, List, Mapping, MutableMapping, Optional,
+    Callable, Dict, Iterable, Iterator, List, Mapping, MutableMapping, Optional,
     TextIO, Tuple, TypeVar, Union, overload,
 )
 from enum import Enum
@@ -305,7 +305,7 @@ class Material(MutableMapping[str, str]):
 
     def apply_patches(
         self,
-        fsys: FileSystem[Any],
+        fsys: FileSystem,
         *,
         limit: int = 100,
         parent_func: Optional[Callable[[str], None]] = None,
@@ -321,7 +321,7 @@ class Material(MutableMapping[str, str]):
 
     def _apply_patch(
         self,
-        fsys: FileSystem[Any],
+        fsys: FileSystem,
         count: int,
         limit: int,
         parent_func: Optional[Callable[[str], None]],

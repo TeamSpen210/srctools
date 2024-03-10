@@ -35,7 +35,7 @@ MDL_EXTS: Tuple[str, ...] = (
     '.mdl',
     *MDL_EXTS_EXTRA,
 )
-FileSysT = TypeVar('FileSysT', bound=FileSystem[Any])
+FileSysT = TypeVar('FileSysT', bound=FileSystem)
 
 
 class Flags(FlagEnum):
@@ -332,8 +332,8 @@ class Model:
 
     This does not parse the animation or geometry data, only other metadata.
     """
-    _sys: FileSystem[Any]
-    _file: File[Any]
+    _sys: FileSystem
+    _file: File
 
     name: str
     version: int

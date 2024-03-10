@@ -1,9 +1,8 @@
 """Handles the list of files which are desired to be packed into the BSP."""
 from typing import (
-    Any, Callable, Collection, Dict, Generic, Iterable, Iterator, List, Optional, Set,
-    Tuple, TypeVar, Union,
+    Callable, Collection, Dict, Generic, Iterable, Iterator, List, Optional, Set, Tuple, Union,
 )
-from typing_extensions import deprecated
+from typing_extensions import deprecated, TypeVar
 from collections import OrderedDict
 from enum import Enum
 from pathlib import Path
@@ -166,14 +165,14 @@ class ManifestedFiles(Generic[ParsedT]):
     # When packing the file, use this filetype.
     pack_type: FileType
     # A function which parses the data, given the filename and contents.
-    parse_func: Callable[[File[Any]], Dict[str, ParsedT]]
+    parse_func: Callable[[File], Dict[str, ParsedT]]
     # For each identifier, the filename it's in and whatever data this was parsed into.
     # Do not display in the repr, there's thousands of these.
     name_to_parsed: Dict[str, Tuple[str, Optional[ParsedT]]] = attrs.field(factory=dict, repr=False)
     # All the filenames we know about, in order. The value is then
     # whether they should be packed.
     _files: Dict[str, FileMode] = attrs.Factory(OrderedDict)
-    _unparsed_file: Dict[str, File[Any]] = attrs.Factory(dict)
+    _unparsed_file: Dict[str, File] = attrs.Factory(dict)
     # Records the contents of the cache file.
     # filename -> (cache_key, identifier_list)
     _cache: Dict[str, Tuple[int, List[str]]] = attrs.Factory(dict)
@@ -226,7 +225,7 @@ class ManifestedFiles(Generic[ParsedT]):
             root.export_binary(f, fmt_name='SrcPacklistCache', fmt_ver=1, unicode='format')
 
     def add_cached_file(
-        self, filename: str, file: File[Any],
+        self, filename: str, file: File,
         mode: FileMode = FileMode.UNKNOWN,
     ) -> None:
         """Load a file which may have been cached.
@@ -311,7 +310,7 @@ class ManifestedFiles(Generic[ParsedT]):
                 yield file, mode
 
 
-def _load_soundscript(file: File[Any]) -> Dict[str, Sound]:
+def _load_soundscript(file: File) -> Dict[str, Sound]:
     """Parse a soundscript file, logging errors that occur."""
     try:
         with file.open_str(encoding='cp1252') as f:
@@ -326,7 +325,7 @@ def _load_soundscript(file: File[Any]) -> Dict[str, Sound]:
         return {}
 
 
-def _load_particle_system(file: File[Any]) -> Dict[str, Particle]:
+def _load_particle_system(file: File) -> Dict[str, Particle]:
     """Parse a particle system file, logging errors that occur."""
     try:
         with file.open_bin() as f:
@@ -670,7 +669,7 @@ class PackList:
 
     def load_soundscript(
         self,
-        file: File[Any],
+        file: File,
         *,
         always_include: bool = False,
     ) -> Iterable[Sound]:
@@ -996,8 +995,8 @@ class PackList:
         self,
         bsp: BSP,
         *,
-        whitelist: Iterable[FileSystem[Any]] = (),
-        blacklist: Iterable[FileSystem[Any]] = (),
+        whitelist: Iterable[FileSystem] = (),
+        blacklist: Iterable[FileSystem] = (),
         callback: Callable[[str], Optional[bool]] = lambda f: None,
         dump_loc: Optional[Path] = None,
         only_dump: bool = False,
@@ -1022,7 +1021,7 @@ class PackList:
         # The packed_files dict is a casefolded name -> (orig name, bytes) tuple.
         packed_files: Dict[str, Tuple[str, bytes]] = {}
 
-        all_systems: Set[FileSystem[Any]] = {
+        all_systems: Set[FileSystem] = {
             sys for sys, _ in
             self.fsys.systems
         }

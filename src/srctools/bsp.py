@@ -568,7 +568,7 @@ class TexData:
     # always the same as regular width/height.
 
     @classmethod
-    def from_material(cls, fsys: FileSystem[Any], mat_name: str) -> 'TexData':
+    def from_material(cls, fsys: FileSystem, mat_name: str) -> 'TexData':
         """Given a filesystem, parse the specified material and compute the texture values."""
         orig_mat = mat_name
         mat_folded = mat_name.casefold()
@@ -654,7 +654,7 @@ class TexInfo:
         return self._info.width, self._info.height
 
     @overload
-    def set(self, bsp: 'BSP', mat: str, *, fsys: FileSystem[Any]) -> None: ...
+    def set(self, bsp: 'BSP', mat: str, *, fsys: FileSystem) -> None: ...
     @overload
     def set(self, bsp: 'BSP', mat: str, reflectivity: Vec, width: int, height: int) -> None: ...
 
@@ -663,7 +663,7 @@ class TexInfo:
         bsp: 'BSP', mat: str,
         reflectivity: Optional[Vec] = None,
         width: int = 0, height: int = 0,
-        fsys: Optional[FileSystem[Any]] = None,
+        fsys: Optional[FileSystem] = None,
     ) -> None:
         """Set the material used for this texinfo.
 
@@ -1751,7 +1751,7 @@ class BSP:
         return lump.data
 
     @overload
-    def create_texinfo(self, mat: str, *, copy_from: 'TexInfo', fsys: FileSystem[Any]) -> 'TexInfo':
+    def create_texinfo(self, mat: str, *, copy_from: 'TexInfo', fsys: FileSystem) -> 'TexInfo':
         """Copy from texinfo using filesystem."""
     @overload
     def create_texinfo(
@@ -1772,7 +1772,7 @@ class BSP:
         lightmap_t_off: AnyVec = FrozenVec(),
         lightmap_t_shift: float = -99999.0,
         flags: SurfFlags = SurfFlags.NONE,
-        *, fsys: FileSystem[Any],
+        *, fsys: FileSystem,
     ) -> 'TexInfo':
         """Construct from filesystem."""
     @overload
@@ -1807,7 +1807,7 @@ class BSP:
         copy_from: Optional['TexInfo'] = None,
         reflectivity: Optional[AnyVec] = None,
         width: int = 0, height: int = 0,
-        fsys: Optional[FileSystem[Any]] = None,
+        fsys: Optional[FileSystem] = None,
     ) -> 'TexInfo':
         """Create or find a texinfo entry with the specified values.
 
