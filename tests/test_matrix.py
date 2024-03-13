@@ -11,15 +11,13 @@ import pytest
 from helpers import *
 
 
-NORMALS = [
-    (-1, 0, 0),
-    (+1, 0, 0),
-    (0, -1, 0),
-    (0, +1, 0),
-    (0, 0, -1),
-    (0, 0, +1),
+DIRECTIONS = list(iter_vec([-1, 0, +1]))
+DIRECTIONS.remove((0, 0, 0))
+SIGNS = {-1: 'n', 0: '0', +1: 'p'}
+DIRECTION_IDS = [
+    f'{SIGNS[x]}{SIGNS[y]}{SIGNS[z]}'
+    for x, y, z in DIRECTIONS
 ]
-NORMAL_IDS = ['negx', 'posx', 'negy', 'posy', 'negz', 'posz']
 
 
 def test_matrix_constructor(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass) -> None:
@@ -279,46 +277,66 @@ def test_from_basis_basics(
         Matrix.from_basis(z=Vec(0, 0, 0))
 
 
-@pytest.mark.parametrize('direction', NORMALS, ids=NORMAL_IDS)
+@pytest.mark.parametrize('direction', DIRECTIONS, ids=DIRECTION_IDS)
 def test_from_basis_x(
     py_c_vec: PyCVec,
     frozen_thawed_matrix: MatrixClass,
+    frozen_thawed_angle: AngleClass,
     direction: Tuple[int, int, int],
 ) -> None:
     """Test Matrix.from_basis(), with a single axis."""
     Matrix = frozen_thawed_matrix
+    Angle = frozen_thawed_angle
+    norm = vec_mod.Vec(direction).norm()
 
-    mat = Matrix.from_basis(x=vec_mod.Vec(direction))
-    assert mat.forward() == direction
+    mat = Matrix.from_basis(x=norm)
+    ang = Angle.from_basis(x=norm)
+    assert mat.forward() == norm
     # Check the other axes are all aligned.
-    roundtrip = Matrix.from_angle(mat.to_angle())
+    ang2 = mat.to_angle()
+    roundtrip = Matrix.from_angle(ang2)
     assert_rot(mat, roundtrip, type=Matrix)
+    assert_ang(ang, *ang2, type=Angle)
 
 
-@pytest.mark.parametrize('direction', NORMALS, ids=NORMAL_IDS)
+@pytest.mark.parametrize('direction', DIRECTIONS, ids=DIRECTION_IDS)
 def test_from_basis_y(
     py_c_vec: PyCVec,
     frozen_thawed_matrix: MatrixClass,
+    frozen_thawed_angle: AngleClass,
     direction: Tuple[int, int, int],
 ) -> None:
     """Test Matrix.from_basis(), with just the y axis."""
     Matrix = frozen_thawed_matrix
+    Angle = frozen_thawed_angle
+    norm = vec_mod.Vec(direction).norm()
 
-    mat = Matrix.from_basis(y=vec_mod.Vec(direction))
-    assert mat.left() == direction
-    roundtrip = Matrix.from_angle(mat.to_angle())
+    mat = Matrix.from_basis(y=norm)
+    ang = Angle.from_basis(y=norm)
+    assert mat.left() == norm
+
+    ang2 = mat.to_angle()
+    roundtrip = Matrix.from_angle(ang2)
     assert_rot(mat, roundtrip, type=Matrix)
+    assert_ang(ang, *ang2, type=Angle)
 
 
-@pytest.mark.parametrize('direction', NORMALS, ids=NORMAL_IDS)
+@pytest.mark.parametrize('direction', DIRECTIONS, ids=DIRECTION_IDS)
 def test_from_basis_z(
     py_c_vec: PyCVec,
     frozen_thawed_matrix: MatrixClass,
+    frozen_thawed_angle: AngleClass,
     direction: Tuple[int, int, int],
 ) -> None:
     Matrix = frozen_thawed_matrix
+    Angle = frozen_thawed_angle
+    norm = vec_mod.Vec(direction).norm()
 
-    mat = Matrix.from_basis(z=vec_mod.Vec(direction))
-    assert mat.up() == direction
-    roundtrip = Matrix.from_angle(mat.to_angle())
+    mat = Matrix.from_basis(z=norm)
+    ang = Angle.from_basis(z=norm)
+    assert mat.up() == norm
+
+    ang2 = mat.to_angle()
+    roundtrip = Matrix.from_angle(ang2)
     assert_rot(mat, roundtrip, type=Matrix)
+    assert_ang(ang, *ang2, type=Angle)

@@ -2296,30 +2296,19 @@ class AngleBase:
         return cls(pitch, yaw, roll)
 
     @classmethod
-    @overload
-    def from_basis(cls: Type[AngleT], *, x: VecUnion, y: VecUnion, z: VecUnion) -> AngleT: ...
-
-    @classmethod
-    @overload
-    def from_basis(cls: Type[AngleT], *, x: VecUnion, y: VecUnion) -> AngleT: ...
-
-    @classmethod
-    @overload
-    def from_basis(cls: Type[AngleT], *, y: VecUnion, z: VecUnion) -> AngleT: ...
-
-    @classmethod
-    @overload
-    def from_basis(cls: Type[AngleT], *, x: VecUnion, z: VecUnion) -> AngleT: ...
-
-    @classmethod
-    def from_basis(cls: Type[AngleT], **kwargs: VecUnion) -> AngleT:
+    def from_basis(
+        cls: Type[AngleT], *,
+        x: Optional[VecUnion] = None,
+        y: Optional[VecUnion] = None,
+        z: Optional[VecUnion] = None,
+    ) -> AngleT:
         """Return the rotation which results in the specified local axes.
 
         At least two must be specified, with the third computed if necessary.
         """
         # We just delegate to Matrix's arg validation.
         # noinspection PyProtectedMember
-        return Py_Matrix.from_basis(**kwargs)._to_angle(cls.__new__(cls))
+        return Py_Matrix.from_basis(x=x, y=y, z=z)._to_angle(cls.__new__(cls))
 
     @classmethod
     @overload
