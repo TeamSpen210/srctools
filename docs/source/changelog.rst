@@ -4,6 +4,7 @@ Changelog
 .. contents::
 	:local:
 	:backlinks: none
+
 --------------
 Version (dev)
 --------------
@@ -11,11 +12,13 @@ Version (dev)
 * Fix entity keyvalues being lowercased when parsed from files.
 * Add "snippets" to FGD parsing, allowing reuse of descriptions and other small pieces of data.
 * Allow VMTs to use ``/* */`` comments.
-* `#24 <https://github.com/TeamSpen210/srctools/pull/24`_: Fixed incorrect :py:func:`matrix.inverse() <srctools.math.MatrixBase.inverse>` being calculated. PR by Ozxybox.
+* `#24 <https://github.com/TeamSpen210/srctools/pull/24>`_: Fixed incorrect :py:func:`matrix.inverse() <srctools.math.MatrixBase.inverse>` being calculated. PR by Ozxybox.
 * Allow omitting file/line number parameters for TokenSyntaxError.
 * Allow passing :py:class:`~srctools.vmf.PrismFace` to :py:class:`VMF.add_brush() <srctools.vmf.VMF.add_brush>`.
 * Parse Strata Source's VMF displacement data.
 * Remove negative zeros when formatting vector and angle values.
+* Expand :py:meth:`Angle <srctools.math.AngleBase.from_basis>`/:py:meth:`Matrix.from_basis() <srctools.math.MatrixBase.from_basis>` to pick the orientation if less than 2 vectors are provided.
+* Add :py:meth:`vmf.Side.from_normal() <srctools.vmf.Side.from_plane>`, which generates a VMF face pointing in an arbitary direction.
 
 --------------
 Version 2.3.15
