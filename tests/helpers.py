@@ -58,10 +58,7 @@ MatrixClass: TypeAlias = Union[Type[Py_Matrix], Type[Py_FrozenMatrix]]
 
 
 def iter_vec(nums: Iterable[T]) -> Iterator[Tuple[T, T, T]]:
-    for x in nums:
-        for y in nums:
-            for z in nums:
-                yield x, y, z
+    return itertools.product(nums, nums, nums)
 
 
 class ExactType(DirtyEquals[object]):
