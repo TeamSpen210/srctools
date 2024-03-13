@@ -556,7 +556,7 @@ cdef inline double _vec_mag_sq(vec_t *vec) noexcept nogil:
 cdef inline double _vec_mag(vec_t *vec) noexcept nogil:
     return math.sqrt(_vec_mag_sq(vec))
 
-cdef inline bint _vec_normalise(vec_t *out, vec_t *inp) except False:
+cdef inline float _vec_normalise(vec_t *out, vec_t *inp) except -1.0:
     """Normalise the vector, writing to out. inp and out may be the same."""
     cdef double mag = _vec_mag(inp)
 
@@ -569,7 +569,7 @@ cdef inline bint _vec_normalise(vec_t *out, vec_t *inp) except False:
             out.x = inp.x / mag
             out.y = inp.y / mag
             out.z = inp.z / mag
-    return True
+    return mag
 
 
 cdef inline bint mat_mul(mat_t targ, mat_t rot) except False:
@@ -643,40 +643,68 @@ cdef inline bint _mat_to_angle(vec_t *ang, mat_t mat) except False:
 
 cdef bint _mat_from_basis(mat_t mat, VecBase x, VecBase y, VecBase z) except False:
     """Implement the shared parts of Matrix/Angle .from_basis()."""
-    cdef vec_t res
+    cdef vec_t vec_x, vec_y, vec_z
 
-    if x is None:
-        if y is not None and z is not None:
-            _vec_cross(&res, &y.val, &z.val)
+    if x is not None:
+        if _vec_normalise(&vec_x, &x.val) < 1e-6:
+            raise ValueError('Basis vectors must be non-zero!')
+    if y is not None:
+        if _vec_normalise(&vec_y, &y.val) < 1e-6:
+            raise ValueError('Basis vectors must be non-zero!')
+    if z is not None:
+        if _vec_normalise(&vec_z, &z.val) < 1e-6:
+            raise ValueError('Basis vectors must be non-zero!')
+
+    if x is not None:
+        if y is not None:
+            if z is not None:
+                # All three provided, nothing to check.
+                pass
+            else:
+                _vec_cross(&vec_z, &vec_x, &vec_y)
         else:
-            raise TypeError('At least two vectors must be provided!')
+            if z is not None:
+                _vec_cross(&vec_y, &vec_z, &vec_x)
+            else:
+                # Just X.
+                if vec_x.x ** 2 + vec_x.y ** 2 < 1e-6:
+                    # Pointing up/down, gimbal lock.
+                    vec_y = {'x': 0, 'y': 1.0, 'z': 0.0}
+                else:
+                    vec_y = {'x': -vec_x.y, 'y': vec_x.x, 'z': 0.0}
+                    _vec_normalise(&vec_y, &vec_y)
+                _vec_cross(&vec_z, &vec_x, &vec_y)
     else:
-        res = x.val
-
-    _vec_normalise(&res, &res)
-    mat[0] = res.x, res.y, res.z
-
-    if y is None:
-        if x is not None and z is not None:
-            _vec_cross(&res, &z.val, &x.val)
+        if y is not None:
+            if z is not None:
+                _vec_cross(&vec_x, &vec_y, &vec_z)
+            else:
+                # Just Y.
+                if vec_y.x ** 2 + vec_y.y ** 2 < 1e-6:
+                    # Pointing up/down, gimbal lock.
+                    vec_x = {'x': 1.0, 'y': 0.0, 'z': 0.0}
+                else:
+                    vec_x = {'x': vec_y.y, 'y': -vec_y.x, 'z': 0.0}
+                    _vec_normalise(&vec_x, &vec_x)
+                _vec_cross(&vec_z, &vec_x, &vec_y)
         else:
-            raise TypeError('At least two vectors must be provided!')
-    else:
-        res = y.val
+            if z is not None:
+                # Just Z.
+                if vec_z.x ** 2 + vec_z.y ** 2 < 1e-6:
+                    # Pointing up/down, gimbal lock.
+                    vec_y = {'x': 0, 'y': 1.0, 'z': 0.0}
+                else:
+                    vec_y = {'x': -vec_z.y, 'y': vec_z.x, 'z': 0.0}
+                    _vec_normalise(&vec_y, &vec_y)
+                _vec_cross(&vec_x, &vec_y, &vec_z)
+            else:
+                # None provided, identity.
+                _mat_identity(mat)
+                return True
 
-    _vec_normalise(&res, &res)
-    mat[1] = res.x, res.y, res.z
-
-    if z is None:
-        if x is not None and y is not None:
-            _vec_cross(&res, &x.val, &y.val)
-        else:
-            raise TypeError('At least two vectors must be provided!')
-    else:
-        res = z.val
-
-    _vec_normalise(&res, &res)
-    mat[2] = res.x, res.y, res.z
+    mat[0] = vec_x.x, vec_x.y, vec_x.z
+    mat[1] = vec_y.x, vec_y.y, vec_y.z
+    mat[2] = vec_z.x, vec_z.y, vec_z.z
     return True
 
 
