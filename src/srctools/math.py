@@ -1958,6 +1958,13 @@ class MatrixBase:
         remaining axes will be positioned on the horizontal plane. With no parameters, this
         returns the identity matrix (but just call the constructor for that).
         """
+        if x is not None and x.mag() < 1e-6:
+            raise ValueError('Basis vectors must be non-zero!')
+        if y is not None and y.mag() < 1e-6:
+            raise ValueError('Basis vectors must be non-zero!')
+        if z is not None and z.mag() < 1e-6:
+            raise ValueError('Basis vectors must be non-zero!')
+
         if x is not None:
             if y is not None:
                 if z is not None:

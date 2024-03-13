@@ -261,14 +261,22 @@ def test_inverse_fail(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass) -> No
         to_invert.inverse()
 
 
-def test_from_basis_identity(
+def test_from_basis_basics(
     py_c_vec: PyCVec,
     frozen_thawed_matrix: MatrixClass,
 ) -> None:
-    """With no parameters, Matrix.from_basis() returns the identity."""
+    """Test basic behaviours for from_basis()."""
     Matrix = frozen_thawed_matrix
+    Vec = vec_mod.Vec
 
     assert_rot(Matrix.from_basis(), Matrix(), type=Matrix)
+    # Passing a zero vector is an error.
+    with pytest.raises(ValueError):
+        Matrix.from_basis(x=Vec(0, 0, 0))
+    with pytest.raises(ValueError):
+        Matrix.from_basis(y=Vec(0, 0, 0))
+    with pytest.raises(ValueError):
+        Matrix.from_basis(z=Vec(0, 0, 0))
 
 
 @pytest.mark.parametrize('direction', NORMALS, ids=NORMAL_IDS)
