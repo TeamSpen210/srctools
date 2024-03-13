@@ -1969,8 +1969,13 @@ class MatrixBase:
                     y = Vec.cross(z, x)
                 else:
                     # Just X
-                    y = Vec()
-                    z = Vec()
+                    x = x.norm()
+                    if (x.x**2 + x.y**2) < 1e-6:
+                        # Pointing up/down, gimbal lock.
+                        y = Vec(0, 1, 0)
+                    else:
+                        y = Vec(-x.y, x.x, 0.0)
+                    z = Vec.cross(x, y)
         else:
             if y is not None:
                 if z is not None:
