@@ -220,7 +220,7 @@ def test_invalid_setitem(py_c_vec: PyCVec) -> None:
         mat[2, 0] = [1, 2, 3]
 
 
-def test_inverse_known(frozen_thawed_matrix: MatrixClass) -> None:
+def test_inverse_known(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass) -> None:
     """Test the matrix inverse() method with a known inverse. """
     Matrix = vec_mod.Matrix
 
@@ -255,7 +255,7 @@ def test_inverse_known(frozen_thawed_matrix: MatrixClass) -> None:
     assert_rot(invert, correct, type=frozen_thawed_matrix)
 
 
-def test_inverse_fail(frozen_thawed_matrix: MatrixClass) -> None:
+def test_inverse_fail(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass) -> None:
     """Test the matrix inverse() method for known failure. """
     # Test for expected failure
     mat = vec_mod.Matrix()
