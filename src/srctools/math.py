@@ -1945,40 +1945,49 @@ class MatrixBase:
         return out
 
     @classmethod
-    @overload
-    def from_basis(cls: Type[MatrixT], *, x: VecUnion, y: VecUnion, z: VecUnion) -> MatrixT: ...
-
-    @classmethod
-    @overload
-    def from_basis(cls: Type[MatrixT], *, x: VecUnion, y: VecUnion) -> MatrixT: ...
-
-    @classmethod
-    @overload
-    def from_basis(cls: Type[MatrixT], *, y: VecUnion, z: VecUnion) -> MatrixT: ...
-
-    @classmethod
-    @overload
-    def from_basis(cls: Type[MatrixT], *, x: VecUnion, z: VecUnion) -> MatrixT: ...
-
-    @classmethod
     def from_basis(
         cls: Type[MatrixT], *,
         x: Optional[VecUnion] = None,
         y: Optional[VecUnion] = None,
         z: Optional[VecUnion] = None,
     ) -> MatrixT:
-        """Construct a matrix from at least two basis vectors.
+        """Construct a matrix from existing basis vectors.
 
-        The third is computed, if not provided.
+        If at least two are provided, only one result is possible. Otherwise, the result is
+        insufficiently constrained, so multiple results are valid. In those cases one of the
+        remaining axes will be positioned on the horizontal plane. With no parameters, this
+        returns the identity matrix (but just call the constructor for that).
         """
-        if x is None and y is not None and z is not None:
-            x = Vec.cross(y, z)
-        elif y is None and x is not None and z is not None:
-            y = Vec.cross(z, x)
-        elif z is None and x is not None and y is not None:
-            z = Vec.cross(x, y)
-        if x is None or y is None or z is None:
-            raise TypeError('At least two vectors must be provided!')
+        if x is not None:
+            if y is not None:
+                if z is not None:
+                    pass  # All three provided.
+                else:
+                    z = Vec.cross(x, y)
+            else:
+                if z is not None:
+                    y = Vec.cross(z, x)
+                else:
+                    # Just X
+                    y = Vec()
+                    z = Vec()
+        else:
+            if y is not None:
+                if z is not None:
+                    x = Vec.cross(y, z)
+                else:
+                    # Just Y.
+                    x = Vec()
+                    z = Vec()
+            else:
+                if z is not None:
+                    # Just Z
+                    x = Vec()
+                    y = Vec()
+                else:
+                    # None provided, identity.
+                    return cls()
+
         mat = cls.__new__(cls)
         mat._aa, mat._ab, mat._ac = x.norm()
         mat._ba, mat._bb, mat._bc = y.norm()
