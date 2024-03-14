@@ -19,6 +19,7 @@ Version (dev)
 * Remove negative zeros when formatting vector and angle values.
 * Expand :py:meth:`Angle <srctools.math.AngleBase.from_basis>`/:py:meth:`Matrix.from_basis() <srctools.math.MatrixBase.from_basis>` to pick the orientation if less than 2 vectors are provided.
 * Add :py:meth:`vmf.Side.from_normal() <srctools.vmf.Side.from_plane>`, which generates a VMF face pointing in an arbitary direction.
+* Add :py:meth:`vmf.Solid.point_inside() <srctools.vmf.Solid.point_inside>`, which checks if a point is inside or outside a brush.
 
 --------------
 Version 2.3.15

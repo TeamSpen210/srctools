@@ -1399,6 +1399,18 @@ class Solid:
         for s in self.sides:
             s.localise(origin, angles)
 
+    def point_inside(self, point: AnyVec, threshold: float = 1e-6) -> bool:
+        """Check if the specified point is inside the brush.
+
+        The threshold controls tolerance - a point is still counted if it is this far away from
+        the surface.
+        """
+        for side in self.sides:
+            offset = side.normal().dot(side.planes[1] - point)
+            if offset > threshold:
+                return False
+        return True
+
 
 @attrs.define(frozen=True, hash=True, order=True)
 class Vec4:
