@@ -6,7 +6,7 @@ Changelog
 	:backlinks: none
 
 --------------
-Version (dev)
+Version 2.3.16
 --------------
 
 * Fix entity keyvalues being lowercased when parsed from files.
