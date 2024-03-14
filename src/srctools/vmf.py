@@ -1886,8 +1886,7 @@ class Side:
         The normal vector points out of the face. This calculates a valid texture alignment, but
         does not specify an exact result.
         """
-        # Use this to pick two arbitrary axes for the UVs. TODO: Calculate directly.
-        orient = Matrix.from_angle(FrozenVec(normal).to_angle())
+        orient = Matrix.from_basis(x=FrozenVec(normal))
         point = Vec(position)
         u = -orient.left()
         v = -orient.up()
