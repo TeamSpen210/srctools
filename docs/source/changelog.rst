@@ -5,12 +5,41 @@ Changelog
 	:local:
 	:backlinks: none
 
--------------
-Version (dev)
--------------
+--------------
+Version 2.3.16
+--------------
+
+* Fix entity keyvalues being lowercased when parsed from files.
+* Add "snippets" to FGD parsing, allowing reuse of descriptions and other small pieces of data.
+* Allow VMTs to use ``/* */`` comments.
+* `#24 <https://github.com/TeamSpen210/srctools/pull/24>`_: Fixed incorrect :py:func:`matrix.inverse() <srctools.math.MatrixBase.inverse>` being calculated. PR by Ozxybox.
+* Allow omitting file/line number parameters for TokenSyntaxError.
+* Allow passing :py:class:`~srctools.vmf.PrismFace` to :py:class:`VMF.add_brush() <srctools.vmf.VMF.add_brush>`.
+* Parse Strata Source's VMF displacement data.
+* Remove negative zeros when formatting vector and angle values.
+* Expand :py:meth:`Angle <srctools.math.AngleBase.from_basis>`/:py:meth:`Matrix.from_basis() <srctools.math.MatrixBase.from_basis>` to pick the orientation if less than 2 vectors are provided.
+* Add :py:meth:`vmf.Side.from_normal() <srctools.vmf.Side.from_plane>`, which generates a VMF face pointing in an arbitary direction.
+* Add :py:meth:`vmf.Solid.point_inside() <srctools.vmf.Solid.point_inside>`, which checks if a point is inside or outside a brush.
+
+--------------
+Version 2.3.15
+--------------
+* `HammerAddons#237 <https://github.com/TeamSpen210/HammerAddons/issues/237>`_: FGD model helpers should override each other.
+* Fix #20: VTF.compute_mipmaps() not working for cubemaps.
+* Correctly handle `.vvd`/`.vtx` etc files being packed as :py:class:`MODEL <srctools.packlist.FileType.GENERIC`.
+* Improve performance of pure-Python VTF save/loading code.
+* Add :py:meth:`Vec.clamped() <srctools.math.VecBase.clamped>`, for applying min/max bounds to a vector.
+* Fix :py:meth:`Entity.make_unique() <srctools.vmf.Entity.make_unique>` renaming entities with numeric suffixes which were already unique.
+
+--------------
+Version 2.3.14
+--------------
 * Drop support for Python 3.7.
 * Fix VMT parsing not handling `Proxies {` style braces.
 * Add Cythonised versions of :py:func:`~srctools.conv_int`, :py:func`~srctools.conv_float` and :py:func`~srctools.conv_bool`.
+* Added a ``repr()`` for :py:class:`srctools.vmf.Entity`.
+* Automatically clean up up empty sets when removing entities from :py:class:`VMF.by_class <srctools.vmf.VMF.by_class>` and :py:class:`.by_target <srctools.vmf.VMF.by_target>`.
+* Fixed saving/loading issues with a number of VTF formats.
 
 --------------
 Version 2.3.13
@@ -71,7 +100,7 @@ Version 2.3.9
 Version 2.3.8
 -------------
 
-* Fix :py:mod:`srctools.logger` discarding :external:py:class:`MultiError` (or its backport) if it
+* Fix :py:mod:`srctools.logger` discarding :external:py:class:`!trio.MultiError` (or its backport) if it
   bubbles up to the toplevel.
 * Tweak VMF :py:meth:`localise() <srctools.vmf.Solid.localise>` and
   :py:meth:`translate()  <srctools.vmf.Solid.translate>` type hints to allow
@@ -233,7 +262,7 @@ Version 2.3.0
 * Upgrade plugin finding logic to ensure each source is mounted under a persistent ID.
 * Add missing :py:attr:`srctools.bsp.Primitive.dynamic_shadows`.
 * Deprecate :py:class:`srctools.AtomicWriter`, use the ``atomicwrites`` module.
-* :py:mod:`srctools._class_resources` is now only imported when required.
+* :py:mod:`!srctools._class_resources` is now only imported when required.
 * Use Cython when building, instead of including sources.
 * :py:attr:`srctools.vmf.Entity.fixup` will instantiate the :py:class:`~srctools.vmf.EntityFixup`
   object only when actually required.
@@ -305,7 +334,7 @@ Version 2.1.0
 -------------
 
 * Fix ``%``-formatted logs breaking when :py:mod:`srctools.logger` is used.
-* Add :py:meth:`Property.extend()`, instead of using ``+`` or :py:meth:`Property.append()` with a block. That usage is deprecated.
+* Add :py:meth:`Property.extend() <Keyvalues.extend>`, instead of using ``+`` or :py:meth:`<Property.append() <Keyvalues.append>` with a block. That usage is deprecated.
 * Deprecate creating root properties with ``name=None``.
 * :py:class:`srctools.filesys.FileSystemChain` is no longer generic, this is not useful.
 * Add functions which embed a Keyvalues1 tree in a DMX tree.

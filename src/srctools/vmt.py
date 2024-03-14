@@ -1,6 +1,6 @@
 """Parses material files."""
 from typing import (
-    Any, Callable, Dict, Iterable, Iterator, List, Mapping, MutableMapping, Optional,
+    Callable, Dict, Iterable, Iterator, List, Mapping, MutableMapping, Optional,
     TextIO, Tuple, TypeVar, Union, overload,
 )
 from enum import Enum
@@ -133,7 +133,12 @@ class Material(MutableMapping[str, str]):
     def parse(cls, data: Iterable[str], filename: str = '') -> 'Material':
         """Parse a VMT from the file."""
         # Block escapes, so "files\test\tex" doesn't have a tab in it.
-        tok = Tokenizer(data, filename, string_bracket=True, allow_escapes=False)
+        tok = Tokenizer(
+            data, filename,
+            string_bracket=True,
+            allow_escapes=False,
+            allow_star_comments=True,
+        )
 
         # First look for the shader name -
         # which must be the first string
@@ -233,8 +238,8 @@ class Material(MutableMapping[str, str]):
             else:
                 raise tok.error('EOF while reading options for "{}" proxy', proxy_name)
             yield proxy_name, opts
-        else:
-            raise tok.error('Proxy block not closed!')
+        # We hit EOF, still expecting the }.
+        raise tok.error('Proxy block not closed!')
 
     @staticmethod
     def _parse_block(tok: Tokenizer, name: str) -> Keyvalues:
@@ -300,7 +305,7 @@ class Material(MutableMapping[str, str]):
 
     def apply_patches(
         self,
-        fsys: FileSystem[Any],
+        fsys: FileSystem,
         *,
         limit: int = 100,
         parent_func: Optional[Callable[[str], None]] = None,
@@ -316,7 +321,7 @@ class Material(MutableMapping[str, str]):
 
     def _apply_patch(
         self,
-        fsys: FileSystem[Any],
+        fsys: FileSystem,
         count: int,
         limit: int,
         parent_func: Optional[Callable[[str], None]],
@@ -336,8 +341,7 @@ class Material(MutableMapping[str, str]):
             parent_file = fsys[filename]
         except FileNotFoundError:
             raise ValueError(
-                'Material file "{}" does not exist when'
-                ' patching!'.format(filename)
+                f'Material file "{filename}" does not exist when patching!'
             ) from None
 
         if parent_func is not None:

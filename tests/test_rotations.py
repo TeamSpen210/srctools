@@ -52,6 +52,22 @@ def rotation_data() -> List[RotationData]:
     return data
 
 
+def test_construction(frozen_thawed_matrix: MatrixClass) -> None:
+    """Test constructing identity matrices."""
+    matrix = frozen_thawed_matrix()
+    assert matrix[0, 0] == 1.0
+    assert matrix[0, 1] == 0.0
+    assert matrix[0, 2] == 0.0
+
+    assert matrix[1, 0] == 0.0
+    assert matrix[1, 1] == 1.0
+    assert matrix[1, 2] == 0.0
+
+    assert matrix[2, 0] == 0.0
+    assert matrix[2, 1] == 0.0
+    assert matrix[2, 2] == 1.0
+
+
 def test_vec_identities(
     py_c_vec: PyCVec,
     frozen_thawed_vec: VecClass,
@@ -258,6 +274,14 @@ def test_axis_angle(
     test(Vec(1, 0, 0), Angle(0, 0, 1))
     test(Vec(0, 1, 0), Angle(1, 0, 0))
     test(Vec(0, 0, 1), Angle(0, 1, 0))
+
+
+def test_matrix_hash(py_c_vec: PyCVec) -> None:
+    """Matrices cannot be hashed."""
+    with pytest.raises(TypeError):
+        hash(vec_mod.Matrix())
+    with pytest.raises(TypeError):
+        hash(vec_mod.FrozenMatrix())
 
 
 def old_mat_mul(

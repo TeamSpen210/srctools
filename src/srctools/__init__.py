@@ -5,6 +5,7 @@ from typing import (
 )
 from typing_extensions import Literal, TypeAlias
 from collections import deque
+from pathlib import Path
 from types import TracebackType
 import io
 import itertools as _itertools
@@ -466,10 +467,9 @@ class AtomicWriter(Generic[IOKindT]):
     This is not reentrant, but can be repeated - starting the context manager
     clears the file.
     """
-    filename: str
-    dir: str
+    filename: Path
     encoding: str
-    _temp_name: Optional[str]
+    _temp_name: Optional[Path]
     is_bytes: bool
     temp: Optional[IOKindT]
 
@@ -494,8 +494,7 @@ class AtomicWriter(Generic[IOKindT]):
         """Create an AtomicWriter.
         is_bytes sets text or bytes writing mode. The file is always writable.
         """
-        self.filename = _os.fspath(filename)
-        self.dir = _os.path.dirname(filename)
+        self.filename = Path(filename)
         self.encoding = encoding
         self._temp_name = None
         self.is_bytes = is_bytes
@@ -506,19 +505,18 @@ class AtomicWriter(Generic[IOKindT]):
         if self.temp is not None:
             # Already open - close and delete the current file.
             self.temp.close()
-            _os.remove(self.temp.name)
+            Path(self.temp.name).unlink()
 
         # Create folders if needed.
-        if self.dir:
-            _os.makedirs(self.dir, exist_ok=True)
+        self.filename.parent.mkdir(parents=True, exist_ok=True)
 
         for i in _itertools.count(start=1):
-            self._temp_name = _os.path.join(self.dir, f'tmp_{i}')
+            self._temp_name = self.filename.with_name(f'tmp_{i}')
             try:
                 if self.is_bytes:  # type checkers can't narrow self from this!
-                    self.temp = open(self._temp_name, 'xb')  # type: ignore
+                    self.temp = self._temp_name.open('xb')  # type: ignore
                 else:
-                    self.temp = open(self._temp_name, 'xt', encoding=self.encoding)  # type: ignore
+                    self.temp = self._temp_name.open('xt', encoding=self.encoding)  # type: ignore
                 break
             except FileExistsError:
                 pass
@@ -545,12 +543,12 @@ class AtomicWriter(Generic[IOKindT]):
         if exc_type is not None:
             # An exception occurred, clean up.
             try:
-                _os.remove(self._temp_name)
+                self._temp_name.unlink()
             except FileNotFoundError:
                 pass
         else:
             # No exception, commit changes
-            _os.replace(self._temp_name, self.filename)
+            self._temp_name.replace(self.filename)
 
         return None  # Don't cancel the exception.
 

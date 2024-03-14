@@ -49,106 +49,102 @@ Several classes from other modules are automatically imported, allowing for more
 
 
 .. py:class:: Vec
-
-	:canonical: :py:class:`srctools.math.Vec`
+	:canonical: srctools.math.Vec
 
 .. py:class:: Angle
-
-	:canonical: :py:class:`srctools.math.Angle`
+	:canonical: srctools.math.Angle
 
 .. py:class:: Matrix
-
-	:canonical: :py:class:`srctools.math.Matrix`
+	:canonical: srctools.math.Matrix
 
 .. py:class:: Vec_tuple
-
-	:canonical: :py:class:`srctools.math.Vec_tuple`
+	:canonical: srctools.math.Vec_tuple
 
 .. py:function:: parse_vec_str
-
-	:canonical: :py:func:`srctools.math.parse_vec_str()`
+	:canonical: srctools.math.parse_vec_str
 
 .. py:function:: lerp
+	:canonical: srctools.math.lerp
 
-	:canonical: :py:func:`srctools.math.lerp()`
+
+These are found in :py:mod:`srctools.math`.
 
 -------------------------------------
 
 .. py:class:: NoKeyError
-
-	:canonical: :py:class:`srctools.keyvalues.NoKeyError`
+	:canonical: srctools.keyvalues.NoKeyError
 
 .. py:class:: KeyValError
-
-	:canonical: :py:class:`srctools.keyvalues.KeyValError`
+	:canonical: srctools.keyvalues.KeyValError
 
 .. py:class:: Keyvalues
+	:canonical: srctools.keyvalues.Keyvalues
 
-	:canonical: :py:class:`srctools.keyvalues.Keyvalues`
+These are found in :py:mod:`srctools.keyvalues`.
 
 -----------------------------------------------
 
 .. py:class:: FileSystem
-
-	:canonical: :py:class:`srctools.filesys.FileSystem`
+	:canonical: srctools.filesys.FileSystem
 
 .. py:class:: FileSystemChain
-
-	:canonical: :py:class:`srctools.filesys.FileSystemChain`
+	:canonical: srctools.filesys.FileSystemChain
 
 .. py:function:: get_filesystem
+	:canonical: srctools.filesys.get_filesystem
 
-	:canonical: :py:func:`srctools.filesys.get_filesystem()`
+These are found in :py:mod:`srctools.filesys`.
 
 ----------------------------------------------------
 
 .. py:class:: VMF
-
-	:canonical: :py:class:`srctools.vmf.VMF`
+	:canonical: srctools.vmf.VMF
 
 .. py:class:: Entity
-
-	:canonical: :py:class:`srctools.vmf.Entity`
+	:canonical: srctools.vmf.Entity
 
 .. py:class:: Solid
-
-	:canonical: :py:class:`srctools.vmf.Solid`
+	:canonical: srctools.vmf.Solid
 
 .. py:class:: Side
-
-	:canonical: :py:class:`srctools.vmf.Side`
+	:canonical: srctools.vmf.Side
 
 .. py:class:: Output
-
-	:canonical: :py:class:`srctools.vmf.Output`
+	:canonical: srctools.vmf.Output
 
 .. py:class:: UVAxis
+	:canonical: srctools.vmf.UVAxis
 
-	:canonical: :py:class:`srctools.vmf.UVAxis`
+These are found in :py:mod:`srctools.vmf`.
 
 ----------------------------------------------------------
 
 .. py:class:: SurfaceProp
+	:canonical: srctools.surfaceprop.SurfaceProp
 
-	:canonical: :py:class:`srctools.surfaceprop.SurfaceProp`
 .. py:class:: SurfChar
+	:canonical: srctools.surfaceprop.SurfChar
 
-	:canonical: :py:class:`srctools.surfaceprop.SurfChar`
+These are found in :py:mod:`srctools.surfaceprop`.
 
 ---------------------------------------------------------
 
 .. py:class:: VPK
+	:canonical: srctools.vpk.VPK
 
-	:canonical: :py:class:`srctools.vpk.VPK`
+This is :py:class:`srctools.vpk.VPK`.
 
 .. py:class:: FGD
+	:canonical: srctools.fgd.FGD
 
-	:canonical: :py:class:`srctools.fgd.FGD`
+This is :py:class:`srctools.fgd.FGD`.
 
 .. py:class:: GameID
+	:canonical: srctools.const.GameID
 
-	:canonical: :py:class:`srctools.const.GameID`
+This is :py:class:`srctools.const.GameID`.
 
 .. py:class:: VTF
+	:canonical: srctools.vtf.VTF
 
-	:canonical: :py:class:`srctools.vtf.VTF`
+This is :py:class:`srctools.vtf.VTF`.

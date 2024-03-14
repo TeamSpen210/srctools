@@ -17,9 +17,9 @@ the file.
 from typing import (
     IO, TYPE_CHECKING, Any, Callable, Dict, Final, Generic, Iterable, Iterator, KeysView,
     List, Mapping, MutableMapping, NamedTuple, Optional, Sequence, Set, Tuple, Type,
-    TypeVar, Union, ValuesView, cast,
+    Union, ValuesView, cast,
 )
-from typing_extensions import Literal, TypeAlias, deprecated, overload
+from typing_extensions import Literal, TypeAlias, TypeVar, deprecated, overload
 from enum import Enum
 from struct import Struct, error as StructError, pack
 from uuid import UUID, uuid4 as get_uuid
@@ -257,7 +257,7 @@ ValueList = Union[
 # Additional values we convert to valid types.
 ConvValue: TypeAlias = Union[Value, Vec, Matrix, Angle]
 
-ValueT = TypeVar('ValueT', bound=Value)
+ValueT = TypeVar('ValueT', bound=Value, default=Any)
 
 # [from, to] -> conversion.
 # Implementation at the end of the file.
@@ -475,7 +475,7 @@ del _make_val_prop
 # noinspection PyProtectedMember
 class AttrMember(_ValProps):
     """A proxy for individual indexes/keys, allowing having .val attributes."""
-    def __init__(self, owner: 'Attribute[Any]', index: int) -> None:
+    def __init__(self, owner: 'Attribute', index: int) -> None:
         """Internal use only."""
         self.owner = owner
         self.index = index
@@ -736,10 +736,10 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     @overload
-    def array(cls, name: str, val_type: ValueType) -> 'Attribute[Any]': ...
+    def array(cls, name: str, val_type: ValueType) -> 'Attribute': ...
 
     @classmethod
-    def array(cls, name: str, val_type: ValueType, values: Iterable[Any] = ()) -> 'Attribute[Any]':
+    def array(cls, name: str, val_type: ValueType, values: Iterable[Any] = ()) -> 'Attribute':
         """Create an attribute with an empty array of a specified type."""
         conv_func = CONVERSIONS[val_type]
         return Attribute(name, val_type, list(map(conv_func, values)))
@@ -1042,6 +1042,8 @@ class Attribute(Generic[ValueT], _ValProps):
             value = repr(self._value)
         return f'<{self._typ.name} Attr {self.name!r}: {value}>'
 
+    __hash__ = None  # type: ignore[assignment]
+
     def __eq__(self, other: object) -> builtins.bool:
         if isinstance(other, Attribute):
             return (
@@ -1163,7 +1165,7 @@ class Attribute(Generic[ValueT], _ValProps):
         return Attribute(self.name, self._typ, copy.deepcopy(self._value, memodict))
 
 
-class Element(Mapping[str, Attribute[Any]]):
+class Element(Mapping[str, Attribute]):
     """An element in a DMX tree.
 
     This is a mapping over `Attribute` objects, representing each key-value pair in the element.
@@ -1185,7 +1187,7 @@ class Element(Mapping[str, Attribute[Any]]):
     including recursively. This does not normally need to be set manually, since a random one
     will be computed for each new element automatically.
     """
-    _members: MutableMapping[str, Attribute[Any]]
+    _members: MutableMapping[str, Attribute]
 
     def __init__(self, name: str, type: str, uuid: Optional[UUID] = None) -> None:
         self._members = {'name': Attribute('name', ValueType.STRING, name)}
@@ -1328,7 +1330,7 @@ class Element(Mapping[str, Attribute[Any]]):
             stringdb = None
 
         stubs: Dict[UUID, StubElement] = {}
-        attr: Attribute[Any]
+        attr: Attribute
 
         [element_count] = binformat.struct_read('<i', file)
         elements: List[Element] = []
@@ -1448,7 +1450,7 @@ class Element(Mapping[str, Attribute[Any]]):
 
         # Locations in arrays which are UUIDs (and need setting).
         # This is a (attr, index, uuid, line_num) tuple.
-        fixups: List[Tuple[Attribute[Any], Optional[int], UUID, int]] = []
+        fixups: List[Tuple[Attribute, Optional[int], UUID, int]] = []
         # Ensure these reuse the same objects.
         stubs: Dict[UUID, StubElement] = collections.defaultdict(StubElement.stub)
 
@@ -1483,13 +1485,13 @@ class Element(Mapping[str, Attribute[Any]]):
     def _parse_kv2_element(
         cls, tok: Tokenizer,
         id_to_elem: Dict[UUID, 'Element'],
-        fixups: List[Tuple[Attribute[Any], Optional[int], UUID, int]],
+        fixups: List[Tuple[Attribute, Optional[int], UUID, int]],
         stubs: Dict[UUID, 'StubElement'],
         name: str,
         typ_name: str,
     ) -> 'Element':
         """Parse a compound element."""
-        attr: Attribute[Any]
+        attr: Attribute
         elem: Element = cls(name, typ_name, _UNSET_UUID)
 
         for attr_name in tok.block(name):
@@ -1993,18 +1995,18 @@ class Element(Mapping[str, Attribute[Any]]):
         """Return a view of the valid (casefolded) keys for this element."""
         return self._members.keys()
 
-    def values(self) -> ValuesView[Attribute[Any]]:
+    def values(self) -> ValuesView[Attribute]:
         """Return a view of the attributes for this element."""
         return self._members.values()
 
-    def __getitem__(self, name: str) -> Attribute[Any]:
+    def __getitem__(self, name: str) -> Attribute:
         return self._members[name.casefold()]
 
     def __delitem__(self, name: str) -> None:
         """Remove the specified attribute."""
         del self._members[name.casefold()]
 
-    def __setitem__(self, name: str, value: Union[Attribute[Any], ConvValue, Sequence[ConvValue]]) -> None:
+    def __setitem__(self, name: str, value: Union[Attribute, ConvValue, Sequence[ConvValue]]) -> None:
         """Set a specific value, by deducing the type.
 
         This means this cannot produce certain types like Time. Use an
@@ -2022,7 +2024,7 @@ class Element(Mapping[str, Attribute[Any]]):
         """Remove all attributes from the element."""
         self._members.clear()
 
-    def pop(self, name: str, default: Union[Attribute[Any], ConvValue, Sequence[ConvValue]] = _UNSET) -> Attribute[Any]:
+    def pop(self, name: str, default: Union[Attribute, ConvValue, Sequence[ConvValue]] = _UNSET) -> Attribute:
         """Remove the specified attribute and return it.
 
         If not found, an attribute is created from the default if specified,
@@ -2042,12 +2044,12 @@ class Element(Mapping[str, Attribute[Any]]):
         else:
             return attr
 
-    def popitem(self) -> Tuple[str, Attribute[Any]]:
+    def popitem(self) -> Tuple[str, Attribute]:
         """Remove and return a (name, attr) pair as a 2-tuple, or raise KeyError."""
         key, attr = self._members.popitem()
         return (attr.name, attr)
 
-    def setdefault(self, name: str, default: Union[Attribute[Any], ConvValue, Sequence[ConvValue]]) -> Attribute[Any]:
+    def setdefault(self, name: str, default: Union[Attribute, ConvValue, Sequence[ConvValue]]) -> Attribute:
         """Return the specified attribute name.
 
         If it does not exist, set it using the default and return that.

@@ -1452,7 +1452,7 @@ def test_npc_combinedropship() -> None:
         Resource.mdl("models/buggy.mdl"),
         classname='npc_combinedropship',
         tags__=['hl2'],
-        cratetype=-3, # Jeep, just a visual prop.
+        cratetype=-3,  # Jeep, just a visual prop.
     )
 
 

@@ -23,13 +23,13 @@ class Game:
     fgd_loc: Optional[str]
     search_paths: List[Path]
 
-    def __init__(self, path: Union[str, Path]) -> None:
+    def __init__(self, path: Union[str, Path], encoding: str = 'utf8') -> None:
         """Parse a game from a folder."""
         if isinstance(path, Path):
             self.path = path
         else:
             self.path = Path(path)
-        with open(self.path / GINFO) as f:
+        with open(self.path / GINFO, encoding=encoding) as f:
             gameinfo = Keyvalues.parse(
                 f,
                 allow_escapes=False,  # Allow backslashes in paths.
@@ -50,7 +50,7 @@ class Game:
             if exp_path.name == '*':
                 try:
                     self.search_paths.extend(
-                        map(exp_path.parent.joinpath, os.listdir(exp_path.parent))
+                        filter(Path.is_dir, exp_path.parent.iterdir())
                     )
                 except FileNotFoundError:
                     pass
@@ -179,17 +179,19 @@ def find_gameinfo(argv: Optional[List[str]] = None) -> Game:
                 raise ValueError(f'"{value}" argument has no value!') from None
             if Path(path, GINFO).exists():
                 return Game(path)
-    else:
-        # Check VPROJECT
-        if 'VPROJECT' in os.environ:
-            path = os.environ['VPROJECT']
-            if Path(path, GINFO).exists():
-                return Game(path)
-        else:
-            if Path(os.getcwd(), GINFO).exists():
-                return Game(os.getcwd())
 
-            for folder in Path(os.getcwd()).parents:
-                if Path(folder / GINFO).exists():
-                    return Game(folder)
+    # Check VPROJECT
+    if 'VPROJECT' in os.environ:
+        path = os.environ['VPROJECT']
+        if Path(path, GINFO).exists():
+            return Game(path)
+    else:
+        workdir = Path.cwd()
+        if Path(workdir, GINFO).exists():
+            return Game(workdir)
+
+        for folder in workdir.parents:
+            if Path(folder / GINFO).exists():
+                return Game(folder)
+
     raise ValueError("Couldn't find gameinfo.txt!")

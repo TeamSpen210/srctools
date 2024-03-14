@@ -18,6 +18,7 @@ import io
 import operator
 import re
 import warnings
+import struct
 
 import attrs
 
@@ -302,6 +303,18 @@ class CopySet(Set[T]):
         yield from self - cur_items
 
 
+def _remove_copyset(mapping: MutableMapping[T, CopySet['Entity']], key: T, ent: 'Entity') -> None:
+    """Remove the entity from the by_class or by_target mappings.
+
+    We also remove the set if now empty.
+    """
+    copyset = mapping.get(key, None)
+    if copyset is not None:
+        copyset.discard(ent)
+        if not copyset:
+            del mapping[key]
+
+
 @attrs.frozen
 class PrismFace:
     """Return value for VMF.make_prism().
@@ -316,7 +329,7 @@ class PrismFace:
     east: 'Side'  #: The ``+x`` side of the brush.
     west: 'Side'  #: The ``-x`` side of the brush.
 
-    def __getitem__(self, item: Union[Vec, Tuple[float, float, float]]) -> 'Side':
+    def __getitem__(self, item: AnyVec) -> 'Side':
         """Given an axis-aligned normal, return the matching side."""
         if item == (1, 0, 0):
             return self.east
@@ -419,6 +432,7 @@ class VMF:
 
         # The worldspawn entity should always be worldspawn.
         self.spawn['classname'] = 'worldspawn'
+        self.by_target[None].add(self.spawn)
 
         self.format_ver = srctools.conv_int(
             map_info.get('formatversion', '100'), 100)
@@ -436,8 +450,10 @@ class VMF:
         self.active_cam = srctools.conv_int(map_info.get('active_cam', '-1'), -1)
         self.quickhide_count = srctools.conv_int(map_info.get('quickhide', '-1'), -1)
 
-    def add_brush(self, item: 'Solid') -> None:
+    def add_brush(self, item: Union['Solid', PrismFace]) -> None:
         """Add a world brush to this map."""
+        if isinstance(item, PrismFace):
+            item = item.solid
         self.brushes.append(item)
 
     def remove_brush(self, brush: 'Solid') -> None:
@@ -474,8 +490,8 @@ class VMF:
         except ValueError:
             pass  # Already removed.
 
-        self.by_class[item['classname'].casefold()].discard(item)
-        self.by_target[item['targetname'].casefold() or None].discard(item)
+        _remove_copyset(self.by_class, item['classname'].casefold(), item)
+        _remove_copyset(self.by_target, item['targetname'].casefold() or None, item)
         if 'nodeid' in item:
             try:
                 node_id = int(item['nodeid'])
@@ -533,7 +549,7 @@ class VMF:
         """
         if not isinstance(tree, Keyvalues):
             # if not a tree, try to read the file
-            with open(tree) as file:
+            with open(tree, encoding='cp1251') as file:
                 tree = Keyvalues.parse(file)
 
         map_info = {}
@@ -586,10 +602,15 @@ class VMF:
             Cordon.parse(map_obj, ent)
 
         map_spawn = tree.find_block('world', or_blank=True)
-        map_obj.spawn = Entity.parse(map_obj, map_spawn, _worldspawn=True)
-
-        if map_obj.spawn.solids is not None:
-            map_obj.brushes = map_obj.spawn.solids
+        map_obj.spawn = worldspawn = Entity.parse(map_obj, map_spawn, _worldspawn=True)
+        # Ensure the correct classname, which adds to by_class as a side effect. It is possible
+        # to name worldspawn, kinda pointless though.
+        worldspawn['classname'] = 'worldspawn'
+        map_obj.by_target[worldspawn['targetname'].casefold() or None].add(worldspawn)
+        # Always a brush entity.
+        if worldspawn.solids is None:
+            worldspawn.solids = []
+        map_obj.brushes = worldspawn.solids
 
         for ent in tree.find_all('Entity'):
             map_obj.add_ent(
@@ -1378,6 +1399,18 @@ class Solid:
         for s in self.sides:
             s.localise(origin, angles)
 
+    def point_inside(self, point: AnyVec, threshold: float = 1e-6) -> bool:
+        """Check if the specified point is inside the brush.
+
+        The threshold controls tolerance - a point is still counted if it is this far away from
+        the surface.
+        """
+        for side in self.sides:
+            offset = side.normal().dot(side.planes[1] - point)
+            if offset > threshold:
+                return False
+        return True
+
 
 @attrs.define(frozen=True, hash=True, order=True)
 class Vec4:
@@ -1402,11 +1435,6 @@ def _list4_validator(_: object, attrib: 'attrs.Attribute[List[Vec]]', value: obj
         raise ValueError(attrib.name + ' must have 4 values!')
 
 
-def _alpha_validator(_: object, attrib: 'attrs.Attribute[float]', value: float) -> None:
-    if not isinstance(value, float) or value < 0.0 or value > 255.0:
-        raise TypeError(f'{attrib.name} should be a float from 0-255: {value}')
-
-
 @attrs.define(frozen=False)
 class DispVertex:
     """A vertex in dislacements."""
@@ -1417,7 +1445,7 @@ class DispVertex:
     distance: float = 0
     offset: Vec = attrs.field(factory=Vec, validator=attrs.validators.instance_of(Vec))
     offset_norm: Vec = attrs.field(factory=Vec, validator=attrs.validators.instance_of(Vec))
-    alpha: float = attrs.field(default=0.0, validator=_alpha_validator)
+    alpha: float = 0.0
     # The pair of triangle tags for the quad in the +ve direction
     # from us. This means the last row/column's triangles are ignored.
     triangle_a: TriangleTag = TriangleTag.FLAT
@@ -1559,6 +1587,15 @@ class UVAxis:
 DispPower: TypeAlias = Literal[0, 1, 2, 3, 4]
 
 
+class _FloatSetter:
+    """Helps type checkers know that UVAxis.offset/scale are settable only.
+
+    TODO: Can be removed if/when generic properties are available, perhaps.
+    """
+    def __set__(self, instance: object, value: float) -> None:
+        ...
+
+
 class Side:
     """A brush face."""
     __slots__ = [
@@ -1653,9 +1690,7 @@ class Side:
         # planes = "(x1 y1 z1) (x2 y2 z2) (x3 y3 z3)"
         verts = tree["plane", "(0 0 0) (0 0 0) (0 0 0)"][1:-1].split(") (")
         if len(verts) != 3:
-            raise ValueError('Wrong number of solid planes in "' +
-                             tree['plane', ''] +
-                             '"')
+            raise ValueError(f'Wrong number of solid planes in "{tree["plane", ""]}"')
         planes = [
             Vec.from_str(verts[0]),
             Vec.from_str(verts[1]),
@@ -1677,92 +1712,107 @@ class Side:
         try:
             disp_tree = tree.find_key('dispinfo')
         except LookupError:  # Not a displacement.
-            return side
+            pass
+        else:
+            side._parse_displacement_data(disp_tree)
+        return side
+
+    def _parse_displacement_data(self, disp_tree: Keyvalues) -> None:
+        """Parse displacement data. This is less common, split into its own method."""
 
         # Deal with displacements.
         disp_power = disp_tree.int('power', 4)
         if disp_power in (0, 1, 2, 3, 4):
-            side.disp_power = disp_power  # type: ignore
+            self.disp_power = disp_power  # type: ignore
         else:
             raise ValueError(f'Invalid displacement power {disp_power}!')
-        side.disp_pos = disp_tree.vec('startposition')
-        side.disp_elevation = disp_tree.float('elevation')
+        self.disp_pos = disp_tree.vec('startposition')
+        self.disp_elevation = disp_tree.float('elevation')
         disp_flag_ind = disp_tree.int('flags')
         if 0 <= disp_flag_ind <= 16:
-            side.disp_flags = _DISP_FLAG_TO_COLL[disp_flag_ind]
+            self.disp_flags = _DISP_FLAG_TO_COLL[disp_flag_ind]
         else:
-            raise ValueError(f'Invalid displacement flags {disp_flag_ind} in side {side.id}!')
+            raise ValueError(f'Invalid displacement flags {disp_flag_ind} in side {self.id}!')
         if disp_tree.bool('subdiv'):
-            side.disp_flags |= DispFlag.SUBDIV
+            self.disp_flags |= DispFlag.SUBDIV
 
-        # This always has a key of '10', with 10 '-1's...
+        # This is 10 int32 numbers. Strata Source alternately uses 5 int64s.
         vert_key = disp_tree.find_key('allowed_verts')
-        allowed_vert = Array('i', map(int, vert_key['10'].split()))
+        allowed_vert = Array('i')
+        if '10' in vert_key:
+            allowed_vert.extend(map(int, vert_key['10'].split()))
+        elif '5' in vert_key:
+            # Pull out the two 32-bit ints from a 64-bit int.
+            allowed_vert.extend(
+                val
+                for num in vert_key['5'].split()
+                for val in struct.unpack('<ii', struct.pack('Q', int(num)))
+            )
         if len(allowed_vert) != 10:
             raise ValueError(
-                f'Displacement allowed_verts in side {side.id} '
+                f'Displacement allowed_verts in side {self.id} '
                 f'must be 10 long!'
             )
-        side.disp_allowed_vert = allowed_vert
+        self.disp_allowed_vert = allowed_vert
 
-        size = side.disp_size
-        side._disp_verts = [
+        size = self.disp_size
+        self._disp_verts = [
             DispVertex(x, y)
             for y in range(size)
             for x in range(size)
         ]
         # Parse all the rows..
-        side._parse_disp_vecrow(disp_tree, 'normals', 'normal')
-        side._parse_disp_vecrow(disp_tree, 'offsets', 'offset')
-        side._parse_disp_vecrow(disp_tree, 'offset_normals', 'offset_norm')
+        self._parse_disp_vecrow(disp_tree, 'normals', 'normal')
+        self._parse_disp_vecrow(disp_tree, 'offsets', 'offset')
+        self._parse_disp_vecrow(disp_tree, 'offset_normals', 'offset_norm')
 
-        for y, row in side._iter_disp_row(disp_tree, 'alphas', size):
+        for y, row in self._iter_disp_row(disp_tree, 'alphas', size):
             try:
                 for x, alpha in enumerate(row):
-                    side._disp_verts[y * size + x].alpha = float(alpha)
+                    self._disp_verts[y * size + x].alpha = float(alpha)
             except ValueError as exc:
                 raise ValueError(
-                    f'Displacement array for alpha in side {side.id}, '
+                    f'Displacement array for alpha in side {self.id}, '
                     f'row {y} had invalid number: {exc.args[0]}'
                 ) from None
 
-        for y, row in side._iter_disp_row(disp_tree, 'distances', size):
+        for y, row in self._iter_disp_row(disp_tree, 'distances', size):
             try:
                 for x, alpha in enumerate(row):
-                    side._disp_verts[y * size + x].distance = float(alpha)
+                    self._disp_verts[y * size + x].distance = float(alpha)
             except ValueError as exc:
                 raise ValueError(
-                    f'Displacement array for distances in side {side.id}, '
+                    f'Displacement array for distances in side {self.id}, '
                     f'row {y} had invalid number: {exc.args[0]}'
                 ) from None
 
         # Not the same, 1 less row and column since it's per-quad.
         tri_tags_count = 2 ** disp_power
-        for y, row in side._iter_disp_row(disp_tree, 'triangle_tags', 2 * tri_tags_count):
+        for y, row in self._iter_disp_row(disp_tree, 'triangle_tags', 2 * tri_tags_count):
             try:
                 for x in range(tri_tags_count):
-                    vert = side._disp_verts[y * size + x]
+                    vert = self._disp_verts[y * size + x]
                     vert.triangle_a = TriangleTag(int(row[2 * x]))
                     vert.triangle_b = TriangleTag(int(row[2 * x + 1]))
             except ValueError as exc:
                 raise ValueError(
-                    f'Displacement array for triangle tags in side {side.id}, '
+                    f'Displacement array for triangle tags in side {self.id}, '
                     f'row {y} had invalid number: {exc.args[0]}'
                 ) from None
 
         if 'multiblend' not in disp_tree:
-            return side
+            return
         # Else: Parse multiblend too.
         # First initialise this list.
-        for vert in side._disp_verts:
+        for vert in self._disp_verts:
             vert.multi_colors = [Vec(1, 1, 1), Vec(1, 1, 1), Vec(1, 1, 1), Vec(1, 1, 1)]
         for i in range(4):
-            side._parse_disp_vecrow(disp_tree, 'multiblend_color_' + str(i), i)
+            self._parse_disp_vecrow(disp_tree, 'multiblend_color_' + str(i), i)
 
-        for y, split in side._iter_disp_row(disp_tree, 'multiblend', 4 * size):
+        for y, split in self._iter_disp_row(disp_tree, 'multiblend', 4 * size):
             try:
                 for x in range(size):
-                    side._disp_verts[y * size + x].multi_blend = Vec4(
+                    self._disp_verts[y * size + x].multi_blend = Vec4(
                         float(split[4*x]),
                         float(split[4*x + 1]),
                         float(split[4*x + 2]),
@@ -1770,14 +1820,14 @@ class Side:
                     )
             except ValueError as exc:
                 raise ValueError(
-                    f'Displacement array for multiblend in side {side.id}, '
+                    f'Displacement array for multiblend in side {self.id}, '
                     f'row {y} had invalid number: {exc.args[0]}'
                 ) from None
 
-        for y, split in side._iter_disp_row(disp_tree, 'alphablend', 4 * size):
+        for y, split in self._iter_disp_row(disp_tree, 'alphablend', 4 * size):
             try:
                 for x in range(size):
-                    side._disp_verts[y * size + x].multi_alpha = Vec4(
+                    self._disp_verts[y * size + x].multi_alpha = Vec4(
                         float(split[4*x]),
                         float(split[4*x + 1]),
                         float(split[4*x + 2]),
@@ -1785,10 +1835,9 @@ class Side:
                     )
             except ValueError as exc:
                 raise ValueError(
-                    f'Displacement array for multiblend in side {side.id}, '
+                    f'Displacement array for multiblend in side {self.id}, '
                     f'row {y} had invalid number: {exc.args[0]}'
                 ) from None
-        return side
 
     def _iter_disp_row(self, tree: Keyvalues, name: str, size: int) -> Iterator[Tuple[int, List[str]]]:
         """Return y, row pairs of values from a displacement array row.
@@ -1813,7 +1862,7 @@ class Side:
         """Parse one of the very similar per-vert sections.
 
         If member is a string, it is an attribute to set on the DispVertex.
-        Otherwise if it's an int, it's the channel for multi_colors (which must
+        Otherwise, it's an int specifying the channel for multi_colors (which must
         have been initialised beforehand).
         """
         assert self._disp_verts is not None
@@ -1835,6 +1884,35 @@ class Side:
                     f'Displacement array for {name} in side {self.id}, '
                     f'row {y} had invalid number: {exc.args[0]}'
                 ) from None
+
+    @classmethod
+    def from_plane(
+        cls,
+        vmf: VMF,
+        position: AnyVec,
+        normal: AnyVec,
+        material: str = 'tools/toolsnodraw',
+    ) -> 'Side':
+        """Generate a new brush face, aligned to the specified plane.
+
+        The normal vector points out of the face. This calculates a valid texture alignment, but
+        does not specify an exact result.
+        """
+        orient = Matrix.from_basis(x=FrozenVec(normal))
+        point = Vec(position)
+        u = -orient.left()
+        v = -orient.up()
+        return cls(
+            vmf,
+            [
+                point - 16 * u,
+                point,
+                point + 16 * v,
+            ],
+            mat=material,
+            uaxis=UVAxis(*u),
+            vaxis=UVAxis(*v),
+        )
 
     def copy(
         self,
@@ -1905,54 +1983,58 @@ class Side:
             f'{ind}\t"smoothing_groups" "{self.smooth}"\n'
         )
         if self.disp_power > 0:
-            assert self._disp_verts is not None
-            assert self.disp_allowed_vert is not None
-            buffer.write(
-                f'{ind}\tdispinfo\n'
-                f'{ind}\t{{\n'
-                f'{ind}\t\t"power" "{self.disp_power}"\n'
-                f'{ind}\t\t"startposition" "[{self.disp_pos}]"\n'
-                f'{ind}\t\t"flags" "{_DISP_COLL_TO_FLAG[self.disp_flags & DispFlag.COLL_ALL]}"\n'
-                f'{ind}\t\t"elevation" "{self.disp_elevation}"\n'
-                f'{ind}\t\t"subdiv" "{"1" if DispFlag.SUBDIV in self.disp_flags else "0"}"\n'
-            )
-
-            size = self.disp_size
-            self._export_disp_rowset('normals', 'normal', buffer, ind, size)
-            self._export_disp_rowset('distances', 'distance', buffer, ind, size)
-            self._export_disp_rowset('offsets', 'offset', buffer, ind, size)
-            self._export_disp_rowset('offset_normals', 'offset_norm', buffer, ind, size)
-            self._export_disp_rowset('alphas', 'alpha', buffer, ind, size)
-
-            buffer.write(f'{ind}\t\ttriangle_tags\n{ind}\t\t{{\n')
-            for y in range(size):
-                row = [
-                    f'{vert.triangle_a.value} {vert.triangle_b.value}'
-                    for vert in self._disp_verts[size * y:size * (y+1)]
-                ]
-                buffer.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
-            buffer.write(ind + '\t\t}\n')
-
-            buffer.write(ind + '\t\tallowed_verts\n')
-            buffer.write(ind + '\t\t{\n')
-            assert len(self.disp_allowed_vert) == 10, self.disp_allowed_vert
-            buffer.write(f'{ind}\t\t"10" "{" ".join(map(str, self.disp_allowed_vert))}"\n')
-            buffer.write(f'{ind}\t\t}}\n{ind}\t}}\n')
-
-            if disp_multiblend and any(vert.multi_blend for vert in self._disp_verts):
-                self._export_disp_rowset('multiblend', 'multi_blend', buffer, ind, size)
-                self._export_disp_rowset('alphablend', 'multi_alpha', buffer, ind, size)
-                for i in range(4):
-                    buffer.write(f'{ind}\t\tmultiblend_color_{i}\n{ind}\t\t{{\n')
-                    for y in range(size):
-                        row = [
-                            str(vert.multi_colors[i]) if vert.multi_colors is not None else '1'
-                            for vert in self._disp_verts[size * y:size * (y+1)]
-                        ]
-                        buffer.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
-                    buffer.write(ind + '\t\t}\n')
+            self._export_displacement(buffer, ind, disp_multiblend)
 
         buffer.write(ind + '}\n')
+
+    def _export_displacement(self, buffer: IO[str], ind: str, disp_multiblend: bool) -> None:
+        """Export displacement data."""
+        assert self._disp_verts is not None
+        assert self.disp_allowed_vert is not None
+        buffer.write(
+            f'{ind}\tdispinfo\n'
+            f'{ind}\t{{\n'
+            f'{ind}\t\t"power" "{self.disp_power}"\n'
+            f'{ind}\t\t"startposition" "[{self.disp_pos}]"\n'
+            f'{ind}\t\t"flags" "{_DISP_COLL_TO_FLAG[self.disp_flags & DispFlag.COLL_ALL]}"\n'
+            f'{ind}\t\t"elevation" "{self.disp_elevation}"\n'
+            f'{ind}\t\t"subdiv" "{"1" if DispFlag.SUBDIV in self.disp_flags else "0"}"\n'
+        )
+
+        size = self.disp_size
+        self._export_disp_rowset('normals', 'normal', buffer, ind, size)
+        self._export_disp_rowset('distances', 'distance', buffer, ind, size)
+        self._export_disp_rowset('offsets', 'offset', buffer, ind, size)
+        self._export_disp_rowset('offset_normals', 'offset_norm', buffer, ind, size)
+        self._export_disp_rowset('alphas', 'alpha', buffer, ind, size)
+
+        buffer.write(f'{ind}\t\ttriangle_tags\n{ind}\t\t{{\n')
+        for y in range(size):
+            row = [
+                f'{vert.triangle_a.value} {vert.triangle_b.value}'
+                for vert in self._disp_verts[size * y:size * (y+1)]
+            ]
+            buffer.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
+        buffer.write(ind + '\t\t}\n')
+
+        buffer.write(ind + '\t\tallowed_verts\n')
+        buffer.write(ind + '\t\t{\n')
+        assert len(self.disp_allowed_vert) == 10, self.disp_allowed_vert
+        buffer.write(f'{ind}\t\t"10" "{" ".join(map(str, self.disp_allowed_vert))}"\n')
+        buffer.write(f'{ind}\t\t}}\n{ind}\t}}\n')
+
+        if disp_multiblend and any(vert.multi_blend for vert in self._disp_verts):
+            self._export_disp_rowset('multiblend', 'multi_blend', buffer, ind, size)
+            self._export_disp_rowset('alphablend', 'multi_alpha', buffer, ind, size)
+            for i in range(4):
+                buffer.write(f'{ind}\t\tmultiblend_color_{i}\n{ind}\t\t{{\n')
+                for y in range(size):
+                    row = [
+                        str(vert.multi_colors[i]) if vert.multi_colors is not None else '1'
+                        for vert in self._disp_verts[size * y:size * (y+1)]
+                    ]
+                    buffer.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
+                buffer.write(ind + '\t\t}\n')
 
     def _export_disp_rowset(self, name: str, membr: str, f: IO[str], ind: str, size: int) -> None:
         """Write out one of the displacement vertex arrays."""
@@ -2112,8 +2194,12 @@ class Side:
         self.uaxis.offset = value
         self.vaxis.offset = value
 
-    scale = property(fset=_scale_setter, doc='Set both scale attributes easily.')
-    offset = property(fset=_offset_setter, doc='Set both offset attributes easily.')
+    if TYPE_CHECKING:
+        scale = _FloatSetter()
+        offset = _FloatSetter()
+    else:
+        scale = property(fset=_scale_setter, doc='Set both scale attributes easily.')
+        offset = property(fset=_offset_setter, doc='Set both offset attributes easily.')
     del _scale_setter, _offset_setter
 
 
@@ -2171,11 +2257,7 @@ class Entity(MutableMapping[str, str]):
     ) -> None:
         """Construct an entity from scratch."""
         self.map = vmf_file
-        self._keys = {
-            k.casefold(): _EntityKey(k, conv_kv(v))
-            for k, v in
-            keys.items()
-        }
+        self._keys = {}
         self._fixup = EntityFixup(fixup) if fixup else None
         self.outputs = list(outputs)
         self.solids = list(solids)
@@ -2190,6 +2272,9 @@ class Entity(MutableMapping[str, str]):
         self.logical_pos = logical_pos or f'[0 {self.id}]'
         self.comments = comments
 
+        for k, v in keys.items():
+            self[k] = v
+
     @property
     def fixup(self) -> 'EntityFixup':
         """Access ``$replace`` variables on instances."""
@@ -2199,9 +2284,19 @@ class Entity(MutableMapping[str, str]):
         return self._fixup
 
     # Override MutableMapping, we compare by identity.
-    __eq__ = object.__eq__
-    __ne__ = object.__ne__
-    __hash__ = object.__hash__
+    if TYPE_CHECKING:
+        def __eq__(self, other: object) -> bool:
+            return self is other
+
+        def __ne__(self, other: object) -> bool:
+            return self is not other
+
+        def __hash__(self) -> int:
+            return object.__hash__(self)
+    else:  # Directly assign for efficiency
+        __eq__ = object.__eq__
+        __ne__ = object.__ne__
+        __hash__ = object.__hash__
 
     def copy(
         self,
@@ -2322,7 +2417,7 @@ class Entity(MutableMapping[str, str]):
                 try:
                     index = int(ind_str)
                 except ValueError:  # Not a replace value!
-                    ent[name] = item.value
+                    ent[item.real_name] = item.value
                 else:
                     # Parse the $replace value
                     try:
@@ -2333,10 +2428,10 @@ class Entity(MutableMapping[str, str]):
                         except IndexError:
                             # Might happen if entirely blank.
                             value = ''
-                        fixup.append(FixupValue(var, value, int(index)))
+                        fixup.append(FixupValue(var, value, index))
                     except ValueError:
                         # Failed!
-                        ent[name] = item.value
+                        ent[item.real_name] = item.value
             else:
                 ent[item.real_name] = item.value
 
@@ -2425,9 +2520,8 @@ class Entity(MutableMapping[str, str]):
 
     def sides(self) -> Iterable['Side']:
         """Iterate through all our brush sides."""
-        if self.is_brush():
-            for solid in self.solids:
-                yield from solid
+        for solid in self.solids:
+            yield from solid
 
     def add_out(self, *outputs: 'Output') -> None:
         """Add the outputs to our list."""
@@ -2452,6 +2546,10 @@ class Entity(MutableMapping[str, str]):
         """
         orig_name = self['targetname']
         if orig_name:
+            # If this name is already unique, preserve it.
+            if self.map.by_target[orig_name] == {self}:
+                return self
+
             self['targetname'] = ''  # Remove ourselves from the .by_target[] set.
         else:
             orig_name = unnamed_prefix
@@ -2472,6 +2570,22 @@ class Entity(MutableMapping[str, str]):
             self['targetname'] = base_name
 
         return self
+
+    def __repr__(self) -> str:
+        """Produce a short string identifying this entity."""
+        desc: List[str] = []
+        if classname := self['classname']:
+            desc.append(classname)
+        desc.append('Entity')
+        if name := self['targetname']:
+            desc.append(f'"{name}"({classname})')
+        else:
+            desc.append(classname)
+        if hammerid := self['hammerid']:
+            desc.append(f'#{hammerid}')
+        if origin := self['origin']:
+            desc.append(f'@ ({origin})')
+        return f'<{" ".join(desc)}>'
 
     def __str__(self) -> str:
         """Dump a user-friendly representation of the entity."""
@@ -2531,7 +2645,6 @@ class Entity(MutableMapping[str, str]):
 
         - It is case-insensitive, so it will overwrite a key which only
           differs by case.
-        - Booleans are treated specially, all other types are stringified.
         """
         str_val = conv_kv(val)
         key_fold = key.casefold()
@@ -2544,18 +2657,25 @@ class Entity(MutableMapping[str, str]):
             except KeyError:
                 self._keys[key_fold] = _EntityKey(key, str_val)
             else:
-                self.map.by_class[existing.value].discard(self)
+                _remove_copyset(self.map.by_class, existing.value, self)
                 self._keys[key_fold] = _EntityKey(existing.var, str_val)
-            self.map.by_class[str_val].add(self)
+            if self in self.map.entities:
+                self.map.by_class[str_val.casefold()].add(self)
+            elif self is self.map.spawn:
+                if str_val.casefold() != 'worldspawn':
+                    self['classname'] = 'worldspawn'  # Revert the change.
+                    raise ValueError('The worldspawn entity must remain worldspawn!')
+                self.map.by_class['worldspawn'].add(self)
         elif key_fold == 'targetname':
             try:
                 existing = self._keys[key]
             except KeyError:
                 self._keys[key_fold] = _EntityKey(key, str_val)
             else:
-                self.map.by_target[existing.value].discard(self)
+                _remove_copyset(self.map.by_target, existing.value, self)
                 self._keys[key_fold] = _EntityKey(existing.var, str_val)
-            self.map.by_target[str_val].add(self)
+            if self in self.map.entities:
+                self.map.by_target[str_val].add(self)
         elif key_fold == 'nodeid':
             # Automatically assign node IDs.
             try:
@@ -2595,9 +2715,9 @@ class Entity(MutableMapping[str, str]):
             try:
                 existing = self._keys.pop(key)
             except KeyError:
-                pass
+                _remove_copyset(self.map.by_target, None, self)
             else:
-                self.map.by_target[existing.value].remove(self)
+                _remove_copyset(self.map.by_target, existing.value, self)
             self.map.by_target[None].add(self)
             return
 

@@ -4,14 +4,14 @@ Wrapper around logging to provide our own functionality.
 This adds the ability to log using str.format() instead of %.
 """
 from typing import (
-    Any, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping, Optional, TextIO,
-    Tuple, Type, Union, cast, overload,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping,
+    Optional, TextIO, Tuple, Type, Union, cast, overload,
 )
 from io import StringIO
+from pathlib import Path
 from types import TracebackType
 import contextlib
 import contextvars
-import itertools
 import logging
 import os
 import sys
@@ -85,9 +85,13 @@ _SysExcInfoType = Union[
     Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
     Tuple[None, None, None]
 ]
+if TYPE_CHECKING:  # Only generic in stubs.
+    _AdapterBase = logging.LoggerAdapter[logging.Logger]
+else:
+    _AdapterBase = logging.LoggerAdapter
 
 
-class LoggerAdapter(logging.LoggerAdapter):  # type: ignore[type-arg]  # Only generic in stubs.
+class LoggerAdapter(_AdapterBase):
     """Fix loggers to use str.format().
 
     """
@@ -188,26 +192,23 @@ class Formatter(logging.Formatter):
 
 def get_handler(filename: 'str | os.PathLike[str]') -> logging.FileHandler:
     """Cycle log files, then give the required file handler."""
-    name, ext = os.path.splitext(filename)
-
+    path = Path(filename)
+    ext = ''.join(path.suffixes)
     suffixes = ('.5', '.4', '.3', '.2', '.1', '')
 
     try:
         # Remove the oldest one.
-        try:
-            os.remove(name + suffixes[0] + ext)
-        except FileNotFoundError:
-            pass
+        path.with_suffix(suffixes[0] + ext).unlink(missing_ok=True)
 
         # Go in reverse, moving each file over to give us space.
         for frm, to in zip(suffixes[1:], suffixes):
             try:
-                os.rename(name + frm + ext, name + to + ext)
+                path.with_suffix(frm + ext).rename(path.with_suffix(to + ext))
             except FileNotFoundError:
                 pass
 
         try:
-            return logging.FileHandler(filename, mode='x')
+            return logging.FileHandler(path, mode='x')
         except FileExistsError:
             pass
     except PermissionError:
@@ -216,13 +217,13 @@ def get_handler(filename: 'str | os.PathLike[str]') -> logging.FileHandler:
     # On windows, we can't touch files opened by other programs (ourselves).
     # If another copy of us is open, it'll hold access.
     # In that case, just keep trying suffixes until we find an empty file.
-    for ind in itertools.count(start=1):
+    ind = 1
+    while True:
         try:
-            return logging.FileHandler(f'{name}.{ind}{ext}', mode='x')
+            return logging.FileHandler(path.with_suffix(f'.{ind}{ext}'), mode='x')
         except (FileExistsError, PermissionError):
             pass
-    else:
-        raise AssertionError  # Never terminates
+        ind += 1
 
 
 class NullStream(TextIO):
@@ -312,6 +313,7 @@ class NewLogRecord(logging.LogRecord):
     _srctools_alias: Optional[str] = None
     # Can be used by formatters.
     srctools_context: str = ''
+    module: str
 
     def getMessage(self) -> str:
         """We have to hook here to change the value of .module.

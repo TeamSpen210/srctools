@@ -21,13 +21,15 @@ __all__ = [
 
 class _BinaryFile(Protocol):
     """The methods on files we use."""
-    def write(self, __data: bytes) -> Any:
+    def write(self, __data: bytes) -> object:
         """Writes to the file."""
 
 
 class Bone:
     """Represents a single bone."""
     __slots__ = ('name', 'parent')
+    name: str
+    parent: Optional['Bone']
 
     def __init__(self, name: str, parent: Optional['Bone']) -> None:
         self.name = name
@@ -47,14 +49,14 @@ class Bone:
     def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'Bone':
         return Bone(self.name, deepcopy(self.parent, memodict))
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if self is other:
             return True
         if isinstance(other, Bone):
             return self.name == other.name
         return NotImplemented
 
-    def __ne__(self, other: Any) -> bool:
+    def __ne__(self, other: object) -> bool:
         if isinstance(other, Bone):
             return self.name != other.name
         return NotImplemented
@@ -293,8 +295,7 @@ class Mesh:
         for bone in self.bones.values():
             if bone.parent is None:
                 return bone
-        else:
-            raise ValueError('No root bone?')
+        raise ValueError('No root bone?')
 
     @staticmethod
     def blank(root_name: str) -> 'Mesh':

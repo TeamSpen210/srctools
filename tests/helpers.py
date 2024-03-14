@@ -5,6 +5,7 @@ import builtins
 import itertools
 import math
 
+from dirty_equals import DirtyEquals
 import pytest
 
 from srctools import math as vec_mod
@@ -41,7 +42,7 @@ VALID_NUMS = [
 ]
 VALID_NUMS += [-x for x in VALID_NUMS]
 
-VALID_ZERONUMS = VALID_NUMS + [0, -0]
+VALID_ZERONUMS = [*VALID_NUMS, 0, -0]
 
 # In SMD files the maximum precision is this, so it should be a good reference.
 EPSILON = 1e-6
@@ -57,24 +58,19 @@ MatrixClass: TypeAlias = Union[Type[Py_Matrix], Type[Py_FrozenMatrix]]
 
 
 def iter_vec(nums: Iterable[T]) -> Iterator[Tuple[T, T, T]]:
-    for x in nums:
-        for y in nums:
-            for z in nums:
-                yield x, y, z
+    return itertools.product(nums, nums, nums)
 
 
-class ExactType:
+class ExactType(DirtyEquals[object]):
     """Proxy object which verifies both value and types match."""
     def __init__(self, val: object) -> None:
-        self.value = val
+        super().__init__(val)
+        self.compare = val
 
-    def __repr__(self) -> str:
-        return f'{self.value!r}'
-
-    def __eq__(self, other: object) -> bool:
+    def equals(self, other: object) -> bool:
         if isinstance(other, ExactType):
-            other = other.value
-        return type(self.value) is type(other) and self.value == other
+            other = other.compare
+        return type(self.compare) is type(other) and self.compare == other
 
 
 def assert_ang(
@@ -158,7 +154,7 @@ def assert_vec(
 
 def assert_rot(
     rot: vec_mod.MatrixBase, exp_rot: vec_mod.MatrixBase,
-    msg: object = '', type: type = None,
+    msg: object = '', type: Optional[type] = None,
 ) -> None:
     """Asserts that the two rotations are the same."""
     # Don't show in pytest tracebacks.
@@ -182,9 +178,9 @@ def assert_rot(
 
 
 ATTRIBUTES = [
-    'Vec', 'FrozenVec',
-    'Angle', 'FrozenAngle',
-    'Matrix', 'FrozenMatrix',
+    'Vec', 'VecBase', 'FrozenVec',
+    'Angle', 'AngleBase', 'FrozenAngle',
+    'Matrix', 'MatrixBase', 'FrozenMatrix',
     'parse_vec_str', 'to_matrix',
 ]
 if Py_Vec is Cy_Vec:

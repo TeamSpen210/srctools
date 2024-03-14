@@ -11,6 +11,8 @@ from srctools.filesys import VirtualFileSystem
 
 with pytest.deprecated_call(match=r'srctools\.fgd\.KeyValues is renamed to srctools\.fgd\.KVDef'):
     from srctools.fgd import *
+    from srctools.fgd import Snippet
+
 
 @pytest.mark.parametrize('name1', ['alpha', 'beta', 'gamma'])
 @pytest.mark.parametrize('name2', ['alpha', 'beta', 'gamma'])
@@ -156,6 +158,213 @@ def test_parse_kv_flags(code, is_readonly, is_report) -> None:
 
     assert kv.readonly is is_readonly, kv
     assert kv.reportable is is_report, kv
+
+
+def test_snippet_desc() -> None:
+    """Test snippet descriptions."""
+    fgd = FGD()
+    fsys = VirtualFileSystem({
+        'snippets.fgd': """\
+@snippet desc first_Desc = "Some text." +
+    " Another line of description.\\n" +
+    "And another."
+@snippet description Another = "Some description"
+@snippet description EntDesc = "This is an entity that does things."
+""",
+        'overlap.fgd': """\
+@snippet desc first_desc = "Different text"
+""",
+        'ent_def.fgd': """\
+
+@PointClass = test_entity: "First line. " + 
+    #snippet EntDesc +
+    " Last line."
+    [
+    keyvalue(string): "Has desc" : "..." : #snippet "anOther"
+    input SomeInput(void): #snippet first_desc
+    ]
+"""
+    })
+    fgd.parse_file(fsys, fsys['snippets.fgd'])
+    with pytest.raises(ValueError, match="^Two description snippets were defined"):
+        fgd.parse_file(fsys, fsys['overlap.fgd'])
+    assert fgd.snippet_desc == {
+        'first_desc': Snippet(
+            'first_Desc', 'snippets.fgd', 1,
+            'Some text. Another line of description.\nAnd another.',
+        ),
+        'another': Snippet(
+            'Another', 'snippets.fgd', 4,
+            'Some description',
+        ),
+        'entdesc': Snippet(
+            'EntDesc', 'snippets.fgd', 5,
+            'This is an entity that does things.',
+        ),
+    }
+    fgd.parse_file(fsys, fsys['ent_def.fgd'])
+
+    ent = fgd['test_entity']
+    assert ent.desc == 'First line. This is an entity that does things. Last line.'
+    assert ent.kv['keyvalue'] == KVDef(
+        name="keyvalue",
+        disp_name="Has desc",
+        default="...",
+        type=ValueTypes.STRING,
+        desc="Some description",
+    )
+    assert ent.inp['SomeInput'] == IODef(
+        name="SomeInput",
+        type=ValueTypes.VOID,
+        desc='Some text. Another line of description.\nAnd another.',
+    )
+
+
+def test_snippet_choices() -> None:
+    """Test parsing snippet choices."""
+    fgd = FGD()
+    fsys = VirtualFileSystem({'snippets.fgd': """\
+
+@snippet choices TRInary = [
+    -1: "EOF" [+srctools]
+    0: "No"
+    1: "Yes"
+]
+
+@PointClass = test_ent [
+    keyvalue(choices): "KeyValue" : -1 : "desc" = #snippet trinary
+]
+    """})
+    fgd.parse_file(fsys, fsys['snippets.fgd'])
+    choices = [
+        ('-1', 'EOF', frozenset({'+SRCTOOLS'})),
+        ('0', 'No', frozenset()),
+        ('1', 'Yes', frozenset()),
+    ]
+    assert fgd.snippet_choices == {
+        'trinary': Snippet('TRInary', 'snippets.fgd', 2, choices)
+    }
+    kv = fgd['test_ent'].kv['keyvalue']
+    assert kv == KVDef(
+        name="keyvalue",
+        disp_name="KeyValue",
+        default="-1",
+        type=ValueTypes.CHOICES,
+        desc="desc",
+        val_list=choices,
+    )
+    # It shouldn't be a shared list!
+    assert kv.val_list is not fgd.snippet_choices['trinary'].value
+
+
+def test_snippet_spawnflags() -> None:
+    """Test parsing snippet spawnflags."""
+    fgd = FGD()
+    fsys = VirtualFileSystem({'snippets.fgd': """\
+
+    @snippet flags Trigger = [
+        1: "Clients (Players/Bots)" : 1 [TF2, CSGO, CSS, MESA]
+        1: "Clients (Players)" : 1 [!TF2, !CSGO, !CSS, !MESA]
+        2: "NPCs" : 0 [!ASW]
+        2: "Marines and Aliens" : 0 [ASW]
+        4: "func_pushable" : 0
+        8: "VPhysics Objects" : 0
+        8192: "Items (weapons, items, projectiles)" : 0 [MBase]
+    ]
+
+@PointClass = test_ent [
+    spawnflags(flags) = [
+        #snippet Trigger
+        16: "Special Stuff": 1
+    ]
+]
+    """})
+    fgd.parse_file(fsys, fsys['snippets.fgd'])
+
+    spawnflags = [
+        (1, 'Clients (Players/Bots)', True, frozenset({'TF2', 'CSGO', 'CSS', 'MESA'})),
+        (1, 'Clients (Players)', True, frozenset({'!TF2', '!CSGO', '!CSS', '!MESA'})),
+        (2, 'NPCs', False, frozenset({'!ASW'})),
+        (2, 'Marines and Aliens', False, frozenset({'ASW'})),
+        (4, 'func_pushable', False, frozenset()),
+        (8, 'VPhysics Objects', False, frozenset()),
+        (8192, 'Items (weapons, items, projectiles)', False, frozenset({'MBASE'})),
+    ]
+
+    assert fgd.snippet_flags == {
+        'trigger': Snippet('Trigger', 'snippets.fgd', 2, spawnflags)
+    }
+    kv = fgd['test_ent'].kv['spawnflags']
+    assert kv == KVDef(
+        name="spawnflags",
+        disp_name="spawnflags",
+        type=ValueTypes.SPAWNFLAGS,
+        val_list=[
+            *spawnflags,
+            (16, "Special Stuff", True, frozenset()),
+        ]
+    )
+    # It shouldn't be a shared list!
+    assert kv.val_list is not fgd.snippet_flags['trigger'].value
+
+
+def test_snippet_keyvalues() -> None:
+    """Test parsing snippet keyvalues."""
+    fgd = FGD()
+    fsys = VirtualFileSystem({'snippets.fgd': """\
+
+    @snippet keyvalue InvStartEnabled = start_enabled[-engine](choices) : "Start Enabled" : 0 : "Start it." = [
+        0: "Yes"
+        1: "No"
+    ]
+    """})
+    fgd.parse_file(fsys, fsys['snippets.fgd'])
+    assert fgd.snippet_keyvalue == {
+        'invstartenabled': Snippet(
+            'InvStartEnabled', 'snippets.fgd', 2,
+            (frozenset(['-ENGINE']), KVDef(
+                'start_enabled', ValueTypes.CHOICES,
+                disp_name='Start Enabled',
+                default='0',
+                desc='Start it.',
+                val_list=[
+                    ('0', 'Yes', frozenset()),
+                    ('1', 'No', frozenset()),
+                ]
+            ))
+        )
+    }
+
+
+def test_snippet_io() -> None:
+    """Test parsing snippet i/o."""
+    fgd = FGD()
+    fsys = VirtualFileSystem({'snippets.fgd': """\
+
+    @snippet input uSer1 = FireUser1[+tag](void) : "Causes this entity's OnUser1 output to be fired." 
+    @snippet output uSer1 = OnUser1[-tag](void) : "Fired in response to FireUser1 input."
+    """})
+    fgd.parse_file(fsys, fsys['snippets.fgd'])
+    assert fgd.snippet_input == {
+        'user1': Snippet(
+            'uSer1', 'snippets.fgd', 2,
+            (frozenset(['+TAG']), IODef(
+                name='FireUser1',
+                type=ValueTypes.VOID,
+                desc="Causes this entity's OnUser1 output to be fired.",
+            ))
+        )
+    }
+    assert fgd.snippet_output == {
+        'user1': Snippet(
+            'uSer1', 'snippets.fgd', 3,
+            (frozenset(['-TAG']), IODef(
+                name='OnUser1',
+                type=ValueTypes.VOID,
+                desc="Fired in response to FireUser1 input.",
+            ))
+        )
+    }
 
 
 def test_export_regressions(file_regression) -> None:

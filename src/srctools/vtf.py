@@ -3,7 +3,10 @@
 This is designed to be used with the `Python Imaging Library`_ to do the editing of pixels or
 saving/loading standard image files.
 
+To compress to DXT formats, this uses the `libsquish`_ library.
+
 .. _`Python Imaging Library`: https://pillow.readthedocs.io/en/stable/
+.. _`libsquish`: https://sourceforge.net/projects/libsquish/
 """
 from typing import (
     IO, TYPE_CHECKING, Any, Collection, Dict, Iterable, Iterator, List, Mapping, Optional,
@@ -41,14 +44,17 @@ from . import _py_vtf_readwrite as _py_format_funcs
 
 
 _cy_format_funcs = _format_funcs = _py_format_funcs
+LIBSQUISH_LICENSE = ""
 
 if not TYPE_CHECKING:
     try:
         # noinspection PyUnresolvedReferences, PyProtectedMember
         from . import _cy_vtf_readwrite as _cy_format_funcs
-        _format_funcs = _cy_format_funcs
     except ImportError:
         pass
+    else:
+        _format_funcs = _cy_format_funcs
+        LIBSQUISH_LICENSE = _cy_format_funcs.LIBSQUISH_LICENSE
 
 
 # The _vtf_readwrite module contains save/load functions which
@@ -148,10 +154,11 @@ class ImageFormats(Enum):
     BGRA5551 = _mk_fmt(5, 5, 5, 1)
     UV88 = _mk_fmt(size=16)
     UVWQ8888 = _mk_fmt(size=32)
+    # Not implemented, these two don't fit in 8-bit RGBA.
     RGBA16161616F = _mk_fmt(16, 16, 16, 16)
     RGBA16161616 = _mk_fmt(16, 16, 16, 16)
-    UVLX8888 = _mk_fmt(size=32)
 
+    UVLX8888 = _mk_fmt(size=32)
     NONE = _mk_fmt()
     # These two aren't supported by VTEX & VTFEdit, but are by the engine.
     # They're useful for normal maps.
@@ -197,7 +204,8 @@ class ImageFormats(Enum):
 
 
 del _mk_fmt, _mk_fmt_ind
-# Initialise the internal mapping in the format modules.
+# Initialise the internal mapping in the format modules. For Cython, this validates that the enum
+# order matches the C code.
 _format_funcs.init(ImageFormats)
 if _cy_format_funcs is not _py_format_funcs:
     _py_format_funcs.init(ImageFormats)
@@ -633,7 +641,7 @@ class VTF:
         if not math.log2(width).is_integer():
             raise ValueError(f"Width must be a power of 2! ({width!r}x{height!r})")
         if not math.log2(height).is_integer():
-            raise ValueError("Height must be a power of 2! ({width!r}x{height!r})")
+            raise ValueError(f"Height must be a power of 2! ({width!r}x{height!r})")
         if frames < 1:
             raise ValueError(f"Invalid frame count, must be positive! ({frames!r})")
 
@@ -854,10 +862,7 @@ class VTF:
 
         if version_major != 7 or not (0 <= version_minor <= 5):
             raise ValueError(
-                "VTF version {}.{} is not "
-                "between 7.0-7.5!".format(
-                    version_major, version_minor,
-                )
+                f"VTF version {version_major}.{version_minor} is not between 7.0-7.5!"
             )
         file.write(struct.pack('<II', version_major, version_minor))
 
@@ -1025,8 +1030,9 @@ class VTF:
 
         # Also regenerate the low-res format.
         if self.low_format is not ImageFormats.NONE:
+            side = CubeSide.FRONT if VTFFlags.ENVMAP in self.flags else None
             for mipmap in range(self.mipmap_count):
-                frame = self.get(mipmap=mipmap)
+                frame = self.get(mipmap=mipmap, side=side)
                 if (
                     frame.width // 2 == self._low_res.width and
                     frame.height // 2 == self._low_res.height

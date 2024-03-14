@@ -1,9 +1,8 @@
 """Handles the list of files which are desired to be packed into the BSP."""
 from typing import (
-    Any, Callable, Collection, Dict, Generic, Iterable, Iterator, List, Optional, Set,
-    Tuple, TypeVar, Union,
+    Callable, Collection, Dict, Generic, Iterable, Iterator, List, Optional, Set, Tuple, Union,
 )
-from typing_extensions import deprecated
+from typing_extensions import deprecated, TypeVar
 from collections import OrderedDict
 from enum import Enum
 from pathlib import Path
@@ -25,7 +24,7 @@ from srctools.filesys import (
     VPKFileSystem,
 )
 from srctools.keyvalues import KeyValError, Keyvalues, NoKeyError
-from srctools.mdl import MDL_EXTS, AnimEvents, Model
+from srctools.mdl import MDL_EXTS_EXTRA, AnimEvents, Model
 from srctools.particles import FORMAT_NAME as PARTICLE_FORMAT_NAME, Particle
 from srctools.sndscript import SND_CHARS, Sound
 from srctools.tokenizer import TokenSyntaxError
@@ -41,8 +40,9 @@ ParsedT = TypeVar('ParsedT')
 __all__ = [
     'FileType', 'FileMode', 'SoundScriptMode',
     'PackFile', 'PackList',
-    'unify_path',
-    'entclass_canonicalize', 'entclass_canonicalise', 'entclass_packfunc', 'entclass_resources', 'entclass_iter',
+    'unify_path', 'strip_extension',
+    'entclass_canonicalize', 'entclass_canonicalise', 'entclass_packfunc',
+    'entclass_resources', 'entclass_iter',
 ]
 
 
@@ -165,14 +165,14 @@ class ManifestedFiles(Generic[ParsedT]):
     # When packing the file, use this filetype.
     pack_type: FileType
     # A function which parses the data, given the filename and contents.
-    parse_func: Callable[[File[Any]], Dict[str, ParsedT]]
+    parse_func: Callable[[File], Dict[str, ParsedT]]
     # For each identifier, the filename it's in and whatever data this was parsed into.
     # Do not display in the repr, there's thousands of these.
     name_to_parsed: Dict[str, Tuple[str, Optional[ParsedT]]] = attrs.field(factory=dict, repr=False)
     # All the filenames we know about, in order. The value is then
     # whether they should be packed.
     _files: Dict[str, FileMode] = attrs.Factory(OrderedDict)
-    _unparsed_file: Dict[str, File[Any]] = attrs.Factory(dict)
+    _unparsed_file: Dict[str, File] = attrs.Factory(dict)
     # Records the contents of the cache file.
     # filename -> (cache_key, identifier_list)
     _cache: Dict[str, Tuple[int, List[str]]] = attrs.Factory(dict)
@@ -225,7 +225,7 @@ class ManifestedFiles(Generic[ParsedT]):
             root.export_binary(f, fmt_name='SrcPacklistCache', fmt_ver=1, unicode='format')
 
     def add_cached_file(
-        self, filename: str, file: File[Any],
+        self, filename: str, file: File,
         mode: FileMode = FileMode.UNKNOWN,
     ) -> None:
         """Load a file which may have been cached.
@@ -310,7 +310,7 @@ class ManifestedFiles(Generic[ParsedT]):
                 yield file, mode
 
 
-def _load_soundscript(file: File[Any]) -> Dict[str, Sound]:
+def _load_soundscript(file: File) -> Dict[str, Sound]:
     """Parse a soundscript file, logging errors that occur."""
     try:
         with file.open_str(encoding='cp1252') as f:
@@ -325,7 +325,7 @@ def _load_soundscript(file: File[Any]) -> Dict[str, Sound]:
         return {}
 
 
-def _load_particle_system(file: File[Any]) -> Dict[str, Particle]:
+def _load_particle_system(file: File) -> Dict[str, Particle]:
     """Parse a particle system file, logging errors that occur."""
     try:
         with file.open_bin() as f:
@@ -354,7 +354,7 @@ class PackList:
     # folder, ext, data -> filename used
     _inject_files: Dict[Tuple[str, str, bytes], str]
     # Cache of the models used for breakable chunks.
-    _break_chunks: Dict[str, List[str]]
+    _break_chunks: Optional[Dict[str, List[str]]]
     # For each model, defines the skins the model uses. None means at least
     # one use is unknown, so all skins could potentially be used.
     skinsets: Dict[str, Optional[Set[int]]]
@@ -471,30 +471,35 @@ class PackList:
         if data_type is FileType.MODEL:
             if not filename.startswith('models/'):
                 filename = 'models/' + filename
-            # Allow passing skinsets via filename. This isn't useful if read from entities,
-            # but is good for filenames in resource lists.
-            if '.mdl#' in filename:
-                filename, skinset_int = filename.rsplit('.mdl#', 1)
-                try:
-                    skinset = set(map(int, skinset_int.split(',')))
-                except (TypeError, ValueError):
-                    LOGGER.warning(
-                        'Invalid skinset for "{}.mdl": {} should be comma-separated skins!',
-                        filename, skinset_int,
-                    )
-            filename = strip_extension(filename) + '.mdl'
-            if skinset is None:
-                # It's dynamic, this overrides any previous specific skins.
-                self.skinsets[filename] = None
+            if filename.endswith(MDL_EXTS_EXTRA):
+                # It's a .vvd, .vtx etc file. Treat as generic, don't check for skinsets
+                # or force the extension to be .mdl!!
+                data_type = FileType.GENERIC
             else:
-                try:
-                    existing_skins = self.skinsets[filename]
-                except KeyError:
-                    self.skinsets[filename] = skinset.copy()
+                # Allow passing skinsets via filename. This isn't useful if read from entities,
+                # but is good for filenames in resource lists.
+                if '.mdl#' in filename:
+                    filename, skinset_int = filename.rsplit('.mdl#', 1)
+                    try:
+                        skinset = set(map(int, skinset_int.split(',')))
+                    except (TypeError, ValueError):
+                        LOGGER.warning(
+                            'Invalid skinset for "{}.mdl": {} should be comma-separated skins!',
+                            filename, skinset_int,
+                        )
+                filename = strip_extension(filename) + '.mdl'
+                if skinset is None:
+                    # It's dynamic, this overrides any previous specific skins.
+                    self.skinsets[filename] = None
                 else:
-                    # Merge the two.
-                    if existing_skins is not None:
-                        self.skinsets[filename] = existing_skins | skinset
+                    try:
+                        existing_skins = self.skinsets[filename]
+                    except KeyError:
+                        self.skinsets[filename] = skinset.copy()
+                    else:
+                        # Merge the two.
+                        if existing_skins is not None:
+                            self.skinsets[filename] = existing_skins | skinset
 
         if not data and filename.endswith(('.wav', '.mp3')) and '$gender' in filename:
             # Special case for raw sounds, they can have gendered files.
@@ -664,7 +669,7 @@ class PackList:
 
     def load_soundscript(
         self,
-        file: File[Any],
+        file: File,
         *,
         always_include: bool = False,
     ) -> Iterable[Sound]:
@@ -870,7 +875,7 @@ class PackList:
                 ent_class = base_entity
 
             skinset: Optional[Set[int]]
-            if ent['skinset'] != '':
+            if 'skinset' in ent:
                 # Special key for us - if set this is a list of skins this
                 # entity is pledging it will restrict itself to.
                 skinset = {
@@ -990,8 +995,8 @@ class PackList:
         self,
         bsp: BSP,
         *,
-        whitelist: Iterable[FileSystem[Any]] = (),
-        blacklist: Iterable[FileSystem[Any]] = (),
+        whitelist: Iterable[FileSystem] = (),
+        blacklist: Iterable[FileSystem] = (),
         callback: Callable[[str], Optional[bool]] = lambda f: None,
         dump_loc: Optional[Path] = None,
         only_dump: bool = False,
@@ -1016,7 +1021,7 @@ class PackList:
         # The packed_files dict is a casefolded name -> (orig name, bytes) tuple.
         packed_files: Dict[str, Tuple[str, bytes]] = {}
 
-        all_systems: Set[FileSystem[Any]] = {
+        all_systems: Set[FileSystem] = {
             sys for sys, _ in
             self.fsys.systems
         }
@@ -1156,11 +1161,10 @@ class PackList:
 
         # Some of these are optional, so just skip. Do not re-pack the MDL itself, that's
         # pointless and will also erase the skinset!
-        for ext in MDL_EXTS:
-            if ext != '.mdl':
-                component = filename + ext
-                if component in self.fsys:
-                    self.pack_file(component)
+        for ext in MDL_EXTS_EXTRA:
+            component = filename + ext
+            if component in self.fsys:
+                self.pack_file(component)
 
         if file.data is not None:
             # We need to add that file onto the system, so it's loaded.

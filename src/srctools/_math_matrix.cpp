@@ -128,9 +128,9 @@ bool mat3_inverse(const mat3_t* in, mat3_t* out)
     }
 
     *out =
-    {omat[0][3], omat[0][4], omat[0][5],
-     omat[1][3], omat[1][4], omat[1][5],
-     omat[2][3], omat[2][4], omat[2][5]};
+    {mat[0][3], mat[0][4], mat[0][5],
+     mat[1][3], mat[1][4], mat[1][5],
+     mat[2][3], mat[2][4], mat[2][5]};
 
     return true;
 }

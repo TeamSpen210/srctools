@@ -14,8 +14,8 @@ token/value pair. One token of lookahead is supported, accessed by the
 the current line number as data is read, letting you ``raise BaseTokenizer.error(...)`` to easily
 produce an exception listing the relevant line number and filename.
 """
-from typing import Any, Final, Iterable, Iterator, List, Optional, Tuple, Type, Union
-from typing_extensions import Self, overload
+from typing import Final, Iterable, Iterator, List, Optional, Tuple, Type, Union, NoReturn
+from typing_extensions import Self, TypeAlias, overload
 from enum import Enum
 from os import fspath as _conv_path
 import abc
@@ -48,8 +48,8 @@ class TokenSyntaxError(Exception):
     def __init__(
         self,
         message: str,
-        file: Optional[StringPath],
-        line: Optional[int],
+        file: Optional[StringPath] = None,
+        line: Optional[int] = None,
     ) -> None:
         super().__init__()
         self.mess = message
@@ -58,6 +58,9 @@ class TokenSyntaxError(Exception):
 
     def __repr__(self) -> str:
         return f'TokenSyntaxError({self.mess!r}, {self.file!r}, {self.line_num!r})'
+
+    # This is mutable.
+    __hash__ = None  # type: ignore[assignment]
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, TokenSyntaxError):
@@ -243,7 +246,7 @@ class BaseTokenizer(abc.ABC):
             self.line_num,
         )
 
-    def __reduce__(self) -> Any:
+    def __reduce__(self) -> NoReturn:
         """Disallow pickling Tokenizers.
 
         The files themselves usually are not pickleable, or are very
@@ -741,12 +744,16 @@ def escape_text(text: str) -> str:
 # This is available as both C and Python versions, plus the unprefixed
 # best version.
 # For static typing, make it think they're the same.
-Py_BaseTokenizer = Cy_BaseTokenizer = BaseTokenizer
-Py_Tokenizer = Cy_Tokenizer = Tokenizer
-Py_IterTokenizer = Cy_IterTokenizer = IterTokenizer
+Py_BaseTokenizer: TypeAlias = BaseTokenizer
+Cy_BaseTokenizer: TypeAlias = BaseTokenizer
+Py_Tokenizer: TypeAlias = Tokenizer
+Cy_Tokenizer: TypeAlias = Tokenizer
+Py_IterTokenizer: TypeAlias = IterTokenizer
+Cy_IterTokenizer: TypeAlias = IterTokenizer
 
 # Maintain this for testing.
-_py_escape_text = cy_escape_text = escape_text
+_py_escape_text = escape_text
+cy_escape_text = escape_text
 
 # Do it this way, so static analysis ignores this.
 _glob = globals()

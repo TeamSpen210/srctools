@@ -8,8 +8,8 @@ cimport cython
 
 cdef extern from *:
     ctypedef unsigned char uchar "unsigned char"  # Using it a lot, this causes it to not be a typedef at all.
-    const uchar* PyUnicode_AsUTF8AndSize(str string, Py_ssize_t *size) except NULL
-    str PyUnicode_FromStringAndSize(const uchar *u, Py_ssize_t size)
+    const char* PyUnicode_AsUTF8AndSize(str string, Py_ssize_t *size) except NULL
+    str PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
     str PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
 
 cdef object os_fspath
@@ -446,7 +446,7 @@ cdef class Tokenizer(BaseTokenizer):
         # and then set the iterable to indicate EOF after that.
         if type(data) is str:
             self.cur_chunk = data
-            self.chunk_buf = PyUnicode_AsUTF8AndSize(data, &self.chunk_size)
+            self.chunk_buf = <const uchar *>PyUnicode_AsUTF8AndSize(data, &self.chunk_size)
             self.chunk_iter = None
         else:
             # The first next_char() call will pull out a chunk.
@@ -574,7 +574,7 @@ cdef class Tokenizer(BaseTokenizer):
 
     cdef str buf_get_text(self):
         """Decode the buffer, and return the text."""
-        out = PyUnicode_FromStringAndSize(self.val_buffer, self.buf_pos)
+        out = PyUnicode_FromStringAndSize(<char *>self.val_buffer, self.buf_pos)
         # Don't bother resizing or clearing, the next append will overwrite.
         self.buf_pos = 0
         return out
@@ -602,7 +602,7 @@ cdef class Tokenizer(BaseTokenizer):
             self.char_index = 0
 
             if type(self.cur_chunk) is str:
-                self.chunk_buf = PyUnicode_AsUTF8AndSize(self.cur_chunk, &self.chunk_size)
+                self.chunk_buf = <const uchar *>PyUnicode_AsUTF8AndSize(self.cur_chunk, &self.chunk_size)
             else:
                 raise ValueError('Expected string, got ' + type(self.cur_chunk).__name__)
 
@@ -634,7 +634,7 @@ cdef class Tokenizer(BaseTokenizer):
             if len(<str>chunk_obj) > 0:
                 self.cur_chunk = chunk_obj
                 self.char_index = 0
-                self.chunk_buf = PyUnicode_AsUTF8AndSize(self.cur_chunk, &self.chunk_size)
+                self.chunk_buf = <const uchar *>PyUnicode_AsUTF8AndSize(self.cur_chunk, &self.chunk_size)
                 return self.chunk_buf[0]
 
     def _get_token(self):
@@ -1062,7 +1062,7 @@ def escape_text(str text not None: str) -> str:
     cdef Py_ssize_t final_size = 0
     cdef int i, j
     cdef uchar letter
-    cdef const uchar *in_buf = PyUnicode_AsUTF8AndSize(text, &size)
+    cdef const uchar *in_buf = <const uchar *>PyUnicode_AsUTF8AndSize(text, &size)
     final_size = size
 
     # First loop to compute the full string length, and check if we need to
@@ -1102,7 +1102,7 @@ def escape_text(str text not None: str) -> str:
                 out_buff[j] = letter
             j += 1
         out_buff[final_size] = b'\0'
-        return PyUnicode_FromStringAndSize(out_buff, final_size)
+        return PyUnicode_FromStringAndSize(<char *>out_buff, final_size)
     finally:
         PyMem_Free(out_buff)
 

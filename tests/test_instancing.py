@@ -33,39 +33,42 @@ VEC_IDS = [
 
 @pytest.mark.parametrize('origin', VECS, ids=VEC_IDS)
 @pytest.mark.parametrize('orient', MAT_ORDER, ids=MAT_ORDER_ID)
-def test_kv_unaffected(origin: FrozenVec, orient: FrozenMatrix) -> None:
+@pytest.mark.parametrize('valtype, value', [
+    (ValueTypes.STRING, 'blank'),
+    (ValueTypes.BOOL, '0'),
+    (ValueTypes.BOOL, '1'),
+    (ValueTypes.INT, '42'),
+    (ValueTypes.FLOAT, '-163.84'),
+    # Has no value, so should not be changed.
+    (ValueTypes.VOID, 'test'),
+    # Still an integer.
+    (ValueTypes.SPAWNFLAGS, '4097'),
+    (ValueTypes.COLOR_1, '0.8 1.2 0.5'),
+    (ValueTypes.COLOR_1, '0.8 1.2 0.5 1.0'),
+    (ValueTypes.COLOR_255, '128 192 255'),
+    (ValueTypes.COLOR_255, '128 192 255 64'),
+    (ValueTypes.EXT_VEC_LOCAL, '12 43 -68'),
+    (ValueTypes.EXT_ANGLES_LOCAL, '45 90 12.5'),
+    (ValueTypes.STR_SCENE, 'scenes/breencast/welcome.vcd'),
+    (ValueTypes.STR_SOUND, 'Weapon_Crowbar.Single'),
+    (ValueTypes.STR_PARTICLE, 'striderbuster_attach'),
+    (ValueTypes.STR_SPRITE, 'sprites/orangecore1.vmt'),
+    (ValueTypes.EXT_STR_TEXTURE, 'effects/flashlight001'),
+    (ValueTypes.STR_DECAL, 'decals/lambdaspray_2a.vmt'),
+    (ValueTypes.STR_MATERIAL, 'dev/dev_measuregeneric01'),
+    (ValueTypes.STR_MODEL, 'models/antlion.mdl',),
+    (ValueTypes.STR_VSCRIPT_SINGLE, 'lib/math.nut'),
+    (ValueTypes.STR_VSCRIPT, 'lib/math.nut dice.nut'),
+    # Instance types would control fixup, but not when the func_instance itself is being positioned.
+    (ValueTypes.INST_FILE, 'instances/gameplay/cube_dropper.vmf'),
+    (ValueTypes.INST_VAR_DEF, '$skin integer 0'),
+    (ValueTypes.INST_VAR_REP, '$skin 3'),
+])
+def test_kv_unaffected(origin: FrozenVec, orient: FrozenMatrix, valtype: ValueTypes, value: str) -> None:
     """Test keyvalue types which do not change when collapsed."""
     inst = instancing.Instance('test_inst', '', origin.thaw(), orient.thaw())
     vmf = VMF()
-    assert inst.fixup_key(vmf, [], ValueTypes.STRING, 'blank') == 'blank'
-    assert inst.fixup_key(vmf, [], ValueTypes.BOOL, '0') == '0'
-    assert inst.fixup_key(vmf, [], ValueTypes.BOOL, '1') == '1'
-    assert inst.fixup_key(vmf, [], ValueTypes.INT, '42') == '42'
-    assert inst.fixup_key(vmf, [], ValueTypes.FLOAT, '-163.84') == '-163.84'
-    # Has no value, so should not be changed.
-    assert inst.fixup_key(vmf, [], ValueTypes.VOID, 'test') == 'test'
-    # Still an integer.
-    assert inst.fixup_key(vmf, [], ValueTypes.SPAWNFLAGS, '4097') == '4097'
-    assert inst.fixup_key(vmf, [], ValueTypes.COLOR_1, '0.8 1.2 0.5') == '0.8 1.2 0.5'
-    assert inst.fixup_key(vmf, [], ValueTypes.COLOR_1, '0.8 1.2 0.5 1.0') == '0.8 1.2 0.5 1.0'
-    assert inst.fixup_key(vmf, [], ValueTypes.COLOR_255, '128 192 255') == '128 192 255'
-    assert inst.fixup_key(vmf, [], ValueTypes.COLOR_255, '128 192 255 64') == '128 192 255 64'
-    assert inst.fixup_key(vmf, [], ValueTypes.EXT_VEC_LOCAL, '12 43 -68') == '12 43 -68'
-    assert inst.fixup_key(vmf, [], ValueTypes.EXT_ANGLES_LOCAL, '45 90 12.5') == '45 90 12.5'
-    assert inst.fixup_key(vmf, [], ValueTypes.STR_SCENE, 'scenes/breencast/welcome.vcd') == 'scenes/breencast/welcome.vcd'
-    assert inst.fixup_key(vmf, [], ValueTypes.STR_SOUND, 'Weapon_Crowbar.Single') == 'Weapon_Crowbar.Single'
-    assert inst.fixup_key(vmf, [], ValueTypes.STR_PARTICLE, 'striderbuster_attach') == 'striderbuster_attach'
-    assert inst.fixup_key(vmf, [], ValueTypes.STR_SPRITE, 'sprites/orangecore1.vmt') == 'sprites/orangecore1.vmt'
-    assert inst.fixup_key(vmf, [], ValueTypes.EXT_STR_TEXTURE, 'effects/flashlight001') == 'effects/flashlight001'
-    assert inst.fixup_key(vmf, [], ValueTypes.STR_DECAL, 'decals/lambdaspray_2a.vmt') == 'decals/lambdaspray_2a.vmt'
-    assert inst.fixup_key(vmf, [], ValueTypes.STR_MATERIAL, 'dev/dev_measuregeneric01') == 'dev/dev_measuregeneric01'
-    assert inst.fixup_key(vmf, [], ValueTypes.STR_MODEL, 'models/antlion.mdl') == 'models/antlion.mdl'
-    assert inst.fixup_key(vmf, [], ValueTypes.STR_VSCRIPT_SINGLE, 'lib/math.nut') == 'lib/math.nut'
-    assert inst.fixup_key(vmf, [], ValueTypes.STR_VSCRIPT, 'lib/math.nut dice.nut') == 'lib/math.nut dice.nut'
-    # Instance types would control fixup, but not when the func_instance itself is being positioned.
-    assert inst.fixup_key(vmf, [], ValueTypes.INST_FILE, 'instances/gameplay/cube_dropper.vmf') == 'instances/gameplay/cube_dropper.vmf'
-    assert inst.fixup_key(vmf, [], ValueTypes.INST_VAR_DEF, '$skin integer 0') == '$skin integer 0'
-    assert inst.fixup_key(vmf, [], ValueTypes.INST_VAR_REP, '$skin 3') == '$skin 3'
+    assert inst.fixup_key(vmf, [], valtype, value) == value
 
 
 @pytest.mark.parametrize('origin', VECS, ids=VEC_IDS)
@@ -74,16 +77,31 @@ def test_kv_vector(origin: FrozenVec, orient: FrozenMatrix) -> None:
     """Test vector keyvalues."""
     inst = instancing.Instance('test_inst', '', origin.thaw(), orient.thaw())
     vmf = VMF()
-    assert inst.fixup_key(vmf, [], ValueTypes.VEC, '12 43 -68') == str(Vec(12, 43, -68) @ orient + origin)
-    assert inst.fixup_key(vmf, [], ValueTypes.VEC_ORIGIN, '12 43 -68') == str(Vec(12, 43, -68) @ orient + origin)
-    assert inst.fixup_key(vmf, [], ValueTypes.VEC_LINE, '12 43 -68') == str(Vec(12, 43, -68) @ orient + origin)
+    assert inst.fixup_key(
+        vmf, [], ValueTypes.VEC,
+        '12 43 -68',
+    ) == str(Vec(12, 43, -68) @ orient + origin)
+    assert inst.fixup_key(
+        vmf, [], ValueTypes.VEC_ORIGIN,
+        '12 43 -68',
+    ) == str(Vec(12, 43, -68) @ orient + origin)
+    assert inst.fixup_key(
+        vmf, [], ValueTypes.VEC_LINE,
+        '12 43 -68',
+    ) == str(Vec(12, 43, -68) @ orient + origin)
     # No offset!
-    assert inst.fixup_key(vmf, [], ValueTypes.EXT_VEC_DIRECTION, '12 43 -68') == str(Vec(12, 43, -68) @ orient)
+    assert inst.fixup_key(
+        vmf, [], ValueTypes.EXT_VEC_DIRECTION,
+        '12 43 -68',
+    ) == str(Vec(12, 43, -68) @ orient)
     assert inst.fixup_key(
         vmf, [], ValueTypes.VEC_AXIS,
         '45 -62 35.82, 12 3.8 0',
     ) == f'{Vec(45, -62, 35.82) @ orient + origin}, {Vec(12, 3.8, 0) @ orient + origin}'
-    assert inst.fixup_key(vmf, [], ValueTypes.ANGLES, '45 270.5 -12.5') == str(Angle(45, 270.5, -12.5) @ orient)
+    assert inst.fixup_key(
+        vmf, [], ValueTypes.ANGLES,
+        '45 270.5 -12.5',
+    ) == str(Angle(45, 270.5, -12.5) @ orient)
 
 
 def test_kv_sides() -> None:

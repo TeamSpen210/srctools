@@ -1,4 +1,5 @@
 """Parse FGD files, used to describe Hammer entities."""
+from __future__ import annotations
 from typing import (
     IO, TYPE_CHECKING, AbstractSet, Any, Callable, ClassVar, Collection, Container, Dict,
     FrozenSet, Generic, Iterable, Iterator, List, Mapping, Optional, Sequence, Set,
@@ -46,13 +47,17 @@ __all__ = [
 ]
 
 T = TypeVar('T')
-FileSysT = TypeVar('FileSysT', bound=FileSystem[Any])
+ValueT_co = TypeVar('ValueT_co', covariant=True)
+FileSysT = TypeVar('FileSysT', bound=FileSystem)
 _fake_vmf = VMF(preserve_ids=False)
 # Collections of tags.
 TagsSet: TypeAlias = FrozenSet[str]
+SnippetDict: TypeAlias = 'Dict[str, Snippet[T]]'
+SpawnFlags: TypeAlias = Tuple[int, str, bool, TagsSet]
+Choices: TypeAlias = Tuple[str, str, TagsSet]
 
 # Cached engine DB parsing functions.
-_ENGINE_DB: Optional['_EngineDBProto'] = None
+_ENGINE_DB: Optional[_EngineDBProto] = None
 
 
 class FGDParseError(TokenSyntaxError):
@@ -284,7 +289,7 @@ class HelperTypes(Enum):
         return self.name.startswith('EXT_')
 
 
-def _load_engine_db() -> '_EngineDBProto':
+def _load_engine_db() -> _EngineDBProto:
     """Load our engine database."""
     # It's pretty expensive to parse, so keep the original privately,
     # returning a deep-copy.
@@ -306,10 +311,15 @@ def _engine_db_stats() -> str:
         return _ENGINE_DB.stats()
 
 
-def read_colon_list(tok: BaseTokenizer, had_colon: bool = False) -> Tuple[List[str], Token]:
+def _read_colon_list(
+    tok: BaseTokenizer,
+    had_colon: bool = False,
+    desc_offset: int = -1,
+    snippet_desc: Mapping[str, Snippet[str]] = srctools.EmptyMapping,
+) -> List[str]:
     """Read strings seperated by colons, up to the end of the line.
 
-    The token found at the end is returned.
+    If desc_offset is provided, this position in the list can be a @snippet reference.
     """
     strings = []
     ready_for_string = had_colon  # Did we have a colon before?
@@ -329,12 +339,23 @@ def read_colon_list(tok: BaseTokenizer, had_colon: bool = False) -> Tuple[List[s
             if ready_for_string or not strings:
                 raise tok.error('"+" without a string before it!')
             strings[-1] += tok.expect(Token.STRING)
+        elif token is Token.DIRECTIVE and tok_value == 'snippet':
+            # Allow a @snippet directive to fetch a description, but only in that spot.
+            if len(strings) != desc_offset:
+                raise tok.error('@snippet may only be used for the description value.')
+            desc_key = tok.expect(Token.STRING)
+
+            if not ready_for_string:
+                raise tok.error('Too many strings (#snippet "{}")!', desc_key)
+            strings.append(Snippet.lookup('description', snippet_desc, desc_key))
+            ready_for_string = False
         elif ready_for_string and token is Token.NEWLINE:
-            continue  # skip over this in particular..
+            continue  # skip over this in particular...
         else:
             if ready_for_string:
                 raise tok.error(token)
-            return strings, token
+            tok.push_back(token, tok_value)
+            return strings
     raise tok.error(token)
 
 
@@ -370,6 +391,100 @@ def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
         sections.append(f'"{remaining}"')
 
     file.write((' +\n' + indent).join(sections))
+
+
+def _parse_colon_array(
+    tok: BaseTokenizer, error_desc: str, kind: str,
+    snippet_mapping: Mapping[str, Snippet[Sequence[T]]],
+    parse: Callable[[BaseTokenizer, str, str, List[str], TagsSet], T],
+) -> List[T]:
+    """Parse through an array of colon-separated values, like in choices/flags keyvalues.
+
+    The function provided is used to parse each line into the desired object.
+    """
+    tok_typ, tok_value = tok()
+    if tok_typ is Token.DIRECTIVE and tok_value == "snippet":
+        # A line like "... = #snippet" - include a single array, no additional values.
+        return list(Snippet.lookup(kind, snippet_mapping, tok.expect(Token.STRING)))
+    else:
+        tok.push_back(tok_typ, tok_value)
+
+    val_list: List[T] = []
+    tok.expect(Token.BRACK_OPEN)
+    for token, first_value in tok.skipping_newlines():
+        if token is Token.BRACK_CLOSE:
+            return val_list
+        elif token is Token.DIRECTIVE and first_value == 'snippet':
+            # Include an existing list of values, maybe with inline values.
+            key = tok.expect(Token.STRING)
+            val_list.extend(Snippet.lookup(kind, snippet_mapping, key))
+            continue
+        elif token is not Token.STRING:
+            raise tok.error(token, first_value)
+
+        vals = _read_colon_list(tok, had_colon=False)
+
+        end_token, tok_value = tok()
+        if end_token is Token.BRACK_OPEN:
+            val_tags = read_tags(tok)
+        else:
+            val_tags = frozenset()
+            tok.push_back(end_token, tok_value)
+        val_list.append(parse(tok, error_desc, first_value, vals, val_tags))
+    raise tok.error(Token.EOF)
+
+
+def _parse_flags(
+    tok: BaseTokenizer, error_desc: str,
+    first_value: str, vals: List[str], tags: TagsSet,
+) -> SpawnFlags:
+    """Parse a line into a flags array member."""
+    try:
+        spawnflag = int(first_value)
+    except ValueError:
+        raise tok.error(
+            'SpawnFlags must be integer values, not "{}" (in {})!',
+            first_value,
+            error_desc,
+        ) from None
+    try:
+        power = math.log2(spawnflag)
+    except ValueError:
+        power = 0.5  # Force the following code to raise
+    if power != round(power):
+        raise tok.error(
+            'SpawnFlags must be powers of two, not {} (in {})!',
+            spawnflag,
+            error_desc,
+        )
+    # Spawnflags can have a default, others may not.
+    if len(vals) == 2:
+        return (spawnflag, vals[0], vals[1].strip() == '1', tags)
+    elif len(vals) == 1:
+        return (spawnflag, vals[0], True, tags)
+    elif len(vals) == 0:
+        raise tok.error('Expected value for spawnflags, got none!')
+    else:
+        raise tok.error(
+            'Too many values for spawnflags definition in ({}):\n{}',
+            error_desc, vals,
+        )
+
+
+def _parse_choices(
+    tok: BaseTokenizer, error_desc: str,
+    first_value: str, vals: List[str], tags: TagsSet,
+) -> Choices:
+    """Parse a line into a choices array member."""
+    if len(vals) == 1:
+        return (first_value, vals[0], tags)
+    elif len(vals) == 0:
+        raise tok.error('Expected value for choices, got none (in {})!', error_desc)
+    else:
+        raise tok.error(
+            'Too many values for choices definition in ({}):\n{}',
+            error_desc, vals,
+        )
 
 
 def read_tags(tok: BaseTokenizer) -> TagsSet:
@@ -458,6 +573,108 @@ def match_tags(search: Container[str], tags: Collection[str]) -> bool:
 
 
 @attrs.frozen
+class Snippet(Generic[ValueT_co]):
+    """A part of some definition which has been given a name to be reused."""
+    name: str
+    source_path: str  # File it was defined in.
+    source_line: int  # Line number.
+    value: ValueT_co
+
+    @classmethod
+    def lookup(cls, kind: str, mapping: Mapping[str, Snippet[T]], key: str) -> T:
+        """Locate a snippet using the specified mapping."""
+        try:
+            return mapping[key.casefold()].value
+        except KeyError:
+            names = [snip.name for snip in mapping.values()]
+            names.sort()
+            raise ValueError(f'Snippet "{key}" does not exist. Known {kind} snippets: {names}') from None
+
+    @classmethod
+    def _add(cls, kind: str, mapping: SnippetDict[T], path: str, line: int, name: str, value: T) -> None:
+        """Create and add a snippet to the mapping, raising an error on collisions."""
+        key = name.casefold()
+        try:
+            existing = mapping[key]
+        except KeyError:
+            mapping[key] = Snippet(name, path, line, value)
+        else:
+            raise ValueError(
+                f'Two {kind} snippets were defined with the name "{name}":\n'
+                f'- {existing.source_path}:{existing.source_line}'
+                f'- {path}:{line}'
+            )
+
+    # noinspection PyProtectedMember
+    @classmethod
+    def parse(cls, fgd: FGD, path: str, tokeniser: BaseTokenizer) -> None:
+        """Parse snippet definitions in a FGD."""
+        definition_line = tokeniser.line_num  # Before further parsing.
+        snippet_kind = tokeniser.expect(Token.STRING).casefold()
+        snippet_id = tokeniser.expect(Token.STRING)
+        tokeniser.expect(Token.EQUALS)
+        error_desc = f'snippet "{path}:{snippet_id}'
+
+        if snippet_kind in ('desc', 'description'):
+            desc = tokeniser.expect(Token.STRING)
+            while True:
+                tok_type, tok_value = tokeniser()
+                if tok_type is Token.PLUS:
+                    desc += tokeniser.expect(Token.STRING)
+                elif tok_type is Token.NEWLINE:
+                    break
+                else:
+                    raise tokeniser.error(tok_type, tok_value)
+            cls._add(
+                'description', fgd.snippet_desc,
+                path, definition_line, snippet_id,
+                desc,
+            )
+        # These two can both use and produce snippets, producing a bit of redundancy.
+        elif snippet_kind == 'choices':
+            cls._add(
+                'choices list', fgd.snippet_choices,
+                path, definition_line, snippet_id,
+                _parse_colon_array(
+                    tokeniser, error_desc,
+                    'choices list', fgd.snippet_choices, _parse_choices,
+                ),
+            )
+        elif snippet_kind in ('flags', 'spawnflags'):
+            cls._add(
+                'flags list', fgd.snippet_flags,
+                path, definition_line, snippet_id,
+                _parse_colon_array(
+                    tokeniser, error_desc,
+                    'flags list', fgd.snippet_flags, _parse_flags,
+                ),
+            )
+        elif snippet_kind in ('kv', 'keyvalue'):
+            kv_name = tokeniser.expect(Token.STRING)
+            cls._add(
+                'keyvalue', fgd.snippet_keyvalue,
+                path, definition_line, snippet_id,
+                KVDef._parse(fgd, kv_name, tokeniser, error_desc),
+            )
+        elif snippet_kind == 'input':
+            cls._add(
+                'input', fgd.snippet_input,
+                path, definition_line, snippet_id,
+                IODef._parse(fgd, tokeniser),
+            )
+        elif snippet_kind == 'output':
+            cls._add(
+                'output', fgd.snippet_output,
+                path, definition_line, snippet_id,
+                IODef._parse(fgd, tokeniser),
+            )
+        else:
+            raise ValueError(
+                f'Unknown snippet type "{snippet_kind}" for snippet "{path}:{snippet_id}"!'
+            )
+
+
+@attrs.frozen
 class Resource:
     """Resources used by an entity, with filetype.
 
@@ -469,27 +686,27 @@ class Resource:
     tags: TagsSet = frozenset()
 
     @classmethod
-    def mdl(cls, filename: str, tags: TagsSet = frozenset()) -> 'Resource':
+    def mdl(cls, filename: str, tags: TagsSet = frozenset()) -> Resource:
         """Create a resource definition for a model."""
         return cls(filename, FileType.MODEL, tags)
 
     @classmethod
-    def mat(cls, filename: str, tags: TagsSet = frozenset()) -> 'Resource':
+    def mat(cls, filename: str, tags: TagsSet = frozenset()) -> Resource:
         """Create a resource definition for a material."""
         return cls(filename, FileType.MATERIAL, tags)
 
     @classmethod
-    def snd(cls, filename: str, tags: TagsSet = frozenset()) -> 'Resource':
+    def snd(cls, filename: str, tags: TagsSet = frozenset()) -> Resource:
         """Create a resource definition for a soundscript."""
         return cls(filename, FileType.GAME_SOUND, tags)
 
     @classmethod
-    def part(cls, filename: str, tags: TagsSet = frozenset()) -> 'Resource':
+    def part(cls, filename: str, tags: TagsSet = frozenset()) -> Resource:
         """Create a resource definition for a particle system."""
         return cls(filename, FileType.PARTICLE_SYSTEM, tags)
 
     @classmethod
-    def weapon_script(cls, filename: str, tags: TagsSet = frozenset()) -> 'Resource':
+    def weapon_script(cls, filename: str, tags: TagsSet = frozenset()) -> Resource:
         """Create a resource definition for a weapon script."""
         return cls(filename, FileType.WEAPON_SCRIPT, tags)
 
@@ -507,7 +724,7 @@ class Helper:
     IS_EXTENSION: ClassVar[bool] = False  # true for our extensions to the format.
 
     @classmethod
-    def parse(cls: Type['HelperT'], args: List[str]) -> 'HelperT':
+    def parse(cls: Type[HelperT], args: List[str]) -> HelperT:
         """Parse this helper from the given arguments.
 
         The default implementation expects no arguments.
@@ -521,7 +738,7 @@ class Helper:
         """Produce the argument text to recreate this helper type."""
         return []
 
-    def get_resources(self, entity: 'EntityDef') -> Iterable[str]:
+    def get_resources(self, entity: EntityDef) -> Iterable[str]:
         """Return the resources used by this helper."""
         return ()
 
@@ -533,6 +750,8 @@ class Helper:
         For example size() is ignored if a studio() is present after it.
         """
         return ()
+
+    __hash__ = None  # type: ignore[assignment]
 
     def __eq__(self, other: object) -> bool:
         """Define equality as all attributes matching, and only matching types."""
@@ -603,16 +822,12 @@ class KVDef(EntAttribute):
     disp_name: str
     default: str = ''
     desc: str = ''
-    val_list: Union[
-        None,
-        List[Tuple[int, str, bool, TagsSet]],
-        List[Tuple[str, str, TagsSet]],
-    ] = None
+    val_list: Union[List[SpawnFlags], List[Choices], None] = None
     readonly: bool = False
     reportable: bool = False
 
     @property
-    def choices_list(self) -> List[Tuple[str, str, TagsSet]]:
+    def choices_list(self) -> List[Choices]:
         """Check that the keyvalues are CHOICES type, and then return val_list.
 
         This isolates the type ambiguity of the attr.
@@ -622,10 +837,10 @@ class KVDef(EntAttribute):
         if self.val_list is None:
             lst: List[Tuple[str, str, TagsSet]] = []
             self.val_list = lst
-        return cast('List[Tuple[str, str, TagsSet]]', self.val_list)
+        return cast('List[Choices]', self.val_list)
 
     @property
-    def flags_list(self) -> List[Tuple[int, str, bool, TagsSet]]:
+    def flags_list(self) -> List[SpawnFlags]:
         """Check that the keyvalues are SPAWNFLAGS type, and then return val_list.
 
         This isolates the type ambiguity of the attr.
@@ -633,11 +848,11 @@ class KVDef(EntAttribute):
         if self.type is not ValueTypes.SPAWNFLAGS:
             raise TypeError
         if self.val_list is None:
-            lst: List[Tuple[int, str, bool, TagsSet]] = []
+            lst: List[SpawnFlags] = []
             self.val_list = lst
-        return cast('List[Tuple[int, str, bool, TagsSet]]', self.val_list)
+        return cast('List[SpawnFlags]', self.val_list)
 
-    def copy(self) -> 'KVDef':
+    def copy(self) -> KVDef:
         """Create a duplicate of this keyvalue."""
         return KVDef(
             self.name,
@@ -653,7 +868,7 @@ class KVDef(EntAttribute):
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'KVDef':
+    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> KVDef:
         return KVDef(
             self.name,
             self.type,
@@ -678,8 +893,8 @@ class KVDef(EntAttribute):
             yield self.default
 
     @classmethod
-    def _parse(cls, entity: 'EntityDef', name: str, tok: BaseTokenizer) -> None:
-        """Parse a keyvalue out of an entity."""
+    def _parse(cls, fgd: FGD, name: str, tok: BaseTokenizer, error_desc: str) -> Tuple[TagsSet, KVDef]:
+        """Parse a keyvalue definition."""
         is_readonly = show_in_report = had_colon = False
         # Next is either the value type parens, or a tags brackets.
         val_token, raw_value_type = tok()
@@ -725,7 +940,8 @@ class KVDef(EntAttribute):
         else:
             raise tok.error(next_token)
         if kv_vals is None:
-            kv_vals, has_equal = read_colon_list(tok, had_colon)
+            kv_vals = _read_colon_list(tok, had_colon, 2, fgd.snippet_desc)
+            has_equal, _ = tok()
         attr_len = len(kv_vals)
         kv_desc = default = ''
         if attr_len == 3:
@@ -744,81 +960,29 @@ class KVDef(EntAttribute):
                 default = '1'
             elif default.casefold() == 'no':
                 default = '0'
-        # Read the choices in the [].  There's two kinds of tuples here, typing this
-        # doesn't work right.
-        val_list: Optional[List[Any]]
+        # Read the choices in the [].
+        val_list: Union[List[Choices], List[SpawnFlags], None]
         if val_typ.has_list:
             if has_equal is not Token.EQUALS:
-                raise tok.error('No list for "{}" value type!', val_typ.name)
-            val_list = []
-            tok.expect(Token.BRACK_OPEN)
-            for choices_token, choices_value in tok:
-                if choices_token is Token.NEWLINE:
-                    continue
-                if choices_token is Token.BRACK_CLOSE:
-                    break
-                elif choices_token is not Token.STRING:
-                    raise tok.error(choices_token)
-                vals, end_token = read_colon_list(tok, had_colon=False)
-
-                if end_token is Token.BRACK_OPEN:
-                    val_tags = read_tags(tok)
-                else:
-                    val_tags = frozenset()
-
-                if val_typ is ValueTypes.SPAWNFLAGS:
-                    # The first value is an integer.
-                    try:
-                        spawnflag = int(choices_value)
-                    except ValueError:
-                        raise tok.error(
-                            'SpawnFlags must be integer values, '
-                            'not "{}" (in {})!'.format(
-                                choices_value,
-                                entity.classname,
-                            )
-                        ) from None
-                    try:
-                        power = math.log2(spawnflag)
-                    except ValueError:
-                        power = 0.5  # Force the following code to raise
-                    if power != round(power):
-                        raise tok.error(
-                            'SpawnFlags must be powers of two, not {} (in {})!',
-                            spawnflag,
-                            entity.classname,
-                        ) from None
-                    # Spawnflags can have a default, others may not.
-                    if len(vals) == 2:
-                        val_list.append((spawnflag, vals[0], vals[1].strip() == '1', val_tags))
-                    elif len(vals) == 1:
-                        val_list.append((spawnflag, vals[0], True, val_tags))
-                    elif len(vals) == 0:
-                        raise tok.error('Expected value for spawnflags, got none!')
-                    else:
-                        raise tok.error('Too many values!\n{}', vals)
-                else:  # Choices.
-                    if len(vals) == 1:
-                        val_list.append((choices_value, vals[0], val_tags))
-                    elif len(vals) == 0:
-                        raise tok.error('Expected value for choices, got none!')
-                    else:
-                        raise tok.error('Too many values!\n{}', vals)
-
-                # Handle ] at the end of a : : line.
-                if end_token is Token.BRACK_CLOSE:
-                    break
-            else:
-                raise tok.error(Token.EOF)
+                raise tok.error('No list provided for "{}" value type!', val_typ.name)
+            if val_typ is ValueTypes.CHOICES:
+                val_list = _parse_colon_array(
+                    tok, error_desc,
+                    'choices list', fgd.snippet_choices, _parse_choices,
+                )
+            elif val_typ is ValueTypes.SPAWNFLAGS:
+                val_list = _parse_colon_array(
+                    tok, error_desc,
+                    'flags list', fgd.snippet_flags, _parse_flags,
+                )
+            else:  # No others have a list.
+                raise AssertionError(val_typ)
         else:
             val_list = None
             if has_equal is Token.EQUALS:
                 raise tok.error('"{}" value types can\'t have lists!', val_typ.name)
-        tags_map = entity.keyvalues.setdefault(name.casefold(), {})
-        if not tags_map:
-            # New, add to the ordering.
-            entity.kv_order.append(name.casefold())
-        tags_map[tags] = KVDef(
+
+        return tags, KVDef(
             name=name,
             type=val_typ,
             desc=kv_desc,
@@ -909,18 +1073,17 @@ class IODef(EntAttribute):
     type: ValueTypes = ValueTypes.VOID  # Most IO has no parameter.
     desc: str = ''
 
-    def copy(self) -> 'IODef':
+    def copy(self) -> IODef:
         """Create a duplicate of this IODef."""
         return IODef(self.name, self.type, self.desc)
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'IODef':
+    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> IODef:
         return IODef(self.name, self.type, self.desc)
 
     @classmethod
-    # TODO: io_type = Literal['input', 'output']
-    def _parse(cls, entity: 'EntityDef', io_type: str, tok: BaseTokenizer) -> None:
+    def _parse(cls, fgd: FGD, tok: BaseTokenizer) -> Tuple[TagsSet, IODef]:
         """Parse I/O definitions in an entity."""
         name = tok.expect(Token.STRING)
 
@@ -943,10 +1106,9 @@ class IODef(EntAttribute):
                 raise tok.error('Unknown keyvalue type "{}"!', raw_value_type) from None
 
         # Read desc
-        io_vals, token = read_colon_list(tok)
+        io_vals = _read_colon_list(tok, False, 0, fgd.snippet_desc)
 
-        if token is Token.EQUALS:
-            raise tok.error(token)
+        tok.expect(Token.NEWLINE)
 
         if io_vals:
             try:
@@ -956,9 +1118,7 @@ class IODef(EntAttribute):
         else:
             io_desc = ''
 
-        # entity.inputs or entity.outputs
-        tags_map = getattr(entity, io_type + 's').setdefault(name.casefold(), {})
-        tags_map[tags] = IODef(name, val_typ, io_desc)
+        return tags, cls(name, val_typ, io_desc)
 
     def export(
         self,
@@ -992,17 +1152,15 @@ class _EntityView(Generic[T]):
     __slots__ = ['_ent', '_attr', '_disp_attr']
 
     # Note, we expect the maps to have casefolded their keys.
-    def __init__(self, ent: 'EntityDef', attr_name: str, disp_name: str) -> None:
+    def __init__(self, ent: EntityDef, attr_name: str, disp_name: str) -> None:
         self._ent = ent
         self._attr = attr_name
         self._disp_attr = disp_name
 
-    @property
-    def __name__(self) -> str:
-        return self._disp_attr
-
     def __repr__(self) -> str:
         return f'{self._ent!r}.{self._disp_attr}'
+
+    __hash__ = None  # type: ignore[assignment]
 
     def __eq__(self, other: object) -> bool:
         """We're private, so we should be the only instance for a given Entity."""
@@ -1010,7 +1168,7 @@ class _EntityView(Generic[T]):
 
     def _maps(
         self,
-        ent: Optional['EntityDef'] = None,
+        ent: Optional[EntityDef] = None,
     ) -> Iterator[Mapping[str, Mapping[TagsSet, T]]]:
         """Yield all the mappings which we need to look through."""
         if ent is None:
@@ -1092,7 +1250,7 @@ class EntityDef:
     kv_order: List[str] = attrs.field(kw_only=True, factory=list)
 
     #: The parent entity classes defined using ``base()`` helpers.
-    bases: List[Union['EntityDef', str]] = attrs.field(kw_only=True, factory=list)
+    bases: List[Union[EntityDef, str]] = attrs.field(kw_only=True, factory=list)
     #: All other helpers defined on the entity.
     helpers: List[Helper] = attrs.field(kw_only=True, factory=list)
     desc: str = attrs.field(default='', kw_only=True)
@@ -1118,7 +1276,7 @@ class EntityDef:
     @classmethod
     def parse(
         cls,
-        fgd: 'FGD',
+        fgd: FGD,
         tok: BaseTokenizer,
         ent_type: EntityTypes,
         eval_bases: bool = True,
@@ -1240,18 +1398,38 @@ class EntityDef:
             elif doc_token is Token.STRING:
                 if desc is None or desc:
                     # No colon yet, or we have text without '+' between
-                    raise tok.error(doc_token)
+                    raise tok.error(doc_token, token_value)
                 desc.append(token_value)
+            elif doc_token is Token.DIRECTIVE and token_value == 'snippet':
+                if desc is None or desc:
+                    # No colon yet, or we have text without '+' between
+                    raise tok.error(doc_token, token_value)
+                # Included from an earlier snippet.
+                desc.append(Snippet.lookup(
+                    'description', fgd.snippet_desc,
+                    tok.expect(Token.STRING),
+                ))
             elif doc_token is Token.PLUS:
                 if not desc:
                     raise tok.error('+ without string before it!')
-                desc.append(tok.expect(Token.STRING))
+                tok_typ, tok_val = tok()
+                while tok_typ is Token.NEWLINE:
+                    tok_typ, tok_val = tok()
+                if tok_typ is Token.STRING:
+                    desc.append(tok_val)
+                elif tok_typ is Token.DIRECTIVE and tok_val == 'snippet':
+                    desc.append(Snippet.lookup(
+                        'description', fgd.snippet_desc,
+                        tok.expect(Token.STRING),
+                    ))
+                else:
+                    raise tok.error(tok_typ, tok_val)
             elif doc_token is Token.BRACK_OPEN:
                 if desc:
                     entity.desc = ''.join(desc)
                 break
             else:
-                raise tok.error(doc_token)
+                raise tok.error(doc_token, token_value)
 
         fgd.entities[entity.classname.casefold()] = entity
 
@@ -1272,14 +1450,46 @@ class EntityDef:
             if token is Token.NEWLINE:
                 continue
 
+            if token is Token.DIRECTIVE and token_value == 'snippet':
+                value_kind = tok.expect(Token.STRING).casefold()
+                key = tok.expect(Token.STRING)
+                if value_kind == 'input':
+                    tags, io_def = Snippet.lookup('input', fgd.snippet_input, key)
+                    io_tags_map = entity.inputs.setdefault(io_def.name.casefold(), {})
+                    io_tags_map[tags] = io_def
+                elif value_kind == 'output':
+                    tags, io_def = Snippet.lookup('output', fgd.snippet_output, key)
+                    io_tags_map = entity.outputs.setdefault(io_def.name.casefold(), {})
+                    io_tags_map[tags] = io_def
+                elif value_kind == 'keyvalue':
+                    tags, kv_def = Snippet.lookup('keyvalue', fgd.snippet_keyvalue, key)
+                    kv_tags_map = entity.keyvalues.setdefault(kv_def.name.casefold(), {})
+                    if not kv_tags_map:
+                        # New, add to the ordering.
+                        entity.kv_order.append(kv_def.name.casefold())
+                    kv_tags_map[tags] = kv_def
+                else:
+                    raise tok.error(
+                        'Unknown snippet type "{}". Valid in this context: '
+                        'input, output, keyvalue',
+                        value_kind,
+                    )
+
             # IO - keyword at the start.
             if token is not Token.STRING:
                 raise tok.error(token, token_value)
 
             io_type = token_value.casefold()
-            if io_type in ('input', 'output'):
+            if io_type == 'input':
                 # noinspection PyProtectedMember
-                IODef._parse(entity, io_type, tok)
+                tags, io_def = IODef._parse(fgd, tok)
+                io_tags_map = entity.inputs.setdefault(io_def.name.casefold(), {})
+                io_tags_map[tags] = io_def
+            elif io_type == 'output':
+                # noinspection PyProtectedMember
+                tags, io_def = IODef._parse(fgd, tok)
+                io_tags_map = entity.outputs.setdefault(io_def.name.casefold(), {})
+                io_tags_map[tags] = io_def
             elif io_type == '@resources':  # @resource block, format extension
                 tok.expect(Token.BRACK_OPEN, skip_newline=True)
                 # Append to existing, in case there's multiple blocks.
@@ -1291,7 +1501,7 @@ class EntityDef:
                         except KeyError:
                             raise tok.error('Unknown resource type "{}"!', res_tok_val) from None
                         filename = tok.expect(Token.STRING)
-                        tags: TagsSet = frozenset()
+                        tags = frozenset()
                         token, tok_val = tok()
                         if token is Token.BRACK_OPEN:
                             tags = read_tags(tok)
@@ -1303,10 +1513,15 @@ class EntityDef:
                 entity.resources = resources
             else:
                 # noinspection PyProtectedMember
-                KVDef._parse(entity, io_type, tok)
+                tags, kv_def = KVDef._parse(fgd, io_type, tok, entity.classname)
+                kv_tags_map = entity.keyvalues.setdefault(kv_def.name.casefold(), {})
+                if not kv_tags_map:
+                    # New, add to the ordering.
+                    entity.kv_order.append(kv_def.name.casefold())
+                kv_tags_map[tags] = kv_def
 
     @classmethod
-    def engine_def(cls, classname: str) -> 'EntityDef':
+    def engine_def(cls, classname: str) -> EntityDef:
         """Return the specified entity from an internal copy of the Hammer Addons database.
 
         This can be used to identify the kind of keys/inputs/outputs present on an entity, as well
@@ -1328,7 +1543,7 @@ class EntityDef:
         else:
             return f'<Entity {self.classname}>'
 
-    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'EntityDef':
+    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> EntityDef:
         """Handle copying ourselves, to eliminate lookups when not required."""
         copy = EntityDef.__new__(EntityDef)
         copy.type = self.type
@@ -1409,7 +1624,7 @@ class EntityDef:
 
     def get_resources(
         self,
-        ctx: 'ResourceCtx',
+        ctx: ResourceCtx,
         *,
         ent: Optional[Entity],
         on_error: Callable[[str], object] = lambda err: None,
@@ -1596,7 +1811,7 @@ class EntityDef:
                     out.export(file, 'output', tags)
         file.write('\t]\n')
 
-    def iter_bases(self, _done: Optional[Set['EntityDef']] = None) -> Iterator['EntityDef']:
+    def iter_bases(self, _done: Optional[Set[EntityDef]] = None) -> Iterator[EntityDef]:
         """Yield all base entities for this one.
 
         If an entity is repeated, it will only be yielded once.
@@ -1616,7 +1831,7 @@ class FGD:
     """A FGD set for a game. May be composed of several files."""
     # List of names we have already parsed.
     # We don't parse them again, to prevent infinite loops.
-    _parse_list: Set[File[Any]]
+    _parse_list: Set[File]
     # Entity definitions
     entities: Dict[str, EntityDef]
     # Maximum bounding box of map
@@ -1635,6 +1850,15 @@ class FGD:
     # has a parent (or None for auto), and then a list of the ents it contains.
     auto_visgroups: Dict[str, AutoVisgroup]
 
+    # Snippets are named sections of syntax that can be reused.
+    # Each is identified by a source filename, and a lookup key.
+    snippet_desc: SnippetDict[str]
+    snippet_choices: SnippetDict[Sequence[Choices]]
+    snippet_flags: SnippetDict[Sequence[SpawnFlags]]
+    snippet_input: SnippetDict[Tuple[TagsSet, IODef]]
+    snippet_output: SnippetDict[Tuple[TagsSet, IODef]]
+    snippet_keyvalue: SnippetDict[Tuple[TagsSet, KVDef]]
+
     def __init__(self) -> None:
         """Create a FGD."""
         self._parse_list = set()
@@ -1644,12 +1868,19 @@ class FGD:
         self.tagged_mat_exclusions = defaultdict(set)
         self.auto_visgroups = {}
 
+        self.snippet_desc = {}
+        self.snippet_choices = {}
+        self.snippet_flags = {}
+        self.snippet_input = {}
+        self.snippet_output = {}
+        self.snippet_keyvalue = {}
+
     @classmethod
     def parse(
         cls,
         file: Union[File[Any], str],
         filesystem: Optional[FileSystem[Any]] = None,
-    ) -> 'FGD':
+    ) -> FGD:
         """Parse an FGD file.
 
         :param file: A :py:class:filesystem.File` representing the file to read, or a file path.
@@ -2005,6 +2236,9 @@ class FGD:
                         elif tok is not Token.NEWLINE:
                             raise tokeniser.error(tok)
 
+                elif token_value == '@snippet':
+                    Snippet.parse(self, file.path, tokeniser)
+
                 # Entity definition...
                 elif token_value[:1] == '@':
                     try:
@@ -2019,7 +2253,7 @@ class FGD:
                     raise tokeniser.error('Bad keyword {!r}', token_value)
 
     @classmethod
-    def engine_dbase(cls) -> 'FGD':
+    def engine_dbase(cls) -> FGD:
         """Load and return a database of entity keyvalues and I/O.
 
         This can be used to identify the kind of keys present on an entity. If you only need
@@ -2085,25 +2319,25 @@ _EMPTY_FILESYS = VirtualFileSystem(srctools.EmptyMapping)
 class ResourceCtx:
     """Map information passed to :attr:`FileType.ENTCLASS_FUNC` functions."""
     tags: TagsSet
-    fsys: FileSystem[Any]
+    fsys: FileSystem
     #: The BSP/VMF map name, like what is passed to :command:`map` in-game.
     mapname: str
-    get_entdef: Callable[[str], 'EntityDef']
+    get_entdef: Callable[[str], EntityDef]
 
     # For use of get_resources() only.
     _functions: Mapping[str, Callable[
-        ['ResourceCtx', Entity],
+        [ResourceCtx, Entity],
         Iterator[Union[Resource, Entity]]
     ]]
 
     def __init__(
         self,
         tags: Iterable[str] = (),
-        fsys: FileSystem[Any] = _EMPTY_FILESYS,
+        fsys: FileSystem = _EMPTY_FILESYS,
         fgd: Union[FGD, Mapping[str, EntityDef], _GetFGDFunc] = EntityDef.engine_def,
         mapname: str = '',
         funcs: Mapping[str, Callable[
-            ['ResourceCtx', Entity],
+            [ResourceCtx, Entity],
             Iterator[Union[Resource, Entity]]
         ]] = srctools.EmptyMapping,
     ) -> None:

@@ -361,7 +361,7 @@ class Keyvalues:
             if token_type is NEWLINE:
                 continue
             if token_type is STRING:   # "string"
-                if not newline_keys and '\n' in token_value or '\r' in token_value:
+                if not newline_keys and ('\n' in token_value or '\r' in token_value):
                     raise tokenizer.error('Illegal newline found in key "{}"!', token_value)
                 # Skip calling __init__ for speed. Value needs to be set
                 # before using this, since it's unset here.
@@ -405,7 +405,7 @@ class Keyvalues:
                             'A value like "name" "value" must be on the same '
                             'line.'
                         )
-                    if not newline_values and '\n' in prop_value or '\r' in prop_value:
+                    if not newline_values and ('\n' in prop_value or '\r' in prop_value):
                         raise tokenizer.error('Illegal newline found in value "{}"!', prop_value)
 
                     keyvalue._value = prop_value
@@ -421,7 +421,7 @@ class Keyvalues:
                             if (
                                 can_flag_replace and
                                 cur_block_contents[-1]._real_name == token_value and
-                                type(cur_block_contents[-1].value) == str
+                                isinstance(cur_block_contents[-1].value, str)
                             ):
                                 cur_block_contents[-1] = keyvalue
                             else:
@@ -774,7 +774,9 @@ class Keyvalues:
         else:
             return [conv(self._value)]
 
-    def __eq__(self, other: Any) -> builtins.bool:
+    __hash__ = None  # type: ignore[assignment]
+
+    def __eq__(self, other: object) -> builtins.bool:
         """Compare two items and determine if they are equal.
 
         This ignores names.
@@ -783,7 +785,7 @@ class Keyvalues:
             return self._value == other._value
         return NotImplemented
 
-    def __ne__(self, other: Any) -> builtins.bool:
+    def __ne__(self, other: object) -> builtins.bool:
         """Not-Equal To comparison. This ignores names.
         """
         if isinstance(other, Keyvalues):
@@ -854,7 +856,7 @@ class Keyvalues:
     @overload
     def __getitem__(self, index: slice) -> List['Keyvalues']: ...
     @overload
-    def __getitem__(self, index: Union[str, Tuple[str, str]]) -> str: ...
+    def __getitem__(self, index: str) -> str: ...
     @overload
     def __getitem__(self, index: Tuple[str, T]) -> Union[str, T]: ...
 
@@ -1106,7 +1108,7 @@ class Keyvalues:
 
     def has_children(self) -> builtins.bool:
         """Does this have child properties?"""
-        return type(self._value) is list
+        return isinstance(self._value, list)
 
     def is_root(self) -> builtins.bool:
         """Check if the keyvalue is a root, returned from the parse() method.

@@ -23,3 +23,4 @@ include src/srctools/fgd.lzma
 include src/srctools/py.typed
 # Lookup table.
 include src/libsquish/singlecolourlookup.inl
+include src/libsquish/LICENSE.txt

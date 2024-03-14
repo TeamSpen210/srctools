@@ -540,9 +540,10 @@ def test_edit() -> None:
 
     # Check converting a keyvalue into a block.
     child_1 = Keyvalues('Key', 'Value')
-    new_prop = test_prop.edit(value=[child_1, Keyvalues('Key2', 'Value')])
+    child_2 = Keyvalues('Key2', 'Value')
+    new_prop = test_prop.edit(value=[child_1, child_2])
     assert test_prop is new_prop
-    assert list(test_prop)[0] is child_1
+    assert list(test_prop) == [child_1, child_2]
 
 
 def test_bool() -> None:

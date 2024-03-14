@@ -111,6 +111,9 @@ class VERSIONS(Enum):
     DESOLATION_OLD = 42  # Old version.
     VITAMINSOURCE = 43  # Desolation's expanded map format.
 
+    def __hash__(self) -> int:
+        return hash(self.value)
+
     def __eq__(self, other: object) -> bool:
         """Versions are equal to their integer value."""
         return self.value == other
@@ -275,13 +278,12 @@ LUMP_LAYOUT_STANDARD: LumpDataLayout = {
 
 
 LUMP_LAYOUT_V19: LumpDataLayout = {
-    # See https://github.com/python/mypy/issues/9408
-    **LUMP_LAYOUT_STANDARD,  # type: ignore[misc]
+    **LUMP_LAYOUT_STANDARD,
     "LEAF": struct.Struct('<ihh6h4Hh24s2x'),  # Version 0
 }
 
 LUMP_LAYOUT_INFRA: LumpDataLayout = {
-    **LUMP_LAYOUT_STANDARD,  # type: ignore[misc]
+    **LUMP_LAYOUT_STANDARD,
     # INFRA seems to have a different lump. It's 16 bytes, it seems to be:
     # char type;
     # int first_ind, ind_count;
@@ -291,7 +293,7 @@ LUMP_LAYOUT_INFRA: LumpDataLayout = {
 }
 
 LUMP_LAYOUT_VITAMIN: LumpDataLayout = {
-    **LUMP_LAYOUT_STANDARD,  # type: ignore[misc]
+    **LUMP_LAYOUT_STANDARD,
     "LEAF": struct.Struct('<ihh6I4HhBx'),
     "FACE": struct.Struct('<5i4iB3x'),
     "BRUSHSIDE": struct.Struct('<IIhBB'),
@@ -300,7 +302,7 @@ LUMP_LAYOUT_VITAMIN: LumpDataLayout = {
 
 # https://chaosinitiative.github.io/Wiki/docs/Reference/bsp-v25/
 LUMP_LAYOUT_CHAOS: LumpDataLayout = {
-    **LUMP_LAYOUT_STANDARD,  # type: ignore[misc]
+    **LUMP_LAYOUT_STANDARD,
     "FACE":             struct.Struct('<I??xx5i4sif5i3I'),
     "FACEID":           struct.Struct('<I'),
     "EDGE":             struct.Struct('<II'),
@@ -566,7 +568,7 @@ class TexData:
     # always the same as regular width/height.
 
     @classmethod
-    def from_material(cls, fsys: FileSystem[Any], mat_name: str) -> 'TexData':
+    def from_material(cls, fsys: FileSystem, mat_name: str) -> 'TexData':
         """Given a filesystem, parse the specified material and compute the texture values."""
         orig_mat = mat_name
         mat_folded = mat_name.casefold()
@@ -652,7 +654,7 @@ class TexInfo:
         return self._info.width, self._info.height
 
     @overload
-    def set(self, bsp: 'BSP', mat: str, *, fsys: FileSystem[Any]) -> None: ...
+    def set(self, bsp: 'BSP', mat: str, *, fsys: FileSystem) -> None: ...
     @overload
     def set(self, bsp: 'BSP', mat: str, reflectivity: Vec, width: int, height: int) -> None: ...
 
@@ -661,7 +663,7 @@ class TexInfo:
         bsp: 'BSP', mat: str,
         reflectivity: Optional[Vec] = None,
         width: int = 0, height: int = 0,
-        fsys: Optional[FileSystem[Any]] = None,
+        fsys: Optional[FileSystem] = None,
     ) -> None:
         """Set the material used for this texinfo.
 
@@ -883,7 +885,7 @@ class Overlay:
         attrs.validators.instance_of(int),
         attrs.validators.instance_of(list),
     ))
-    render_order: int = attrs.field(default=int(0), validator=attrs.validators.in_(range(4)))
+    render_order: int = attrs.field(default=0, validator=attrs.validators.in_(range(4)))
     u_min: float = 0.0
     u_max: float = 1.0
     v_min: float = 0.0
@@ -898,10 +900,10 @@ class Overlay:
     fade_max_sq: float = 0.0
 
     # If system exceeds these limits, the overlay is skipped. Each is a single byte.
-    min_cpu: int = attrs.field(default=int(0), validator=attrs.validators.in_(range(255)))
-    max_cpu: int = attrs.field(default=int(0), validator=attrs.validators.in_(range(255)))
-    min_gpu: int = attrs.field(default=int(0), validator=attrs.validators.in_(range(255)))
-    max_gpu: int = attrs.field(default=int(0), validator=attrs.validators.in_(range(255)))
+    min_cpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
+    max_cpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
+    min_gpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
+    max_gpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
 
 
 @attrs.define(eq=False)
@@ -1749,7 +1751,7 @@ class BSP:
         return lump.data
 
     @overload
-    def create_texinfo(self, mat: str, *, copy_from: 'TexInfo', fsys: FileSystem[Any]) -> 'TexInfo':
+    def create_texinfo(self, mat: str, *, copy_from: 'TexInfo', fsys: FileSystem) -> 'TexInfo':
         """Copy from texinfo using filesystem."""
     @overload
     def create_texinfo(
@@ -1770,7 +1772,7 @@ class BSP:
         lightmap_t_off: AnyVec = FrozenVec(),
         lightmap_t_shift: float = -99999.0,
         flags: SurfFlags = SurfFlags.NONE,
-        *, fsys: FileSystem[Any],
+        *, fsys: FileSystem,
     ) -> 'TexInfo':
         """Construct from filesystem."""
     @overload
@@ -1805,7 +1807,7 @@ class BSP:
         copy_from: Optional['TexInfo'] = None,
         reflectivity: Optional[AnyVec] = None,
         width: int = 0, height: int = 0,
-        fsys: Optional[FileSystem[Any]] = None,
+        fsys: Optional[FileSystem] = None,
     ) -> 'TexInfo':
         """Create or find a texinfo entry with the specified values.
 

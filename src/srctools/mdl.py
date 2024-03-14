@@ -1,7 +1,6 @@
 """Parses Source models, to extract metadata."""
 from typing import (
-    Any, BinaryIO, Dict, Iterable, Iterator, List, Optional, Sequence as SequenceType,
-    Tuple, TypeVar, Union, cast,
+    Any, BinaryIO, Dict, Iterable, Iterator, List, Optional, Tuple, TypeVar, Union, cast,
 )
 from enum import Enum, Flag as FlagEnum
 from pathlib import PurePosixPath
@@ -17,13 +16,12 @@ from srctools.math import Vec
 
 
 __all__ = [
-    'MDL_EXTS', 'Flags', 'Model',
+    'MDL_EXTS', 'MDL_EXTS_EXTRA', 'Flags', 'Model',
     'AnimEventTypes', 'CL', 'SV', 'AnimEvents',
     'IncludedMDL', 'SeqEvent', 'Sequence',
 ]
-# All the file extensions used for models.
-MDL_EXTS: SequenceType[str] = [
-    '.mdl',
+# All the file extensions used for models, other than .mdl.
+MDL_EXTS_EXTRA: Tuple[str, ...] = (
     '.phy',
     '.vvd',
     '.ani',
@@ -31,8 +29,13 @@ MDL_EXTS: SequenceType[str] = [
     '.dx80.vtx',
     '.sw.vtx',
     '.vtx',
-]
-FileSysT = TypeVar('FileSysT', bound=FileSystem[Any])
+)
+# All the file extensions used for models.
+MDL_EXTS: Tuple[str, ...] = (
+    '.mdl',
+    *MDL_EXTS_EXTRA,
+)
+FileSysT = TypeVar('FileSysT', bound=FileSystem)
 
 
 class Flags(FlagEnum):
@@ -329,8 +332,29 @@ class Model:
 
     This does not parse the animation or geometry data, only other metadata.
     """
-    _sys: FileSystem[Any]
-    _file: File[Any]
+    _sys: FileSystem
+    _file: File
+
+    name: str
+    version: int
+    checksum: bytes
+    flags: Flags
+    phys_keyvalues: Keyvalues
+    eye_pos: Vec
+    illum_pos: Vec
+    hull_min: Vec
+    hull_max: Vec
+    view_min: Vec
+    view_max: Vec
+    mass: float
+    contents: Any  # TODO
+    numAllowedRootLods: int
+    cdmaterials: List[str]
+    skins: List[List[str]]
+    surfaceprop: str
+    keyvalues: str
+    included_models: List[IncludedMDL]
+    sequences: List[Sequence]
 
     def __init__(self, filesystem: FileSysT, file: File[FileSysT]) -> None:
         """Parse a model from a file."""
@@ -357,6 +381,7 @@ class Model:
         assert f.tell() == 0, "Doesn't begin at start?"
         if f.read(4) != b'IDST':
             raise ValueError('Not a model!')
+        name: bytes
         (
             self.version,
             self.checksum,
@@ -550,7 +575,7 @@ class Model:
         # Now parse through the family table, to match skins to textures.
         f.seek(skinref_ind)
         ref_data = f.read(2 * skinref_count * skin_count)
-        self.skins: List[List[str]] = []
+        self.skins = []
         skin_group = Struct(f'<{skinref_count}H')
         offset = 0
         for ind in range(skin_count):

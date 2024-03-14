@@ -11,12 +11,12 @@ Rotations are performed via the matrix-multiplication operator `@`, where the le
 the right. Vectors can be rotated by matrices and angles and matrices can be rotated by angles,
 but not vice-versa.
 
- - Vec @ Angle -> Vec
- - Vec @ Matrix -> Vec
- - 3-tuple @ Angle -> Vec
- - Angle @ Angle -> Angle
- - Angle @ Matrix -> Angle
- - Matrix @ Matrix -> Matrix
+ - ``Vec @ Angle`` → ``Vec``
+ - ``Vec @ Matrix`` → ``Vec``
+ - ``tuple[x, y, z] @ Angle`` → ``Vec``
+ - ``Angle @ Angle`` → ``Angle``
+ - ``Angle @ Matrix`` → ``Angle``
+ - ``Matrix @ Matrix`` → ``Matrix``
 """
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, Final, Iterable, Iterator, List,
@@ -68,7 +68,7 @@ def parse_vec_str(
     are simply ignored.
 
     If the 'string' is already a :py:class:`VecBase` or :py:class:`AngleBase`, this will be passed through.
-    If you do want a specific class, use :py:meth:`VecBase.from_str`, :py:meth:`VecBase.from_str`
+    If you do want a specific class, use :py:meth:`VecBase.from_str`, :py:meth:`AngleBase.from_str`
     or :py:meth:`MatrixBase.from_angstr`.
     """
     if isinstance(val, str):
@@ -120,10 +120,11 @@ def to_matrix(value: Union['AnyAngle', 'AnyMatrix', 'AnyVec', None]) -> 'Matrix 
 
 def format_float(x: float, places: int = 6) -> str:
     """Convert the specified float to a string, stripping off a .0 if it ends with that."""
-    result = f'{x:.{places}f}'
+    # Add zero to make -0 positive
+    result = f'{x+0.0:.{places}f}'
     if '.' in result:
-        result = result.rstrip('0')
-    return result.rstrip('.')
+        result = result.rstrip('0').rstrip('.')
+    return result
 
 
 def _coerce_float(value: Union[float, SupportsFloat, SupportsIndex]) -> float:
@@ -323,6 +324,7 @@ class VecBase:
     """Internal Base class for 3D vectors, implementing common code."""
     __match_args__: Final = ('_x', '_y', '_z')
     __slots__ = ('_x', '_y', '_z')
+    __hash__ = None  # type: ignore[assignment]
 
     #: This is a dictionary containing complementary axes.
     #: ``INV_AXIS["x", "y"]`` gives ``"z"``, and ``INV_AXIS["y"]`` returns ``("x", "z")``.
@@ -446,7 +448,7 @@ class VecBase:
 
     @classmethod
     @overload
-    def bbox(cls: Type[VecT],  __point: Iterable['VecBase']) -> Tuple[VecT, VecT]: ...
+    def bbox(cls: Type[VecT], __point: Iterable['VecBase']) -> Tuple[VecT, VecT]: ...
     @classmethod
     @overload
     def bbox(cls: Type[VecT], *points: 'VecBase') -> Tuple[VecT, VecT]: ...
@@ -817,6 +819,72 @@ class VecBase:
             out_min.z + (x_off * (out_max._z - out_min._z)) / diff,
         )
 
+    @overload
+    def clamped(self: VecT, mins: AnyVec, maxs: AnyVec, /) -> VecT: ...
+    @overload
+    def clamped(self: VecT, /, *, mins: AnyVec) -> VecT: ...
+    @overload
+    def clamped(self: VecT, /, *, maxs: AnyVec) -> VecT: ...
+    @overload
+    def clamped(self: VecT, /, *, mins: AnyVec, maxs: AnyVec) -> VecT: ...
+    def clamped(
+        self: VecT, *args: AnyVec,
+        mins: Optional[AnyVec] = None,
+        maxs: Optional[AnyVec] = None,
+    ) -> VecT:
+        """Return a copy of this vector, constrained by the given min/max values.
+
+        Either both can be provided positionally, or at least one can be provided by keyword.
+        """
+        if args:
+            if mins is not None or maxs is not None:
+                raise TypeError('Bounds may not be provided both positionally or by keyword.')
+            if len(args) == 2:
+                mins, maxs = args
+            elif len(args) == 1:
+                raise TypeError(
+                    f"{type(self).__name__}.clamped() missing 1 required positional argument: "
+                    f"'maxs'"
+                )
+            else:
+                raise TypeError(
+                    f"{type(self).__name__}.clamped() takes 2 positional arguments "
+                    f"but {len(args)} were given"
+                )
+        elif mins is None and maxs is None:
+            raise TypeError(
+                f"{type(self)}.__name__.clamped() missing either 2 positional arguments "
+                f"or at least 1 keyword arguments: 'mins' and 'maxs'"
+            )
+        x, y, z = self._x, self._y, self._z
+        return_self = type(self) is Py_FrozenVec
+        if mins is not None:
+            mx, my, mz = mins
+            if x < mx:
+                x = mx
+                return_self = False
+            if y < my:
+                y = my
+                return_self = False
+            if z < mz:
+                z = mz
+                return_self = False
+        if maxs is not None:
+            mx, my, mz = maxs
+            if x > mx:
+                x = mx
+                return_self = False
+            if y > my:
+                y = my
+                return_self = False
+            if z > mz:
+                z = mz
+                return_self = False
+        if return_self:  # Unchanged FrozenVec, return it.
+            return self
+        else:
+            return type(self)(x, y, z)
+
     def __round__(self: VecT, ndigits: int = 0) -> VecT:
         """Performing :external:py:func:`round()` on a vector rounds each axis."""
         return type(self)(
@@ -852,18 +920,18 @@ class VecBase:
         if not format_spec:
             return str(self)
 
-        x = format(self._x, format_spec)
+        x = format(self._x + 0.0, format_spec)
         if '.' in x:
-            x = x.rstrip('0')
+            x = x.rstrip('0').rstrip('.')
 
-        y = format(self._y, format_spec)
+        y = format(self._y + 0.0, format_spec)
         if '.' in y:
-            y = y.rstrip('0')
+            y = y.rstrip('0').rstrip('.')
 
-        z = format(self._z, format_spec)
+        z = format(self._z + 0.0, format_spec)
         if '.' in z:
-            z = z.rstrip('0')
-        return f'{x.rstrip(".")} {y.rstrip(".")} {z.rstrip(".")}'
+            z = z.rstrip('0').rstrip('.')
+        return f'{x} {y} {z}'
 
     def __iter__(self) -> Iterator[float]:
         """Iterating through the vector yields each axis in order."""
@@ -1126,7 +1194,7 @@ class FrozenVec(VecBase):
         """
         return _mk_fvec, (self._x, self._y, self._z)
 
-    def __hash__(self) -> int:
+    def __hash__(self) -> int:  # type: ignore[override]
         """Hashing a frozen vec is the same as hashing the tuple form."""
         return hash((round(self._x, 6), round(self._y, 6), round(self._z, 6)))
 
@@ -1495,7 +1563,8 @@ class Vec(VecBase):
         mat = to_matrix(angles)
         # noinspection PyProtectedMember
         mat._vec_rot(self)
-        self.__iadd__(origin)
+        # Use method directly, we know where it'll go.
+        self.__iadd__(origin)  # noqa: PLC2801
 
     @contextlib.contextmanager
     def transform(self) -> Iterator['Matrix']:
@@ -1558,6 +1627,8 @@ class MatrixBase:
         self._ba, self._bb, self._bc = ba, bb, bc
         self._ca, self._cb, self._cc = ca, cb, cc
         return self
+
+    __hash__ = None  # type: ignore[assignment]
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, MatrixBase):
@@ -1813,7 +1884,7 @@ class MatrixBase:
         mat_r: List[Vec] = [omat_r[0], omat_r[1], omat_r[2]]
 
         # Get it into row echelon form
-        for n in range(0, 2):
+        for n in [0, 1]:
             # Find pivots
             la = 0.0
             pivrow = -1
@@ -1844,8 +1915,8 @@ class MatrixBase:
                 mat_r[m] -= mat_r[pivrow] * v
 
         # Get it into reduced row echelon form
-        for n in range(2, 0, -1):
-            for m in range(n - 1, -1, -1):
+        for n in [2, 1]:
+            for m in reversed(range(n)):
                 # Get the multiplier
                 v = mat_l[m][n] / mat_l[n][n]
 
@@ -1854,7 +1925,7 @@ class MatrixBase:
                 mat_r[m] -= mat_r[n] * v
 
         # Clean up our diagonal
-        for n in range(0, 3):
+        for n in range(3):
             v = mat_l[n][n]
 
             # Check for zeros along the diagonal
@@ -1867,27 +1938,11 @@ class MatrixBase:
         cls: Type[MatrixT] = type(self)
         out = cls.__new__(cls)
 
-        out._aa, out._ab, out._ac = omat_r[0][0], omat_r[0][1], omat_r[0][2]
-        out._ba, out._bb, out._bc = omat_r[1][0], omat_r[1][1], omat_r[1][2]
-        out._ca, out._cb, out._cc = omat_r[2][0], omat_r[2][1], omat_r[2][2]
+        out._aa, out._ab, out._ac = mat_r[0][0], mat_r[0][1], mat_r[0][2]
+        out._ba, out._bb, out._bc = mat_r[1][0], mat_r[1][1], mat_r[1][2]
+        out._ca, out._cb, out._cc = mat_r[2][0], mat_r[2][1], mat_r[2][2]
 
         return out
-
-    @classmethod
-    @overload
-    def from_basis(cls: Type[MatrixT], *, x: VecUnion, y: VecUnion, z: VecUnion) -> MatrixT: ...
-
-    @classmethod
-    @overload
-    def from_basis(cls: Type[MatrixT], *, x: VecUnion, y: VecUnion) -> MatrixT: ...
-
-    @classmethod
-    @overload
-    def from_basis(cls: Type[MatrixT], *, y: VecUnion, z: VecUnion) -> MatrixT: ...
-
-    @classmethod
-    @overload
-    def from_basis(cls: Type[MatrixT], *, x: VecUnion, z: VecUnion) -> MatrixT: ...
 
     @classmethod
     def from_basis(
@@ -1896,18 +1951,65 @@ class MatrixBase:
         y: Optional[VecUnion] = None,
         z: Optional[VecUnion] = None,
     ) -> MatrixT:
-        """Construct a matrix from at least two basis vectors.
+        """Construct a matrix from existing basis vectors.
 
-        The third is computed, if not provided.
+        If at least two are provided, only one result is possible. Otherwise, the result is
+        insufficiently constrained, so multiple results are valid. In those cases one of the
+        remaining axes will be positioned on the horizontal plane. With no parameters, this
+        returns the identity matrix (but just call the constructor for that).
         """
-        if x is None and y is not None and z is not None:
-            x = Vec.cross(y, z)
-        elif y is None and x is not None and z is not None:
-            y = Vec.cross(z, x)
-        elif z is None and x is not None and y is not None:
-            z = Vec.cross(x, y)
-        if x is None or y is None or z is None:
-            raise TypeError('At least two vectors must be provided!')
+        if x is not None and x.mag() < 1e-6:
+            raise ValueError('Basis vectors must be non-zero!')
+        if y is not None and y.mag() < 1e-6:
+            raise ValueError('Basis vectors must be non-zero!')
+        if z is not None and z.mag() < 1e-6:
+            raise ValueError('Basis vectors must be non-zero!')
+
+        if x is not None:
+            if y is not None:
+                if z is not None:
+                    pass  # All three provided.
+                else:
+                    z = Vec.cross(x, y)
+            else:
+                if z is not None:
+                    y = Vec.cross(z, x)
+                else:
+                    # Just X
+                    x = x.norm()
+                    if (x.x**2 + x.y**2) < 1e-6:
+                        # Pointing up/down, gimbal lock.
+                        y = Vec(0, 1, 0)
+                    else:
+                        y = Vec(-x.y, x.x, 0.0)
+                    z = Vec.cross(x, y)
+        else:
+            if y is not None:
+                if z is not None:
+                    x = Vec.cross(y, z)
+                else:
+                    # Just Y.
+                    y = y.norm()
+                    if (y.x**2 + y.y**2) < 1e-6:
+                        # Pointing up/down, gimbal lock.
+                        x = Vec(1, 0, 0)
+                    else:
+                        x = Vec(y.y, -y.x, 0.0)
+                    z = Vec.cross(x, y)
+            else:
+                if z is not None:
+                    # Just Z.
+                    z = z.norm()
+                    if (z.x**2 + z.y**2) < 1e-6:
+                        # Pointing up/down, gimbal lock.
+                        y = Vec(0, 1, 0)
+                    else:
+                        y = Vec(-z.y, z.x, 0.0)
+                    x = Vec.cross(y, z)
+                else:
+                    # None provided, identity.
+                    return cls()
+
         mat = cls.__new__(cls)
         mat._aa, mat._ab, mat._ac = x.norm()
         mat._ba, mat._bb, mat._bc = y.norm()
@@ -2149,6 +2251,7 @@ class AngleBase:
     # Use the private attrs for matching also, we only hook assignment in the mutable one.
     __match_args__ = ('_pitch', '_yaw', '_roll')
     __slots__ = ('_pitch', '_yaw', '_roll')
+    __hash__ = None  # type: ignore
 
     _pitch: float
     _yaw: float
@@ -2193,30 +2296,19 @@ class AngleBase:
         return cls(pitch, yaw, roll)
 
     @classmethod
-    @overload
-    def from_basis(cls: Type[AngleT], *, x: VecUnion, y: VecUnion, z: VecUnion) -> AngleT: ...
-
-    @classmethod
-    @overload
-    def from_basis(cls: Type[AngleT], *, x: VecUnion, y: VecUnion) -> AngleT: ...
-
-    @classmethod
-    @overload
-    def from_basis(cls: Type[AngleT], *, y: VecUnion, z: VecUnion) -> AngleT: ...
-
-    @classmethod
-    @overload
-    def from_basis(cls: Type[AngleT], *, x: VecUnion, z: VecUnion) -> AngleT: ...
-
-    @classmethod
-    def from_basis(cls: Type[AngleT], **kwargs: VecUnion) -> AngleT:
+    def from_basis(
+        cls: Type[AngleT], *,
+        x: Optional[VecUnion] = None,
+        y: Optional[VecUnion] = None,
+        z: Optional[VecUnion] = None,
+    ) -> AngleT:
         """Return the rotation which results in the specified local axes.
 
         At least two must be specified, with the third computed if necessary.
         """
         # We just delegate to Matrix's arg validation.
         # noinspection PyProtectedMember
-        return Py_Matrix.from_basis(**kwargs)._to_angle(cls.__new__(cls))
+        return Py_Matrix.from_basis(x=x, y=y, z=z)._to_angle(cls.__new__(cls))
 
     @classmethod
     @overload
@@ -2249,11 +2341,13 @@ class AngleBase:
     ) -> AngleT:
         """Create an Angle, given a number of axes and corresponding values.
 
-        This is a convenience for doing the following:
+        This is a convenience for doing the following::
+
             ang = Angle()
             ang[axis1] = val1
             ang[axis2] = val2
             ang[axis3] = val3
+
         The magnitudes can also be Angles, in which case the matching
         axis will be used from the angle.
         """
@@ -2551,7 +2645,7 @@ class FrozenAngle(AngleBase):
         """
         return _mk_fang, (self._pitch, self._yaw, self._roll)
 
-    def __hash__(self) -> int:
+    def __hash__(self) -> int:  # type: ignore[override]
         """Hashing a frozen angle is the same as hashing the tuple form."""
         return hash((round(self._pitch, 6), round(self._yaw, 6), round(self._roll, 6)))
 
@@ -2902,17 +2996,26 @@ Cy_Vec: TypeAlias = Vec
 Py_Vec: TypeAlias = Vec
 Cy_FrozenVec: TypeAlias = FrozenVec
 Py_FrozenVec: TypeAlias = FrozenVec
+Cy_VecBase: TypeAlias = VecBase
+Py_VecBase: TypeAlias = VecBase
 Cy_Angle: TypeAlias = Angle
 Py_Angle: TypeAlias = Angle
 Cy_FrozenAngle: TypeAlias = FrozenAngle
 Py_FrozenAngle: TypeAlias = FrozenAngle
+Cy_AngleBase: TypeAlias = AngleBase
+Py_AngleBase: TypeAlias = AngleBase
 Cy_Matrix: TypeAlias = Matrix
 Py_Matrix: TypeAlias = Matrix
 Cy_FrozenMatrix: TypeAlias = FrozenMatrix
 Py_FrozenMatrix: TypeAlias = FrozenMatrix
-Cy_parse_vec_str = Py_parse_vec_str = parse_vec_str
-Cy_to_matrix = Py_to_matrix = to_matrix
-Cy_lerp = Py_lerp = lerp
+Cy_MatrixBase: TypeAlias = MatrixBase
+Py_MatrixBase: TypeAlias = MatrixBase
+Cy_parse_vec_str = parse_vec_str
+Py_parse_vec_str = parse_vec_str
+Cy_to_matrix = to_matrix
+Py_to_matrix = to_matrix
+Cy_lerp = lerp
+Py_lerp = lerp
 
 # Do it this way, so static analysis ignores this.
 if not TYPE_CHECKING:
@@ -2923,9 +3026,9 @@ if not TYPE_CHECKING:
         pass
     else:
         for _name in [
-            'Vec', 'FrozenVec',
-            'Angle', 'FrozenAngle',
-            'Matrix', 'FrozenMatrix',
+            'Vec', 'VecBase', 'FrozenVec',
+            'Angle', 'AngleBase', 'FrozenAngle',
+            'Matrix', 'MatrixBase', 'FrozenMatrix',
             'parse_vec_str', 'to_matrix', 'lerp', 'format_float',
         ]:
             _glob[_name] = _glob['Cy_' + _name] = getattr(_math, _name)

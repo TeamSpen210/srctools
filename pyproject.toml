@@ -1,6 +1,6 @@
 [build-system]
 requires = [
-	"setuptools >= 61",
+	"setuptools >= 68.1.0",
 	"wheel >= 0.37.0",
 	"cython >= 3.0.0",
 	"versioningit >= 2.1.0"
@@ -29,6 +29,7 @@ classifiers = [
 	"Programming Language :: Python :: 3.9",
 	"Programming Language :: Python :: 3.10",
 	"Programming Language :: Python :: 3.11",
+	"Programming Language :: Python :: 3.12",
 	"Programming Language :: Python :: 3 :: Only",
 	"Programming Language :: Python :: Implementation :: CPython",
 	"Programming Language :: Python :: Implementation :: PyPy",
@@ -82,8 +83,12 @@ file = "src/srctools/_version.py"
 [tool.cibuildwheel]
 # Ensure both 32-bit and 64-bit are built
 archs = "auto"
-# Skip building on < 3.8, 32-bit Linux.
-skip = ["cp37-*", "*-manylinux_i686"]
+# Skip building:
+skip = [
+	"{cp,pp}{36,37}-*", # < Python 3.8
+	"*linux_i686",  # 32-bit linux (all)
+	"{cp,pp}{39,310,311,312,313,314,315,316}-win32",  # 32-bit on 3.9+
+]
 
 # After building, run tests to check it works.
 before-test = "pip install -r test-requirements.txt"
@@ -143,22 +148,23 @@ src_paths = ["src", "tests", "type_tests"]
 
 [tool.ruff]
 line-length = 127
-select = [
-	"E", "UP", "F", "C4", "ANN", "B", "PIE", "RUF",
 
-    "E111", "E112", "E113", "E114", "E115", "E116", "E117",
-    "E201", "E202", "E203", "E211", "E222", "E223",
-    "E224", "E225", "E227", "E228", "E231", "E251",
-    "E252", "E261", "E262", "E265", "E266", "E271", "E272",
-    "E273", "E274", "E275",
+[tool.ruff.lint]
+select = [
+	"UP", "F", "C4", "ANN", "B", "PIE", "RUF",
+	"PLC", "PLE", "PLW",  # Pylint.
+
+	"TCH005",  # Empty type-checking block.
+]
+allowed-confusables = [
+	"×",  # Multiplication sign
 ]
 extend-ignore = [
-	# Allow module level import later in the file.
-	"E402",
 	# Allow *-imports.
 	"F403",
 	# name may be undefined, or defined from star imports: module
 	"F405",
+	"F841",  # Unused local var, detects tuple unpacks.
 	# Flake8-annotations.
 	# Type annotations for self & cls are not important.
 	"ANN101",
@@ -166,23 +172,32 @@ extend-ignore = [
 	# Allow typing.Any
 	"ANN401",
 
+	# PyLint:
+	"PLC0414",  # import x as x is used for type checking.
+	"PLC0415",  # We use non-toplevel imports to fetch our databases after initialising the classes.
+	"PLC1901",  # Allow compare to empty string, can be more clear.
+	"PLE1205",  # Too many arguments for logging, doesn't handle our format
+	"PLW0603",  # Allow use of global statement.
+	"PLW2901",  # Allow redefining loop var inside the loop.
+
 	# Ruff:
-	"RUF001", "RUF002", "RUF003",  # Allow ambiguous Unicode chars
 	"RUF100", # Sometimes use # noqa for other linters
-
-	# Pycodestyle:
-	"E221",  # Allow multiple spaces before operators if we want to align
-	"E226",  # Allow "1+1", sometimes useful to indicate precedence
-
-	# Pyupgrade:
-	# Keep using typing types even with __future__.annotations.
-	"UP006", "UP007",
+	"RUF022", # All not sorted
+	"RUF023", # Slots not sorted
 
 	# Flake8-bugbear:
 	# Loop control var not used, triggers on unpackings.
 	"B007",
 	# Stacklevel parameter required for warnings.warn() - doesn't detect positional args.
 	"B028",
+
+	# Pycodestyle, when out of preview:
+	"E221",  # Allow multiple spaces before operators if we want to align
+	"E226",  # Allow no spaces like "1+1", sometimes useful to indicate precedence
+
+	# Pyupgrade:
+	# Keep using typing types even with __future__.annotations.
+	"UP006", "UP007",
 
 	# Flake8-pie:
 	# Prefer to use pass in empty functions, even if docstring is present
@@ -191,7 +206,7 @@ extend-ignore = [
 	"PIE796",
 	]
 
-[tool.ruff.flake8-bugbear]
+[tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = [
 	"srctools.math.FrozenVec", "srctools.math.FrozenAngle", "srctools.math.FrozenMatrix",
 	"typing.cast", "srctools.logger.get_logger",

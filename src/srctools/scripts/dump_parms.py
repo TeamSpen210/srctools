@@ -143,7 +143,7 @@ def dump(folder: str) -> None:
     for file in glob.iglob(folder + '/**/*'):
         if not file.endswith(('.h', '.cpp', '.c')):
             continue
-        with open(file, errors='ignore') as f:
+        with open(file, encoding='cp1251') as f:
             for line in f:
                 if line.strip() == 'BEGIN_SHADER_PARAMS':
                     break
@@ -165,7 +165,7 @@ def dump(folder: str) -> None:
     # Special case - FLAGS values.
     # These are a bit flag set on any material.
     try:
-        f = open(folder + '/shadersystem.cpp')
+        f = open(folder + '/shadersystem.cpp', encoding='cp1251')
     except FileNotFoundError:
         return
     with f:
@@ -227,7 +227,7 @@ def main(args: List[str]) -> None:
             print(var.name+':', list(var.default), '\n', list(var.filename))
             print()
 
-    with open('../_shaderdb.py', 'w') as f:
+    with open('../_shaderdb.py', 'w', encoding='utf8') as f:
         f.write('def _shader_db(var_type, DB):\n')
         var_by_type = defaultdict(list)
         for var in VARS.values():

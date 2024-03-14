@@ -120,11 +120,12 @@ cdef extern from *:
 cdef extern from *:  # Allow ourselves to access one of the feature flag macros.
     cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"
 
-cdef inline double deg_2_rad(double ang):
+cdef inline double deg_2_rad(double ang) noexcept nogil:
     """Convert a degrees value to radians."""
     return ang * (M_PI / 180.0)
 
-cdef inline double rad_2_deg(double ang):
+@cython.cdivision(True)  # We know M_PI != 0.
+cdef inline double rad_2_deg(double ang) noexcept nogil:
     """Convert a radians value to degrees."""
     return ang * (180.0 / M_PI)
 
@@ -149,7 +150,7 @@ cdef inline double norm_ang(double val) except? NAN:
     return val
 
 
-cdef Py_ssize_t trim_float(char *buf, Py_ssize_t size):
+cdef Py_ssize_t trim_float(char *buf, Py_ssize_t size) except -1:
     """Strip a .0 from the end of a float."""
     while size > 1 and buf[size - 1] == b'0':
         buf[size - 1] = 0
@@ -163,7 +164,7 @@ cdef Py_ssize_t trim_float(char *buf, Py_ssize_t size):
 cdef char * _format_float(double x, int places) except NULL:
     """Convert the specified float to a string, stripping off a .0 if it ends with that."""
     cdef char *buf
-    buf = PyOS_double_to_string(x, b'f', places, 0, NULL)
+    buf = PyOS_double_to_string(x + 0.0, b'f', places, 0, NULL)
     trim_float(buf, len(buf))
     return buf
 
@@ -233,13 +234,13 @@ cdef object _format_vec_wspec(const vec_t *values, str spec):
     if not spec:
         return _format_triple(b'%s %s %s', values)
 
-    x_str = format(values.x, spec)
+    x_str = format(values.x + 0.0, spec)
     x_buf = PyUnicode_AsUTF8AndSize(x_str, &x_size)
 
-    y_str = format(values.y, spec)
+    y_str = format(values.y + 0.0, spec)
     y_buf = PyUnicode_AsUTF8AndSize(y_str, &y_size)
 
-    z_str = format(values.z, spec)
+    z_str = format(values.z + 0.0, spec)
     z_buf = PyUnicode_AsUTF8AndSize(z_str, &z_size)
 
     # Allocate enough for worst-case (no rounding)
@@ -548,14 +549,14 @@ cdef inline bint conv_angles(vec_t *result, object ang) except False:
             raise TypeError(f'{type(ang)} is not an Angle-like object!')
     return True
 
-cdef inline double _vec_mag_sq(vec_t *vec) except? NAN:
+cdef inline double _vec_mag_sq(vec_t *vec) noexcept nogil:
     # This is faster if you just need to compare.
     return vec.x**2 + vec.y**2 + vec.z**2
 
-cdef inline double _vec_mag(vec_t *vec) except? NAN:
+cdef inline double _vec_mag(vec_t *vec) noexcept nogil:
     return math.sqrt(_vec_mag_sq(vec))
 
-cdef inline bint _vec_normalise(vec_t *out, vec_t *inp) except False:
+cdef inline float _vec_normalise(vec_t *out, vec_t *inp) except -1.0:
     """Normalise the vector, writing to out. inp and out may be the same."""
     cdef double mag = _vec_mag(inp)
 
@@ -568,7 +569,7 @@ cdef inline bint _vec_normalise(vec_t *out, vec_t *inp) except False:
             out.x = inp.x / mag
             out.y = inp.y / mag
             out.z = inp.z / mag
-    return True
+    return mag
 
 
 cdef inline bint mat_mul(mat_t targ, mat_t rot) except False:
@@ -642,40 +643,68 @@ cdef inline bint _mat_to_angle(vec_t *ang, mat_t mat) except False:
 
 cdef bint _mat_from_basis(mat_t mat, VecBase x, VecBase y, VecBase z) except False:
     """Implement the shared parts of Matrix/Angle .from_basis()."""
-    cdef vec_t res
+    cdef vec_t vec_x, vec_y, vec_z
 
-    if x is None:
-        if y is not None and z is not None:
-            _vec_cross(&res, &y.val, &z.val)
+    if x is not None:
+        if _vec_normalise(&vec_x, &x.val) < 1e-6:
+            raise ValueError('Basis vectors must be non-zero!')
+    if y is not None:
+        if _vec_normalise(&vec_y, &y.val) < 1e-6:
+            raise ValueError('Basis vectors must be non-zero!')
+    if z is not None:
+        if _vec_normalise(&vec_z, &z.val) < 1e-6:
+            raise ValueError('Basis vectors must be non-zero!')
+
+    if x is not None:
+        if y is not None:
+            if z is not None:
+                # All three provided, nothing to check.
+                pass
+            else:
+                _vec_cross(&vec_z, &vec_x, &vec_y)
         else:
-            raise TypeError('At least two vectors must be provided!')
+            if z is not None:
+                _vec_cross(&vec_y, &vec_z, &vec_x)
+            else:
+                # Just X.
+                if vec_x.x ** 2 + vec_x.y ** 2 < 1e-6:
+                    # Pointing up/down, gimbal lock.
+                    vec_y = {'x': 0, 'y': 1.0, 'z': 0.0}
+                else:
+                    vec_y = {'x': -vec_x.y, 'y': vec_x.x, 'z': 0.0}
+                    _vec_normalise(&vec_y, &vec_y)
+                _vec_cross(&vec_z, &vec_x, &vec_y)
     else:
-        res = x.val
-
-    _vec_normalise(&res, &res)
-    mat[0] = res.x, res.y, res.z
-
-    if y is None:
-        if x is not None and z is not None:
-            _vec_cross(&res, &z.val, &x.val)
+        if y is not None:
+            if z is not None:
+                _vec_cross(&vec_x, &vec_y, &vec_z)
+            else:
+                # Just Y.
+                if vec_y.x ** 2 + vec_y.y ** 2 < 1e-6:
+                    # Pointing up/down, gimbal lock.
+                    vec_x = {'x': 1.0, 'y': 0.0, 'z': 0.0}
+                else:
+                    vec_x = {'x': vec_y.y, 'y': -vec_y.x, 'z': 0.0}
+                    _vec_normalise(&vec_x, &vec_x)
+                _vec_cross(&vec_z, &vec_x, &vec_y)
         else:
-            raise TypeError('At least two vectors must be provided!')
-    else:
-        res = y.val
+            if z is not None:
+                # Just Z.
+                if vec_z.x ** 2 + vec_z.y ** 2 < 1e-6:
+                    # Pointing up/down, gimbal lock.
+                    vec_y = {'x': 0, 'y': 1.0, 'z': 0.0}
+                else:
+                    vec_y = {'x': -vec_z.y, 'y': vec_z.x, 'z': 0.0}
+                    _vec_normalise(&vec_y, &vec_y)
+                _vec_cross(&vec_x, &vec_y, &vec_z)
+            else:
+                # None provided, identity.
+                _mat_identity(mat)
+                return True
 
-    _vec_normalise(&res, &res)
-    mat[1] = res.x, res.y, res.z
-
-    if z is None:
-        if x is not None and y is not None:
-            _vec_cross(&res, &x.val, &y.val)
-        else:
-            raise TypeError('At least two vectors must be provided!')
-    else:
-        res = z.val
-
-    _vec_normalise(&res, &res)
-    mat[2] = res.x, res.y, res.z
+    mat[0] = vec_x.x, vec_x.y, vec_x.z
+    mat[1] = vec_y.x, vec_y.y, vec_y.z
+    mat[2] = vec_z.x, vec_z.y, vec_z.z
     return True
 
 
@@ -995,13 +1024,13 @@ cdef class AngleTransform:
 
 
 @cython.freelist(64)
-@cython.internal
 cdef class VecBase:
     """A 3D Vector. This has most standard Vector functions.
 
     Many of the functions will accept a 3-tuple for comparison purposes.
     """
     __match_args__ = ('x', 'y', 'z')
+    __hash__ = None
 
     # Various constants.
     INV_AXIS = {
@@ -1318,6 +1347,78 @@ cdef class VecBase:
             out_min.val.y + (off * (out_max.val.y - out_min.val.y)) / diff,
             out_min.val.z + (off * (out_max.val.z - out_min.val.z)) / diff,
         )
+
+    def clamped(self, *args, mins = None, maxs = None):
+        """Return a copy of this vector, constrained by the given min/max values.
+
+        Either both can be provided positionally, or at least one can be provided by keyword.
+        """
+        cdef vec_t vec_min, vec_max
+        cdef bint has_mins = False
+        cdef bint has_maxs = False
+
+        if args:
+            if mins is not None or maxs is not None:
+                raise TypeError(
+                    f"{type(self)}.__name__.clamped() accepts either 2 positional arguments "
+                    f"or 1-2 keyword arguments ('mins' and 'maxs'), not both"
+                )
+            if len(args) == 2:
+                conv_vec(&vec_min, args[0], scalar=False)
+                conv_vec(&vec_max, args[1], scalar=False)
+                has_mins = has_maxs = True
+            elif len(args) == 1:
+                raise TypeError(
+                    f"{type(self).__name__}.clamped() missing 1 required positional argument: "
+                    f"'maxs'"
+                )
+            else:
+                raise TypeError(
+                    f"{type(self).__name__}.clamped() takes 2 positional arguments "
+                    f"but {len(args)} were given"
+                )
+        elif mins is None and maxs is None:
+            raise TypeError(
+                f"{type(self)}.__name__.clamped() missing either 2 positional arguments "
+                f"or at least 1 keyword arguments: 'mins' and 'maxs'"
+            )
+        else:
+            if mins is not None:
+                conv_vec(&vec_min, mins, scalar=False)
+                has_mins = True
+            if maxs is not None:
+                conv_vec(&vec_max, maxs, scalar=False)
+                has_maxs = True
+
+        cdef double x = self.val.x
+        cdef double y = self.val.y
+        cdef double z = self.val.z
+        cdef bint return_self = type(self) is FrozenVec
+        if has_mins:
+            if x < vec_min.x:
+                x = vec_min.x
+                return_self = False
+            if y < vec_min.y:
+                y = vec_min.y
+                return_self = False
+            if z < vec_min.z:
+                z = vec_min.z
+                return_self = False
+        if has_maxs:
+            if x > vec_max.x:
+                x = vec_max.x
+                return_self = False
+            if y > vec_max.y:
+                y = vec_max.y
+                return_self = False
+            if z > vec_max.z:
+                z = vec_max.z
+                return_self = False
+
+        if return_self:  # Unchanged FrozenVec, return it.
+            return self
+        else:
+            return _vector(type(self), x, y, z)
 
     def axis(self) -> str:
         """For a normal vector, return the axis it is on."""
@@ -1981,8 +2082,9 @@ cdef class Vec(VecBase):
 
         return vec
 
+    __hash__ = None
+
     def __richcmp__(self, other_obj, int op):
-        """We have to redeclare this because of FrozenSet's __hash__."""
         return vector_compare(self, other_obj, op)
 
     def norm(self):
@@ -2336,7 +2438,6 @@ cdef class Vec(VecBase):
 
 
 @cython.freelist(16)
-@cython.internal
 cdef class MatrixBase:
     """Common code for both matrices."""
     def __init__(self, MatrixBase matrix = None) -> None:
@@ -2345,6 +2446,9 @@ cdef class MatrixBase:
         If an existing matrix is supplied, it will be copied. Otherwise, an identity matrix is
         produced.
         """
+        if type(self) is MatrixBase:
+            raise TypeError('This class cannot be instantiated!')
+
         if matrix is not None:
             memcpy(self.mat, matrix.mat, sizeof(mat_t))
         else:
@@ -2360,6 +2464,8 @@ cdef class MatrixBase:
         if mat_check(other):
             return memcmp(self.mat, (<MatrixBase>other).mat, sizeof(mat_t)) != 0
         return NotImplemented
+
+    __hash__ = None
 
     def __repr__(self) -> str:
         return (
@@ -2720,10 +2826,10 @@ cdef class Matrix(MatrixBase):
 
 # Lots of temporaries are expected.
 @cython.freelist(16)
-@cython.internal
 cdef class AngleBase:
     """Common code for pitch/yaw/roll Euler angles."""
     __match_args__ = ('pitch', 'yaw', 'roll')
+    __hash__ = None
 
     def __init__(self, pitch=0.0, yaw=0.0, roll=0.0) -> None:
         """Create an Angle.
@@ -3189,6 +3295,8 @@ cdef class Angle(AngleBase):
             elif key in ('r', 'rol', 'roll'):
                 self.val.z = val
         raise KeyError(f'Invalid axis: {pos!r}')
+
+    __hash__ = None
 
     def __richcmp__(self, other, int op):
         """Rich Comparisons.

@@ -1,5 +1,5 @@
 """Implements support for collapsing instances."""
-from typing import Any, Container, Dict, Iterable, List, MutableMapping, Optional, Set, Tuple, Union
+from typing import Container, Dict, Iterable, List, MutableMapping, Optional, Set, Tuple, Union
 from typing_extensions import deprecated, overload
 from enum import Enum
 from pathlib import Path
@@ -557,7 +557,7 @@ def collapse_one(
 
 def collapse_all(
     vmf: VMF,
-    fsys: FileSystem[Any],
+    fsys: FileSystem,
     recur_limit: int = 100,
 ) -> None:
     """Searches for ``func_instance`` in the map, then collapses them.
@@ -589,5 +589,6 @@ def collapse_all(
                 # except FileNotFoundError - fail.
                 file = file_cache[inst.filename] = InstanceFile(VMF.parse(props, preserve_ids=True))
             collapse_one(vmf, inst, file, engine_cache=fgd_cache)
-    else:  # Exhausted the range, we must have too much recursion in the instances.
-        raise RecursionError('Loop in instances!')
+
+    # Exhausted the range, we must have too much recursion in the instances.
+    raise RecursionError('Loop in instances!')

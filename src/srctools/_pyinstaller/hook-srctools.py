@@ -1,16 +1,16 @@
 """Pyinstaller hooks for the main module."""
-import os
+from pathlib import Path
 
 from PyInstaller.utils.hooks import get_module_file_attribute
 
 
 srctools_init = get_module_file_attribute('srctools')
 assert srctools_init is not None
-srctools_loc = os.path.dirname(srctools_init)
+srctools_loc = Path(srctools_init).parent
 
 datas = [
     # Add our FGD database.
-    (os.path.join(srctools_loc, 'fgd.lzma'), 'srctools'),
+    (str(Path(srctools_loc, 'fgd.lzma').resolve()), 'srctools'),
 ]
 
 excludedimports = [

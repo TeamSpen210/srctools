@@ -3,10 +3,21 @@ import copy
 import fractions
 import itertools
 import pickle
+from typing import Tuple
 
+from dirty_equals import IsFloat
 import pytest
 
 from helpers import *
+
+
+DIRECTIONS = list(iter_vec([-1, 0, +1]))
+DIRECTIONS.remove((0, 0, 0))
+SIGNS = {-1: 'n', 0: '0', +1: 'p'}
+DIRECTION_IDS = [
+    f'{SIGNS[x]}{SIGNS[y]}{SIGNS[z]}'
+    for x, y, z in DIRECTIONS
+]
 
 
 def test_matrix_constructor(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass) -> None:
@@ -53,26 +64,6 @@ def test_as_matrix(py_c_vec: PyCVec) -> None:
     assert_rot(vec_mod.to_matrix(FrozenAngle(ang)), rot)
     assert_rot(vec_mod.to_matrix((ang.pitch, ang.yaw, ang.roll)), rot)
 
-
-# noinspection PyArgumentList
-def test_bad_from_basis(
-    py_c_vec: PyCVec,
-    frozen_thawed_vec: VecClass,
-    frozen_thawed_matrix: MatrixClass,
-) -> None:
-    """Test invalid arguments to Matrix.from_basis()"""
-    Vec = frozen_thawed_vec
-    Matrix = frozen_thawed_matrix
-
-    v = Vec(0, 1, 0)
-    with pytest.raises(TypeError):
-        Matrix.from_basis()
-    with pytest.raises(TypeError):
-        Matrix.from_basis(x=v)
-    with pytest.raises(TypeError):
-        Matrix.from_basis(y=v)
-    with pytest.raises(TypeError):
-        Matrix.from_basis(z=v)
 
 
 def test_matrix_no_iteration(py_c_vec: PyCVec) -> None:
@@ -210,16 +201,16 @@ def test_invalid_setitem(py_c_vec: PyCVec) -> None:
     Matrix = vec_mod.Matrix
     mat = Matrix()
     mat[1, 1] = 3
-    assert mat[1, 1] == ExactType(3.0)
+    assert mat[1, 1] == IsFloat(exactly=3.0)
     mat[0, 2] = fractions.Fraction(1, 2)
-    assert mat[0, 2] == ExactType(0.5)
+    assert mat[0, 2] == IsFloat(exactly=0.5)
     with pytest.raises(TypeError):
         mat[2, 0] = '1'
     with pytest.raises(TypeError):
         mat[2, 0] = [1, 2, 3]
 
 
-def test_inverse_known(frozen_thawed_matrix: MatrixClass) -> None:
+def test_inverse_known(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass) -> None:
     """Test the matrix inverse() method with a known inverse. """
     Matrix = vec_mod.Matrix
 
@@ -239,8 +230,22 @@ def test_inverse_known(frozen_thawed_matrix: MatrixClass) -> None:
 
     assert_rot(invert, correct, type=frozen_thawed_matrix)
 
+    # Test for matrix with known inverse
+    mat[0, 0], mat[0, 1], mat[0, 2] = ( 0.0,  0.0, -1.0)
+    mat[1, 0], mat[1, 1], mat[1, 2] = (-1.0,  0.0,  0.0)
+    mat[2, 0], mat[2, 1], mat[2, 2] = ( 0.0,  1.0,  0.0)
 
-def test_inverse_fail(frozen_thawed_matrix: MatrixClass) -> None:
+    correct[0, 0], correct[0, 1], correct[0, 2] = ( 0.0, -1.0,  0.0)
+    correct[1, 0], correct[1, 1], correct[1, 2] = ( 0.0,  0.0,  1.0)
+    correct[2, 0], correct[2, 1], correct[2, 2] = (-1.0,  0.0,  0.0)
+
+    to_invert = frozen_thawed_matrix(mat)
+    invert = to_invert.inverse()
+
+    assert_rot(invert, correct, type=frozen_thawed_matrix)
+
+
+def test_inverse_fail(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass) -> None:
     """Test the matrix inverse() method for known failure. """
     # Test for expected failure
     mat = vec_mod.Matrix()
@@ -252,3 +257,86 @@ def test_inverse_fail(frozen_thawed_matrix: MatrixClass) -> None:
 
     with pytest.raises(ArithmeticError):
         to_invert.inverse()
+
+
+def test_from_basis_basics(
+    py_c_vec: PyCVec,
+    frozen_thawed_matrix: MatrixClass,
+) -> None:
+    """Test basic behaviours for from_basis()."""
+    Matrix = frozen_thawed_matrix
+    Vec = vec_mod.Vec
+
+    assert_rot(Matrix.from_basis(), Matrix(), type=Matrix)
+    # Passing a zero vector is an error.
+    with pytest.raises(ValueError):
+        Matrix.from_basis(x=Vec(0, 0, 0))
+    with pytest.raises(ValueError):
+        Matrix.from_basis(y=Vec(0, 0, 0))
+    with pytest.raises(ValueError):
+        Matrix.from_basis(z=Vec(0, 0, 0))
+
+
+@pytest.mark.parametrize('direction', DIRECTIONS, ids=DIRECTION_IDS)
+def test_from_basis_x(
+    py_c_vec: PyCVec,
+    frozen_thawed_matrix: MatrixClass,
+    frozen_thawed_angle: AngleClass,
+    direction: Tuple[int, int, int],
+) -> None:
+    """Test Matrix.from_basis(), with a single axis."""
+    Matrix = frozen_thawed_matrix
+    Angle = frozen_thawed_angle
+    norm = vec_mod.Vec(direction).norm()
+
+    mat = Matrix.from_basis(x=norm)
+    ang = Angle.from_basis(x=norm)
+    assert mat.forward() == norm
+    # Check the other axes are all aligned.
+    ang2 = mat.to_angle()
+    roundtrip = Matrix.from_angle(ang2)
+    assert_rot(mat, roundtrip, type=Matrix)
+    assert_ang(ang, *ang2, type=Angle)
+
+
+@pytest.mark.parametrize('direction', DIRECTIONS, ids=DIRECTION_IDS)
+def test_from_basis_y(
+    py_c_vec: PyCVec,
+    frozen_thawed_matrix: MatrixClass,
+    frozen_thawed_angle: AngleClass,
+    direction: Tuple[int, int, int],
+) -> None:
+    """Test Matrix.from_basis(), with just the y axis."""
+    Matrix = frozen_thawed_matrix
+    Angle = frozen_thawed_angle
+    norm = vec_mod.Vec(direction).norm()
+
+    mat = Matrix.from_basis(y=norm)
+    ang = Angle.from_basis(y=norm)
+    assert mat.left() == norm
+
+    ang2 = mat.to_angle()
+    roundtrip = Matrix.from_angle(ang2)
+    assert_rot(mat, roundtrip, type=Matrix)
+    assert_ang(ang, *ang2, type=Angle)
+
+
+@pytest.mark.parametrize('direction', DIRECTIONS, ids=DIRECTION_IDS)
+def test_from_basis_z(
+    py_c_vec: PyCVec,
+    frozen_thawed_matrix: MatrixClass,
+    frozen_thawed_angle: AngleClass,
+    direction: Tuple[int, int, int],
+) -> None:
+    Matrix = frozen_thawed_matrix
+    Angle = frozen_thawed_angle
+    norm = vec_mod.Vec(direction).norm()
+
+    mat = Matrix.from_basis(z=norm)
+    ang = Angle.from_basis(z=norm)
+    assert mat.up() == norm
+
+    ang2 = mat.to_angle()
+    roundtrip = Matrix.from_angle(ang2)
+    assert_rot(mat, roundtrip, type=Matrix)
+    assert_ang(ang, *ang2, type=Angle)

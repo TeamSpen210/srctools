@@ -10,7 +10,9 @@ import operator as op
 import pickle
 import re
 
+from dirty_equals import IsFloat
 import pytest
+from typing_extensions import Literal, TypeAlias
 
 from helpers import *
 from srctools import Vec_tuple, math as vec_mod
@@ -27,6 +29,7 @@ except ImportError:
 raises_typeerror = pytest.raises(TypeError)
 raises_keyerror = pytest.raises(KeyError)
 raises_zero_div = pytest.raises(ZeroDivisionError)
+Axis: TypeAlias = Literal["x", "y", "z"]
 
 
 @pytest.mark.parametrize('cls', ['Vec', 'FrozenVec', 'Matrix', 'Angle', 'FrozenAngle'])
@@ -46,9 +49,10 @@ def test_matching_apis(cls: str) -> None:
     assert cy_attrs == py_attrs
 
 
-@pytest.mark.parametrize('cls', [vec_mod.AngleBase, vec_mod.VecBase, vec_mod.MatrixBase])
-def test_noconstruct_base(cls: type) -> None:
+@pytest.mark.parametrize('cls_name', ['AngleBase', 'VecBase', 'MatrixBase'])
+def test_noconstruct_base(py_c_vec, cls_name: str) -> None:
     """Test the internal base classes cannot be instantiated."""
+    cls = getattr(vec_mod, cls_name)
     with pytest.raises(TypeError):
         cls()
 
@@ -279,13 +283,13 @@ def test_with_axes_conv(frozen_thawed_vec: VecClass) -> None:
     """Test with_axes() converts values properly."""
     Vec = frozen_thawed_vec
     vec = Vec.with_axes('y', 8, 'z', -45, 'x', 32)
-    assert vec.x == ExactType(32.0)
-    assert vec.y == ExactType(8.0)
-    assert vec.z == ExactType(-45.0)
+    assert vec.x == IsFloat(exactly=32.0)
+    assert vec.y == IsFloat(exactly=8.0)
+    assert vec.z == IsFloat(exactly=-45.0)
     vec = Vec.with_axes('z', Fraction(8, 2), 'x', Fraction(1, 4), 'y', Fraction(-23, 16))
-    assert vec.x == ExactType(0.25)
-    assert vec.y == ExactType(-1.4375)
-    assert vec.z == ExactType(4.0)
+    assert vec.x == IsFloat(exactly=0.25)
+    assert vec.y == IsFloat(exactly=-1.4375)
+    assert vec.z == IsFloat(exactly=4.0)
 
 
 @pytest.mark.parametrize('clsname', ['Vec', 'FrozenVec', 'Angle', 'FrozenAngle'])
@@ -358,6 +362,18 @@ def test_vec_ang_stringification(py_c_vec, clsname: str) -> None:
     assert format(obj) == str(obj)
     assert format(obj, '.2%') == '0.00% 3600.00% 6800.00%'
     assert format(obj, '.9f') == '0.000000001 36.000000001 68.000000012'
+
+    # Test -0.0 gets the negative stripped.
+    neg_zero = 0.0/-1.0
+    assert repr(neg_zero) == '-0.0'
+    obj = cls(neg_zero, neg_zero, neg_zero)
+    assert str(obj) == '0 0 0'
+    assert repr(obj) == f'{clsname}(0, 0, 0)'
+    assert obj.join() == '0, 0, 0'
+    assert obj.join(':') == '0:0:0'
+    assert format(obj) == str(obj)
+    assert format(obj, '.2%') == '0.00% 0.00% 0.00%'
+    assert format(obj, '.9f') == '0 0 0'
 
 
 def test_unary_ops(frozen_thawed_vec: VecClass) -> None:
@@ -449,6 +465,108 @@ def test_vec_lerp(frozen_thawed_vec: VecClass) -> None:
 
     with raises_zero_div:
         Vec.lerp(48.4, -64.0, -64.0, Vec(), Vec())
+
+
+def test_vec_clamped_args(frozen_thawed_vec: VecClass) -> None:
+    """Test Vec.clamped()."""
+    Vec = frozen_thawed_vec
+    vec = Vec(48, 23, 284)
+    with pytest.raises(TypeError, match='not both'):
+        vec.clamped(vec, vec, mins=vec, maxs=vec)
+    with pytest.raises(TypeError, match='missing either'):
+        vec.clamped()
+    with pytest.raises(TypeError, match='missing 1 required positional argument'):
+        vec.clamped(vec)
+    with pytest.raises(TypeError, match='takes 2 positional arguments but 3 were given'):
+        vec.clamped(vec, vec, vec)
+
+    # Unchanged FrozenVec returns self.
+    fvec = vec_mod.FrozenVec(30, 38, 87)
+    assert fvec.clamped(Vec(-80, -80, -80), Vec(120, 120, 120)) is fvec
+
+
+@pytest.mark.parametrize("axis, u, v", [
+    ("x", "y", "z"),
+    ("y", "x", "z"),
+    ("z", "x", "y"),
+])
+def test_vec_clamped_args(frozen_thawed_vec: VecClass, axis: Axis, u: Axis, v: Axis) -> None:
+    """Test each axis is independent and behaves correctly."""
+    Vec = frozen_thawed_vec
+    vec = Vec.with_axes(axis, 400, u, 500, v, 800)
+    unchanged = {axis: 400, u: 500, v: 800}
+    # Unchanged, positional + kw.
+    assert_vec(
+        vec.clamped(
+            Vec.with_axes(axis, 200, u, 300, v, 678),
+            Vec.with_axes(axis, 900, u, 800, v, 1200),
+        ),
+        **unchanged,
+        type=Vec,
+    )
+    assert_vec(vec, **unchanged)  # clamped() must not modify self!
+    assert_vec(
+        vec.clamped(
+            mins=Vec.with_axes(axis, 200, u, 300, v, 678),
+            maxs=Vec.with_axes(axis, 900, u, 800, v, 1200),
+        ),
+        **unchanged,
+        type=Vec,
+    )
+    assert_vec(vec, **unchanged)
+    # Uses mins, positional, kw, both kv.
+    assert_vec(
+        vec.clamped(
+            Vec.with_axes(axis, 448, u, 300, v, 678),
+            Vec.with_axes(axis, 900, u, 800, v, 1200),
+        ),
+        **{axis: 448, u: 500, v: 800},
+        type=Vec,
+    )
+    assert_vec(vec, **unchanged)
+    assert_vec(
+        vec.clamped(
+            mins=Vec.with_axes(axis, 448, u, 300, v, 678),
+        ),
+        **{axis: 448, u: 500, v: 800},
+        type=Vec,
+    )
+    assert_vec(vec, **unchanged)
+    assert_vec(
+        vec.clamped(
+            mins=Vec.with_axes(axis, 448, u, 300, v, 678),
+            maxs=Vec.with_axes(axis, 900, u, 800, v, 1200),
+        ),
+        **{axis: 448, u: 500, v: 800},
+        type=Vec,
+    )
+    # Uses maxes, positional, kw, both kv.
+    assert_vec(
+        vec.clamped(
+            Vec.with_axes(axis, 200, u, 300, v, 678),
+            Vec.with_axes(axis, 321, u, 800, v, 1200),
+        ),
+        **{axis: 321, u: 500, v: 800},
+        type=Vec,
+    )
+    assert_vec(vec, **unchanged)
+    assert_vec(
+        vec.clamped(
+            maxs=Vec.with_axes(axis, 321, u, 800, v, 1200),
+        ),
+        **{axis: 321, u: 500, v: 800},
+        type=Vec,
+    )
+    assert_vec(vec, **unchanged)
+    assert_vec(
+        vec.clamped(
+            mins=Vec.with_axes(axis, 200, u, 300, v, 678),
+            maxs=Vec.with_axes(axis, 321, u, 800, v, 1200),
+        ),
+        **{axis: 321, u: 500, v: 800},
+        type=Vec,
+    )
+    assert_vec(vec, **unchanged)
 
 
 @pytest.mark.slow
@@ -722,21 +840,35 @@ def test_scalar_zero(py_c_vec: PyCVec):
         # We don't need to check divmod(0, vec) -
         # that always falls back to % and /.
 
-        with raises_zero_div: vec / 0
-        with raises_zero_div: vec // 0
-        with raises_zero_div: vec % 0
-        with raises_zero_div: divmod(vec, 0)
-        with raises_zero_div: vec / 0.0
-        with raises_zero_div: vec // 0.0
-        with raises_zero_div: vec % 0.0
-        with raises_zero_div: divmod(vec, 0.0)
+        with raises_zero_div:
+            vec / 0
+        with raises_zero_div:
+            vec // 0
+        with raises_zero_div:
+            vec % 0
+        with raises_zero_div:
+            divmod(vec, 0)
+        with raises_zero_div:
+            vec / 0.0
+        with raises_zero_div:
+            vec // 0.0
+        with raises_zero_div:
+            vec % 0.0
+        with raises_zero_div:
+            divmod(vec, 0.0)
 
-        with raises_zero_div: vec /= 0
-        with raises_zero_div: vec //= 0
-        with raises_zero_div: vec %= 0
-        with raises_zero_div: vec /= 0.0
-        with raises_zero_div: vec //= 0.0
-        with raises_zero_div: vec %= 0.0
+        with raises_zero_div:
+            vec /= 0
+        with raises_zero_div:
+            vec //= 0
+        with raises_zero_div:
+            vec %= 0
+        with raises_zero_div:
+            vec /= 0.0
+        with raises_zero_div:
+            vec //= 0.0
+        with raises_zero_div:
+            vec %= 0.0
 
 
 def test_divmod_vec_scalar(frozen_thawed_vec):
@@ -1114,7 +1246,7 @@ def test_setitem(py_c_vec) -> None:
         assert vec1.other_axes(axis) == (0.0, 0.0), axis
 
         vec1[axis] = Fraction(15, 12)
-        assert vec1[axis] == ExactType(1.25)
+        assert vec1[axis] == IsFloat(exactly=1.25)
 
         vec2 = Vec()
         vec2[ind] = 1.25
