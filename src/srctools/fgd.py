@@ -29,7 +29,7 @@ import srctools
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes', 'AutoVisgroup',
     'FGD', 'EntityDef', 'KVDef', 'IODef', 'EntAttribute', 'Helper', 'UnknownHelper',
-    'match_tags', 'validate_tags', 'Resource', 'ResourceCtx',
+    'match_tags', 'validate_tags', 'Resource', 'ResourceCtx', 'Snippet',
 
     # From srctools._fgd_helpers
     'HelperBBox', 'HelperBoundingBox', 'HelperBreakableSurf',
