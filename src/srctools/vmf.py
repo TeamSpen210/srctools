@@ -1459,41 +1459,23 @@ class DispVertex:
     ))
 
 
+@attrs.define(eq=False)
 class UVAxis:
     """Values saved into Side.uaxis and Side.vaxis.
 
     These define the alignment of textures on a face.
     """
-    __slots__ = [
-        'x', 'y', 'z',
-        'scale',
-        'offset',
-    ]
-    x: float
-    y: float
-    z: float
-    scale: float
-    offset: float
+    x: float = attrs.field(repr=format_float)
+    y: float = attrs.field(repr=format_float)
+    z: float = attrs.field(repr=format_float)
+    offset: float = attrs.field(repr=format_float, default=0.0)
+    scale: float = attrs.field(repr=format_float, default=0.25)
 
-    def __init__(
-        self,
-        x: float,
-        y: float,
-        z: float,
-        offset: float = 0.0,
-        scale: float = 0.25,
-    ) -> None:
-        self.x = x
-        self.y = y
-        self.z = z
-        self.offset = offset
-        self.scale = scale
-
-    @staticmethod
-    def parse(value: str) -> 'UVAxis':
+    @classmethod
+    def parse(cls, value: str) -> 'UVAxis':
         """Parse a UV axis from a string."""
         vals = value.split()
-        return UVAxis(
+        return cls(
             x=float(vals[0].lstrip('[')),
             y=float(vals[1]),
             z=float(vals[2]),
@@ -1511,38 +1493,14 @@ class UVAxis:
             scale=self.scale,
         )
 
-    def __copy__(self) -> 'UVAxis':
-        return UVAxis(
-            x=self.x,
-            y=self.y,
-            z=self.z,
-            offset=self.offset,
-            scale=self.scale,
-        )
-
-    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'UVAxis':
-        return UVAxis(
-            x=self.x,
-            y=self.y,
-            z=self.z,
-            offset=self.offset,
-            scale=self.scale,
-        )
-
-    def __getstate__(self) -> Tuple[float, float, float, float, float]:
-        return (self.x, self.y, self.z, self.offset, self.scale)
-
-    def __setstate__(self, state: Tuple[float, float, float, float, float]) -> None:
-        (self.x, self.y, self.z, self.offset, self.scale) = state
-
     def vec(self) -> Vec:
         """Return the axis as a vector."""
         return Vec(self.x, self.y, self.z)
 
-    def rotate(self, angles: Angle) -> 'UVAxis':
-        """Rotate the axis by a vector.
+    def rotate(self, angles: Union[AnyAngle, AnyMatrix]) -> 'UVAxis':
+        """Rotate the axis by some orientation.
 
-        This doesn't handle offsets correctly.
+        This doesn't alter texture offsets.
         """
         vec = self.vec() @ angles
         return UVAxis(
@@ -1571,17 +1529,9 @@ class UVAxis:
     def __str__(self) -> str:
         """Generate the text form for this UV data."""
         return (
-            f'[{self.x:g} {self.y:g} {self.z:g} '
-            f'{self.offset:g}] {self.scale:g}'
+            f'[{format_float(self.x)} {format_float(self.y)} {format_float(self.z)} '
+            f'{format_float(self.offset)}] {format_float(self.scale)}'
         )
-
-    def __repr__(self) -> str:
-        rep = f'{self.__class__.__name__}({self.x:g}, {self.y:g}, {self.z:g}'
-        if self.offset != 0:
-            rep += f', offset={self.offset:g}'
-        if self.scale != 0.25:
-            rep += f', scale={self.scale:g}'
-        return rep + ')'
 
 
 DispPower: TypeAlias = Literal[0, 1, 2, 3, 4]
