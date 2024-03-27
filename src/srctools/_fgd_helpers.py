@@ -5,7 +5,7 @@ from typing_extensions import Self
 import attrs
 
 from srctools.fgd import EntityDef, Helper, HelperTypes
-from srctools.math import Vec, parse_vec_str
+from srctools.math import Vec, parse_vec_str, format_float
 
 
 __all__ = [
@@ -319,7 +319,7 @@ class HelperFrustum(Helper):
 
         def conv(x: 'Union[str, float]') -> str:
             """Ensure the .0 is removed from the float forms. """
-            return format(x, 'g') if isinstance(x, float) else x
+            return x if isinstance(x, str) else format_float(x)
 
         return [
             conv(self.fov),

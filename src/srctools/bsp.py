@@ -1296,23 +1296,23 @@ class ParsedLump(Generic[T]):
         if self._read is None:
             raise TypeError('ParsedLump.__set_name__ was never called!')
         result: T
-        if isinstance(self.lump, bytes):  # Game lump
-            gm_lump = instance.game_lumps[self.lump]
-            LOGGER.debug('Load game lump {} v{} ({} bytes)', self.lump, gm_lump.version, len(gm_lump.data))
-            result = self._read(instance, gm_lump.version, gm_lump.data)
-        else:
+        if isinstance(self.lump, BSP_LUMPS):
             data = instance.lumps[self.lump].data
             LOGGER.debug('Load game lump {} ({} bytes)', self.lump, len(data))
             result = self._read(instance, data)
+        else:  # Game lump
+            gm_lump = instance.game_lumps[self.lump]
+            LOGGER.debug('Load game lump {} v{} ({} bytes)', self.lump, gm_lump.version, len(gm_lump.data))
+            result = self._read(instance, gm_lump.version, gm_lump.data)
         if inspect.isgenerator(result):  # Convenience, yield to accumulate into a list.
             result = list(result)  # type: ignore
 
         instance._parsed_lumps[self.lump] = result # noqa
         for lump in self.to_clear:
-            if isinstance(lump, bytes):
-                instance.game_lumps[lump].data = b''
-            else:
+            if isinstance(lump, BSP_LUMPS):
                 instance.lumps[lump].data = b''
+            else:
+                instance.game_lumps[lump].data = b''
         return result
 
     def __set__(self, instance: Optional['BSP'], value: T) -> None:
@@ -1323,10 +1323,10 @@ class ParsedLump(Generic[T]):
             # Allow raising if an invalid value.
             self._check(instance, value)
         for lump in self.to_clear:
-            if isinstance(lump, bytes):
-                instance.game_lumps[lump].data = b''
-            else:
+            if isinstance(lump, BSP_LUMPS):
                 instance.lumps[lump].data = b''
+            else:
+                instance.game_lumps[lump].data = b''
         instance._parsed_lumps[self.lump] = value  # noqa
 
 
@@ -1596,10 +1596,10 @@ class BSP:
                     for chunk in lump_result:
                         buf.write(chunk)
                     lump_result = buf.getvalue()
-                if isinstance(lump_or_game, bytes):
-                    self.game_lumps[lump_or_game].data = lump_result
-                else:
+                if isinstance(lump_or_game, BSP_LUMPS):
                     self.lumps[lump_or_game].data = lump_result
+                else:
+                    self.game_lumps[lump_or_game].data = lump_result
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
         with AtomicWriter(filename or self.filename, is_bytes=True) as file:

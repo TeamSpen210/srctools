@@ -446,16 +446,16 @@ class VirtualFileSystem(FileSystem[str]):
             filename, data = self._mapping[self._clean_path(name)]
         except KeyError:
             raise FileNotFoundError(name) from None
-        if isinstance(data, bytes):
+        if isinstance(data, str):
+            # None = universal newlines mode directly.
+            # No encoding is needed obviously.
+            return io.StringIO(data, newline=None)
+        else:
             # Decode on the fly, with universal newlines.
             return io.TextIOWrapper(
                 io.BytesIO(data),
                 encoding=encoding,
             )
-        else:
-            # None = universal newlines mode directly.
-            # No encoding is needed obviously.
-            return io.StringIO(data, newline=None)
 
     def walk_folder(self, folder: str = '') -> Iterator[File[Self]]:
         """Return all files that are 'subfolders' of the provided folder."""
