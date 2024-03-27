@@ -101,7 +101,8 @@ markers = [
 
 [tool.pyright]
 include = [
-	"src/srctools/"
+	"src/srctools/",
+	"type_tests/",
 	]
 exclude = [
 	"**/__pycache__"
@@ -110,6 +111,8 @@ stubPath = "src/"   # Use our module for stubs.
 # We want to do conversions when setting.
 reportPropertyTypeMismatch = false
 pythonVersion = "3.8"
+# We omit PIL in the tools CI, not necessary.
+reportMissingModuleSource = false
 
 [tool.mypy]
 warn_unused_ignores = true
