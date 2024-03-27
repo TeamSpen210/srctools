@@ -393,8 +393,9 @@ class VirtualFileSystem(FileSystem[str]):
     The encoding arg specifies how text data is presented if open_bin()
     is called.
     """
+    _mapping: Mapping[str, Tuple[str, Union[str, bytes, bytearray, memoryview]]]
 
-    def __init__(self, mapping: Mapping[str, Union[str, bytes]], encoding: str = 'utf8') -> None:
+    def __init__(self, mapping: Mapping[str, Union[str, bytes, bytearray, memoryview]], encoding: str = 'utf8') -> None:
         super().__init__('<virtual>')
         self._mapping = {
             self._clean_path(filename): (filename, data)

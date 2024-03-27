@@ -44,7 +44,7 @@ if sys.platform == 'win32':
 
     class CopyDataStruct(ctypes.Structure):
         """Data to pass for WM_COPYDATA."""
-        _fields_: ClassVar[List[Tuple[str, type]]] = [
+        _fields_ = [
             ('dWData', _ulong_ptr),
             ('cbData', ctypes.c_uint32),
             ('lpData', ctypes.c_void_p),
