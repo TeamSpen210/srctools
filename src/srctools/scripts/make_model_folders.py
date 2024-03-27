@@ -10,6 +10,7 @@ from srctools.vpk import VPK
 
 
 def main(args: List[str]) -> None:
+    """Create empty folders for all models in a VPK."""
     parser = argparse.ArgumentParser(description=__doc__)
 
     parser.add_argument(

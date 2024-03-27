@@ -2239,8 +2239,9 @@ class Entity(MutableMapping[str, str]):
             self[k] = v
 
     if TYPE_CHECKING:
-        # To type checkers, treat as a regular method.
-        def keys(self) -> KeysView[str]: ...
+        def keys(self) -> KeysView[str]:
+            """To type checkers, this is a regular method with only the non-deprecated usage."""
+            ...
     else:
         @property
         def keys(self) -> _KeyDict:

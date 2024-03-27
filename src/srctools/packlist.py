@@ -820,8 +820,9 @@ class PackList:
         for mat in bsp.textures:
             self.pack_file(f'materials/{mat.lower()}.vmt', FileType.MATERIAL)
 
-    @deprecated("The provided FGD is no longer used, call pack_with_ents instead.",)
+    @deprecated("The provided FGD is no longer necessary, call pack_with_ents instead.",)
     def pack_fgd(self, vmf: VMF, fgd: FGD, mapname: str = '', tags: Iterable[str] = ()) -> None:
+        """Deprecated version of pack_from_ents(). The FGD parameter is no longer necessary."""
         self.pack_from_ents(vmf, mapname, tags)
 
     def pack_from_ents(

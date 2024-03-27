@@ -62,6 +62,7 @@ def diff_vpk(path1: Path, path2: Path) -> None:
 
 
 def main(args: List[str]) -> None:
+    """Implement diffs for a few types understood by srctools."""
     ext = path = None
     if len(args) == 3:
         ext, fname1, fname2 = args

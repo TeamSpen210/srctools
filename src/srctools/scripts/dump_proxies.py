@@ -10,6 +10,7 @@ from srctools.vmt import Material
 
 
 def main(args: List[str]) -> None:
+    """Parse out all material proxies used in the given game."""
     parser = argparse.ArgumentParser(
         description=__doc__,
     )

@@ -143,7 +143,8 @@ class LeafKeyvalueError(ValueError):
 
 class _SupportsWrite(Protocol):
     """We accept any file object with a ``write()`` method."""
-    def write(self, data: str, /) -> object: ...
+    def write(self, data: str, /) -> object:
+        """Write to a file."""
 
 
 def _read_flag(flags: Mapping[str, bool], flag_val: str) -> bool:

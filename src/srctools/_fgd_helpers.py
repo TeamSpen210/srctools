@@ -446,6 +446,7 @@ class HelperSprite(Helper):
     mat: Optional[str]
 
     def overrides(self) -> Collection[HelperTypes]:
+        """Specifies helpers which this makes irrelevant."""
         if self.mat is None:
             return ()  # When not set, this doesn't affect anything.
         else:
@@ -722,9 +723,11 @@ class HelperExtAppliesTo(Helper):
 
     @classmethod
     def parse(cls, args: List[str]) -> Self:
+        """Parse appliesto(tag1, tag2)."""
         return cls(args)
 
     def export(self) -> List[str]:
+        """Produce the arguments for appliesto()."""
         return self.tags
 
 
@@ -738,9 +741,11 @@ class HelperExtOrderBy(Helper):
 
     @classmethod
     def parse(cls, args: List[str]) -> Self:
+        """Parse orderby(key1, key2)."""
         return cls(args)
 
     def export(self) -> List[str]:
+        """Produce the arguments for orderby()."""
         return self.order
 
 
@@ -756,6 +761,7 @@ class HelperExtAutoVisgroups(Helper):
 
     @classmethod
     def parse(cls, args: List[str]) -> Self:
+        """Parse autovis(group1, group2)."""
         if len(args) > 0 and args[0].casefold() != 'auto':
             args.insert(0, 'Auto')
         if len(args) < 2:
@@ -763,4 +769,5 @@ class HelperExtAutoVisgroups(Helper):
         return cls(args)
 
     def export(self) -> List[str]:
+        """Produce the arguments for autovis()."""
         return self.path
