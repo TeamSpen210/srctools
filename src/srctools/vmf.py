@@ -4,7 +4,7 @@ Wraps property_parser tree in a set of classes which smartly handle
 specifics of VMF files.
 """
 from typing import (
-    IO, TYPE_CHECKING, AbstractSet, Any, Dict, Final, FrozenSet, ItemsView, Iterable,
+    Callable, IO, TYPE_CHECKING, AbstractSet, Any, Dict, Final, FrozenSet, ItemsView, Iterable,
     Iterator, KeysView, List, Mapping, Match, MutableMapping, Optional, Pattern, Set,
     Tuple, TypeVar, Union, ValuesView, overload,
 )
@@ -1712,9 +1712,9 @@ class Side:
             for x in range(size)
         ]
         # Parse all the rows..
-        self._parse_disp_vecrow(disp_tree, 'normals', 'normal')
-        self._parse_disp_vecrow(disp_tree, 'offsets', 'offset')
-        self._parse_disp_vecrow(disp_tree, 'offset_normals', 'offset_norm')
+        self._parse_disp_vecrow(disp_tree, 'normals', _disprow_set_norm)
+        self._parse_disp_vecrow(disp_tree, 'offsets', _disprow_set_off)
+        self._parse_disp_vecrow(disp_tree, 'offset_normals', _disprow_set_off_norm)
 
         for y, row in self._iter_disp_row(disp_tree, 'alphas', size):
             try:
@@ -1756,8 +1756,8 @@ class Side:
         # First initialise this list.
         for vert in self._disp_verts:
             vert.multi_colors = [Vec(1, 1, 1), Vec(1, 1, 1), Vec(1, 1, 1), Vec(1, 1, 1)]
-        for i in range(4):
-            self._parse_disp_vecrow(disp_tree, 'multiblend_color_' + str(i), i)
+        for name, setter in _disprow_multiblend:
+            self._parse_disp_vecrow(disp_tree, name, setter)
 
         for y, split in self._iter_disp_row(disp_tree, 'multiblend', 4 * size):
             try:
@@ -1808,7 +1808,7 @@ class Side:
                 )
             yield y, split
 
-    def _parse_disp_vecrow(self, tree: Keyvalues, name: str, member: Union[str, int]) -> None:
+    def _parse_disp_vecrow(self, tree: Keyvalues, name: str, setter: Callable[[DispVertex, Vec], None]) -> None:
         """Parse one of the very similar per-vert sections.
 
         If member is a string, it is an attribute to set on the DispVertex.
@@ -1821,14 +1821,7 @@ class Side:
             try:
                 for x in range(size):
                     res = Vec(float(split[3 * x]), float(split[3 * x + 1]), float(split[3 * x + 2]))
-                    if isinstance(member, str):
-                        setattr(self._disp_verts[y * size + x], member, res)
-                    else:
-                        # multi_colors could be None, but we make sure to fix
-                        # that before calling this.
-                        multi_colors = self._disp_verts[y * size + x].multi_colors
-                        assert multi_colors is not None
-                        multi_colors[member] = res
+                    setter(self._disp_verts[y * size + x], res)
             except ValueError as exc:
                 raise ValueError(
                     f'Displacement array for {name} in side {self.id}, '
@@ -2151,6 +2144,34 @@ class Side:
         scale = property(fset=_scale_setter, doc='Set both scale attributes easily.')
         offset = property(fset=_offset_setter, doc='Set both offset attributes easily.')
     del _scale_setter, _offset_setter
+
+
+# Instead of using setattr(), define a setter function for each attribute
+def _disprow_set_norm(vert: DispVertex, value: Vec) -> None:
+    vert.normal = value
+
+
+def _disprow_set_off(vert: DispVertex, value: Vec) -> None:
+    vert.offset = value
+
+
+def _disprow_set_off_norm(vert: DispVertex, value: Vec) -> None:
+    vert.offset_norm = value
+
+
+def _make_disprow_set_multiblend(ind: int) -> Callable[[DispVertex, Vec], None]:
+    """Make a function to set a specific multiblend color value."""
+    def setter(vert: DispVertex, value: Vec) -> None:
+        """multi_colors could be None, but the caller should have initialised it."""
+        assert vert.multi_colors is not None
+        vert.multi_colors[ind] = value
+    return setter
+
+
+_disprow_multiblend = [
+    (f'multiblend_color_{i}', _make_disprow_set_multiblend(i))
+    for i in range(4)
+]
 
 
 class _KeyDict(Dict[str, str]):
