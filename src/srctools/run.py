@@ -15,7 +15,7 @@ __all__ = ['run_compiler', 'get_compiler_name', 'send_engine_command']
 def quote(txt: str) -> str:
     """Add quotes to text if needed."""
     if ' ' in txt:
-        return '"' + txt + '"'
+        return f'"{txt}"'
     return txt
 
 
@@ -44,11 +44,11 @@ if sys.platform == 'win32':
 
     class CopyDataStruct(ctypes.Structure):
         """Data to pass for WM_COPYDATA."""
-        _fields_ = [
+        _fields_ = (
             ('dWData', _ulong_ptr),
             ('cbData', ctypes.c_uint32),
             ('lpData', ctypes.c_void_p),
-        ]
+        )
 
     def _send_cmd(command: bytes, classname: str) -> None:
         """Send the command to a game."""
@@ -113,7 +113,7 @@ def run_compiler(
     """
     log_name = os.path.basename(name)
     logger.info("Calling original {}...", log_name.upper())
-    logger.info('Args: {}', ', '.join(map(repr, args)))
+    logger.info('Args: {}', ', '.join([repr(arg) for arg in args]))
 
     comp_name = get_compiler_name(name) if change_name else name
 
