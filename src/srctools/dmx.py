@@ -603,8 +603,6 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @overload
     def __init__(self, name: str, val_type: ValueType, value: Union[ValueT, List[ValueT]]) -> None: ...
-    @overload
-    def __init__(self, name: str, val_type: ValueType, value: Union[Value, ValueList]) -> None: ...
 
     def __init__(self, name: str, val_type: ValueType, value: Union[ValueT, List[ValueT]]) -> None:  # type: ignore[misc]
         """For internal use only."""

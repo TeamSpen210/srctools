@@ -305,36 +305,37 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     @overload
     def setdefault(self, key: Any, default: ValT) -> ValT: ...
 
-    def setdefault(self, key: Any, default: Optional[ValT] = None) -> Optional[ValT]:
+    def setdefault(self, key: Any, default: Optional[ValT] = None) -> Optional[ValT]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """setdefault() always returns the default item, but does not store it."""
         return default
 
     @overload
-    def update(self, __m: SupportsKeysAndGetItem[Any, Any], **kwargs: Any) -> None: ...
+    def update(self, m: SupportsKeysAndGetItem[Any, Any], /, **kwargs: Any) -> None: ...
     @overload
-    def update(self, __m: Iterable[Tuple[Any, Any]], **kwargs: Any) -> None: ...
+    def update(self, m: Iterable[Tuple[Any, Any]], /, **kwargs: Any) -> None: ...
     @overload
     def update(self, **kwargs: Any) -> None: ...
 
-    def update(self, *args: Any, **kargs: Any) -> None:
+    def update(self, *args: Any, **kargs: Any) -> None:  # type: ignore  # Mypy bug?
         """Runs {}.update() on arguments."""
         # Check arguments are correct, and raise appropriately.
         # Also consume args[0] if an iterator - this raises if args > 1.
         {}.update(*args, **kargs)
 
+    # Also stricter than Mapping[Any, Any], since we NoReturn if not passed a default.
     __marker: Final[Any] = object()
     @overload
-    def pop(self, key: Any) -> NoReturn: ...
+    def pop(self, key: Any, /) -> NoReturn: ...
     @overload
-    def pop(self, key: Any, default: ValT = __marker) -> ValT: ...
+    def pop(self, key: Any, /, default: ValT) -> ValT: ...
 
-    def pop(self, key: Any, default: ValT = __marker) -> ValT:
+    def pop(self, key: Any, default: ValT = __marker) -> ValT:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Returns the default value, or raises KeyError if not present."""
         if default is self.__marker:
             raise KeyError(key)
         return default
 
-    def popitem(self) -> Any:
+    def popitem(self) -> NoReturn:
         """Popitem() raises, since no items are in EmptyMapping."""
         raise KeyError('EmptyMapping is empty')
 

@@ -25,7 +25,7 @@ import attrs
 from srctools import BOOL_LOOKUP, EmptyMapping
 from srctools.keyvalues import Keyvalues
 from srctools.math import (
-    Angle, AnyAngle, AnyMatrix, AnyVec, FrozenAngle, FrozenMatrix, FrozenVec, Matrix, Vec,
+    Angle, AnyAngle, AnyMatrix, AnyVec, FrozenMatrix, FrozenVec, Matrix, Vec,
     format_float, to_matrix,
 )
 import srctools
@@ -56,13 +56,7 @@ T = TypeVar('T')
 # matching Valve's usual encoding.
 # Other types are just str()ed, which might produce a bad result.
 ValidKVs = Union[str, int, bool, float, AnyVec, AnyAngle, AnyMatrix]
-ValidKV_T = TypeVar(
-    'ValidKV_T',
-    str, int, bool, float,
-    Vec, FrozenVec,
-    Angle, FrozenAngle,
-    Matrix, FrozenMatrix,
-)
+ValidKV_T = TypeVar('ValidKV_T', bound=ValidKVs)
 
 
 class DispFlag(Flag):
@@ -1867,7 +1861,7 @@ class Side:
 
         des_id is the id which is desired for the new side.
         map is the VMF to add the new side to (defaults to the same map).
-        If passed, side_mapping will be updated with a old -> new ID pair.
+        If passed, side_mapping will be updated with an old -> new ID pair.
         """
         if vmf_file is not None and des_id == -1:
             des_id = self.id
@@ -2694,7 +2688,12 @@ class Entity(MutableMapping[str, str]):
                         self.map.node_id.discard(node_id)
                 break
 
-    def get(self, key: str, default: Union[str, T] = '') -> Union[str, T]:
+    @overload
+    def get(self, key: str, /) -> str: ...
+    @overload
+    def get(self, key: str, /, default: Union[str, T]) -> Union[str, T]: ...
+
+    def get(self, key: str, /, default: Union[str, T] = '') -> Union[str, T]:
         """Allow using [] syntax to search for keyvalues.
 
         - This will return '' if the value is not present.
@@ -2852,12 +2851,12 @@ class EntityFixup(MutableMapping[str, str]):
         self._matcher = None
 
     @overload
-    def setdefault(self, var: str) -> str: ...
+    def setdefault(self, var: str, /, default: str = ...) -> str: ...
     # noinspection PyMethodOverriding
     @overload
-    def setdefault(self, var: str, default: Union[ValidKV_T, str]) -> Union[str, ValidKV_T]: ...
+    def setdefault(self, var: str, /, default: ValidKV_T) -> Union[str, ValidKV_T]: ...
 
-    def setdefault(self, var: str, default: Union[ValidKV_T, str] = '') -> Union[str, ValidKV_T]:
+    def setdefault(self, var: str, /, default: Union[ValidKV_T, str] = '') -> Union[str, ValidKV_T]:
         """Return $key, but if not present set it to the default and return that."""
         if var[0] == '$':
             var = var[1:]
