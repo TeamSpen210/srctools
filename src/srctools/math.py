@@ -1032,7 +1032,8 @@ class VecBase:
                 self._z / mag + 0,
             )
 
-    def dot(self, other: AnyVec) -> float:
+    # Explicit self-annotation to allow Vec.dot(frozen, ...) & vice-versa.
+    def dot(self: 'VecBase', other: AnyVec) -> float:
         """Return the dot product of both Vectors.
 
         Tip: using this in the form ``Vec.dot(a, b)`` may be more readable.

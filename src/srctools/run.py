@@ -1,5 +1,5 @@
 """Code which handles executing and interfacing with game binaries."""
-from typing import IO, ClassVar, List, Tuple
+from typing import IO, List
 import logging
 import os.path
 import subprocess
