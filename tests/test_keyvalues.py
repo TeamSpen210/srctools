@@ -1,5 +1,7 @@
+"""Test the keyvalues module."""
 from typing import Any, Generator, List, Type, Union
 import itertools
+import io
 
 import pytest
 
@@ -514,6 +516,103 @@ def test_newline_strings(py_c_token: Type[Tokenizer]) -> None:
 
     root = Keyvalues.parse('"key\nmulti" "value"', newline_keys=True)
     assert_tree(root, Keyvalues.root(Keyvalues('key\nmulti', 'value')))
+
+
+def test_serialise() -> None:
+    """Test serialisation code."""
+
+    basic_tree = Keyvalues.root(
+        Keyvalues('Block1', [
+            Keyvalues('kEy"', 'Value\t\n with "quotes" included.'),
+            Keyvalues('regular', 'key'),
+            Keyvalues('block2', [
+                Keyvalues('lambda2', 'should2'),
+                Keyvalues('Blank', []),
+                Keyvalues('replace2', 'above2'),
+            ]),
+            Keyvalues('anotherKey', '1'),
+
+        ]),
+        Keyvalues('AnotherRoot', [
+            Keyvalues('option', 'set'),
+        ])
+    )
+
+    buf = []
+
+    class File:
+        """Implements only the write() method."""
+        def write(self, the_line: str, /) -> float:
+            buf.append(the_line)
+            return 3.14
+
+    basic_tree.serialise(File())
+    buf2 = basic_tree.serialise()
+    assert buf == [
+        '"Block1"\n',
+        '\t{\n',
+        '\t"kEy\\"" "Value\\t\\n with \\"quotes\\" included."\n',
+        '\t"regular" "key"\n',
+        '\t"block2"\n',
+        '\t\t{\n',
+        '\t\t"lambda2" "should2"\n',
+        '\t\t"Blank"\n',
+        '\t\t\t{\n',
+        '\t\t\t}\n',
+        '\t\t"replace2" "above2"\n',
+        '\t\t}\n',
+        '\t"anotherKey" "1"\n',
+        '\t}\n',
+        '"AnotherRoot"\n',
+        '\t{\n',
+        '\t"option" "set"\n',
+        '\t}\n',
+    ]
+    assert buf2 == ''.join(buf)
+
+    buf.clear()
+    basic_tree.serialise(File(), indent='>>|')
+    assert buf == [
+        '"Block1"\n',
+        '>>|{\n',
+        '>>|"kEy\\"" "Value\\t\\n with \\"quotes\\" included."\n',
+        '>>|"regular" "key"\n',
+        '>>|"block2"\n',
+        '>>|>>|{\n',
+        '>>|>>|"lambda2" "should2"\n',
+        '>>|>>|"Blank"\n',
+        '>>|>>|>>|{\n',
+        '>>|>>|>>|}\n',
+        '>>|>>|"replace2" "above2"\n',
+        '>>|>>|}\n',
+        '>>|"anotherKey" "1"\n',
+        '>>|}\n',
+        '"AnotherRoot"\n',
+        '>>|{\n',
+        '>>|"option" "set"\n',
+        '>>|}\n',
+    ]
+
+    assert basic_tree.serialise(indent=' ', indent_braces=False) == '''\
+"Block1"
+{
+ "kEy\\"" "Value\\t\\n with \\"quotes\\" included."
+ "regular" "key"
+ "block2"
+ {
+  "lambda2" "should2"
+  "Blank"
+  {
+  }
+  "replace2" "above2"
+ }
+ "anotherKey" "1"
+}
+"AnotherRoot"
+{
+ "option" "set"
+}
+'''
 
 
 def test_edit() -> None:

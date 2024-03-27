@@ -5,6 +5,11 @@ Changelog
 	:local:
 	:backlinks: none
 
+-------------
+Version (dev)
+-------------
+* Added :py:meth:`Keyvalues.serialise() <srctools.keyvalues.Keyvalues.serialise>`, a replacement for :py:meth:`~srctools.keyvalues.Keyvalues.export`.
+
 --------------
 Version 2.3.16
 --------------

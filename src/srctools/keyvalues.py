@@ -23,11 +23,10 @@ to parse a file.
 
 This will perform a round-trip file read::
 
-    >>> with open('filename.txt', 'r') as f:  # doctest: +SKIP
-    ...     kv = Keyvalues.parse(f, 'filename.txt')
-    ... with open('filename_2.txt', 'w') as f:
-    ...     for line in kv.export():
-    ...         f.write(line)
+    >>> with open('filename.txt', 'r') as read_file:  # doctest: +SKIP
+    ...     kv = Keyvalues.parse(read_file, 'filename.txt')
+    ... with open('filename_2.txt', 'w') as write_file:
+    ...     kv.serialise(write_file)
 
 Keyvalue ``values`` should be either a string, or a list of children Properties.
 Names will be converted to lowercase automatically; use Prop.real_name to
@@ -1137,10 +1136,76 @@ class Keyvalues:
     def __str__(self) -> str:
         return ''.join(self.export())
 
+    @overload
+    def serialise(self, file: _SupportsWrite, /, *, indent: str = '\t', indent_braces: builtins.bool = True) -> None: ...
+    @overload
+    def serialise(self, /, *, indent: str = '\t', indent_braces: builtins.bool = True) -> str: ...
+
+    def serialise(
+        self,
+        file: Optional[_SupportsWrite] = None,
+        /, *,
+        indent: str = '\t',
+        indent_braces: builtins.bool = True,
+    ) -> Optional[str]:
+        """Serialise the keyvalues data to a file, or return as a string.
+
+        Recursive trees are not permitted.
+
+        :param file: The file to write to. If omitted, the data is returned instead.
+        :param indent: The characters to use for each indentation.
+        :param indent_braces: If enabled, indent the braces to match the block contents, instead of the name.
+        """
+        buffer: Optional[io.StringIO] = None
+        if file is None:
+            file = buffer = io.StringIO()
+
+        if indent_braces:
+            open_brace = f'{indent}{{\n'
+            close_brace = f'{indent}}}\n'
+        else:
+            open_brace, close_brace = '{\n', '}\n'
+
+        self._serialise(file, indent, open_brace, close_brace, '')
+
+        if buffer is not None:
+            return buffer.getvalue()
+        return None
+
+    def _serialise(
+        self,
+        file: _SupportsWrite,
+        indent: str, open_brace: str, close_brace: str,
+        cur_indent: str,
+    ) -> None:
+        """Implements write(), after values are prepared."""
+        child: Keyvalues
+        if isinstance(self._value, list):
+            if self._real_name is None:
+                # If the name is None, we just output the children
+                # without a "Name" { } surround. These Keyvalue objects represent the root.
+                for child in self._value:
+                    child._serialise(file, indent, open_brace, close_brace, '')
+            else:
+                file.write(f'{cur_indent}"{self._real_name}"\n')
+                file.write(f'{cur_indent}{open_brace}')
+                child_indent = f"{cur_indent}{indent}"
+                for child in self._value:
+                    child._serialise(file, indent, open_brace, close_brace, child_indent)
+                file.write(f'{cur_indent}{close_brace}')
+        else:
+            # We need to escape quotes and backslashes, so they don't get detected.
+            assert self._real_name is not None, repr(self)
+            file.write(f'{cur_indent}"{escape_text(self._real_name)}" "{escape_text(self._value)}"\n')
+
+    serialize = serialise  # Alias
+
     def export(self) -> Iterator[str]:
         """Generate the set of strings for a keyvalues file.
 
         Recursively calls itself for all child properties.
+
+        :deprecated: Use :py:meth:`serialise()` instead.
         """
         if isinstance(self._value, list):
             if self._real_name is None:
