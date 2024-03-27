@@ -14,7 +14,9 @@ token/value pair. One token of lookahead is supported, accessed by the
 the current line number as data is read, letting you ``raise BaseTokenizer.error(...)`` to easily
 produce an exception listing the relevant line number and filename.
 """
-from typing import Final, Iterable, Iterator, List, Optional, Tuple, Type, Union, NoReturn
+from typing import (
+    Final, Iterable, Iterator, List, NoReturn, Optional, TYPE_CHECKING, Tuple, Type, Union,
+)
 from typing_extensions import Self, TypeAlias, overload
 from enum import Enum
 from os import fspath as _conv_path
@@ -756,14 +758,15 @@ _py_escape_text = escape_text
 cy_escape_text = escape_text
 
 # Do it this way, so static analysis ignores this.
-_glob = globals()
-try:
-    from . import _tokenizer
-except ImportError:
-    pass
-else:
-    _name = ''
-    for _name in ['Tokenizer', 'BaseTokenizer', 'IterTokenizer']:
-        _glob[_name] = _glob['Cy_' + _name] = getattr(_tokenizer, _name)
-    _glob['escape_text'] = _glob['cy_escape_text'] = _tokenizer.escape_text
-    del _glob, _name, _tokenizer
+if not TYPE_CHECKING:
+    _glob = globals()
+    try:
+        from . import _tokenizer
+    except ImportError:
+        pass
+    else:
+        _name = ''
+        for _name in ['Tokenizer', 'BaseTokenizer', 'IterTokenizer']:
+            _glob[_name] = _glob['Cy_' + _name] = getattr(_tokenizer, _name)
+        _glob['escape_text'] = _glob['cy_escape_text'] = _tokenizer.escape_text
+        del _glob, _name, _tokenizer
