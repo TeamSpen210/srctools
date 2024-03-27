@@ -390,7 +390,7 @@ def kv_unserialise(
         val_list = None
 
     # Bypass __init__, to speed up - we have a lot of these.
-    kv = KVDef.__new__(KVDef)
+    kv = KVDef.__new__(KVDef)  # pyright: ignore
     kv.name = name
     kv.type = value_type
     kv.disp_name = disp_name
@@ -414,7 +414,7 @@ def iodef_unserialise(
 ) -> IODef:
     """Recover an IODef from a binary file."""
     # Bypass __init__, to speed up - we have a lot of these.
-    iodef = IODef.__new__(IODef)
+    iodef = IODef.__new__(IODef)  # pyright: ignore
     iodef.name = from_dict()
     [value_type] = file.read(1)
     iodef.type = VALUE_TYPE_ORDER[value_type]
@@ -490,7 +490,7 @@ def ent_unserialise(
         res_count,
     ] = _fmt_ent_header.unpack(file.read(_fmt_ent_header.size))
 
-    ent = EntityDef.__new__(EntityDef)
+    ent = EntityDef.__new__(EntityDef)  # pyright: ignore
     ent.type = ENTITY_FLAG_2_TYPE[flags & EntFlags.MASK_TYPE]
     ent.classname = classname
     ent.desc = ''
