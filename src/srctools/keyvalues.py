@@ -57,14 +57,15 @@ Properties with children can be indexed by their names, or by a
     >>> kv
     Keyvalues('Top', [Keyvalues('child1', '1'), Keyvalues('child3', 'new value')])
 
-Handling `\\\\n`, `\\\\t`, `\\\\"`, and `\\\\\\\\` escape characters can be enabled.
+Handling ``\\n``, ``\\t``, ``\\"``, and ``\\\\`` escape characters can be enabled.
 """
 from typing import (
     Any, Callable, ClassVar, Dict, Final, Iterable, Iterator, List, Mapping, Optional,
-    Tuple, Type, TypeVar, Union, cast,
+    Protocol, Tuple, Type, TypeVar, Union, cast,
 )
 from typing_extensions import TypeAlias, deprecated, overload
 import builtins  # Keyvalues.bool etc shadows these.
+import io
 import keyword
 import os
 import sys
@@ -103,13 +104,13 @@ FLAGS_DEFAULT = {
 class KeyValError(TokenSyntaxError):
     """An error that occurred when parsing a Valve KeyValues file.
 
-    See the base class for available attributes.
+    See the base class :py:class:`TokenSyntaxError` for available attributes.
     """
 
 
 class NoKeyError(LookupError):
-    """Raised if a key is not found when searching from find_key().
-    """
+    """Raised if a key is not found when searching with
+    :py:meth:`~Keyvalues.find_key()`, :py:meth:`~Keyvalues.find_block()`, etc."""
     key: str  #: The key that was missing.
     def __init__(self, key: str) -> None:
         super().__init__(key)
@@ -128,7 +129,7 @@ class LeafKeyvalueError(ValueError):
     Leaf keyvalues only have a string value, so this operation is not valid.
     """
     leaf: 'Keyvalues'  #: The keyvalue being used.
-    msg: str  # The operation being performed.
+    operation: str  #: Name of the operation being performed.
     def __init__(self, leaf: 'Keyvalues', operation: str) -> None:
         super().__init__(operation)
         self.leaf = leaf
@@ -139,6 +140,11 @@ class LeafKeyvalueError(ValueError):
 
     def __str__(self) -> str:
         return f'Cannot {self.operation} a leaf {self.leaf!r}, since it has no children!'
+
+
+class _SupportsWrite(Protocol):
+    """We accept any file object with a ``write()`` method."""
+    def write(self, data: str, /) -> object: ...
 
 
 def _read_flag(flags: Mapping[str, bool], flag_val: str) -> bool:
@@ -160,7 +166,7 @@ class Keyvalues:
 
     Value should be a string (for leaf properties), or a list of children Keyvalues objects.
     The name should be a string, or None for a root object.
-    Root objects export each child at the topmost indent level. This is produced from ``Keyvalues.parse()`` calls.
+    Root objects export each child at the topmost indent level. This is produced from :py:meth:`Keyvalues.parse()` calls.
     """
     # Helps decrease memory footprint with lots of Keyvalues values.
     __slots__ = ('_folded_name', '_real_name', '_value')
@@ -187,7 +193,10 @@ class Keyvalues:
 
     @property
     def value(self) -> str:
-        """Return the value of a leaf keyvalue."""
+        """Return the value of a leaf keyvalue.
+
+        :deprecated: Accessing the internal list for keyvalue blocks.
+        """
         if isinstance(self._value, list):
             warnings.warn("Accessing internal keyvalues block list is deprecated", DeprecationWarning, 2)
         return cast(str, self._value)
@@ -201,10 +210,11 @@ class Keyvalues:
 
     @property
     def name(self) -> str:
-        """Name automatically casefolds() any given names.
+        """Produces a :py:meth:`str.casefold`-ed version of the keyvalue's name. Usually names are case-insensitive.
 
-        This ensures comparisons are always case-insensitive.
-        Read .real_name to get the original value.
+        Assigning to this automatically updates both this and :py:attr:`real_name`.
+
+        :deprecated: 'Root' keyvalues have a name of :py:const:`None`. This will be replaced by a blank string, use :py:meth:`is_root()` instead.
         """
         if self._folded_name is None:
             warnings.warn("The name of root properties will change to a blank string in the future.", DeprecationWarning, 2)
@@ -222,7 +232,12 @@ class Keyvalues:
 
     @property
     def real_name(self) -> str:
-        """The original, case-sensitive version of this name."""
+        """The original, case-sensitive version of this name.
+
+        Assigning to this automatically updates both this and :py:attr:`name`.
+
+        :deprecated: 'Root' keyvalues have a name of :py:const:`None`. This will be replaced by a blank string, use :py:meth:`is_root()` instead.
+        """
         if self._real_name is None:
             warnings.warn("The name of root properties will change to a blank string in the future.", DeprecationWarning, 2)
         return self._real_name  # type: ignore
@@ -248,7 +263,11 @@ class Keyvalues:
 
     @classmethod
     def root(cls, *children: 'Keyvalues') -> 'Keyvalues':
-        """Return a new 'root' keyvalues."""
+        """Return a new 'root' keyvalue. These have no name, and are returned from :py:meth:`parse()`.
+
+        When serialised, their children are directly written with no indents, allowing multiple keyvalues
+        blocks to exist on the topmost level.
+        """
         kv = cls.__new__(cls)
         kv._folded_name = kv._real_name = None
         for child in children:
@@ -512,9 +531,7 @@ class Keyvalues:
         return root
 
     def find_all(self, *keys: str) -> Iterator['Keyvalues']:
-        """Search through the tree, yielding all properties that match a particular path.
-
-        """
+        """Search through the tree, yielding all properties that match a particular path."""
         depth = len(keys)
         if depth == 0:
             raise ValueError("Cannot find_all without commands!")
@@ -531,9 +548,7 @@ class Keyvalues:
                     yield prop
 
     def find_children(self, *keys: str) -> Iterator['Keyvalues']:
-        """Search through the tree, yielding children of properties in a path.
-
-        """
+        """Search through the tree, yielding children of properties in a path."""
         for block in self.find_all(*keys):
             yield from block
 
@@ -546,9 +561,9 @@ class Keyvalues:
         """Obtain the child Keyvalue with a given name.
 
         - If no child is found with the given name, this will return the
-          default value wrapped in a Keyvalue. If or_blank is set,
+          default value wrapped in a new :py:class:`Keyvalue <Keyvalues>`. If or_blank is set,
           it will be a blank block instead. If neither default is provided
-          this will raise NoKeyError.
+          this will raise :py:class:`NoKeyError`.
         - This prefers keys located closer to the end of the value list.
         """
         if not isinstance(self._value, list):
@@ -569,8 +584,8 @@ class Keyvalues:
     def find_block(self, key: str, or_blank: bool = False) -> 'Keyvalues':
         """Obtain the child Keyvalue block with a given name.
 
-        - If no child is found with the given name and `or_blank` is true, a
-          blank Keyvalue block will be returned. Otherwise NoKeyError will
+        - If no child is found with the given name and ``or_blank`` is true, a
+          blank :py:class:`Keyvalues` block will be returned. Otherwise, :py:class:`NoKeyError` will
           be raised.
         - This prefers keys located closer to the end of the value list.
         """
@@ -589,10 +604,10 @@ class Keyvalues:
     def _get_value(self, key: str, def_: Union[builtins.str, T] = _NO_KEY_FOUND) -> Union[str, T]:
         """Obtain the value of the child Keyvalue with a given name.
 
-        Effectively find_key() but doesn't make a new keyvalue.
+        Effectively :py:meth:`find_key()` but doesn't make a new keyvalue.
 
         - If no child is found with the given name, this will return the
-          default value, or raise NoKeyError if none is provided.
+          default value, or raise :py:class:`NoKeyError` if none is provided.
         - This prefers keys located closer to the end of the value list.
         """
         if not isinstance(self._value, list):
@@ -621,7 +636,7 @@ class Keyvalues:
     def int(self, key: str, def_: Union[builtins.int, T] = 0) -> Union[builtins.int, T]:
         """Return the value of an integer key.
 
-        Equivalent to int(prop[key]), but with a default value if missing or
+        Equivalent to ``int(prop[key])``, but with a default value if missing or
         invalid.
         If multiple keys with the same name are present, this will use the
         last only.
@@ -641,7 +656,7 @@ class Keyvalues:
     def float(self, key: str, def_: Union[builtins.float, T] = 0.0) -> Union[builtins.float, T]:
         """Return the value of an integer key.
 
-        Equivalent to float(prop[key]), but with a default value if missing or
+        Equivalent to ``float(prop[key])``, but with a default value if missing or
         invalid.
         If multiple keys with the same name are present, this will use the
         last only.
@@ -659,7 +674,7 @@ class Keyvalues:
     def bool(self, key: str, def_: T) -> Union[builtins.bool, T]: ...
 
     def bool(self, key: str, def_: Union[builtins.bool, T] = False) -> Union[builtins.bool, T]:
-        """Return the value of an boolean key.
+        """Return the value of a boolean key.
 
         The value may be case-insensitively 'true', 'false', '1', '0', 'T',
         'F', 'y', 'n', 'yes', or 'no'.
@@ -694,8 +709,7 @@ class Keyvalues:
     def set_key(self, path: Union[Tuple[str, ...], str], value: str) -> None:
         """Set the value of a key deep in the tree hierarchy.
 
-        - If any of the hierarchy do not exist (or do not have children), blank properties will be
-            added automatically.
+        - If any of the hierarchy do not exist (or do not have children), blank properties will be added automatically.
         - path should be a tuple of names, or a single string.
         """
         if not isinstance(self._value, list):
@@ -1111,10 +1125,9 @@ class Keyvalues:
         return isinstance(self._value, list)
 
     def is_root(self) -> builtins.bool:
-        """Check if the keyvalue is a root, returned from the parse() method.
+        """Check if the keyvalue is a root, returned from the :py:meth:`parse()` or :py:meth:`root()` methods.
 
-        The root when exported produces its children, allowing multiple properties to be at the
-        topmost indent level in a file.
+        See :py:meth:`root()` for more information.
         """
         return self._real_name is None
 
