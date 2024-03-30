@@ -347,7 +347,7 @@ def _read_colon_list(
 
             if not ready_for_string:
                 raise tok.error('Too many strings (#snippet "{}")!', desc_key)
-            strings.append(Snippet.lookup('description', snippet_desc, desc_key))
+            strings.append(Snippet.lookup(tok.error, 'description', snippet_desc, desc_key))
             ready_for_string = False
         elif ready_for_string and token is Token.NEWLINE:
             continue  # skip over this in particular...
@@ -405,7 +405,7 @@ def _parse_colon_array(
     tok_typ, tok_value = tok()
     if tok_typ is Token.DIRECTIVE and tok_value == "snippet":
         # A line like "... = #snippet" - include a single array, no additional values.
-        return list(Snippet.lookup(kind, snippet_mapping, tok.expect(Token.STRING)))
+        return list(Snippet.lookup(tok.error, kind, snippet_mapping, tok.expect(Token.STRING)))
     else:
         tok.push_back(tok_typ, tok_value)
 
@@ -417,7 +417,7 @@ def _parse_colon_array(
         elif token is Token.DIRECTIVE and first_value == 'snippet':
             # Include an existing list of values, maybe with inline values.
             key = tok.expect(Token.STRING)
-            val_list.extend(Snippet.lookup(kind, snippet_mapping, key))
+            val_list.extend(Snippet.lookup(tok.error, kind, snippet_mapping, key))
             continue
         elif token is not Token.STRING:
             raise tok.error(token, first_value)
@@ -581,14 +581,24 @@ class Snippet(Generic[ValueT_co]):
     value: ValueT_co
 
     @classmethod
-    def lookup(cls, kind: str, mapping: Mapping[str, Snippet[T]], key: str) -> T:
-        """Locate a snippet using the specified mapping."""
+    def lookup(
+        cls,
+        error: Callable[[str], BaseException],
+        kind: str,
+        mapping: Mapping[str, Snippet[T]],
+        key: str,
+    ) -> T:
+        """Locate a snippet using the specified mapping.
+
+        If not found, `error` is used to create the exception to raise, using `kind` as the snippet
+        type.
+        """
         try:
             return mapping[key.casefold()].value
         except KeyError:
             names = [snip.name for snip in mapping.values()]
             names.sort()
-            raise ValueError(f'Snippet "{key}" does not exist. Known {kind} snippets: {names}') from None
+            raise error(f'Snippet "{key}" does not exist. Known {kind} snippets: {names}') from None
 
     @classmethod
     def _add(cls, kind: str, mapping: SnippetDict[T], path: str, line: int, name: str, value: T) -> None:
@@ -669,7 +679,7 @@ class Snippet(Generic[ValueT_co]):
                 IODef._parse(fgd, tokeniser),
             )
         else:
-            raise ValueError(
+            raise tokeniser.error(
                 f'Unknown snippet type "{snippet_kind}" for snippet "{path}:{snippet_id}"!'
             )
 
@@ -1406,6 +1416,7 @@ class EntityDef:
                     raise tok.error(doc_token, token_value)
                 # Included from an earlier snippet.
                 desc.append(Snippet.lookup(
+                    tok.error,
                     'description', fgd.snippet_desc,
                     tok.expect(Token.STRING),
                 ))
@@ -1419,7 +1430,7 @@ class EntityDef:
                     desc.append(tok_val)
                 elif tok_typ is Token.DIRECTIVE and tok_val == 'snippet':
                     desc.append(Snippet.lookup(
-                        'description', fgd.snippet_desc,
+                        tok.error, 'description', fgd.snippet_desc,
                         tok.expect(Token.STRING),
                     ))
                 else:
@@ -1454,15 +1465,15 @@ class EntityDef:
                 value_kind = tok.expect(Token.STRING).casefold()
                 key = tok.expect(Token.STRING)
                 if value_kind == 'input':
-                    tags, io_def = Snippet.lookup('input', fgd.snippet_input, key)
+                    tags, io_def = Snippet.lookup(tok.error, 'input', fgd.snippet_input, key)
                     io_tags_map = entity.inputs.setdefault(io_def.name.casefold(), {})
                     io_tags_map[tags] = io_def
                 elif value_kind == 'output':
-                    tags, io_def = Snippet.lookup('output', fgd.snippet_output, key)
+                    tags, io_def = Snippet.lookup(tok.error, 'output', fgd.snippet_output, key)
                     io_tags_map = entity.outputs.setdefault(io_def.name.casefold(), {})
                     io_tags_map[tags] = io_def
                 elif value_kind == 'keyvalue':
-                    tags, kv_def = Snippet.lookup('keyvalue', fgd.snippet_keyvalue, key)
+                    tags, kv_def = Snippet.lookup(tok.error, 'keyvalue', fgd.snippet_keyvalue, key)
                     kv_tags_map = entity.keyvalues.setdefault(kv_def.name.casefold(), {})
                     if not kv_tags_map:
                         # New, add to the ordering.
@@ -1771,7 +1782,7 @@ class EntityDef:
             else:
                 raise TypeError(f'Helper {helper!r} has no TYPE attr?')
             if isinstance(helper, HelperExtOrderBy):
-                kv_order_list.extend(map(str.casefold, args))
+                kv_order_list += [arg.casefold() for arg in args]
 
         if self.helpers:
             file.write('\n')  # Put the classname on the following line.
@@ -2365,7 +2376,7 @@ class ResourceCtx:
         if mapname.casefold().endswith(('.bsp', '.vmf', '.vmm', '.vmx')):
             mapname = mapname[:-4]
         self.__attrs_init__(  # pyright: ignore
-            frozenset(map(str.upper, tags)),
+            frozenset({tag.upper() for tag in tags}),
             fsys,
             mapname.replace('\\', '/'),
             # If this is an FGD or Mapping __getitem__ is the appropriate callable, otherwise
