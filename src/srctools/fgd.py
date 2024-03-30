@@ -1474,6 +1474,7 @@ class EntityDef:
                         'input, output, keyvalue',
                         value_kind,
                     )
+                continue
 
             # IO - keyword at the start.
             if token is not Token.STRING:
