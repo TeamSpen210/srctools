@@ -9,6 +9,7 @@ Changelog
 Version (dev)
 -------------
 * Added :py:meth:`Keyvalues.serialise() <srctools.keyvalues.Keyvalues.serialise>`, a replacement for :py:meth:`~srctools.keyvalues.Keyvalues.export`.
+* Fix `+` and `=` being parsed as part of a bare string if not the first character.
 
 --------------
 Version 2.3.16

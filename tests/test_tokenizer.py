@@ -108,7 +108,7 @@ noprop_parse_test = """
 #ﬁmport test
 #EXclßÀde value
 #caseA\u0345\u03a3test
-{ ]]{ }}}[[ {{] + = "test" + "ing" == vaLUE
+{ ]]{ }}}[[ {{] + = "test" + "ing" == vaLUE= 4+6
 """
 
 noprop_parse_tokens = [
@@ -120,7 +120,7 @@ noprop_parse_tokens = [
     T.BRACE_OPEN, T.BRACK_CLOSE, T.BRACK_CLOSE, T.BRACE_OPEN, T.BRACE_CLOSE, T.BRACE_CLOSE, T.BRACE_CLOSE,
     T.BRACK_OPEN, T.BRACK_OPEN, T.BRACE_OPEN, T.BRACE_OPEN, T.BRACK_CLOSE, T.PLUS,
     T.EQUALS, (T.STRING, "test"), T.PLUS, (T.STRING, "ing"),
-    T.EQUALS, T.EQUALS, (T.STRING, "vaLUE"), T.NEWLINE
+    T.EQUALS, T.EQUALS, (T.STRING, "vaLUE"), T.EQUALS, (T.STRING, "4"), T.PLUS, (T.STRING, "6"), T.NEWLINE
 ]
 
 

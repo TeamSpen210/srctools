@@ -159,7 +159,7 @@ ESCAPES = {
 }
 
 #: Characters not allowed for bare strings. These must be quoted.
-BARE_DISALLOWED: Final = frozenset('"\'{};,[]()\n\t ')
+BARE_DISALLOWED: Final = frozenset('"\'{};,=+[]()\n\t ')
 
 
 class BaseTokenizer(abc.ABC):
