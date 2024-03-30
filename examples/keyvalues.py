@@ -2,11 +2,10 @@ from srctools import Keyvalues
 
 # Reading and writing
 with open('filename.vdf', 'r') as f1:
-	kv = Keyvalues.parse(f)
+	kv = Keyvalues.parse(f1)
 	
 with open('filename.vdf', 'w') as f2:
-	for line in kv.export():
-		f2.write(line)
+	kv.serialise(f2)
 
 kv = Keyvalues('Root', [
 	Keyvalues('block', [
