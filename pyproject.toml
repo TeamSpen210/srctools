@@ -93,7 +93,7 @@ skip = [
 # After building, run tests to check it works.
 # Disable assertion rewriting since that sometimes has issues on PyPy.
 before-test = "pip install -r test-requirements.txt"
-test-command = 'pytest -m --assert=plain "not slow" {project}/tests'
+test-command = 'pytest --assert=plain -m "not slow" {project}/tests'
 
 [tool.pytest.ini_options]
 markers = [
