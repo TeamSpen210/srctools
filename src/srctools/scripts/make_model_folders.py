@@ -27,11 +27,10 @@ def main(args: List[str]) -> None:
 
     dest_folder = Path(result.folder).resolve()
     with VPK(result.vpk) as vpk:
-        for ext, folders in vpk._fileinfo.items():
-            for folder in folders:
-                full_path = (dest_folder / folder)
-                print(str(full_path).replace('\\', '/') + '/')
-                full_path.mkdir(parents=True, exist_ok=True)
+        for folder in vpk.folders(ext='mdl'):
+            full_path = (dest_folder / folder)
+            print(str(full_path).replace('\\', '/') + '/')
+            full_path.mkdir(parents=True, exist_ok=True)
 
 
 if __name__ == '__main__':

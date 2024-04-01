@@ -551,19 +551,40 @@ class VPK:
                 for info in files.values():
                     yield info.filename
 
-    def fileinfos(self, ext: Optional[str] = None, folder: str = '') -> Iterator[FileInfo]:
+    def _iter_folders(self, ext: Optional[str]) -> Iterable[Dict[str, Dict[str, FileInfo]]]:
+        """Yield the folder dicts matching the specified extension."""
+        if ext is not None:
+            try:
+                return [self._fileinfo[ext]]
+            except KeyError:
+                return ()  # None with this extension.
+        else:
+            return self._fileinfo.values()
+
+    def folders(self, *, ext: Optional[str] = None) -> Iterator[str]:
+        """Yield the names of folders present in this VPK.
+
+        If an extension is specified, only folders containing files with that extension
+        are returned.
+        """
+        if ext is not None:
+            # These only contain a single copy of each filename.
+            for folders in self._iter_folders(ext):
+                yield from folders.keys()
+        else:
+            # When yielding all, we need to deduplicate across different extensions.
+            result: set[str] = set()
+            for folder in self._fileinfo.values():
+                result.update(folder.keys())
+            yield from result
+
+    def fileinfos(self, *, ext: Optional[str] = None, folder: str = '') -> Iterator[FileInfo]:
         """Yield file info objects from this VPK.
 
         If an extension or folder is specified, only files with this extension
         or in this folder are returned.
         """
-        all_folders: Iterable[Dict[str, Dict[str, FileInfo]]]
-        if ext is not None:
-            all_folders = [self._fileinfo.get(ext, {})]
-        else:
-            all_folders = self._fileinfo.values()
-
-        for folders in all_folders:
+        for folders in self._iter_folders(ext):
             for subfolder, files in folders.items():
                 if not subfolder.startswith(folder):
                     continue
