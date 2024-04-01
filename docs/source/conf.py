@@ -14,7 +14,7 @@ sys.modules['srctools._cy_vtf_readwrite'] = None
 # -- Project information -----------------------------------------------------
 
 project = 'srctools'
-copyright = '2022, TeamSpen210'
+copyright = '2024, TeamSpen210'
 author = 'TeamSpen210'
 
 # The full version, including alpha/beta/rc tags
