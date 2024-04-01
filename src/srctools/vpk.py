@@ -551,14 +551,14 @@ class VPK:
                 for info in files.values():
                     yield info.filename
 
-    def fileinfos(self, ext: str = '', folder: str = '') -> Iterator[FileInfo]:
+    def fileinfos(self, ext: Optional[str] = None, folder: str = '') -> Iterator[FileInfo]:
         """Yield file info objects from this VPK.
 
         If an extension or folder is specified, only files with this extension
         or in this folder are returned.
         """
         all_folders: Iterable[Dict[str, Dict[str, FileInfo]]]
-        if ext:
+        if ext is not None:
             all_folders = [self._fileinfo.get(ext, {})]
         else:
             all_folders = self._fileinfo.values()
