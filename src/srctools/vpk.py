@@ -1,5 +1,6 @@
 """Classes for reading and writing Valve's VPK format, version 1."""
-from typing import IO, Dict, Final, Iterable, Iterator, List, Optional, Tuple, Type, Union
+from typing import IO, Dict, Final, Iterable, Iterator, List, Optional, Set, Tuple, Type, Union
+from typing_extensions import TypeAlias
 from enum import Enum
 from types import TracebackType
 import operator
@@ -18,7 +19,7 @@ __all__ = [
 ]
 VPK_SIG: Final = 0x55aa1234  #: The first byte of VPK files.
 DIR_ARCH_INDEX: Final = 0x7fff  #: The file index used for the ``_dir`` file.
-FileName = Union[str, Tuple[str, str], Tuple[str, str, str]]
+FileName: TypeAlias = Union[str, Tuple[str, str], Tuple[str, str, str]]
 
 
 class OpenModes(Enum):
@@ -573,7 +574,7 @@ class VPK:
                 yield from folders.keys()
         else:
             # When yielding all, we need to deduplicate across different extensions.
-            result: set[str] = set()
+            result: Set[str] = set()
             for folder in self._fileinfo.values():
                 result.update(folder.keys())
             yield from result
