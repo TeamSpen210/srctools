@@ -6,6 +6,11 @@ Changelog
 	:backlinks: none
 
 --------------
+Version (dev)
+--------------
+* Allow passing :py:class:`~srctools.math.FrozenVec` to :py:meth:`VMF.make_prism() <srctools.vmf.VMF.make_prism>`/:py:meth:`~srctools.vmf.VMF.make_hollow`.
+
+--------------
 Version 2.3.17
 --------------
 * Added :py:meth:`Keyvalues.serialise() <srctools.keyvalues.Keyvalues.serialise>`, a replacement for :py:meth:`~srctools.keyvalues.Keyvalues.export`.

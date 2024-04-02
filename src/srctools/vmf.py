@@ -825,8 +825,8 @@ class VMF:
 
     def make_prism(
         self,
-        p1: Vec,
-        p2: Vec,
+        p1: Union[Vec, FrozenVec],
+        p2: Union[Vec, FrozenVec],
         mat: str = 'tools/toolsnodraw',
     ) -> PrismFace:
         """Create an axis-aligned brush connecting the two points.
@@ -835,10 +835,7 @@ class VMF:
         faces, as well as the solid.
         All faces will be textured with 'mat'.
         """
-        b_min = Vec(p1)
-        b_max = Vec(p1)
-        b_min.min(p2)
-        b_max.max(p2)
+        b_min, b_max = Vec.bbox(p1, p2)
 
         # Sanity check - all dimensions must be different, otherwise we'll
         # have an invalid zero-thick brush.
@@ -940,8 +937,8 @@ class VMF:
 
     def make_hollow(
         self,
-        p1: Vec,
-        p2: Vec,
+        p1: Union[Vec, FrozenVec],
+        p2: Union[Vec, FrozenVec],
         thick: float = 16,
         mat: str = 'tools/toolsnodraw',
         inner_mat: str = '',
