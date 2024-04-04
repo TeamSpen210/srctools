@@ -531,15 +531,15 @@ class Mesh:
         """Write out the SMD to the given file."""
         file.write(b"version 1\nnodes\n")
 
-        # Deconstruct the tree into the original indexes.
+        # Deconstruct the tree into indexes, with parents before children.
         bone_indexes: Dict[Bone, int] = {}
         next_ind = 0
         todo: Set[Bone] = set(self.bones.values())
         while todo:
-            for bone in todo:
+            changed = False
+            for bone in list(todo):
                 if not bone.parent or bone.parent in bone_indexes:
                     bone_indexes[bone] = next_ind
-                    todo.remove(bone)
                     if bone.parent is None:
                         parent_ind = -1
                     else:
@@ -550,10 +550,11 @@ class Mesh:
                         parent_ind,
                     ))
                     next_ind += 1
-                    break
-            else:
+                    todo.remove(bone)
+                    changed = True
+            if not changed:
                 # Every bone had a parent, so it must be a loop somewhere!
-                raise ValueError('Loop in bone parenting!')
+                raise ValueError('Loop in bone parenting! Remaining: {}', list(todo))
 
         file.write(b'end\nskeleton\n')
         for time, frame in sorted(self.animation.items(), key=itemgetter(0)):
