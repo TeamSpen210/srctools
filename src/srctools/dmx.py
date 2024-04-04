@@ -2507,7 +2507,7 @@ def _conv_binary(value: Union[bytes, bytearray, memoryview]) -> bytes:
 def _converter_ntup(typ: Type[ValueT]) -> Callable[[Union[ValueT, Iterable[float]]], ValueT]:
     """Common logic for named-tuple members."""
     def _convert(value: Union[ValueT, Iterable[float]]) -> ValueT:
-        if isinstance(value, typ):  # pyright: ignore
+        if isinstance(value, typ):
             return value
         else:
             return typ._make(value)  # type: ignore

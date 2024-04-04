@@ -1557,7 +1557,7 @@ class EntityDef:
 
     def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> EntityDef:
         """Handle copying ourselves, to eliminate lookups when not required."""
-        copy = EntityDef.__new__(EntityDef)  # pyright: ignore
+        copy = EntityDef.__new__(EntityDef)
         copy.type = self.type
         copy.classname = self.classname
         copy.kv_order = self.kv_order.copy()
