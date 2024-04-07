@@ -545,7 +545,7 @@ class HelperModel(Helper):
             try:
                 models = entity.kv['model'].known_options()
             except KeyError:
-                return []
+                return
         else:
             models = [self.model]
 
