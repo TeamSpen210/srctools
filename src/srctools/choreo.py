@@ -203,6 +203,16 @@ NAME_TO_EVENT_FLAG = {
     'playoverscript': EventFlags.PlayOverScript,
     # Active is not included, works differently.
 }
+NAME_TO_EVENT_TYPE = {
+    event.name.casefold(): event
+    for event in EventType
+}
+# Match to the index in our list for easier parsing.
+PARAM_KEY_INDEXES = {
+    'param': 0,
+    'param2': 1,
+    'paraam3': 2,
+}
 
 
 class CaptionType(enum.Enum):
@@ -293,7 +303,7 @@ class Curve:
     """Scene or event ramp data."""
     BIN_FMT: ClassVar[struct.Struct] = struct.Struct('<fB')
 
-    ramp: List[ExpressionSample]
+    ramp: List[ExpressionSample] = attrs.Factory(list)
     # VCD only
     left: CurveEdge = CurveEdge(False)
     right: CurveEdge = CurveEdge(False)
@@ -462,6 +472,18 @@ def _validate_base_event_type(value: Literal[
             f'event type {value}, use {value.name}Event() instead.'
         )
     return value
+
+
+def _check_event_type(
+    tokenizer: BaseTokenizer, key: str,
+    event: EventType, expected: EventType,
+) -> None:
+    """Raise an error if the event types do not match."""
+    if event is not expected:
+        raise tokenizer.error(
+            'Only {} events can use {}, not {}!',
+            EventType.Gesture.name, key, event.name,
+        )
 
 
 @attrs.define(eq=False, kw_only=True)
@@ -658,6 +680,206 @@ class Event:
                 flags,
             ))
 
+    @classmethod
+    def parse_text(cls, tokenizer: BaseTokenizer) -> Event:
+        """Parse text data. The 'event' string should have already been parsed."""
+        event_type_str = tokenizer.expect(Token.STRING)
+        name = tokenizer.expect(Token.STRING)
+        try:
+            event_type = NAME_TO_EVENT_TYPE[event_type_str.casefold()]
+        except KeyError:
+            raise tokenizer.error('Invalid event type "{}" for event "{}"!', event_type_str, name)
+
+        tokenizer.expect(Token.BRACE_OPEN)
+        flags = EventFlags.Active
+        params = ['', '', '']
+        start_time = 0.0
+        end_time = -1.0
+
+        ramp = Curve()
+        tag_name: str | None = None
+        tag_wav_name: str | None = None
+        dist_to_targ: float = 0
+        default_curve_type = CURVE_DEFAULT
+        pitch = 0.0
+        yaw = 0.0
+
+        rel_tags: list[Tag] = []
+        timing_tags: list[TimingTag] = []
+        abs_playback_tags: list[AbsoluteTag] = []
+        abs_shifted_tags: list[AbsoluteTag] = []
+        flex_anims: list[FlexAnimTrack] = []
+
+        gesture_sequence_duration = 0.0
+        loop_count = -1
+
+        caption_type = CaptionType.Master
+        cc_token = ''
+        suppress_caption_attenuation = False
+        use_combined_file = False
+        use_gender_token = False
+
+        for tok, tok_str in tokenizer:
+            if tok is Token.NEWLINE:
+                continue
+            if tok is Token.BRACE_CLOSE:
+                break
+            if tok is not Token.STRING:
+                raise tokenizer.error(tok, tok_str)
+            folded = tok_str.casefold()
+            if folded == "time":
+                start_str = tokenizer.expect(Token.STRING)
+                end_str = tokenizer.expect(Token.STRING)
+                try:
+                    start_time = float(start_str)
+                    end_time = float(end_str)
+                except ValueError as exc:
+                    raise tokenizer.error(
+                        'Invalid duration values {} {}',
+                        start_str, end_str,
+                    ) from exc
+            elif folded in PARAM_KEY_INDEXES:
+                params[PARAM_KEY_INDEXES[folded]] = tokenizer.expect(Token.STRING, skip_newline=False)
+            elif folded in NAME_TO_EVENT_FLAG:
+                flags |= NAME_TO_EVENT_FLAG[folded]
+            elif folded == "active":
+                if conv_bool(tokenizer.expect(Token.STRING, skip_newline=False)):
+                    flags |= EventFlags.Active
+                else:
+                    flags &= ~EventFlags.Active
+            elif folded == "pitch":
+                pitch = conv_int(tokenizer.expect(Token.STRING, skip_newline=False))
+            elif folded == "yaw":
+                yaw = conv_int(tokenizer.expect(Token.STRING, skip_newline=False))
+            elif folded == "distancetotarget":
+                dist_to_targ = conv_float(tokenizer.expect(Token.STRING, skip_newline=False))
+            elif folded == "relativetag":
+                tag_name = tokenizer.expect(Token.STRING, skip_newline=False)
+                tag_wav_name = tokenizer.expect(Token.STRING, skip_newline=False)
+            elif folded == "sequenceduration":
+                _check_event_type(tokenizer, folded, event_type, EventType.Gesture)
+                gesture_sequence_duration = conv_float(tokenizer.expect(Token.STRING, skip_newline=False))
+            elif folded == "loopcount":
+                _check_event_type(tokenizer, folded, event_type, EventType.Loop)
+                loop_count = conv_int(tokenizer.expect(Token.STRING, skip_newline=False))
+            elif folded == "cctype":
+                _check_event_type(tokenizer, folded, event_type, EventType.Speak)
+                cc_type_str = tokenizer.expect(Token.STRING, skip_newline=False)
+                try:
+                    caption_type = CaptionType(cc_type_str)
+                except ValueError as exc:
+                    raise tokenizer.error('Invalid caption type "{}"', cc_type_str) from exc
+            elif folded == "cctoken":
+                _check_event_type(tokenizer, folded, event_type, EventType.Speak)
+                cc_token = tokenizer.expect(Token.STRING, skip_newline=False)
+            elif folded == "cc_usingcombinedfile":
+                _check_event_type(tokenizer, folded, event_type, EventType.Speak)
+                use_combined_file = True
+            elif folded == "cc_combinedusesgender":
+                _check_event_type(tokenizer, folded, event_type, EventType.Speak)
+                use_gender_token = True
+            elif folded == "cc_noattenuate":
+                _check_event_type(tokenizer, folded, event_type, EventType.Speak)
+                suppress_caption_attenuation = True
+            elif folded == "tags":
+                raise NotImplementedError  # TODO
+            elif folded == "absolutetags":
+                raise NotImplementedError  # TODO
+            elif folded == "flextimingtags":
+                raise NotImplementedError  # TODO
+            elif folded == "flexanimations":
+                raise NotImplementedError  # TODO
+            elif folded == "event_ramp":
+                raise NotImplementedError  # TODO
+            else:
+                raise tokenizer.error('Unknown event keyvalue "{}"!', tok_str)
+        else:
+            raise tokenizer.error(Token.EOF)
+
+        param_tup = tuple(params)
+        assert len(param_tup) == 3
+
+        # Pick the appropriate type.
+        if event_type is EventType.Gesture:
+            return GestureEvent(
+                name=name,
+                start_time=start_time,
+                end_time=end_time,
+                parameters=param_tup,
+                ramp=ramp,
+                flags=EventFlags(flags),
+                dist_to_targ=dist_to_targ,
+                relative_tags=rel_tags,
+                timing_tags=timing_tags,
+                flex_anim_tracks=flex_anims,
+                absolute_playback_tags=abs_playback_tags,
+                absolute_shifted_tags=abs_shifted_tags,
+                tag_name=tag_name,
+                tag_wav_name=tag_wav_name,
+
+                gesture_sequence_duration=gesture_sequence_duration,
+            )
+        elif event_type is EventType.Loop:
+            return LoopEvent(
+                name=name,
+                start_time=start_time,
+                end_time=end_time,
+                parameters=param_tup,
+                ramp=ramp,
+                flags=EventFlags(flags),
+                dist_to_targ=dist_to_targ,
+                relative_tags=rel_tags,
+                timing_tags=timing_tags,
+                flex_anim_tracks=flex_anims,
+                absolute_playback_tags=abs_playback_tags,
+                absolute_shifted_tags=abs_shifted_tags,
+                tag_name=tag_name,
+                tag_wav_name=tag_wav_name,
+
+                loop_count=loop_count,
+            )
+        elif event_type is EventType.Speak:
+            return SpeakEvent(
+                name=name,
+                start_time=start_time,
+                end_time=end_time,
+                parameters=param_tup,
+                ramp=ramp,
+                flags=EventFlags(flags),
+                dist_to_targ=dist_to_targ,
+                relative_tags=rel_tags,
+                timing_tags=timing_tags,
+                flex_anim_tracks=flex_anims,
+                absolute_playback_tags=abs_playback_tags,
+                absolute_shifted_tags=abs_shifted_tags,
+                tag_name=tag_name,
+                tag_wav_name=tag_wav_name,
+
+                cc_token=cc_token,
+                caption_type=caption_type,
+                suppress_caption_attenuation=suppress_caption_attenuation,
+                use_gender_token=use_gender_token,
+                use_combined_file=use_combined_file,
+            )
+        else:
+            return Event(
+                type=event_type,
+                name=name,
+                start_time=start_time,
+                end_time=end_time,
+                parameters=param_tup,
+                ramp=ramp,
+                flags=EventFlags(flags),
+                dist_to_targ=dist_to_targ,
+                relative_tags=rel_tags,
+                timing_tags=timing_tags,
+                flex_anim_tracks=flex_anims,
+                absolute_playback_tags=abs_playback_tags,
+                absolute_shifted_tags=abs_shifted_tags,
+                tag_name=tag_name,
+                tag_wav_name=tag_wav_name,
+            )
+
     def export_text(self, file: IO[str], indent: str) -> None:
         """Write this to a text VCD file."""
         file.write(f'{indent}event {self.type.name.lower()} "{escape_text(self.name)}"\n')
@@ -679,6 +901,8 @@ class Event:
         for text, flag in NAME_TO_EVENT_FLAG.items():
             if flag in self.flags:
                 file.write(f'{indent} {text}\n')
+        # Active takes a bool to indicate if enabled/disabled. It starts enabled, so only write
+        # if unset present.
         if EventFlags.Active not in self.flags:
             file.write(f'{indent} active 0\n')
         Tag.export_text(file, indent, self.relative_tags, 'tags')
@@ -698,7 +922,7 @@ class Event:
         if self.flex_anim_tracks:
             if self.default_curve_type != CURVE_DEFAULT:
                 default_curve = self.default_curve_type
-                curve = f'defaultcurvetype={self.default_curve_type}'
+                curve = f' defaultcurvetype={self.default_curve_type}'
             else:
                 default_curve = CURVE_DEFAULT
                 curve = ''
@@ -748,6 +972,7 @@ class SpeakEvent(Event):
 
 @attrs.define(eq=False)
 class Channel:
+    """A channel defines a set of events that an actor performs."""
     name: str
     active: bool = True
     events: List[Event] = attrs.Factory(list)
@@ -763,6 +988,28 @@ class Channel:
         ]
         active = file.read(1) != b'\x00'
         return cls(name, active, events)
+
+    @classmethod
+    def parse_text(cls, tokenizer: BaseTokenizer) -> Self:
+        """Parse text data. The 'channnel' string should have already been parsed."""
+        name = tokenizer.expect(Token.STRING)
+        channel = cls(name)
+        tokenizer.expect(Token.BRACE_OPEN)
+        for tok, tok_str in tokenizer:
+            if tok is Token.NEWLINE:
+                continue
+            if tok is Token.BRACE_CLOSE:
+                return channel
+            if tok is not Token.STRING:
+                raise tokenizer.error(tok, tok_str)
+            folded = tok_str.casefold()
+            if folded == "event":
+                channel.events.append(Event.parse_text(tokenizer))
+            elif folded == "active":
+                channel.active = conv_bool(tokenizer.expect(Token.STRING))
+            else:
+                raise tokenizer.error('Unknown channel keyvalue "{}"!', tok_str)
+        raise tokenizer.error(Token.EOF)
 
     def export_binary(self, file: IO[bytes], add_to_pool: Callable[[str], int]) -> None:
         """Write this to a binary BVCD block."""
