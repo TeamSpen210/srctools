@@ -297,6 +297,21 @@ class CurveEdge:
     zero_pos: float = 0.0
     curve_type: CurveType = CURVE_DEFAULT
 
+    @classmethod
+    def parse_text(cls, tokenizer: BaseTokenizer) -> Self:
+        """Parse text data. The leftedge/rightedge string should have already been parsed."""
+        curve_str = tokenizer.expect(Token.STRING, skip_newline=False)
+        try:
+            curve_type = CurveType.parse_text(curve_str)
+        except ValueError:
+            raise tokenizer.error('Invalid curve type "{}"!', curve_str) from None
+        zero_str = tokenizer.expect(Token.STRING, skip_newline=False)
+        try:
+            zero_pos = float(zero_str)
+        except ValueError as exc:
+            raise tokenizer.error('Invalid curve zero "{}"', zero_str) from exc
+        return cls(True, zero_pos, curve_type)
+
 
 @attrs.define
 class Curve:
@@ -324,6 +339,56 @@ class Curve:
         for sample in self.ramp:
             value = min(255, max(0, round(sample.value * 255.0)))
             file.write(self.BIN_FMT.pack(sample.time, value))
+
+    @classmethod
+    def parse_text(cls, tokenizer: BaseTokenizer) -> Self:
+        """Parse text data. The 'ramp' string should have already been parsed."""
+        tok, tok_val = tokenizer()
+        if tok is Token.STRING and tok_val == "leftedge":
+            left = CurveEdge.parse_text(tokenizer)
+            tok, tok_val = tokenizer()
+        else:
+            left = CurveEdge(False)
+        if tok is Token.STRING and tok_val == "rightedge":
+            right = CurveEdge.parse_text(tokenizer)
+            tok, tok_val = tokenizer()
+        else:
+            right = CurveEdge(False)
+        tokenizer.push_back(tok, tok_val)
+        tokenizer.expect(Token.BRACE_OPEN)
+
+        ramp: list[ExpressionSample] = []
+
+        for tok, tok_val in tokenizer:
+            if tok is Token.BRACE_CLOSE:
+                return cls(ramp, left, right)
+            elif tok is Token.NEWLINE:
+                continue
+            elif tok is not Token.STRING:
+                raise tokenizer.error(tok, tok_val)
+            try:
+                time = float(tok_val)
+            except ValueError as exc:
+                raise tokenizer.error('Invalid ramp time {}', tok_val) from exc
+            value_str = tokenizer.expect(Token.STRING, skip_newline=False)
+            try:
+                value = float(value_str)
+            except ValueError as exc:
+                raise tokenizer.error('Invalid ramp time {}', value_str) from exc
+            curve_tok, curve_str = tokenizer()
+            if curve_tok is Token.STRING:
+                try:
+                    curve_type = CurveType.parse_text(curve_str)
+                except ValueError:
+                    raise tokenizer.error('Invalid curve type "{}"!', curve_str) from None
+            elif curve_tok is Token.NEWLINE:
+                # Default
+                curve_type = CURVE_DEFAULT
+            else:
+                raise tokenizer.error(curve_tok, curve_str)
+            ramp.append(ExpressionSample(time, value, curve_type))
+        else:
+            raise tokenizer.error(Token.EOF)
 
     def export_text(self, file: IO[str], indent: str, name: str) -> None:
         """Write this to a text VCD file."""
@@ -790,7 +855,7 @@ class Event:
             elif folded == "flexanimations":
                 raise NotImplementedError  # TODO
             elif folded == "event_ramp":
-                raise NotImplementedError  # TODO
+                ramp = Curve.parse_text(tokenizer)
             else:
                 raise tokenizer.error('Unknown event keyvalue "{}"!', tok_str)
         else:
