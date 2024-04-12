@@ -5,7 +5,7 @@ from typing import (
     Callable, ClassVar, Final, Iterable, Iterator, List, IO,
     NewType, Dict, Optional, Tuple, Union,
 )
-from typing_extensions import Literal, Self, TypeAlias
+from typing_extensions import Literal, Self, TypeAlias, assert_never
 
 from io import BytesIO
 import enum
@@ -58,7 +58,19 @@ class Entry:
     last_speak_ms: int  # Time at which the last voice line ends.
     sounds: List[str]  # List of sounds it uses.
     # Either an already parsed scene, or the raw bytes plus the whole string pool.
-    _data: Union[Scene, Tuple[bytes, List[str]]] = attrs.field(repr=False)
+    _data: Union[Scene, Tuple[bytes, List[str]]] = attrs.field(repr=False, alias='data')
+
+    @classmethod
+    def from_scene(cls, filename: str, scene: Scene) -> Self:
+        """Produce an entry from an existing scene."""
+        return cls(
+            filename=filename,
+            checksum=CRC(0),  # Immediately recalculated by the validator.
+            duration_ms=round(scene.duration() * 1000.0),
+            last_speak_ms=round(scene.duration(EventType.Speak) * 1000.0),
+            sounds=sorted(set(scene.used_sounds())),
+            data=scene,
+        )
 
     @property
     def duration(self) -> float:
@@ -198,6 +210,13 @@ class EventFlags(enum.Flag):
     PlayOverScript = 1 << 5
 
 
+class CaptionType(enum.Enum):
+    """Kind of closed captions."""
+    Master = 0
+    Slave = 1
+    Disabled = 2
+
+
 NAME_TO_EVENT_FLAG = {
     'resumecondition': EventFlags.ResumeCondition,
     'lockbodyfacing': EventFlags.LockBodyFacing,
@@ -216,13 +235,11 @@ PARAM_KEY_INDEXES = {
     'param2': 1,
     'paraam3': 2,
 }
-
-
-class CaptionType(enum.Enum):
-    """Kind of closed captions."""
-    Master = 0
-    Slave = 1
-    Disabled = 2
+CAPTION_TYPES = {
+    'cc_master': CaptionType.Master,
+    'cc_slave': CaptionType.Slave,
+    'cc_disabled': CaptionType.Disabled,
+}
 
 
 @attrs.define
@@ -569,7 +586,7 @@ class Event:
     flags: EventFlags = EventFlags(0)
     parameters: tuple[str, str, str]
     start_time: float
-    end_time: float
+    end_time: float = -1.0
 
     ramp: Curve
     tag_name: Optional[str] = None
@@ -586,6 +603,11 @@ class Event:
     default_curve_type: CurveType = CURVE_DEFAULT
     pitch: int = 0
     yaw: int = 0
+
+    @property
+    def has_end_time(self) -> bool:
+        """Events have no end time if they are set to -1."""
+        return self.end_time != -1.0
 
     @classmethod
     def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Event:
@@ -834,9 +856,9 @@ class Event:
                 _check_event_type(tokenizer, folded, event_type, EventType.Speak)
                 cc_type_str = tokenizer.expect(Token.STRING, skip_newline=False)
                 try:
-                    caption_type = CaptionType(cc_type_str)
-                except ValueError as exc:
-                    raise tokenizer.error('Invalid caption type "{}"', cc_type_str) from exc
+                    caption_type = CAPTION_TYPES[cc_type_str.casefold()]
+                except KeyError:
+                    raise tokenizer.error('Invalid caption type "{}"', cc_type_str) from None
             elif folded == "cctoken":
                 _check_event_type(tokenizer, folded, event_type, EventType.Speak)
                 cc_token = tokenizer.expect(Token.STRING, skip_newline=False)
@@ -1040,6 +1062,20 @@ class SpeakEvent(Event):
     suppress_caption_attenuation: bool = False
     use_combined_file: bool = False
     use_gender_token: bool = False
+
+    def playback_caption(self) -> Optional[str]:
+        """Return the caption token to use, if this event should display one."""
+        if self.caption_type is CaptionType.Disabled:
+            return None
+        elif self.caption_type is CaptionType.Master:
+            return self.cc_token or self.parameters[0]
+        elif self.caption_type is CaptionType.Slave:
+            if self.use_combined_file:
+                return None
+            else:
+                return self.cc_token or self.parameters[0]
+        else:
+            assert_never(self.caption_type)
 
 
 @attrs.define(eq=False)
@@ -1258,7 +1294,7 @@ class Scene:
             elif folded == "scalesettings":
                 pass
             else:
-                raise tokenizer.error('Unknown scene option "{}"!', tok_val)
+                raise tokenizer.error('Unknown scene option "{!r}"!', tok_val)
 
         # TODO: post-processing
 
@@ -1289,6 +1325,41 @@ class Scene:
             file.write('snap on\n')
         if self.ignore_phonemes:
             file.write('ignorePhonemes on\n')
+
+    def iter_events(self, type_filter: EventType | None = None) -> Iterator[Event]:
+        """Iterate over all events, including those in actors.
+
+        If a filter is provided, only events of that type are produced.
+        """
+        def iterate() -> Iterator[Event]:
+            """Iterate over events."""
+            yield from self.events
+            for actor in self.actors:
+                for channel in actor.channels:
+                    yield from channel.events
+        if type_filter is None:
+            return iterate()
+        else:
+            return (event for event in iterate() if event.type is type_filter)
+
+    def duration(self, type_filter: EventType | None = None) -> float:
+        """Calculate the duration of the events in the scene.
+
+        If a filter is provided, only those events are accepted.
+        """
+        return max((
+            event.end_time if event.has_end_time else event.start_time
+            for event in self.iter_events(type_filter)
+        ), default=0.0)
+
+    def used_sounds(self) -> Iterator[str]:
+        """Yield sounds used by events."""
+        for event in self.iter_events():
+            if isinstance(event, SpeakEvent):
+                yield event.parameters[0]
+                caption = event.playback_caption()
+                if caption is not None:
+                    yield caption
 
 
 def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
