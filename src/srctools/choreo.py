@@ -14,8 +14,8 @@ import re
 
 import attrs
 
-from srctools import binformat
-from srctools.tokenizer import BaseTokenizer, escape_text
+from srctools import binformat, conv_bool, conv_int, conv_float
+from srctools.tokenizer import BaseTokenizer, Token, escape_text
 
 
 CRC = NewType('CRC', int)
@@ -802,6 +802,30 @@ class Actor:
         ]
         active = file.read(1) != b'\x00'
         return cls(name, active, channels)
+
+    @classmethod
+    def parse_text(cls, tokenizer: BaseTokenizer) -> Self:
+        """Parse text data. The 'actor' string should have already been parsed."""
+        name = tokenizer.expect(Token.STRING)
+        actor = cls(name)
+        tokenizer.expect(Token.BRACE_OPEN)
+        for tok, tok_str in tokenizer:
+            if tok is Token.NEWLINE:
+                continue
+            if tok is Token.BRACE_CLOSE:
+                return actor
+            if tok is not Token.STRING:
+                raise tokenizer.error(tok, tok_str)
+            folded = tok_str.casefold()
+            if folded == "channel":
+                actor.channels.append(Channel.parse_text(tokenizer))
+            elif folded == "faceposermodel":
+                actor.faceposer_model = tokenizer.expect(Token.STRING)
+            elif folded == "active":
+                actor.active = conv_bool(tokenizer.expect(Token.STRING))
+            else:
+                raise tokenizer.error('Unknown actor keyvalue "{}"!', tok_str)
+        raise tokenizer.error(Token.EOF)
 
     def export_binary(self, file: IO[bytes], add_to_pool: Callable[[str], int]) -> None:
         """Write this to a binary BVCD block."""
