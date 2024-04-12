@@ -2,8 +2,8 @@
 from __future__ import annotations
 
 from typing import (
-    Callable, ClassVar, Final, Iterable, List, IO, NewType, Dict, Optional, Tuple,
-    Union,
+    Callable, ClassVar, Final, Iterable, Iterator, List, IO,
+    NewType, Dict, Optional, Tuple, Union,
 )
 from typing_extensions import Literal, Self, TypeAlias
 
@@ -241,7 +241,7 @@ class Tag:
     value: float = attrs.field(validator=[attrs.validators.ge(0.0), attrs.validators.le(1.0)])
 
     @classmethod
-    def parse(cls, file: IO[bytes], string_pool: List[str], double: bool) -> List[Self]:
+    def parse_binary(cls, file: IO[bytes], string_pool: List[str], double: bool) -> List[Self]:
         """Parse a list of tags from the file. If double is set, the value is 16-bit not 8-bit."""
         [tag_count] = file.read(1)
         tags = []
@@ -258,6 +258,21 @@ class Tag:
             value = min(cls._MAX, max(0, round(tag.value * cls._FACTOR)))
             file.write(cls._FMT.pack(add_to_pool(tag.name), value))
             # Timing tags do not save the locked state.
+
+    @classmethod
+    def parse_text(cls, tokenizer: BaseTokenizer) -> Iterator[Self]:
+        """Parse a list of tags from a text file."""
+        for name in tokenizer.block('Tags', True):
+            value_str = tokenizer.expect(Token.STRING, skip_newline=False)
+            try:
+                value = float(value_str)
+            except ValueError as exc:
+                raise tokenizer.error('Invalid tag amount "{}"!', value_str) from exc
+            if cls is TimingTag:
+                locked = conv_bool(tokenizer.expect(Token.STRING, skip_newline=False))
+                yield cls(name, value, locked)  # type: ignore
+            else:
+                yield cls(name, value)
 
     @classmethod
     def export_text(cls, file: IO[str], indent: str, tags: List[Self], block_name: str) -> None:
@@ -581,10 +596,10 @@ class Event:
         ramp = Curve.parse_binary(file)
         [flags, dist_to_targ] = binformat.struct_read('<Bf', file)
 
-        rel_tags = Tag.parse(file, string_pool, False)
-        timing_tags = TimingTag.parse(file, string_pool, False)
-        abs_playback_tags = AbsoluteTag.parse(file, string_pool, True)
-        abs_shifted_tags = AbsoluteTag.parse(file, string_pool, True)
+        rel_tags = Tag.parse_binary(file, string_pool, False)
+        timing_tags = TimingTag.parse_binary(file, string_pool, False)
+        abs_playback_tags = AbsoluteTag.parse_binary(file, string_pool, True)
+        abs_shifted_tags = AbsoluteTag.parse_binary(file, string_pool, True)
 
         if event_type is EventType.Gesture:
             [gesture_sequence_duration] = binformat.struct_read('<f', file)
@@ -832,11 +847,17 @@ class Event:
                 _check_event_type(tokenizer, folded, event_type, EventType.Speak)
                 suppress_caption_attenuation = True
             elif folded == "tags":
-                raise NotImplementedError  # TODO
+                rel_tags.extend(Tag.parse_text(tokenizer))
             elif folded == "absolutetags":
-                raise NotImplementedError  # TODO
+                abs_kind = tokenizer.expect(Token.STRING, skip_newline=False).casefold()
+                if abs_kind == "playback_time":
+                    abs_playback_tags.extend(AbsoluteTag.parse_text(tokenizer))
+                elif abs_kind == "shifted_time":
+                    abs_shifted_tags.extend(AbsoluteTag.parse_text(tokenizer))
+                else:
+                    raise tokenizer.error('Unknown absolute tag type "{}"!', abs_kind)
             elif folded == "flextimingtags":
-                raise NotImplementedError  # TODO
+                timing_tags.extend(TimingTag.parse_text(tokenizer))
             elif folded == "flexanimations":
                 raise NotImplementedError  # TODO
             elif folded == "event_ramp":
