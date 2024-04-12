@@ -355,21 +355,13 @@ class Curve:
         else:
             right = CurveEdge(False)
         tokenizer.push_back(tok, tok_val)
-        tokenizer.expect(Token.BRACE_OPEN)
-
         ramp: list[ExpressionSample] = []
 
-        for tok, tok_val in tokenizer:
-            if tok is Token.BRACE_CLOSE:
-                return cls(ramp, left, right)
-            elif tok is Token.NEWLINE:
-                continue
-            elif tok is not Token.STRING:
-                raise tokenizer.error(tok, tok_val)
+        for time_str in tokenizer.block('Ramp', consume_brace=True):
             try:
-                time = float(tok_val)
+                time = float(time_str)
             except ValueError as exc:
-                raise tokenizer.error('Invalid ramp time {}', tok_val) from exc
+                raise tokenizer.error('Invalid ramp time {}', time_str) from exc
             value_str = tokenizer.expect(Token.STRING, skip_newline=False)
             try:
                 value = float(value_str)
@@ -387,8 +379,8 @@ class Curve:
             else:
                 raise tokenizer.error(curve_tok, curve_str)
             ramp.append(ExpressionSample(time, value, curve_type))
-        else:
-            raise tokenizer.error(Token.EOF)
+
+        return cls(ramp, left, right)
 
     def export_text(self, file: IO[str], indent: str, name: str) -> None:
         """Write this to a text VCD file."""
@@ -755,7 +747,6 @@ class Event:
         except KeyError:
             raise tokenizer.error('Invalid event type "{}" for event "{}"!', event_type_str, name)
 
-        tokenizer.expect(Token.BRACE_OPEN)
         flags = EventFlags.Active
         params = ['', '', '']
         start_time = 0.0
@@ -784,14 +775,8 @@ class Event:
         use_combined_file = False
         use_gender_token = False
 
-        for tok, tok_str in tokenizer:
-            if tok is Token.NEWLINE:
-                continue
-            if tok is Token.BRACE_CLOSE:
-                break
-            if tok is not Token.STRING:
-                raise tokenizer.error(tok, tok_str)
-            folded = tok_str.casefold()
+        for key_name in tokenizer.block('Event', consume_brace=True):
+            folded = key_name.casefold()
             if folded == "time":
                 start_str = tokenizer.expect(Token.STRING)
                 end_str = tokenizer.expect(Token.STRING)
@@ -857,9 +842,7 @@ class Event:
             elif folded == "event_ramp":
                 ramp = Curve.parse_text(tokenizer)
             else:
-                raise tokenizer.error('Unknown event keyvalue "{}"!', tok_str)
-        else:
-            raise tokenizer.error(Token.EOF)
+                raise tokenizer.error('Unknown event keyvalue "{}"!', key_name)
 
         param_tup = tuple(params)
         assert len(param_tup) == 3
@@ -1059,22 +1042,15 @@ class Channel:
         """Parse text data. The 'channnel' string should have already been parsed."""
         name = tokenizer.expect(Token.STRING)
         channel = cls(name)
-        tokenizer.expect(Token.BRACE_OPEN)
-        for tok, tok_str in tokenizer:
-            if tok is Token.NEWLINE:
-                continue
-            if tok is Token.BRACE_CLOSE:
-                return channel
-            if tok is not Token.STRING:
-                raise tokenizer.error(tok, tok_str)
-            folded = tok_str.casefold()
+        for key_name in tokenizer.block('Channel'):
+            folded = key_name.casefold()
             if folded == "event":
                 channel.events.append(Event.parse_text(tokenizer))
             elif folded == "active":
                 channel.active = conv_bool(tokenizer.expect(Token.STRING))
             else:
-                raise tokenizer.error('Unknown channel keyvalue "{}"!', tok_str)
-        raise tokenizer.error(Token.EOF)
+                raise tokenizer.error('Unknown channel keyvalue "{}"!', key_name)
+        return channel
 
     def export_binary(self, file: IO[bytes], add_to_pool: Callable[[str], int]) -> None:
         """Write this to a binary BVCD block."""
@@ -1120,15 +1096,8 @@ class Actor:
         """Parse text data. The 'actor' string should have already been parsed."""
         name = tokenizer.expect(Token.STRING)
         actor = cls(name)
-        tokenizer.expect(Token.BRACE_OPEN)
-        for tok, tok_str in tokenizer:
-            if tok is Token.NEWLINE:
-                continue
-            if tok is Token.BRACE_CLOSE:
-                return actor
-            if tok is not Token.STRING:
-                raise tokenizer.error(tok, tok_str)
-            folded = tok_str.casefold()
+        for key_name in tokenizer.block('Actor', True):
+            folded = key_name.casefold()
             if folded == "channel":
                 actor.channels.append(Channel.parse_text(tokenizer))
             elif folded == "faceposermodel":
@@ -1136,8 +1105,8 @@ class Actor:
             elif folded == "active":
                 actor.active = conv_bool(tokenizer.expect(Token.STRING))
             else:
-                raise tokenizer.error('Unknown actor keyvalue "{}"!', tok_str)
-        raise tokenizer.error(Token.EOF)
+                raise tokenizer.error('Unknown actor keyvalue "{}"!', key_name)
+        return actor
 
     def export_binary(self, file: IO[bytes], add_to_pool: Callable[[str], int]) -> None:
         """Write this to a binary BVCD block."""
