@@ -22,6 +22,9 @@ CRC = NewType('CRC', int)
 ScenesImage: TypeAlias = Dict[CRC, 'Entry']
 # Only known binary version.
 BINARY_VERSION: Final = 4
+FPS_MIN: Final = 10
+FPS_MAX: Final = 240
+FPS_DEFAULT: Final = 60
 
 
 def checksum_filename(filename: str) -> CRC:
@@ -1160,14 +1163,11 @@ class Scene:
     # CRC for the original VCD that this scene was parsed from.
     text_crc: int = 0
 
-    # VCD only?
-    # channels: List[Channel] = attrs.Factory(list)
-    # map_name: str = ''
-    # fps: int = 0
-    # time_zoom_lookup: Dict[int, int] = attrs.Factory(dict)
-    # is_background: bool = False
-    # is_sub_scene: bool = False
-    # use_frame_snap: bool = False
+    # Text VCD only.
+    map_name: str = ''
+    fps: int = FPS_DEFAULT
+    time_zoom_lookup: Dict[int, int] = attrs.Factory(dict)
+    use_frame_snap: bool = False
 
     @classmethod
     def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Self:
@@ -1214,6 +1214,65 @@ class Scene:
         file.write(b'\x01' if self.ignore_phonemes else b'\x00')
         return file.getvalue()
 
+    @classmethod
+    def parse_text(cls, tokenizer: BaseTokenizer) -> Self:
+        """Parse a scene from a text VCD file.
+
+        This does not calculate the CRC value.
+        """
+        events: list[Event] = []
+        actors: list[Actor] = []
+        time_zoom_lookup: dict[int, int] = {}
+        ramp = Curve()
+        ignore_phonemes = False
+        map_name = ''
+        fps = FPS_DEFAULT
+        use_frame_snap = False
+
+        for tok, tok_val in tokenizer.skipping_newlines():
+            if tok is not Token.STRING:
+                raise tokenizer.error(tok, tok_val)
+            folded = tok_val.casefold()
+            if folded == "event":
+                events.append(Event.parse_text(tokenizer))
+            elif folded == "actor":
+                actors.append(Actor.parse_text(tokenizer))
+            elif folded == "scene_ramp":
+                ramp = Curve.parse_text(tokenizer)
+            elif folded == "map_name":
+                map_name = tokenizer.expect(Token.STRING, skip_newline=False)
+            elif folded == "fps":
+                fps_str = tokenizer.expect(Token.STRING, skip_newline=False)
+                try:
+                    fps = int(fps_str)
+                except ValueError as exc:
+                    raise tokenizer.error('Invalid FPS value "{}"!', fps_str) from exc
+                if fps < FPS_MIN:
+                    fps = FPS_MIN
+                if fps > FPS_MAX:
+                    fps = FPS_MAX
+            elif folded == "snap":
+                use_frame_snap = tokenizer.expect(Token.STRING, skip_newline=False).casefold() == "on"
+            elif folded == "ignorephonemes":
+                ignore_phonemes = tokenizer.expect(Token.STRING, skip_newline=False).casefold() == "on"
+            elif folded == "scalesettings":
+                pass
+            else:
+                raise tokenizer.error('Unknown scene option "{}"!', tok_val)
+
+        # TODO: post-processing
+
+        return cls(
+            events=events,
+            actors=actors,
+            ramp=ramp,
+            ignore_phonemes=ignore_phonemes,
+            map_name=map_name,
+            fps=fps,
+            time_zoom_lookup=time_zoom_lookup,
+            use_frame_snap=use_frame_snap,
+        )
+
     def export_text(self, file: IO[str]) -> None:
         """Write this to a text VCD file."""
         file.write('// Choreo version 1\n')
@@ -1222,6 +1281,14 @@ class Scene:
         for actor in self.actors:
             actor.export_text(file, '')
         self.ramp.export_text(file, '', 'scene_ramp')
+        if self.map_name:
+            file.write(f'map_name "{escape_text(self.map_name)}"\n')
+        if self.fps != FPS_DEFAULT:
+            file.write(f'fps {self.fps}\n')
+        if self.use_frame_snap:
+            file.write('snap on\n')
+        if self.ignore_phonemes:
+            file.write('ignorePhonemes on\n')
 
 
 def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
