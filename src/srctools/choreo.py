@@ -1446,7 +1446,7 @@ def save_scenes_image(
     if pool is None:
         pool = []
 
-    add_to_pool = binformat.find_or_insert(pool)
+    add_to_pool = binformat.find_or_insert(pool, lambda x: x)
     deferred = binformat.DeferredWrites(file)
 
     # Now, go through every scene, writing their data so our pool is filled.
@@ -1469,7 +1469,7 @@ def save_scenes_image(
     deferred.defer('scene_offset', '<i', write=True)
     # Defer the block of offsets, write the strings, then come back.
     pool_offset_size = len(pool) * binformat.SIZE_INT
-    deferred.defer('pool_offsets', f'<{len(pool)}s', write=True)
+    deferred.defer('pool_offsets', f'<{pool_offset_size}s', write=True)
     offsets = []
     for string in pool:
         offsets.append(file.tell())
