@@ -785,7 +785,10 @@ class Event:
         try:
             event_type = NAME_TO_EVENT_TYPE[event_type_str.casefold()]
         except KeyError:
-            raise tokenizer.error('Invalid event type "{}" for event "{}"!', event_type_str, name)
+            raise tokenizer.error(
+                'Invalid event type "{}" for event "{}"!',
+                event_type_str, name,
+            ) from None
 
         flags = EventFlags.Active
         params = ['', '', '']
@@ -1374,7 +1377,7 @@ def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
     if magic != b'VSIF':
         raise ValueError("Invalid scenes.image!")
     if version not in (2, 3):
-        raise ValueError("Unknown version {}!".format(version))
+        raise ValueError(f"Unknown version {version}!")
 
     string_pool = binformat.read_offset_array(file, string_count, 'latin1')
     scenes: ScenesImage = {}
@@ -1398,7 +1401,7 @@ def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
             last_speak = duration  # Assume it's the whole choreo scene.
         sounds = [
             string_pool[i]
-            for i in binformat.struct_read('<{}i'.format(sound_count), file)
+            for i in binformat.struct_read(f'<{sound_count}i', file)
         ]
         file.seek(data_off)
         data = binformat.decompress_lzma(file.read(data_size))

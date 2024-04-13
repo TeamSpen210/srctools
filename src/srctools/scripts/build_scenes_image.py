@@ -1,6 +1,5 @@
 """Builds a ``scenes.image`` file. Unlike the original this allows merging into an existing image."""
 import argparse
-import io
 import sys
 from pathlib import Path
 from typing import List, Literal, cast
@@ -60,7 +59,9 @@ def load_scene(root: Path, filename: Path, encoding: str) -> Entry:
     """Load a single scene."""
     data = filename.read_bytes()
     scene = Scene.parse_text(Tokenizer(data.decode(encoding), filename))
-    return Entry.from_scene(str(filename.relative_to(root)), scene)
+    scene.text_crc = checksum(data)
+    entry = Entry.from_scene(filename.relative_to(root).as_posix(), scene)
+    return entry
 
 
 def main(args: List[str]) -> None:
@@ -71,8 +72,8 @@ def main(args: List[str]) -> None:
     for filename in opts.input:
         if filename.is_dir():
             for scene_file in filename.rglob("scenes/**/*.vcd"):
-                print(f'Adding VCD {scene_file}')
                 scene = load_scene(filename, scene_file, opts.encoding)
+                print(f'Adding VCD {scene.filename}')
                 if opts.require_unique and scene.checksum in scenes:
                     raise ValueError(f'Duplicate copy of "{scene.filename}" provided: {filename}')
                 scenes[scene.checksum] = scene
@@ -89,17 +90,17 @@ def main(args: List[str]) -> None:
                         )
                     scenes[scene.checksum] = scene
             except Exception as exc:
-                raise IOError(f'Failed to parse {filename}:') from exc
+                raise ValueError(f'Failed to parse {filename}:') from exc
         else:
             raise ValueError(f'Unrecognised file "{filename}"')
 
         print(f'{len(scenes)} scenes. Writing {opts.output}')
-        with opts.output.open('wb') as f2:
-            save_scenes_image(
-                f2, scenes,
-                version=opts.version,
-                encoding=opts.encoding,
-            )
+    with opts.output.open('wb') as f2:
+        save_scenes_image(
+            f2, scenes,
+            version=opts.version,
+            encoding=opts.encoding,
+        )
 
 if __name__ == '__main__':
     main(sys.argv[1:])
