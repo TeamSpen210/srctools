@@ -69,7 +69,7 @@ cdef:
 
 # Characters not allowed for bare names on a line.
 # TODO: Make this an actual constant value, but that won't do the switch optimisation.
-DEF BARE_DISALLOWED = b'"\'{};,=+[]()\n\t '
+DEF BARE_DISALLOWED = b'"\'{};,=+[]()\r\n\t '
 
 # Pack flags into a bitfield.
 cdef extern from *:

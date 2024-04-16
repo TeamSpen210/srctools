@@ -106,7 +106,7 @@ prop_parse_tokens = [
 noprop_parse_test = """
 #letter_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ
 #ﬁmport test
-#EXclßÀde value
+#EXclßÀde value\r
 #caseA\u0345\u03a3test
 { ]]{ }}}[[ {{] + = "test" + "ing" == vaLUE= 4+6
 """

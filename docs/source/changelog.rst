@@ -9,6 +9,7 @@ Changelog
 Version (dev)
 --------------
 * Allow passing :py:class:`~srctools.math.FrozenVec` to :py:meth:`VMF.make_prism() <srctools.vmf.VMF.make_prism>`/:py:meth:`~srctools.vmf.VMF.make_hollow`.
+* Fix bare strings on the end of CRLF lines eating the ``\r``.
 
 --------------
 Version 2.3.17
