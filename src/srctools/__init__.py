@@ -182,6 +182,10 @@ BOOL_LOOKUP: Final[Mapping[str, bool]] = {
 }
 
 
+@overload
+def conv_bool(val: Union[str, bool, None]) -> bool: ...
+@overload
+def conv_bool(val: Union[str, bool, None], default: ValT) -> Union[ValT, bool]: ...
 def conv_bool(val: Union[str, bool, None], default: Union[ValT, bool] = False) -> Union[ValT, bool]:
     """Converts a string to a boolean, using a default if it fails.
 
@@ -207,7 +211,10 @@ def conv_bool(val: Union[str, bool, None], default: Union[ValT, bool] = False) -
         except KeyError:
             return default
 
-
+@overload
+def conv_float(val: Union[int, float, str]) -> float: ...
+@overload
+def conv_float(val: Union[int, float, str], default: ValT) -> Union[ValT, float]: ...
 def conv_float(val: Union[int, float, str], default: Union[ValT, float] = 0.0) -> Union[ValT, float]:
     """Converts a string to a float, using a default if it fails.
 
@@ -219,6 +226,10 @@ def conv_float(val: Union[int, float, str], default: Union[ValT, float] = 0.0) -
         return default
 
 
+@overload
+def conv_int(val: Union[int, float, str]) -> int: ...
+@overload
+def conv_int(val: Union[int, float, str], default: ValT) -> Union[ValT, int]: ...
 def conv_int(val: Union[int, float, str], default: Union[ValT, int] = 0) -> Union[ValT, int]:
     """Converts a string to an integer, using a default if it fails.
 
