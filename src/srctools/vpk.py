@@ -352,10 +352,10 @@ class VPK:
             vpk_sig, version, tree_length = struct_read('<III', dirfile)
 
             if vpk_sig != VPK_SIG:
-                raise ValueError('Bad VPK directory signature!')
+                raise ValueError(f'Bad VPK directory signature for VPK "{self.path}"!')
 
             if version not in (1, 2):
-                raise ValueError(f"Bad VPK version {self.version}!")
+                raise ValueError(f'Bad VPK version {self.version} for "{self.path}"!')
 
             self.version = version
 
@@ -392,9 +392,10 @@ class VPK:
                             offset = 0
 
                         if end != 0xffff:
-                            raise Exception(
+                            raise ValueError(
                                 f'"{_join_file_parts(directory, file, ext)}" has bad terminator! '
-                                f'{(crc, index_len, arch_ind, offset, arch_len, end)}'
+                                f'{(crc, index_len, arch_ind, offset, arch_len, end)}\n'
+                                f'Error occurred in file "{self.path}"'
                             )
                         dir_dict[file] = FileInfo(
                             self,
