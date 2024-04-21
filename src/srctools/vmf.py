@@ -23,7 +23,7 @@ import struct
 import attrs
 
 from srctools import BOOL_LOOKUP, EmptyMapping
-from srctools.keyvalues import Keyvalues
+from srctools.keyvalues import Keyvalues, escape_text
 from srctools.math import (
     Angle, AnyAngle, AnyMatrix, AnyVec, FrozenMatrix, FrozenVec, Matrix, Vec,
     format_float, to_matrix,
@@ -1081,22 +1081,16 @@ class Cordon:
 
     def export(self, buffer: IO[str], ind: str = '') -> None:
         """Write the cordon into the VMF."""
-        buffer.write(ind + 'cordon\n')
-        buffer.write(ind + '{\n')
-        buffer.write(ind + '\t"name" "' + self.name + '"\n')
-        buffer.write(ind + '\t"active" "' +
-                     srctools.bool_as_int(self.active) +
-                     '"\n')
-        buffer.write(ind + '\tbox\n')
-        buffer.write(ind + '\t{\n')
-        buffer.write(ind + '\t\t"mins" "(' +
-                     self.bounds_min.join(' ') +
-                     ')"\n')
-        buffer.write(ind + '\t\t"maxs" "(' +
-                     self.bounds_max.join(' ') +
-                     ')"\n')
-        buffer.write(ind + '\t}\n')
-        buffer.write(ind + '}\n')
+        buffer.write(f'{ind}cordon\n')
+        buffer.write(f'{ind}{{\n')
+        buffer.write(f'{ind}\t\"name\" \"{escape_text(self.name)}\"\n')
+        buffer.write(f'{ind}\t\"active\" \"{srctools.bool_as_int(self.active)}\"\n')
+        buffer.write(f'{ind}\tbox\n')
+        buffer.write(f'{ind}\t{{\n')
+        buffer.write(f'{ind}\t\t\"mins\" \"({self.bounds_min})\"\n')
+        buffer.write(f'{ind}\t\t\"maxs\" \"({self.bounds_max})\"\n')
+        buffer.write(f'{ind}\t}}\n')
+        buffer.write(f'{ind}}}\n')
 
     def copy(self) -> 'Cordon':
         """Duplicate this cordon."""
@@ -1151,7 +1145,7 @@ class VisGroup:
         buffer.write(
             f'{ind}visgroup\n'
             f'{ind}{{\n'
-            f'{ind}\t"name" "{self.name}"\n'
+            f'{ind}\t"name" "{escape_text(self.name)}"\n'
             f'{ind}\t"visgroupid" "{self.id}"\n'
             f'{ind}\t"color" "{self.color}"\n'
         )
@@ -1316,16 +1310,16 @@ class Solid:
           inside brush entities.
         """
         if self.hidden:
-            buffer.write(ind + 'hidden\n' + ind + '{\n')
+            buffer.write(f'{ind}hidden\n{ind}{{\n')
             ind += '\t'
-        buffer.write(ind + 'solid\n')
-        buffer.write(ind + '{\n')
-        buffer.write(ind + '\t"id" "' + str(self.id) + '"\n')
+        buffer.write(f'{ind}solid\n')
+        buffer.write(f'{ind}{{\n')
+        buffer.write(f'{ind}\t"id" "{self.id}"\n')
         for s in self.sides:
-            s.export(buffer, ind + '\t', disp_multiblend)
+            s.export(buffer, f'{ind}\t', disp_multiblend)
 
-        buffer.write(ind + '\teditor\n')
-        buffer.write(ind + '\t{\n')
+        buffer.write(f'{ind}\teditor\n')
+        buffer.write(f'{ind}\t{{\n')
         buffer.write(f'{ind}\t\t"color" "{self.editor_color}"\n')
         if include_groups:
             if self.group_id is not None:
@@ -1339,19 +1333,15 @@ class Solid:
         if self.cordon_solid is not None:
             buffer.write(f'{ind}\t\t"cordonsolid" "{self.cordon_solid}"\n')
 
-        buffer.write(ind + '\t}\n')
+        buffer.write(f'{ind}\t}}\n')
 
-        buffer.write(ind + '}\n')
+        buffer.write(f'{ind}}}\n')
         if self.hidden:
-            buffer.write(ind[:-1] + '}\n')
+            buffer.write(f'{ind[:-1]}}}\n')
 
     def __str__(self) -> str:
         """Return a user-friendly description of our data."""
-        st = "<solid:" + str(self.id) + ">\n{\n"
-        for s in self.sides:
-            st += str(s) + "\n"
-        st += "}"
-        return st
+        return ''.join([f'<solid:{self.id}>\n{{', *map(str, self.sides), '}'])
 
     def __iter__(self) -> Iterator['Side']:
         return iter(self.sides)
@@ -1904,8 +1894,8 @@ class Side:
         - disp_multiblend controls whether displacements produce their multiblend
           data (added in CSGO), or if it is skipped.
         """
-        buffer.write(ind + 'side\n')
-        buffer.write(ind + '{\n')
+        buffer.write(f'{ind}side\n')
+        buffer.write(f'{ind}{{\n')
         buffer.write(
             f'{ind}\t"id" "{self.id}"\n'
             f'{ind}\t"plane" "({self.planes[0]}) ({self.planes[1]}) ({self.planes[2]})"\n'
@@ -1919,7 +1909,7 @@ class Side:
         if self.disp_power > 0:
             self._export_displacement(buffer, ind, disp_multiblend)
 
-        buffer.write(ind + '}\n')
+        buffer.write(f'{ind}}}\n')
 
     def _export_displacement(self, buffer: IO[str], ind: str, disp_multiblend: bool) -> None:
         """Export displacement data."""
@@ -2444,7 +2434,7 @@ class Entity(MutableMapping[str, str]):
         buffer.write(ind + '{\n')
         buffer.write(f'{ind}\t"id" "{self.id}"\n')
         for key, value in sorted(self._keys.items(), key=operator.itemgetter(0)):
-            buffer.write(f'{ind}\t"{key}" "{value}"\n')
+            buffer.write(f'{ind}\t"{key}" "{escape_text(value)}"\n')
 
         if self._fixup is not None:
             self._fixup.export(buffer, ind)
@@ -2486,7 +2476,7 @@ class Entity(MutableMapping[str, str]):
             buffer.write(f'{ind}\t\t"logicalpos" "{self.logical_pos}"\n')
 
         if self.comments:
-            buffer.write(f'{ind}\t\t"comments" "{self.comments}"\n')
+            buffer.write(f'{ind}\t\t"comments" "{escape_text(self.comments)}"\n')
         buffer.write(ind + '\t}\n')
 
         buffer.write(ind + '}\n')
@@ -2944,9 +2934,9 @@ class EntityFixup(MutableMapping[str, str]):
     def export(self, buffer: IO[str], ind: str) -> None:
         """Export all the fixup values into the VMF."""
         for fixup in sorted(self._fixup.values(), key=operator.attrgetter('id')):
-            # When exporting, pad the index with zeros if needed
+            # When exporting, pad the index with zeros if necessary
             buffer.write(
-                f'{ind}\t"replace{fixup.id:02}" "${fixup.var} {fixup.value}"\n'
+                f'{ind}\t"replace{fixup.id:02}" "${fixup.var} {escape_text(fixup.value)}"\n'
             )
 
     def __str__(self) -> str:
