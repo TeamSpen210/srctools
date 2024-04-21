@@ -97,6 +97,8 @@ FLAGS_DEFAULT = {
     'win32': True,  # Not actually windows, it actually means 'PC'
     'osx': sys.platform.startswith('darwin'),
     'linux': sys.platform.startswith('linux'),
+    # Not in the SDK, but shows up in compatible games.
+    'deck': 'steamdeck' in os.environ,
 }
 
 
