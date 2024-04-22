@@ -76,7 +76,7 @@ from srctools.math import Vec as _Vec
 from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
 
 
-__all__ = ['KeyValError', 'NoKeyError', 'LeafKeyvalueError', 'Keyvalues']
+__all__ = ['KeyValError', 'NoKeyError', 'LeafKeyvalueError', 'Keyvalues', 'escape_text']
 
 # Sentinel value to indicate that no default was given to find_key()
 _NO_KEY_FOUND = cast(str, object())
