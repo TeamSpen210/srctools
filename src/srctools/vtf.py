@@ -9,7 +9,7 @@ To compress to DXT formats, this uses the `libsquish`_ library.
 .. _`libsquish`: https://sourceforge.net/projects/libsquish/
 """
 from typing import (
-    IO, TYPE_CHECKING, Any, Collection, Dict, Iterable, Iterator, List, Mapping, Optional,
+    Final, IO, TYPE_CHECKING, Any, Collection, Dict, Iterable, Iterator, List, Mapping, Optional,
     Sequence, Tuple, Type, Union, overload,
 )
 from array import array
@@ -22,6 +22,7 @@ import types
 import warnings
 
 import attrs
+from typing_extensions import assert_never
 
 from . import EmptyMapping, binformat
 from .const import add_unknown
@@ -101,6 +102,26 @@ _BLANK_PIXEL = {
     BufferFormat.HDR_INT: array('I', [0, 0, 0, (1<<16-1)]),
     BufferFormat.HDR_FLOAT: array('f', [0.0, 0.0, 0.0, 0.0]),
 }
+
+
+def to_ldr(value: float) -> int:
+    """Quantize a value between 0-1.0 into 0-255."""
+    value = round(value * 255)
+    if value < 0:
+        return 0
+    if value > 255:
+        return 255
+    return value
+
+
+def to_hdr_int(value: float) -> int:
+    """Quantize a value between 0-1.0 into 0-65535."""
+    value = round(value * 65535)
+    if value < 0:
+        return 0
+    if value > 65535:
+        return 65535
+    return value
 
 
 def _mk_fmt(
@@ -360,27 +381,31 @@ class Frame:
 
     This is lazy, so it will only read from the file when actually used.
     """
-    __slots__ = ['width', 'height', '_data', '_fileinfo']
+    __slots__ = ['width', 'height', 'format', '_data', '_fileinfo']
     width: int
     height: int
+    format: Final[BufferFormat]
     _data: Optional['array[int]']  # Only generic in stubs!
     _fileinfo: Optional[Tuple[IO[bytes], int, ImageFormats]]
 
     def __init__(
         self,
+        fmt: BufferFormat,
         width: int,
         height: int,
     ) -> None:
         """Private constructor, creates a blank image of this size."""
         self.width = width
         self.height = height
+        self.format = fmt
         self._data = None
         self._fileinfo = None
 
     def load(self) -> None:
         """If the image has not been loaded, load it from the file stream."""
+        buf_fmt = self.format
         if self._data is None:
-            self._data = _BLANK_PIXEL * (self.width * self.height)
+            self._data = _BLANK_PIXEL[buf_fmt] * (self.width * self.height)
 
         if self._fileinfo is None:
             return
@@ -399,7 +424,12 @@ class Frame:
 
         stream.seek(file_off)
         data = stream.read(fmt.frame_size(self.width, self.height))
-        _format_funcs.load(fmt, self._data, data, self.width, self.height)
+        if buf_fmt is BufferFormat.LDR:
+            _format_funcs.load(fmt, self._data, data, self.width, self.height)
+        else:
+            # Directly load.
+            self._data.clear()
+            self._data.frombytes(data)
 
     def clear(self) -> None:
         """This clears the contents of the frame.
