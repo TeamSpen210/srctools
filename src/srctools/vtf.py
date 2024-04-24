@@ -81,12 +81,26 @@ class CubeSide(Enum):
     SPHERE = 6
 
 
+class BufferFormat(Enum):
+    """The three kinds of pixel formats we convert images to.
+
+    The value is the struct typecode.
+    """
+    LDR = 'B'  # 8-bit, most formats.
+    HDR_INT = 'I'  # 16-bit integer HDR
+    HDR_FLOAT = 'F'  # floating-point HDR.
+
+
 CUBES_WITH_SPHERE: Sequence[CubeSide] = list(CubeSide)
 # Remove the Sphere type, for 7.5+
 CUBES: Sequence[CubeSide] = CUBES_WITH_SPHERE[:-1]
 
 # One black, opaque pixel for creating blank images.
-_BLANK_PIXEL = array('B', [0, 0, 0, 0xFF])
+_BLANK_PIXEL = {
+    BufferFormat.LDR: array('B', [0, 0, 0, (1<<8)-1]),
+    BufferFormat.HDR_INT: array('I', [0, 0, 0, (1<<16-1)]),
+    BufferFormat.HDR_FLOAT: array('f', [0.0, 0.0, 0.0, 0.0]),
+}
 
 
 def _mk_fmt(
