@@ -392,7 +392,7 @@ class Frame:
     width: int
     height: int
     format: Final[BufferFormat]
-    _data: 'array[int] | array[float] | None'  # Only generic in stubs!
+    _data: Union['array[int]', 'array[float]', None]  # Only generic in stubs!
     _fileinfo: Optional[Tuple[IO[bytes], int, ImageFormats]]
 
     def __init__(
@@ -407,6 +407,13 @@ class Frame:
         self.format = fmt
         self._data = None
         self._fileinfo = None
+
+    def _data_ldr(self) -> 'array[int]':
+        """Return the data value, asserting that it is LDR."""
+        assert self._data is not None
+        assert self.format is BufferFormat.LDR
+        assert self._data.typecode == 'B'
+        return self._data  # type: ignore
 
     def load(self) -> None:
         """If the image has not been loaded, load it from the file stream."""
@@ -432,7 +439,7 @@ class Frame:
         stream.seek(file_off)
         data = stream.read(fmt.frame_size(self.width, self.height))
         if buf_fmt is BufferFormat.LDR:
-            _format_funcs.load(fmt, self._data, data, self.width, self.height)
+            _format_funcs.load(fmt, self._data_ldr(), data, self.width, self.height)
         else:
             # Directly load.
             self._data = array(self.format.value)
@@ -521,7 +528,7 @@ class Frame:
                     f"for {self.width}x{self.height} {format} image, "
                     f"got {len(view)} bytes!"
                 )
-            _format_funcs.load(format, self._data, view, self.width, self.height)
+            _format_funcs.load(format, self._data_ldr(), view, self.width, self.height)
             self._fileinfo = None
         else:
             if format is not HDR_FORMATS[self.format]:
@@ -601,12 +608,20 @@ class Frame:
     def to_PIL(self) -> 'PIL_Image':
         """Convert the given frame into a PIL image.
 
-        Requires Pillow to be installed.
+        Requires Pillow to be installed, and only supports LDR formats.
+        HDR formats require returning each band independently.
         """
         self.load()
         assert self._data is not None
 
         from PIL.Image import frombuffer
+
+        if self.format is not BufferFormat.LDR:
+            raise ValueError(
+                'Cannot convert HDR to a PIL image. '
+                'Pillow does not support colour HDR images.'
+            )
+
         return frombuffer(
             'RGBA',
             (self.width, self.height),
@@ -643,7 +658,7 @@ class Frame:
             # That requires a bunch of data crunching, so the code is Cythonised
             # if possible.
             data=_format_funcs.ppm_convert(
-                cast('array[int]', self._data),
+                self._data_ldr(),
                 self.width,
                 self.height,
                 bg,
@@ -669,7 +684,7 @@ class Frame:
 
         img = wx.Image(self.width, self.height)
         _format_funcs.alpha_flatten(
-            cast('array[int]', self._data),
+            self._data_ldr(),
             img.GetDataBuffer(),
             self.width, self.height,
             bg,
@@ -682,16 +697,21 @@ class Frame:
         This requires wxPython to be installed.
         If bg is set, the image will be composited onto this background.
         Otherwise, alpha is ignored.
+
+        HDR images are not supported.
         """
         self.load()
         assert self._data is not None
         import wx  # noqa
 
+        if self.format is not BufferFormat.LDR:
+            raise ValueError('HDR images may not be converted to WX.')
+
         img = wx.Bitmap(self.width, self.height)
         # The WX Bitmap memory layout isn't public, so we have to write to a
         # temporary that it copies from.
         buf = bytearray(3 * self.width * self.height)
-        _format_funcs.alpha_flatten(self._data, buf, self.width, self.height, bg)
+        _format_funcs.alpha_flatten(self._data_ldr(), buf, self.width, self.height, bg)
         img.CopyFromBuffer(buf, wx.BitmapBufferFormat_RGB)
         return img
 
@@ -1057,7 +1077,11 @@ class VTF:
             assert self._low_res._data is not None
             if self._low_res.format is BufferFormat.LDR:
                 data = bytearray(self.low_format.frame_size(self._low_res.width, self._low_res.height))
-                _format_funcs.save(self.low_format, self._low_res._data, data, self._low_res.width, self._low_res.height)
+                _format_funcs.save(
+                    self.low_format,
+                    self._low_res._data_ldr(), data,
+                    self._low_res.width, self._low_res.height,
+                )
                 file.write(data)
             else:
                 self._low_res._data.tofile(file)
@@ -1089,7 +1113,7 @@ class VTF:
                     size = self.format.frame_size(frame.width, frame.height)
                     if frame.format is BufferFormat.LDR:
                         data = bytearray(size)
-                        _format_funcs.save(self.format, frame._data, data, frame.width, frame.height)
+                        _format_funcs.save(self.format, frame._data_ldr(), data, frame.width, frame.height)
                         file.write(data)
                     else:
                         # tofile() converts to byes, returns
