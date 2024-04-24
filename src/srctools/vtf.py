@@ -10,8 +10,9 @@ To compress to DXT formats, this uses the `libsquish`_ library.
 """
 from typing import (
     Final, IO, TYPE_CHECKING, Any, Collection, Dict, Iterable, Iterator, List, Mapping, Optional,
-    Sequence, Tuple, Type, Union, overload,
+    Sequence, Tuple, Type, Union, cast, overload,
 )
+from typing_extensions import assert_never, Literal
 from array import array
 from enum import Enum, Flag
 from io import BytesIO
@@ -22,7 +23,6 @@ import types
 import warnings
 
 import attrs
-from typing_extensions import assert_never
 
 from . import EmptyMapping, binformat
 from .const import add_unknown
@@ -89,7 +89,7 @@ class BufferFormat(Enum):
     """
     LDR = 'B'  # 8-bit, most formats.
     HDR_INT = 'I'  # 16-bit integer HDR
-    HDR_FLOAT = 'F'  # floating-point HDR.
+    HDR_FLOAT = 'f'  # floating-point HDR.
 
 
 CUBES_WITH_SPHERE: Sequence[CubeSide] = list(CubeSide)
@@ -97,7 +97,7 @@ CUBES_WITH_SPHERE: Sequence[CubeSide] = list(CubeSide)
 CUBES: Sequence[CubeSide] = CUBES_WITH_SPHERE[:-1]
 
 # One black, opaque pixel for creating blank images.
-_BLANK_PIXEL = {
+_BLANK_PIXEL: Dict[BufferFormat, 'array[int] | array[float]'] = {
     BufferFormat.LDR: array('B', [0, 0, 0, (1<<8)-1]),
     BufferFormat.HDR_INT: array('I', [0, 0, 0, (1<<16-1)]),
     BufferFormat.HDR_FLOAT: array('f', [0.0, 0.0, 0.0, 0.0]),
@@ -189,7 +189,6 @@ class ImageFormats(Enum):
     BGRA5551 = _mk_fmt(5, 5, 5, 1)
     UV88 = _mk_fmt(size=16)
     UVWQ8888 = _mk_fmt(size=32)
-    # Not implemented, these two don't fit in 8-bit RGBA.
     RGBA16161616F = _mk_fmt(16, 16, 16, 16)
     RGBA16161616 = _mk_fmt(16, 16, 16, 16)
 
@@ -257,6 +256,14 @@ FORMAT_ORDER[-1] = ImageFormats.NONE
 # They're backward because why not.
 FORMAT_ORDER[34] = FORMAT_ORDER[37] = ImageFormats.ATI2N
 FORMAT_ORDER[35] = FORMAT_ORDER[38] = ImageFormats.ATI1N
+
+HDR_FORMATS: Mapping[
+    Literal[BufferFormat.HDR_INT, BufferFormat.HDR_FLOAT],
+    Literal[ImageFormats.RGBA16161616, ImageFormats.RGBA16161616F],
+] = {
+    BufferFormat.HDR_INT: ImageFormats.RGBA16161616,
+    BufferFormat.HDR_FLOAT: ImageFormats.RGBA16161616F,
+}
 
 
 class VTFFlags(Flag):
@@ -385,7 +392,7 @@ class Frame:
     width: int
     height: int
     format: Final[BufferFormat]
-    _data: Optional['array[int]']  # Only generic in stubs!
+    _data: 'array[int] | array[float] | None'  # Only generic in stubs!
     _fileinfo: Optional[Tuple[IO[bytes], int, ImageFormats]]
 
     def __init__(
@@ -428,7 +435,7 @@ class Frame:
             _format_funcs.load(fmt, self._data, data, self.width, self.height)
         else:
             # Directly load.
-            self._data.clear()
+            self._data = array(self.format.value)
             self._data.frombytes(data)
 
     def clear(self) -> None:
@@ -449,15 +456,16 @@ class Frame:
 
     def fill_hdr(self, r: float = 0.0, g: float = 0.0, b: float = 0.0, a: float = 1.0) -> None:
         """Fill the frame with the specified colour. This variant takes a HDR colour."""
+        colour: Union[array[int], array[float]]
         if self.format is BufferFormat.LDR:
             colour = array('B', [to_ldr(r), to_ldr(g), to_ldr(b), to_ldr(a)])
         elif self.format is BufferFormat.HDR_INT:
             colour = array('I', [to_hdr_int(r), to_hdr_int(g), to_hdr_int(b), to_hdr_int(a)])
-        elif self.format is BufferFormat.LDR:
+        elif self.format is BufferFormat.HDR_FLOAT:
             colour = array('f', [r, g, b, a])
         else:
             assert_never(self.format)
-        assert self._data.typecode == self.format.value
+        assert colour.typecode == self.format.value
         self._data = colour * (self.width * self.height)
 
         self._fileinfo = None
@@ -474,26 +482,31 @@ class Frame:
 
     def copy_from(
         self,
-        source: Union['Frame', bytes, bytearray, 'array[int]', memoryview],
+        source: Union['Frame', bytes, bytearray, 'array[int]', 'array[float]', memoryview],
         format: ImageFormats = ImageFormats.RGBA8888,
     ) -> None:
         """Overwrite this frame with other data.
 
-        The source can be another Frame, or any buffer with bytes-format data.
+        The source can be another Frame, or any buffer with the specified format.
         """
         if isinstance(source, Frame):
             if self.width != source.width or self.height != source.height:
                 raise ValueError("Tried copying from a frame of a different size!")
+            if self.format is not source.format:
+                raise ValueError("Tried copying from a frame of a different format!")
             source.load()
             assert source._data is not None
             if self._data is None:  # Duplicate the other array
                 self._data = source._data[:]
-            else:  # Copy the other array onto us
-                self._data[:] = source._data
+            else:  # Copy the other array onto us.
+                # The format attr check verifies that this has the same format.
+                self._data[:] = source._data  # type: ignore
             self._fileinfo = None
-        else:
+            return
+
+        if self.format is BufferFormat.LDR:
             if self._data is None:
-                self._data = _BLANK_PIXEL * (self.width * self.height)
+                self._data = _BLANK_PIXEL[self.format] * (self.width * self.height)
             view = memoryview(source)
             # For efficiency, our functions assume the view is contiguous.
             # If it isn't, make a copy to force that.
@@ -509,6 +522,22 @@ class Frame:
                     f"got {len(view)} bytes!"
                 )
             _format_funcs.load(format, self._data, view, self.width, self.height)
+            self._fileinfo = None
+        else:
+            if format is not HDR_FORMATS[self.format]:
+                raise ValueError(
+                    f'Only {HDR_FORMATS[self.format].name} format is valid for {self.format.name} frames!'
+                )
+            new_data = array(self.format.value)
+            new_data.frombytes(source)  # Would raise TypeError if mismatching.
+            required_size = 4 * self.width * self.height
+            if len(new_data) != required_size:
+                raise ValueError(
+                    f"Expected {required_size} values "
+                    f"for {self.width}x{self.height} {self.format} image, "
+                    f"got {len(new_data)} numbers!"
+                )
+            self._data = new_data
             self._fileinfo = None
 
     def rescale_from(self, larger: 'Frame', filter: FilterMode = FilterMode.BILINEAR) -> None:
@@ -526,9 +555,9 @@ class Frame:
                 f"{larger.width}x{larger.height} -> {self.width}x{self.height}"
             )
         if self._data is None:
-            self._data = _BLANK_PIXEL * (self.width * self.height)
-        if larger._data is not None:
-            _format_funcs.scale_down(filter, larger.width, larger.height, self.width, self.height, larger._data, self._data)
+            self._data = _BLANK_PIXEL[self.format] * (self.width * self.height)
+        larger.load()
+        _format_funcs.scale_down(filter, larger.width, larger.height, self.width, self.height, larger._data, self._data)
 
     def __getitem__(self, item: Tuple[int, int]) -> Pixel:
         """Retrieve an individual pixel at (x, y)."""
@@ -567,7 +596,7 @@ class Frame:
         # C-contiguous and will deny F-contiguous requests.
         self.load()
         assert self._data is not None
-        return memoryview(self._data).cast('B', (self.height, self.width, 4))
+        return memoryview(self._data).cast(self.format.value, (self.height, self.width, 4))
 
     def to_PIL(self) -> 'PIL_Image':
         """Convert the given frame into a PIL image.
@@ -598,9 +627,14 @@ class Frame:
 
         If bg is set, the image will be composited onto this background.
         Otherwise, alpha is ignored.
+
+        HDR images are not supported.
         """
         self.load()
         assert self._data is not None
+
+        if self.format is not BufferFormat.LDR:
+            raise ValueError('HDR images may not be converted to Tkinter.')
 
         import tkinter
         return tkinter.PhotoImage(
@@ -609,7 +643,7 @@ class Frame:
             # That requires a bunch of data crunching, so the code is Cythonised
             # if possible.
             data=_format_funcs.ppm_convert(
-                self._data,
+                cast('array[int]', self._data),
                 self.width,
                 self.height,
                 bg,
@@ -623,13 +657,23 @@ class Frame:
         This requires wxPython to be installed.
         If bg is set, the image will be composited onto this background.
         Otherwise, alpha is ignored.
+
+        HDR images are not supported.
         """
         self.load()
         assert self._data is not None
         import wx  # type: ignore
 
+        if self.format is not BufferFormat.LDR:
+            raise ValueError('HDR images may not be converted to WX.')
+
         img = wx.Image(self.width, self.height)
-        _format_funcs.alpha_flatten(self._data, img.GetDataBuffer(), self.width, self.height, bg)
+        _format_funcs.alpha_flatten(
+            cast('array[int]', self._data),
+            img.GetDataBuffer(),
+            self.width, self.height,
+            bg,
+        )
         return img
 
     def to_wx_bitmap(self, bg: Optional[Tuple[int, int, int]] = None) -> Any:
@@ -641,7 +685,7 @@ class Frame:
         """
         self.load()
         assert self._data is not None
-        import wx  # pyright: ignore
+        import wx  # noqa
 
         img = wx.Bitmap(self.width, self.height)
         # The WX Bitmap memory layout isn't public, so we have to write to a
@@ -731,7 +775,7 @@ class VTF:
 
         # (frame, depth/cubemap, mipmap) -> frame
         self._frames = {}
-        self._low_res = Frame(16, 16)
+        self._low_res = Frame(BufferFormat.LDR, 16, 16)
 
         depth_iter: Iterable[Union[int, CubeSide]]
         if VTFFlags.ENVMAP in flags:
@@ -746,7 +790,9 @@ class VTF:
         for mip_count in itertools.count():
             for frame in range(frames):
                 for cube_or_depth in depth_iter:
-                    self._frames[frame, cube_or_depth, mip_count] = Frame(width, height)
+                    self._frames[
+                        frame, cube_or_depth, mip_count,
+                    ] = Frame(BufferFormat.LDR, width, height)
 
             # Once either is 1 large, we have no more mipmaps.
             # Create the frame first, so we still create the final 1-large frame.
@@ -865,11 +911,14 @@ class VTF:
         if high_res_offset < 0:
             raise ValueError('Missing main image resource!')
 
-        # We don't implement these high-res formats.
-        if fmt is ImageFormats.RGBA16161616 or fmt is ImageFormats.RGBA16161616F:
-            return vtf
+        if low_fmt is ImageFormats.RGBA16161616:
+            frame_fmt = BufferFormat.HDR_INT
+        elif low_fmt is ImageFormats.RGBA16161616F:
+            frame_fmt = BufferFormat.HDR_FLOAT
+        else:
+            frame_fmt = BufferFormat.LDR
 
-        vtf._low_res = Frame(low_width, low_height)
+        vtf._low_res = Frame(frame_fmt, low_width, low_height)
         if low_fmt is not ImageFormats.NONE:
             if low_res_offset < 0:
                 raise ValueError('Missing low-res thumbnail resource!')
@@ -887,6 +936,13 @@ class VTF:
         else:
             depth_iter = range(vtf.depth)
 
+        if fmt is ImageFormats.RGBA16161616:
+            frame_fmt = BufferFormat.HDR_INT
+        elif fmt is ImageFormats.RGBA16161616F:
+            frame_fmt = BufferFormat.HDR_FLOAT
+        else:
+            frame_fmt = BufferFormat.LDR
+
         for data_mipmap in reversed(range(mipmap_count)):
             mip_width = max(width >> data_mipmap, 1)
             mip_height = max(height >> data_mipmap, 1)
@@ -896,7 +952,7 @@ class VTF:
                         frame_ind,
                         depth_or_cube,
                         data_mipmap,
-                    ] = Frame(mip_width, mip_height)
+                    ] = Frame(frame_fmt, mip_width, mip_height)
                     # noinspection PyProtectedMember
                     frame._fileinfo = (file, high_res_offset, fmt)
                     high_res_offset += fmt.frame_size(mip_width, mip_height)
@@ -997,10 +1053,14 @@ class VTF:
         if version_minor >= 3:
             deferred.set_data('low_res', file.tell())
         if self.low_format is not ImageFormats.NONE:
-            data = bytearray(self.low_format.frame_size(self._low_res.width, self._low_res.height))
-            if self._low_res._data is not None:
+            size = self.format.frame_size(self._low_res.width, self._low_res.height)
+            assert self._low_res._data is not None
+            if self._low_res.format is BufferFormat.LDR:
+                data = bytearray(self.low_format.frame_size(self._low_res.width, self._low_res.height))
                 _format_funcs.save(self.low_format, self._low_res._data, data, self._low_res.width, self._low_res.height)
-            file.write(data)
+                file.write(data)
+            else:
+                self._low_res._data.tofile(file)
 
         # If cubemaps are present, we iterate that for depth.
         # Otherwise it's the depth value.
@@ -1025,10 +1085,15 @@ class VTF:
                         data_mipmap,
                     ]
                     frame.load()
-                    data = bytearray(self.format.frame_size(frame.width, frame.height))
-                    if frame._data is not None:
+                    assert frame._data is not None
+                    size = self.format.frame_size(frame.width, frame.height)
+                    if frame.format is BufferFormat.LDR:
+                        data = bytearray(size)
                         _format_funcs.save(self.format, frame._data, data, frame.width, frame.height)
-                    file.write(data)
+                        file.write(data)
+                    else:
+                        # tofile() converts to byes, returns
+                        frame._data.tofile(file)
         deferred.write()
 
     def __enter__(self) -> 'VTF':
