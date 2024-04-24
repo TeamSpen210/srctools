@@ -439,9 +439,27 @@ class Frame:
         self._data = self._fileinfo = None
 
     def fill(self, r: int = 0, g: int = 0, b: int = 0, a: int = 255) -> None:
-        """Fill the frame with the specified colour."""
-        colour = array('B', [r, g, b, a])
+        """Fill the frame with the specified colour. This variant only works for LDR frames."""
+        if self.format is BufferFormat.LDR:
+            colour = array('B', [r, g, b, a])
+        else:
+            raise ValueError('Use fill_hdr() for HDR-mode frames!')
         self._data = colour * (self.width * self.height)
+        self._fileinfo = None
+
+    def fill_hdr(self, r: float = 0.0, g: float = 0.0, b: float = 0.0, a: float = 1.0) -> None:
+        """Fill the frame with the specified colour. This variant takes a HDR colour."""
+        if self.format is BufferFormat.LDR:
+            colour = array('B', [to_ldr(r), to_ldr(g), to_ldr(b), to_ldr(a)])
+        elif self.format is BufferFormat.HDR_INT:
+            colour = array('I', [to_hdr_int(r), to_hdr_int(g), to_hdr_int(b), to_hdr_int(a)])
+        elif self.format is BufferFormat.LDR:
+            colour = array('f', [r, g, b, a])
+        else:
+            assert_never(self.format)
+        assert self._data.typecode == self.format.value
+        self._data = colour * (self.width * self.height)
+
         self._fileinfo = None
 
     @overload
