@@ -1,9 +1,10 @@
 """Functions for reading/writing VTF data."""
+from __future__ import annotations
 # We don't implement DXT saving, since that's highly complicated (and would be very slow).
 # Wherever possible, use memoryview slicing to copy channels all in one go. This is much faster
 # than a loop.
 
-from typing import TYPE_CHECKING, Callable, Dict, Iterable, List, Optional, Tuple
+from typing import TYPE_CHECKING, Callable, Iterable, List, Optional, Tuple, TypeVar
 from typing_extensions import TypeAlias
 import array
 
@@ -15,11 +16,12 @@ else:
     FilterMode = 'FilterMode'
 
 Array: TypeAlias = 'array.array[int]'
-_SAVE: Dict[ImageFormats, Callable[[Array, bytearray, int, int], None]] = {}
-_LOAD: Dict[ImageFormats, Callable[[Array, bytes, int, int], None]] = {}
+ArrayT = TypeVar('ArrayT', 'array.array[int]', 'array.array[float]')
+_SAVE: dict[ImageFormats, Callable[[Array, bytearray, int, int], None]] = {}
+_LOAD: dict[ImageFormats, Callable[[Array, bytes, int, int], None]] = {}
 
 
-def ppm_convert(pixels: Array, width: int, height: int, bg: Optional[Tuple[int, int, int]]) -> bytes:
+def ppm_convert(pixels: Array, width: int, height: int, bg: tuple[int, int, int] | None) -> bytes:
     """Convert a frame into a PPM-format bytestring, for passing to tkinter.
 
     If bg is set, this is the background we composite into. Otherwise, we just strip the alpha.
@@ -157,11 +159,11 @@ def save(fmt: ImageFormats, pixels: Array, data: bytearray, width: int, height: 
     func(pixels, data, width, height)
 
 
-def scale_down(
+def scale_down_ldr(
     filt: FilterMode,
     src_width: int, src_height: int,
     width: int, height: int,
-    src: Array, dest: Array,
+    src: ArrayT, dest: ArrayT,
 ) -> None:
     """Scale down the image to this smaller size.
 
@@ -208,7 +210,12 @@ def scale_down(
         raise ValueError(f"Unknown filter {filt}!")
 
 
-def saveload_rgba(mode: str) -> Tuple[
+# Python code handles this identically. Just ignore the int/float mismatch.
+scale_down_hdr_int = scale_down_ldr
+scale_down_hdr_float = scale_down_ldr
+
+
+def saveload_rgba(mode: str) -> tuple[
     Callable[[Array, bytes, int, int], None],
     Callable[[Array, bytearray, int, int], None],
 ]:

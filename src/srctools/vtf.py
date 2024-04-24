@@ -561,10 +561,24 @@ class Frame:
                 "Larger image must be exactly twice or the same size: "
                 f"{larger.width}x{larger.height} -> {self.width}x{self.height}"
             )
+        if self.format is not larger.format:
+            raise ValueError('Both images must have the same pixel format!')
         if self._data is None:
             self._data = _BLANK_PIXEL[self.format] * (self.width * self.height)
         larger.load()
-        _format_funcs.scale_down(filter, larger.width, larger.height, self.width, self.height, larger._data, self._data)
+        assert larger._data is not None
+        # Ignore the mismatch, the format compare above confirmed both are the same.
+        data_lrg: array[Any] = larger._data
+        data_sml: array[Any] = self._data
+        args = filter, larger.width, larger.height, self.width, self.height, data_lrg, data_sml
+        if self.format is BufferFormat.LDR:
+            _format_funcs.scale_down_ldr(*args)
+        elif self.format is BufferFormat.HDR_INT:
+            _format_funcs.scale_down_hdr_int(*args)
+        elif self.format is BufferFormat.HDR_FLOAT:
+            _format_funcs.scale_down_hdr_float(*args)
+        else:
+            assert_never(self.format)
 
     def __getitem__(self, item: Tuple[int, int]) -> Pixel:
         """Retrieve an individual pixel at (x, y)."""

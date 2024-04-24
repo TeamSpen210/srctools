@@ -2,7 +2,7 @@
 """Functions for reading/writing VTF data."""
 from cpython.bytes cimport PyBytes_FromStringAndSize
 from cython.parallel cimport parallel, prange
-from libc.stdint cimport uint8_t as byte, uint_fast8_t as fastbyte, uint_fast16_t
+from libc.stdint cimport uint8_t as byte, uint_fast8_t as fastbyte, uint_fast16_t, uint16_t, uint_fast32_t
 from libc.stdio cimport snprintf
 from libc.string cimport memcpy, memset, strcmp
 
@@ -142,20 +142,13 @@ def alpha_flatten(const byte[::1] pixels, byte[::1] buffer, uint width, uint hei
             buffer[3*off + B] = pixels[4*off + 2]
 
 
-def scale_down(
-    filt: 'FilterMode',
-    uint src_width, uint src_height,
-    uint width, uint height,
-    const byte[::1] src, byte[::1] dest,
-) -> None:
-    """Scale down the image to this smaller size.
-
-    This is simplified for mipmap generation only:
-    either dimension may be the same, or be scaled exactly half.
-    """
-    cdef int filter_val = filt.value
-    cdef Py_ssize_t x, y, pos_off, off, off2, channel
-    cdef Py_ssize_t vert_off, horiz_off, per_row, per_column
+cdef (Py_ssize_t, Py_ssize_t, Py_ssize_t, Py_ssize_t, fastbyte) _scale_down_offsets(
+    uint src_width, uint src_height, uint width, uint height,
+    int filter_val,
+):
+    """Calculate the offsets required to resize this."""
+    cdef Py_ssize_t vert_off, horiz_off, per_row
+    cdef fastbyte pos_off, per_column
 
     # We allow the dimensions to remain the same.
     # So figure out the offsets we need to pick the right pixels.
@@ -169,6 +162,39 @@ def scale_down(
         vert_off, per_row = 4 * per_column * width, 2 * per_column * width
     else:
         vert_off, per_row = 0, per_column * width
+    if filter_val == 0:  # upper-left
+        pos_off = 0
+    if filter_val == 1:  # upper-right
+        pos_off = horiz_off
+    if filter_val == 2:  # lower-left
+        pos_off = vert_off
+    if filter_val == 3:  # lower-right
+        pos_off = vert_off + horiz_off
+
+    return vert_off, horiz_off, per_row, per_column, pos_off
+
+
+def scale_down_ldr(
+    filt: 'FilterMode',
+    uint src_width, uint src_height,
+    uint width, uint height,
+    const byte[::1] src, byte[::1] dest,
+    /,
+) -> None:
+    """Scale down the image to this smaller size.
+
+    This is simplified for mipmap generation only:
+    either dimension may be the same, or be scaled exactly half.
+    """
+    cdef int filter_val = filt.value
+    cdef fastbyte pos_off, channel, per_column  # Limited size, can be smaller.
+    cdef Py_ssize_t x, y, off, off2
+    cdef Py_ssize_t vert_off, horiz_off, per_row
+
+    vert_off, horiz_off, per_row, per_column, pos_off = _scale_down_offsets(
+        src_width, src_height, width, height,
+        filter_val,
+    )
 
     if filter_val == 4:  # Bilinear
         for y in prange(height, nogil=True, schedule='static'):
@@ -183,17 +209,101 @@ def scale_down(
                         src[off2 + channel + vert_off + horiz_off]
                     ) // <uint_fast16_t>4)
         return
+    elif filter_val not in (0, 1, 2, 3):
+        raise ValueError(f"Unknown filter {filt}")
 
-    # Otherwise, nearest-neighbour.
-    elif filter_val == 0:  # upper-left
-        pos_off = 0
-    elif filter_val == 1:  # upper-right
-        pos_off = horiz_off
-    elif filter_val == 2:  # lower-left
-        pos_off = vert_off
-    elif filter_val == 3:  # lower-right
-        pos_off = vert_off + horiz_off
-    else:
+    # for off in range(0, 4 * width * height, 4):
+    for y in prange(height, nogil=True, schedule='static'):
+        for x in range(width):
+            off = 4 * (width * y + x)
+            off2 = 4 * (per_row * y + per_column * x)
+            for channel in range(4):
+                dest[off + channel] = src[off2 + pos_off + channel]
+
+
+def scale_down_hdr_int(
+    filt: 'FilterMode',
+    uint src_width, uint src_height,
+    uint width, uint height,
+    const uint16_t[::1] src, uint16_t[::1] dest,
+    /,
+) -> None:
+    """Scale down the image to this smaller size.
+
+    This is simplified for mipmap generation only:
+    either dimension may be the same, or be scaled exactly half.
+    """
+    cdef int filter_val = filt.value
+    cdef fastbyte pos_off, channel, per_column  # Limited size, can be smaller.
+    cdef Py_ssize_t x, y, off, off2
+    cdef Py_ssize_t vert_off, horiz_off, per_row
+
+    vert_off, horiz_off, per_row, per_column, pos_off = _scale_down_offsets(
+        src_width, src_height, width, height,
+        filter_val,
+    )
+
+    if filter_val == 4:  # Bilinear
+        for y in prange(height, nogil=True, schedule='static'):
+            for x in range(width):
+                off = 4 * (width * y + x)
+                off2 = 4 * (per_row * y + per_column * x)
+                for channel in range(4):
+                    dest[off + channel] = <uint16_t>((
+                        src[off2 + channel] +
+                        src[off2 + channel + horiz_off] +
+                        src[off2 + channel + vert_off] +
+                        src[off2 + channel + vert_off + horiz_off]
+                    ) // <uint_fast32_t>4)
+        return
+    elif filter_val not in (0, 1, 2, 3):
+        raise ValueError(f"Unknown filter {filt}")
+
+    # for off in range(0, 4 * width * height, 4):
+    for y in prange(height, nogil=True, schedule='static'):
+        for x in range(width):
+            off = 4 * (width * y + x)
+            off2 = 4 * (per_row * y + per_column * x)
+            for channel in range(4):
+                dest[off + channel] = src[off2 + pos_off + channel]
+
+
+def scale_down_hdr_float(
+    filt: 'FilterMode',
+    uint src_width, uint src_height,
+    uint width, uint height,
+    const float[::1] src, float[::1] dest,
+    /,
+) -> None:
+    """Scale down the image to this smaller size.
+
+    This is simplified for mipmap generation only:
+    either dimension may be the same, or be scaled exactly half.
+    """
+    cdef int filter_val = filt.value
+    cdef fastbyte pos_off, channel, per_column  # Limited size, can be smaller.
+    cdef Py_ssize_t x, y, off, off2
+    cdef Py_ssize_t vert_off, horiz_off, per_row
+
+    vert_off, horiz_off, per_row, per_column, pos_off = _scale_down_offsets(
+        src_width, src_height, width, height,
+        filter_val,
+    )
+
+    if filter_val == 4:  # Bilinear
+        for y in prange(height, nogil=True, schedule='static'):
+            for x in range(width):
+                off = 4 * (width * y + x)
+                off2 = 4 * (per_row * y + per_column * x)
+                for channel in range(4):
+                    dest[off + channel] = <float>((
+                        src[off2 + channel] +
+                        src[off2 + channel + horiz_off] +
+                        src[off2 + channel + vert_off] +
+                        src[off2 + channel + vert_off + horiz_off]
+                    ) // <double>4.0)
+        return
+    elif filter_val not in (0, 1, 2, 3):
         raise ValueError(f"Unknown filter {filt}")
 
     # for off in range(0, 4 * width * height, 4):
