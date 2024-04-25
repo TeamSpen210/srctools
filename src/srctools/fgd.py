@@ -300,7 +300,7 @@ def _load_engine_db() -> _EngineDBProto:
         # On 3.8, importlib_resources doesn't have the right stubs.
         with cast(Any, files(srctools) / 'fgd.lzma').open('rb') as f:
             _ENGINE_DB = unserialise(f)
-    return _ENGINE_DB
+    return [_ENGINE_DB]
 
 
 def _engine_db_stats() -> str:
@@ -1541,13 +1541,26 @@ class EntityDef:
 
         :raises KeyError: If the classname is not found in the database.
         """
-        return deepcopy(_load_engine_db().get_ent(classname))  # Or KeyError if not found.
+        to_return = KeyError()
+        databases = _load_engine_db()
+        for dbase in databases: # Order is important here, overrides will occur if multiple are specified
+            to_return = deepcopy(dbase.get_ent(classname)) # Try to catch the entity from this database, if not, raises KeyError
+            
+            if to_return is not KeyError:
+                break
+ 
+        return to_return
 
     @classmethod
     def engine_classes(cls) -> AbstractSet[str]:
         """Return a set of known entity classnames, from the Hammer Addons database."""
         # This is immutable, so we don't need to copy.
-        return _load_engine_db().get_classnames()
+        classnames = set()
+        databases = _load_engine_db()
+        for dbase in databases:
+            classnames |= dbase.get_classnames()
+
+        return frozenset(classnames)
 
     def __repr__(self) -> str:
         if self.type is EntityTypes.BASE:
@@ -2272,7 +2285,15 @@ class FGD:
         specific entities, use :py:func:`EntityDef.engine_def()` instead to avoid needing to fetch
         all the entities.
         """
-        return _load_engine_db().get_fgd()
+        temp_FGD = FGD()
+        databases = _load_engine_db()
+        for dbase in databases:
+            dbasefgd: FGD = dbase.get_fgd()
+            for classname_, ent_ in dbasefgd.entities.items():
+                temp_FGD.entities[classname_] = ent_
+        
+        temp_FGD.apply_bases()
+        return deepcopy(temp_FGD)
 
     def __getitem__(self, classname: str) -> EntityDef:
         """Lookup entities by classname."""
