@@ -1542,16 +1542,20 @@ class EntityDef:
         :raises KeyError: If the classname is not found in the database.
         """
         databases = _load_engine_db()
-        if len(databases) == 0:
-            raise RuntimeError("No databases has been loaded!")
-        
+        to_return = EntityDef(EntityTypes.BASE) # Create an empty to make pyright shut up, it will always get bound, if not keyerror is raised
+        errored = False
         for dbase in databases: # Order is important here, overrides will occur if multiple are specified
-            to_return = deepcopy(dbase.get_ent(classname)) # Try to catch the entity from this database, if not, raises KeyError
-            
-            if to_return is not KeyError:
+            try:
+                to_return = deepcopy(dbase.get_ent(classname)) # Try to catch the entity from this database, if not, raises KeyError
+                errored = False
                 break
+            except KeyError as err:
+                errored = True
+                continue
+        
+        if errored:
+            raise KeyError(f"{classname} has not been found in any of the supplied databases!")
 
- 
         return to_return
 
     @classmethod
@@ -2293,7 +2297,9 @@ class FGD:
         for dbase in databases:
             dbasefgd: FGD = dbase.get_fgd()
             for classname_, ent_ in dbasefgd.entities.items():
-                temp_FGD.entities[classname_] = ent_
+
+                if not classname_ in temp_FGD.entities.keys(): # Don't include duplicates
+                    temp_FGD.entities[classname_] = ent_
         
         temp_FGD.apply_bases()
         return deepcopy(temp_FGD)
