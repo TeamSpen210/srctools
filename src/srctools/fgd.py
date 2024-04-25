@@ -289,7 +289,7 @@ class HelperTypes(Enum):
         return self.name.startswith('EXT_')
 
 
-def _load_engine_db() -> _EngineDBProto:
+def _load_engine_db() -> list[_EngineDBProto]:
     """Load our engine database."""
     # It's pretty expensive to parse, so keep the original privately,
     # returning a deep-copy.
