@@ -314,7 +314,8 @@ def _engine_db_stats() -> str:
         to_return = ""
         for db in _ENGINE_DB:
             to_return += f"[Database {i}]: \n"
-            to_return += db.stats() + "\n"
+            to_return += db.stats()
+            i += 1
 
         return to_return
 
