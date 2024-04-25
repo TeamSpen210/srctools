@@ -1541,7 +1541,6 @@ class EntityDef:
 
         :raises KeyError: If the classname is not found in the database.
         """
-        to_return = KeyError()
         databases = _load_engine_db()
         for dbase in databases: # Order is important here, overrides will occur if multiple are specified
             to_return = deepcopy(dbase.get_ent(classname)) # Try to catch the entity from this database, if not, raises KeyError
