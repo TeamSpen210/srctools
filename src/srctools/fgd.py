@@ -1562,7 +1562,7 @@ class EntityDef:
     def engine_classes(cls) -> AbstractSet[str]:
         """Return a set of known entity classnames, from the Hammer Addons database."""
         # This is immutable, so we don't need to copy.
-        classnames = set()
+        classnames: set[str] = set()
         databases = _load_engine_db()
         for dbase in databases:
             classnames |= dbase.get_classnames()
