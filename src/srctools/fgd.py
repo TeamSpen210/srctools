@@ -59,9 +59,6 @@ Choices: TypeAlias = Tuple[str, str, TagsSet]
 # Cached engine DB parsing functions.
 _ENGINE_DB: Optional[list[_EngineDBProto]] = None
 
-# Append to this when defining custom database paths!
-_ENGINE_DB_PATHS: list[Path] = []
-
 
 class FGDParseError(TokenSyntaxError):
     """Raised if the FGD contains invalid syntax."""
@@ -291,10 +288,16 @@ class HelperTypes(Enum):
         """Is this an extension to the format?"""
         return self.name.startswith('EXT_')
 
-def AddDBPath(path: Path) -> None:
-    """Appends new paths to search for databases."""
-    global _ENGINE_DB_PATHS
-    _ENGINE_DB_PATHS.append(path)
+def AddDatabase(path: Path) -> None:
+    """Add a new database on top of the current ones."""
+    global _ENGINE_DB
+
+    if _ENGINE_DB is None:
+        _load_engine_db() # Ensure the first database is initialized and loaded
+
+    with path.open('rb') as f:
+        from ._engine_db import unserialise
+        _ENGINE_DB.insert(0, unserialise(f))
 
 def _load_engine_db() -> list[_EngineDBProto]:
     """Load our engine database."""
@@ -306,9 +309,6 @@ def _load_engine_db() -> list[_EngineDBProto]:
         from ._engine_db import unserialise
 
 
-        for path in _ENGINE_DB_PATHS:
-            with path.open('rb') as f:
-                _ENGINE_DB.append(unserialise(f)) 
 
         # On 3.8, importlib_resources doesn't have the right stubs.
         with cast(Any, files(srctools) / 'fgd.lzma').open('rb') as f:
