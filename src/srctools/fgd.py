@@ -10,7 +10,7 @@ from collections import ChainMap, defaultdict
 from copy import deepcopy
 from enum import Enum
 from importlib_resources import files
-from pathlib import PurePosixPath
+from pathlib import PurePosixPath, Path
 import io
 import itertools
 import math
@@ -58,6 +58,9 @@ Choices: TypeAlias = Tuple[str, str, TagsSet]
 
 # Cached engine DB parsing functions.
 _ENGINE_DB: Optional[list[_EngineDBProto]] = None
+
+# Append to this when defining custom database paths!
+_ENGINE_DB_PATHS: list[Path] = []
 
 
 class FGDParseError(TokenSyntaxError):
@@ -298,6 +301,11 @@ def _load_engine_db() -> list[_EngineDBProto]:
         _ENGINE_DB = []
         from ._engine_db import unserialise
 
+
+        for path in _ENGINE_DB_PATHS:
+            with path.open('rb') as f:
+                _ENGINE_DB.append(unserialise(f)) 
+
         # On 3.8, importlib_resources doesn't have the right stubs.
         with cast(Any, files(srctools) / 'fgd.lzma').open('rb') as f:
             _ENGINE_DB.append(unserialise(f))
@@ -313,8 +321,8 @@ def _engine_db_stats() -> str:
         i = 0
         to_return = ""
         for db in _ENGINE_DB:
-            to_return += f"[Database {i}]: \n"
-            to_return += db.stats()
+            to_return += f"[Database {i}]: "
+            to_return += db.stats() + "\n"
             i += 1
 
         return to_return
