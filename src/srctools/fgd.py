@@ -2294,6 +2294,10 @@ class FGD:
         """
         temp_FGD = FGD()
         databases = _load_engine_db()
+
+        if len(databases) == 0: # If there's only one there's no need to iterate again
+            return deepcopy(databases[0].get_fgd())
+
         for dbase in databases:
             dbasefgd: FGD = dbase.get_fgd()
             for classname_, ent_ in dbasefgd.entities.items():
