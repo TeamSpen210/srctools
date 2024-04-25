@@ -1542,6 +1542,10 @@ class EntityDef:
         :raises KeyError: If the classname is not found in the database.
         """
         databases = _load_engine_db()
+
+        if len(databases) == 1:
+            return deepcopy(databases[0].get_ent(classname))
+
         to_return = EntityDef(EntityTypes.BASE) # Create an empty to make pyright shut up, it will always get bound, if not keyerror is raised
         errored = False
         for dbase in databases: # Order is important here, overrides will occur if multiple are specified
@@ -1561,12 +1565,16 @@ class EntityDef:
     @classmethod
     def engine_classes(cls) -> AbstractSet[str]:
         """Return a set of known entity classnames, from the Hammer Addons database."""
-        # This is immutable, so we don't need to copy.
         classnames: set[str] = set()
         databases = _load_engine_db()
+
+        if len(databases) == 1: # Don't iterate when there's no need to check for other databases
+            return databases[0].get_classnames()
+        
         for dbase in databases:
             classnames |= dbase.get_classnames()
 
+        # This is immutable, so we don't need to copy.
         return frozenset(classnames)
 
     def __repr__(self) -> str:
@@ -2295,7 +2303,7 @@ class FGD:
         temp_FGD = FGD()
         databases = _load_engine_db()
 
-        if len(databases) == 0: # If there's only one there's no need to iterate again
+        if len(databases) == 1: # If there's only one there's no need to iterate again
             return deepcopy(databases[0].get_fgd())
 
         for dbase in databases:
