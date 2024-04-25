@@ -9,7 +9,7 @@ To compress to DXT formats, this uses the `libsquish`_ library.
 .. _`libsquish`: https://sourceforge.net/projects/libsquish/
 """
 from typing import (
-    IO, TYPE_CHECKING, Any, Collection, Dict, Iterable, Iterator, List, Mapping, Optional,
+    IO, TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional,
     Sequence, Tuple, Type, Union, overload,
 )
 from array import array
@@ -671,19 +671,12 @@ class VTF:
         self._frames = {}
         self._low_res = Frame(16, 16)
 
-        depth_iter: Iterable[Union[int, CubeSide]]
-        if VTFFlags.ENVMAP in flags:
-            if version[1] == 5:
-                depth_iter = CUBES
-            else:
-                depth_iter = CUBES_WITH_SPHERE
-        else:
-            depth_iter = range(depth)
+        depth_seq = self._depth_range()
 
         mip_count = 0
         for mip_count in itertools.count():
             for frame in range(frames):
-                for cube_or_depth in depth_iter:
+                for cube_or_depth in depth_seq:
                     self._frames[frame, cube_or_depth, mip_count] = Frame(width, height)
 
             # Once either is 1 large, we have no more mipmaps.
@@ -758,6 +751,8 @@ class VTF:
         vtf.resources = {}
         vtf.sheet_info = {}
 
+        depth_seq = vtf._depth_range()
+
         # Read resources.
         if version_minor >= 3:
             [num_resources] = struct.unpack('<3xI8x', file.read(15))
@@ -813,23 +808,11 @@ class VTF:
                 raise ValueError('Missing low-res thumbnail resource!')
             vtf._low_res._fileinfo = (file, low_res_offset, low_fmt)
 
-        # If cubemaps are present, we iterate that for depth.
-        # Otherwise, it's the depth value.
-        depth_iter: Iterable[Union[int, CubeSide]]
-        if VTFFlags.ENVMAP in vtf.flags:
-            # For version 7.5, the spheremap is skipped.
-            if version_minor == 5:
-                depth_iter = CUBES
-            else:
-                depth_iter = CUBES_WITH_SPHERE
-        else:
-            depth_iter = range(vtf.depth)
-
         for data_mipmap in reversed(range(mipmap_count)):
             mip_width = max(width >> data_mipmap, 1)
             mip_height = max(height >> data_mipmap, 1)
             for frame_ind in range(frame_count):
-                for depth_or_cube in depth_iter:
+                for depth_or_cube in depth_seq:
                     frame = vtf._frames[
                         frame_ind,
                         depth_or_cube,
@@ -940,23 +923,13 @@ class VTF:
                 _format_funcs.save(self.low_format, self._low_res._data, data, self._low_res.width, self._low_res.height)
             file.write(data)
 
-        # If cubemaps are present, we iterate that for depth.
-        # Otherwise it's the depth value.
-        depth_iter: Iterable[Union[int, CubeSide]]
-        if VTFFlags.ENVMAP in self.flags:
-            # For version 7.5, the spheremap is skipped.
-            if version_minor == 5:
-                depth_iter = CUBES
-            else:
-                depth_iter = CUBES_WITH_SPHERE
-        else:
-            depth_iter = range(self.depth)
+        depth_seq = self._depth_range()
 
         if version_minor >= 3:
             deferred.set_data('high_res', file.tell())
         for data_mipmap in reversed(range(self.mipmap_count)):
             for frame_ind in range(self.frame_count):
-                for depth_or_cube in depth_iter:
+                for depth_or_cube in depth_seq:
                     frame = self._frames[
                         frame_ind,
                         depth_or_cube,
@@ -984,6 +957,19 @@ class VTF:
         for frame in self._frames.values():
             frame._fileinfo = None
 
+    def _depth_range(self) -> Sequence[Union[int, CubeSide]]:
+        """Return the appropriate sequence for iterating over the _frames dict.
+
+        Depending on the type of VTF, frames may either be per cubemap side, or per depth.
+        """
+        if VTFFlags.ENVMAP in self.flags:
+            if self.version[1] >= 5:  # Spheremaps were removed in 7.5+
+                return CUBES
+            else:
+                return CUBES_WITH_SPHERE
+        else:
+            return range(self.depth)
+
     def load(self) -> None:
         """Fully load all image frames from the VTF.
 
@@ -1007,17 +993,9 @@ class VTF:
 
     def compute_mipmaps(self, filter: FilterMode = FilterMode.BILINEAR) -> None:
         """Regenerate all mipmaps that have previously been cleared."""
-        depth_iter: Collection[Union[int, CubeSide]]
-        if VTFFlags.ENVMAP in self.flags:
-            # For version 7.5, the spheremap is skipped.
-            if self.version == (7, 5):
-                depth_iter = CUBES
-            else:
-                depth_iter = CUBES_WITH_SPHERE
-        else:
-            depth_iter = range(self.depth)
+        depth_seq = self._depth_range()
         for frame_num in range(self.frame_count):
-            for depth_side in depth_iter:
+            for depth_side in depth_seq:
                 # Force to blank if cleared, we can't load it from aynthing.
                 self._frames[frame_num, depth_side, 0].load()
                 for mipmap in range(1, self.mipmap_count):
