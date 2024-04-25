@@ -291,6 +291,10 @@ class HelperTypes(Enum):
         """Is this an extension to the format?"""
         return self.name.startswith('EXT_')
 
+def AddDBPath(path: Path) -> None:
+    """Appends new paths to search for databases."""
+    global _ENGINE_DB_PATHS
+    _ENGINE_DB_PATHS.append(path)
 
 def _load_engine_db() -> list[_EngineDBProto]:
     """Load our engine database."""
