@@ -1547,6 +1547,9 @@ class EntityDef:
             
             if to_return is not KeyError:
                 break
+
+        else:
+            raise RuntimeError("No databases has been loaded!")
  
         return to_return
 
