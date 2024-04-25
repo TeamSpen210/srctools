@@ -57,7 +57,7 @@ SpawnFlags: TypeAlias = Tuple[int, str, bool, TagsSet]
 Choices: TypeAlias = Tuple[str, str, TagsSet]
 
 # Cached engine DB parsing functions.
-_ENGINE_DB: Optional[_EngineDBProto] = None
+_ENGINE_DB: Optional[list[_EngineDBProto]] = None
 
 
 class FGDParseError(TokenSyntaxError):
@@ -295,12 +295,14 @@ def _load_engine_db() -> list[_EngineDBProto]:
     # returning a deep-copy.
     global _ENGINE_DB
     if _ENGINE_DB is None:
+        _ENGINE_DB = []
         from ._engine_db import unserialise
 
         # On 3.8, importlib_resources doesn't have the right stubs.
         with cast(Any, files(srctools) / 'fgd.lzma').open('rb') as f:
-            _ENGINE_DB = unserialise(f)
-    return [_ENGINE_DB]
+            _ENGINE_DB.append(unserialise(f))
+        
+    return _ENGINE_DB
 
 
 def _engine_db_stats() -> str:
@@ -308,7 +310,13 @@ def _engine_db_stats() -> str:
     if _ENGINE_DB is None:
         return '<not loaded>'
     else:
-        return _ENGINE_DB.stats()
+        i = 0
+        to_return = ""
+        for db in _ENGINE_DB:
+            to_return += f"[Database {i}]: \n"
+            to_return += db.stats() + "\n"
+
+        return to_return
 
 
 def _read_colon_list(
