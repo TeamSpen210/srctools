@@ -299,7 +299,10 @@ def add_engine_database(path: Path) -> None:
 
 
 def _load_engine_db() -> list[_EngineDBProto]:
-    """Load our engine database."""
+    """Load the builtin database if required.
+
+    This returns the resolved ``_ENGINE_DB`` value, allowing callers to avoid the ``None`` check.
+    """
     # It's pretty expensive to parse, so keep the original privately,
     # returning a deep-copy.
     global _ENGINE_DB
@@ -1560,39 +1563,27 @@ class EntityDef:
         :raises KeyError: If the classname is not found in the database.
         """
         databases = _load_engine_db()
-
-        if len(databases) == 1:
-            return deepcopy(databases[0].get_ent(classname))
-
-        to_return = EntityDef(EntityTypes.BASE) # Create an empty to make pyright shut up, it will always get bound, if not keyerror is raised
-        errored = False
-        for dbase in databases: # Order is important here, overrides will occur if multiple are specified
+        for dbase in databases:
             try:
-                to_return = deepcopy(dbase.get_ent(classname)) # Try to catch the entity from this database, if not, raises KeyError
-                errored = False
-                break
+                return deepcopy(dbase.get_ent(classname))
             except KeyError as err:
-                errored = True
-                continue
+                pass
         
-        if errored:
-            raise KeyError(f"{classname} has not been found in any of the supplied databases!")
-
-        return to_return
+        raise KeyError(classname)
 
     @classmethod
     def engine_classes(cls) -> AbstractSet[str]:
         """Return a set of known entity classnames, from the Hammer Addons database."""
-        classnames: set[str] = set()
         databases = _load_engine_db()
 
-        if len(databases) == 1: # Don't iterate when there's no need to check for other databases
+        # If only one database exists, just pass on its set directly.
+        if len(databases) == 1:
             return databases[0].get_classnames()
-        
+
+        classnames: Set[str] = set()
         for dbase in databases:
             classnames |= dbase.get_classnames()
 
-        # This is immutable, so we don't need to copy.
         return frozenset(classnames)
 
     def __repr__(self) -> str:
