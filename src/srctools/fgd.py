@@ -10,7 +10,7 @@ from collections import ChainMap, defaultdict
 from copy import deepcopy
 from enum import Enum
 from importlib_resources import files
-from pathlib import PurePosixPath
+from pathlib import PurePosixPath, Path
 import io
 import itertools
 import math
@@ -57,7 +57,7 @@ SpawnFlags: TypeAlias = Tuple[int, str, bool, TagsSet]
 Choices: TypeAlias = Tuple[str, str, TagsSet]
 
 # Cached engine DB parsing functions.
-_ENGINE_DB: Optional[_EngineDBProto] = None
+_ENGINE_DB: Optional[list[_EngineDBProto]] = None
 
 
 class FGDParseError(TokenSyntaxError):
@@ -289,17 +289,31 @@ class HelperTypes(Enum):
         return self.name.startswith('EXT_')
 
 
-def _load_engine_db() -> _EngineDBProto:
-    """Load our engine database."""
+def add_engine_database(path: Path) -> None:
+    """Add an additional binary database. This can override the existing entities."""
+    db = _load_engine_db()  # Ensure the first database is initialised and loaded
+
+    with path.open('rb') as f:
+        from ._engine_db import unserialise
+        db.insert(0, unserialise(f))
+
+
+def _load_engine_db() -> list[_EngineDBProto]:
+    """Load the builtin database if required.
+
+    This returns the resolved ``_ENGINE_DB`` value, allowing callers to avoid the ``None`` check.
+    """
     # It's pretty expensive to parse, so keep the original privately,
     # returning a deep-copy.
     global _ENGINE_DB
     if _ENGINE_DB is None:
+        _ENGINE_DB = []
         from ._engine_db import unserialise
 
         # On 3.8, importlib_resources doesn't have the right stubs.
         with cast(Any, files(srctools) / 'fgd.lzma').open('rb') as f:
-            _ENGINE_DB = unserialise(f)
+            _ENGINE_DB.append(unserialise(f))
+        
     return _ENGINE_DB
 
 
@@ -308,7 +322,14 @@ def _engine_db_stats() -> str:
     if _ENGINE_DB is None:
         return '<not loaded>'
     else:
-        return _ENGINE_DB.stats()
+        i = 0
+        to_return = ""
+        for db in _ENGINE_DB:
+            to_return += f"[Database {i}]: "
+            to_return += db.stats() + "\n"
+            i += 1
+
+        return to_return
 
 
 def _read_colon_list(
@@ -1541,13 +1562,29 @@ class EntityDef:
 
         :raises KeyError: If the classname is not found in the database.
         """
-        return deepcopy(_load_engine_db().get_ent(classname))  # Or KeyError if not found.
+        databases = _load_engine_db()
+        for dbase in databases:
+            try:
+                return deepcopy(dbase.get_ent(classname))
+            except KeyError as err:
+                pass
+        
+        raise KeyError(classname)
 
     @classmethod
     def engine_classes(cls) -> AbstractSet[str]:
         """Return a set of known entity classnames, from the Hammer Addons database."""
-        # This is immutable, so we don't need to copy.
-        return _load_engine_db().get_classnames()
+        databases = _load_engine_db()
+
+        # If only one database exists, just pass on its set directly.
+        if len(databases) == 1:
+            return databases[0].get_classnames()
+
+        classnames: Set[str] = set()
+        for dbase in databases:
+            classnames |= dbase.get_classnames()
+
+        return frozenset(classnames)
 
     def __repr__(self) -> str:
         if self.type is EntityTypes.BASE:
@@ -2272,7 +2309,21 @@ class FGD:
         specific entities, use :py:func:`EntityDef.engine_def()` instead to avoid needing to fetch
         all the entities.
         """
-        return _load_engine_db().get_fgd()
+        temp_FGD = FGD()
+        databases = _load_engine_db()
+
+        if len(databases) == 1: # If there's only one there's no need to iterate again
+            return deepcopy(databases[0].get_fgd())
+
+        for dbase in databases:
+            dbasefgd: FGD = dbase.get_fgd()
+            for classname_, ent_ in dbasefgd.entities.items():
+
+                if not classname_ in temp_FGD.entities.keys(): # Don't include duplicates
+                    temp_FGD.entities[classname_] = ent_
+        
+        temp_FGD.apply_bases()
+        return deepcopy(temp_FGD)
 
     def __getitem__(self, classname: str) -> EntityDef:
         """Lookup entities by classname."""
