@@ -1723,7 +1723,7 @@ class Element(Mapping[str, Attribute]):
                     for subelem in attr.iter_elem():
                         if not isinstance(subelem, StubElement) and subelem.uuid not in elem_to_ind:
                             elem_to_ind[subelem.uuid] = len(elements)
-                            elements.append(subelem)
+                            elements.append(subelem)  # noqa: B909
                 # Only non-array strings get added to the DB.
                 elif version >= 4 and attr.type is ValueType.STRING and not attr.is_array:
                     used_strings.add(attr.val_str)
@@ -1850,7 +1850,7 @@ class Element(Mapping[str, Attribute]):
                         continue
                     if subelem.uuid not in use_count:
                         use_count[subelem.uuid] = 1
-                        elements.append(subelem)
+                        elements.append(subelem)  # noqa: B909
                     else:
                         use_count[subelem.uuid] += 1
 
