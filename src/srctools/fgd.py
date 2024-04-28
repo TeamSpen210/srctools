@@ -288,16 +288,15 @@ class HelperTypes(Enum):
         """Is this an extension to the format?"""
         return self.name.startswith('EXT_')
 
-def AddDatabase(path: Path) -> None:
-    """Add a new database on top of the current ones."""
-    global _ENGINE_DB
 
-    if _ENGINE_DB is None:
-        _load_engine_db() # Ensure the first database is initialized and loaded
+def add_engine_database(path: Path) -> None:
+    """Add an additional binary database. This can override the existing entities."""
+    db = _load_engine_db()  # Ensure the first database is initialised and loaded
 
     with path.open('rb') as f:
         from ._engine_db import unserialise
-        _ENGINE_DB.insert(0, unserialise(f))
+        db.insert(0, unserialise(f))
+
 
 def _load_engine_db() -> list[_EngineDBProto]:
     """Load our engine database."""
@@ -307,8 +306,6 @@ def _load_engine_db() -> list[_EngineDBProto]:
     if _ENGINE_DB is None:
         _ENGINE_DB = []
         from ._engine_db import unserialise
-
-
 
         # On 3.8, importlib_resources doesn't have the right stubs.
         with cast(Any, files(srctools) / 'fgd.lzma').open('rb') as f:
