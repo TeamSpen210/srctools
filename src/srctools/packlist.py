@@ -790,11 +790,9 @@ class PackList:
             for snd, _ in self.soundscript.packed_files()
         ])
 
-        buf = bytearray()
-        for line in manifest.export():
-            buf.extend(line.encode('utf8'))
-
-        self.pack_file('scripts/game_sounds_manifest.txt', FileType.GENERIC, bytes(buf))
+        buf = io.BytesIO()
+        manifest.serialise(io.TextIOWrapper(buf))
+        self.pack_file('scripts/game_sounds_manifest.txt', FileType.GENERIC, buf.getvalue())
 
     def write_particles_manifest(self, manifest_name: str) -> None:
         """Write a particles manifest, so that used particles can be loaded."""
@@ -804,11 +802,9 @@ class PackList:
                 filename = '!' + filename
             manifest.append(Keyvalues('file', filename))
 
-        buf = bytearray()
-        for line in manifest.export():
-            buf.extend(line.encode('utf8'))
-
-        self.pack_file(manifest_name, FileType.GENERIC, bytes(buf))
+        buf = io.BytesIO()
+        manifest.serialise(io.TextIOWrapper(buf))
+        self.pack_file(manifest_name, FileType.GENERIC, buf.getvalue())
 
     def pack_from_bsp(self, bsp: BSP) -> None:
         """Pack files found in BSP data (excluding entities)."""

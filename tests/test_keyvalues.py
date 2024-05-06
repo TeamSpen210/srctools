@@ -264,8 +264,8 @@ def test_parse(py_c_token: Type[Tokenizer]) -> None:
     )
     assert_tree(parse_result, result)
 
-    # Check export roundtrips.
-    assert_tree(parse_result, Keyvalues.parse(parse_result.export()))
+    # Check serialise roundtrips.
+    assert_tree(parse_result, Keyvalues.parse(parse_result.serialise()))
 
 
 def test_build() -> None:

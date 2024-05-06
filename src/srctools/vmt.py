@@ -293,13 +293,11 @@ class Material(MutableMapping[str, str]):
                 value = f'"{value}"'
             f.write(f'\t{name} {value}\n')
         for block in self.blocks:
-            for line in block.export():
-                f.write(f'\t{line}')
+            block.serialise(f, start_indent='\t')
         if self.proxies:
             f.write('\n\tProxies\n\t\t{\n')
             for block in self.proxies:
-                for line in block.export():
-                    f.write(f'\t\t{line}')
+                block.serialise(f, start_indent='\t\t')
             f.write('\t\t}\n')
         f.write('\t}\n')
 

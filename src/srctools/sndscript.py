@@ -482,27 +482,24 @@ class Sound:
                     '\t\t' 'start_stack\n'
                     '\t\t\t' '{\n'
                 )
-                for prop in self.stack_start:
-                    for line in prop.export():
-                        file.write('\t\t\t' + line)
+                for kv in self.stack_start:
+                    kv.serialise(file, start_indent='\t\t\t')
                 file.write('\t\t\t}\n')
             if self.stack_update:
                 file.write(
                     '\t\t' 'update_stack\n'
                     '\t\t\t' '{\n'
                 )
-                for prop in self.stack_update:
-                    for line in prop.export():
-                        file.write('\t\t\t' + line)
+                for kv in self.stack_update:
+                    kv.serialise(file, start_indent='\t\t\t')
                 file.write('\t\t\t}\n')
             if self.stack_stop:
                 file.write(
                     '\t\t' 'stop_stack\n'
                     '\t\t\t' '{\n'
                 )
-                for prop in self.stack_stop:
-                    for line in prop.export():
-                        file.write('\t\t\t' + line)
+                for kv in self.stack_stop:
+                    kv.serialise(file, start_indent='\t\t\t')
                 file.write('\t\t\t}\n')
             file.write('\t\t}\n')
         file.write('\t}\n')

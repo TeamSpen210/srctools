@@ -1177,7 +1177,7 @@ class Keyvalues:
         return f'Keyvalues({self._real_name!r}, {self._value!r})'
 
     def __str__(self) -> str:
-        return ''.join(self.export())
+        return self.serialise()
 
     @overload
     def serialise(
@@ -1299,7 +1299,7 @@ class Keyvalues:
             Keyvalues('unusual name', 'value')
             >>> print(subprop) # doctest: +NORMALIZE_WHITESPACE
             "config" "value"
-            >>> print(''.join(kv.export())) # doctest: +NORMALIZE_WHITESPACE
+            >>> print(kv.serialise()) # doctest: +NORMALIZE_WHITESPACE
             "name"
                 {
                 "root1" "blah"
