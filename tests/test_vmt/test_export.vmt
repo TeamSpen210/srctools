@@ -1,0 +1,18 @@
+LightmappedGeneric
+	{
+	$basetexture tools/toolsskybox
+	$surfaceprop dirt
+	$selfillum 1
+	$reflectivity "[.4 .8 .12]"
+
+	Proxies
+		{
+		"Sine"
+			{
+			"min" "0"
+			"max" "1"
+			"period" "2.3"
+			"resultVar" "$selfillumscale[0]"
+			}
+		}
+	}

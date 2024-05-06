@@ -294,12 +294,12 @@ class Material(MutableMapping[str, str]):
             f.write(f'\t{name} {value}\n')
         for block in self.blocks:
             for line in block.export():
-                f.write(f'\t{line}\n')
+                f.write(f'\t{line}')
         if self.proxies:
             f.write('\n\tProxies\n\t\t{\n')
             for block in self.proxies:
                 for line in block.export():
-                    f.write(f'\t\t{line}\n')
+                    f.write(f'\t\t{line}')
             f.write('\t\t}\n')
         f.write('\t}\n')
 
