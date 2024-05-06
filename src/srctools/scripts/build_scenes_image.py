@@ -1,8 +1,9 @@
 """Builds a ``scenes.image`` file. Unlike the original this allows merging into an existing image."""
+from __future__ import annotations
 import argparse
 import sys
 from pathlib import Path
-from typing import List, Literal, cast
+from typing import Literal, cast
 
 from srctools.choreo import CRC, Scene, Entry, parse_scenes_image, save_scenes_image
 from srctools.binformat import checksum
@@ -48,7 +49,7 @@ parser.add_argument(
 
 class ParsedArgs:
     """Result of the parser."""
-    input: List[Path]
+    input: list[Path]
     version: Literal[2, 3]
     output: Path
     require_unique: bool
@@ -64,7 +65,7 @@ def load_scene(root: Path, filename: Path, encoding: str) -> Entry:
     return entry
 
 
-def main(args: List[str]) -> None:
+def main(args: list[str]) -> None:
     """Main script."""
     opts = cast(ParsedArgs, parser.parse_args(args))
     scenes: dict[CRC, Entry] = {}
@@ -77,7 +78,7 @@ def main(args: List[str]) -> None:
                 if opts.require_unique and scene.checksum in scenes:
                     raise ValueError(f'Duplicate copy of "{scene.filename}" provided: {filename}')
                 scenes[scene.checksum] = scene
-        elif filename.suffix.casefold() == 'image':
+        elif filename.suffix.casefold() == '.image':
             print(f'Merging image {filename}')
             try:
                 with open(filename, 'rb') as f1:
@@ -94,7 +95,7 @@ def main(args: List[str]) -> None:
         else:
             raise ValueError(f'Unrecognised file "{filename}"')
 
-        print(f'{len(scenes)} scenes. Writing {opts.output}')
+    print(f'{len(scenes)} scenes. Writing {opts.output}')
     with opts.output.open('wb') as f2:
         save_scenes_image(
             f2, scenes,
