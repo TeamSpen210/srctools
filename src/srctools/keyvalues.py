@@ -1253,6 +1253,7 @@ class Keyvalues:
 
     serialize = serialise  # Alias
 
+    @deprecated('Use serialise() instead.')
     def export(self) -> Iterator[str]:
         """Generate the set of strings for a keyvalues file.
 

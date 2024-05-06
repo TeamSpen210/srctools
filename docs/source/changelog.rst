@@ -11,6 +11,7 @@ Version (dev)
 * Allow passing :py:class:`~srctools.math.FrozenVec` to :py:meth:`VMF.make_prism() <srctools.vmf.VMF.make_prism>`/:py:meth:`~srctools.vmf.VMF.make_hollow`.
 * Fix bare strings on the end of CRLF lines eating the ``\r``.
 * Escape characters like `"` when exporting VMFs. This isn't supported by regular Source, but can be added by mods.
+* :py:meth:`Keyvalues.export() <srctools.keyvalues.Keyvalues.export>` is now deprecated.
 
 --------------
 Version 2.3.17
