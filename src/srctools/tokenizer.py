@@ -28,8 +28,27 @@ from srctools import StringPath
 __all__ = [
     'TokenSyntaxError', 'BARE_DISALLOWED',
     'Token', 'BaseTokenizer', 'Tokenizer', 'IterTokenizer',
-    'escape_text',
+    'escape_text', 'format_exc_fileinfo',
 ]
+
+
+def format_exc_fileinfo(msg: str, file: Optional[StringPath], line_num: Optional[int]) -> str:
+    """If a line number or file is provided, include those in the error message."""
+    if file is None and line_num is None:
+        return msg
+    parts = [msg]
+    if line_num is not None:
+        parts.append(f'\nError occurred on line {line_num}')
+        if file is not None:
+            parts.append(f', with file "{file}".')
+        else:
+            parts.append('.')
+    elif file is not None:
+        parts.append(f'\nError occurred with file "{file}".')
+    else:
+        # We checked for both being none above!
+        raise AssertionError((msg, file, line_num))
+    return ''.join(parts)
 
 
 class TokenSyntaxError(Exception):
@@ -78,18 +97,7 @@ class TokenSyntaxError(Exception):
 
         This includes the line number and file, if available.
         """
-        mess = self.mess
-        if self.line_num:
-            mess += f'\nError occurred on line {self.line_num}'
-            if self.file:
-                mess += ', with file'
-            else:
-                mess += '.'
-        if self.file:
-            if not self.line_num:
-                mess += '\nError occurred with file'
-            mess += f' "{self.file}".'
-        return mess
+        return format_exc_fileinfo(self.mess, self.file, self.line_num)
 
 
 class Token(Enum):

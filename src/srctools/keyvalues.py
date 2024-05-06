@@ -62,7 +62,7 @@ from typing import (
     Any, Callable, ClassVar, Dict, Final, Iterable, Iterator, List, Mapping, Optional,
     Protocol, Tuple, Type, TypeVar, Union, cast,
 )
-from typing_extensions import TypeAlias, deprecated, overload
+from typing_extensions import Literal, TypeAlias, deprecated, overload
 import builtins  # Keyvalues.bool etc shadows these.
 import io
 import keyword
@@ -73,7 +73,10 @@ import warnings
 
 from srctools import BOOL_LOOKUP, EmptyMapping, StringPath
 from srctools.math import Vec as _Vec
-from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
+from srctools.tokenizer import (
+    BaseTokenizer, Token, Tokenizer, TokenSyntaxError,
+    escape_text, format_exc_fileinfo,
+)
 
 
 __all__ = ['KeyValError', 'NoKeyError', 'LeafKeyvalueError', 'Keyvalues', 'escape_text']
@@ -113,15 +116,23 @@ class NoKeyError(LookupError):
     """Raised if a key is not found when searching with
     :py:meth:`~Keyvalues.find_key()`, :py:meth:`~Keyvalues.find_block()`, etc."""
     key: str  #: The key that was missing.
-    def __init__(self, key: str) -> None:
+    line_num: Optional[int]  #: The line number where the block is defined, if known.
+    filename: Optional[str]  #: The filename where the block is defined, if known.
+    def __init__(
+        self, key: str,
+        line_num: Optional[int] = None,
+        filename: Optional[str] = None,
+    ) -> None:
         super().__init__(key)
         self.key = key
+        self.line_num = line_num
+        self.filename = filename
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.key!r})'
 
     def __str__(self) -> str:
-        return f"No key {self.key}!"
+        return format_exc_fileinfo(f"No key {self.key}!", self.filename, self.line_num)
 
 
 class LeafKeyvalueError(ValueError):
@@ -131,16 +142,23 @@ class LeafKeyvalueError(ValueError):
     """
     leaf: 'Keyvalues'  #: The keyvalue being used.
     operation: str  #: Name of the operation being performed.
-    def __init__(self, leaf: 'Keyvalues', operation: str) -> None:
+    line_num: Optional[int]  #: The line number where the leaf is defined, if known.
+    filename: Optional[str]  #: The filename where the leaf is defined, if known.
+    def __init__(self, leaf: 'Keyvalues', operation: str, filename: Optional[str] = None) -> None:
         super().__init__(operation)
         self.leaf = leaf
         self.operation = operation
+        self.line_num = leaf.line_num
+        self.filename = filename
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.leaf!r}, {self.operation!r})'
 
     def __str__(self) -> str:
-        return f'Cannot {self.operation} a leaf {self.leaf!r}, since it has no children!'
+        return format_exc_fileinfo(
+            f'Cannot {self.operation} a leaf {self.leaf!r}, since it has no children!',
+            self.filename, self.line_num,
+        )
 
 
 class _SupportsWrite(Protocol):
@@ -171,18 +189,34 @@ class Keyvalues:
     Root objects export each child at the topmost indent level. This is produced from :py:meth:`Keyvalues.parse()` calls.
     """
     # Helps decrease memory footprint with lots of Keyvalues values.
-    __slots__ = ('_folded_name', '_real_name', '_value')
+    __slots__ = ('_folded_name', '_real_name', '_value', 'line_num')
     _folded_name: Optional[str]
     _real_name: Optional[str]
     _value: _KV_Value
+    line_num: Optional[int]
 
     @overload
-    def __init__(self, name: str, value: Union[List['Keyvalues'], str]) -> None: ...
+    def __init__(
+        self,
+        name: str,
+        value: Union[List['Keyvalues'], str],
+        line_num: Optional[int] = None,
+    ) -> None: ...
     @overload
-    @deprecated("Root properties will change to a new class.", category=None)
-    def __init__(self, name: None, value: Union[List['Keyvalues'], str]) -> None: ...
+    @deprecated("Use Keyvalues.root() to construct.", category=None)
+    def __init__(
+        self,
+        name: None,
+        value: Union[List['Keyvalues'], str],
+        line_num: Optional[int] = None,
+    ) -> None: ...
 
-    def __init__(self, name: Optional[str], value: Union[List['Keyvalues'], str]) -> None:
+    def __init__(
+        self,
+        name: Optional[str],
+        value: Union[List['Keyvalues'], str],
+        line_num: Optional[int] = None,
+    ) -> None:
         """Create a new keyvalues instance."""
         if name is None:
             warnings.warn("Root properties will change to a new class.", DeprecationWarning, 2)
@@ -192,6 +226,7 @@ class Keyvalues:
             self._folded_name = sys.intern(name.casefold())
 
         self._value = value
+        self.line_num = line_num
 
     @property
     def value(self) -> str:
@@ -276,6 +311,7 @@ class Keyvalues:
             if not isinstance(child, Keyvalues):
                 raise TypeError(f'{type(kv).__name__} is not a Keyvalues!')
         kv._value = list(children)
+        kv.line_num = None
         return kv
 
     @staticmethod
@@ -313,13 +349,14 @@ class Keyvalues:
         # Skip calling __init__ for speed.
         cur_block = root = Keyvalues.__new__(Keyvalues)
         cur_block._folded_name = cur_block._real_name = None
+        cur_block.line_num = 1
 
         # Cache off the value list.
         cur_block_contents: List[Keyvalues]
         cur_block_contents = cur_block._value = []
         # A queue of the properties we are currently in (outside to inside).
         # And the line numbers of each of these, for error reporting.
-        open_properties: List[Tuple[Keyvalues, int]] = [(cur_block, 1)]
+        open_properties: List[Keyvalues] = [cur_block]
 
         # Grab a reference to the token values, so we avoid global lookups.
         STRING: Final = Token.STRING
@@ -341,38 +378,39 @@ class Keyvalues:
                 allow_escapes=allow_escapes,
             )
 
-        # If >= 0, we're requiring a block to open next ("name"\n must have { next.)
-        # It's the line number of the header name then.
-        BLOCK_LINE_NONE: Final = -1  # there's no block.
-        BLOCK_LINE_SKIP: Final = -2  # the block is disabled, so we need to skip it.
-        block_line = BLOCK_LINE_NONE
+        # A pseudo-enum to track whether we expect a block next.
+        BLOCK_LINE_EXPECT: Literal[2] = 2  # We require a block to open next ("name"\n must have { next.)
+        BLOCK_LINE_NONE: Literal[0] = 0  # there's no block.
+        BLOCK_LINE_SKIP: Literal[1] = 1  # the block is disabled, so we need to skip it.
+        block_line: Literal[0, 1, 2] = BLOCK_LINE_NONE
         # Are we permitted to replace the last keyvalue with a flagged version of the same?
         can_flag_replace = False
 
         for token_type, token_value in tokenizer:
             if token_type is BRACE_OPEN:  # {
                 # Open a new block - make sure the last token was a name.
-                if block_line == BLOCK_LINE_NONE:
+                if block_line is BLOCK_LINE_NONE:
                     raise tokenizer.error(
                         'Keyvalues cannot have sub-section if it already '
                         'has an in-line value.\n\n'
                         'A "name" "value" line cannot then open a block.',
                     )
                 can_flag_replace = False
-                if block_line == BLOCK_LINE_SKIP:
+                if block_line is BLOCK_LINE_SKIP:
                     # It failed the flag check. Use a dummy keyvalue object.
                     # This isn't put into the tree, so after we parse the block it's popped
                     # and discarded.
                     cur_block = Keyvalues.__new__(Keyvalues)
                     cur_block._folded_name = cur_block.real_name = '<skipped>'
+                    cur_block.line_num = None  # Not used, but make sure to keep it valid.
                 else:
                     cur_block = cur_block_contents[-1]
                 cur_block_contents = cur_block._value = []
-                open_properties.append((cur_block, block_line))
+                open_properties.append(cur_block)
                 block_line = BLOCK_LINE_NONE
                 continue
             # Something else, but followed by '{'
-            elif block_line != BLOCK_LINE_NONE and token_type is not NEWLINE:
+            elif block_line is not BLOCK_LINE_NONE and token_type is not NEWLINE:
                 raise tokenizer.error(
                     'Block opening ("{{") required!\n\n'
                     'A single "name" on a line should next have a open brace '
@@ -389,6 +427,7 @@ class Keyvalues:
                 keyvalue = Keyvalues.__new__(Keyvalues)
                 keyvalue._folded_name = sys.intern(token_value.casefold())
                 keyvalue.real_name = sys.intern(token_value)
+                keyvalue.line_num = tokenizer.line_num
 
                 # We need to check the next token to figure out what kind of
                 # prop it is.
@@ -396,10 +435,10 @@ class Keyvalues:
 
                 # It's a block followed by flag. ("name" [stuff])
                 if prop_type is PROP_FLAG:
-                    # That must be the end of the line..
+                    # That must be the end of the line...
                     tokenizer.expect(NEWLINE)
                     if _read_flag(flags, prop_value):
-                        block_line = tokenizer.line_num
+                        block_line = BLOCK_LINE_EXPECT
                         keyvalue._value = []
 
                         # Special function - if the last prop was a
@@ -420,7 +459,7 @@ class Keyvalues:
 
                 elif prop_type is STRING:
                     # A value.. ("name" "value")
-                    if block_line != BLOCK_LINE_NONE:
+                    if block_line is not BLOCK_LINE_NONE:
                         raise tokenizer.error(
                             'Keyvalue split across lines!\n\n'
                             'A value like "name" "value" must be on the same '
@@ -475,7 +514,7 @@ class Keyvalues:
                     # then re-evaluate the token in the next loop.
                     keyvalue._value = []
 
-                    block_line = tokenizer.line_num
+                    block_line = BLOCK_LINE_EXPECT
                     can_flag_replace = False
                     cur_block_contents.append(keyvalue)
                     tokenizer.push_back(prop_type, prop_value)
@@ -485,7 +524,7 @@ class Keyvalues:
                 # Move back a block
                 open_properties.pop()
                 try:
-                    cur_block, _ = open_properties[-1]
+                    cur_block = open_properties[-1]
                 except IndexError:
                     # It's empty, we've closed one too many properties.
                     raise tokenizer.error(
@@ -504,7 +543,7 @@ class Keyvalues:
 
         # We last had a ("name"\n), so we were expecting a block
         # next.
-        if block_line != BLOCK_LINE_NONE:
+        if block_line is not BLOCK_LINE_NONE:
             raise KeyValError(
                 'Block opening ("{") required, but hit EOF!\n'
                 'A "name" line was located at the end of the file, which needs'
@@ -523,8 +562,8 @@ class Keyvalues:
                 "File ended with at least one keyvalue that didn't "
                 'have an ending "}".\n'
                 'Open properties: \n- Root at line 1\n' + '\n'.join([
-                    f'- "{prop.real_name}" on line {line_num}'
-                    for prop, line_num in open_properties[1:]
+                    f'- "{prop.real_name}" on line {prop.line_num}'
+                    for prop in open_properties[1:]
                 ]),
                 tokenizer.filename,
                 line=None,
@@ -747,6 +786,7 @@ class Keyvalues:
         result = Keyvalues.__new__(Keyvalues)
         result._real_name = self._real_name
         result._folded_name = self._folded_name
+        result.line_num = self.line_num
         if isinstance(self._value, list):
             # This recurses if needed
             result._value = [child.copy() for child in self._value]
