@@ -193,6 +193,8 @@ class Keyvalues:
     _folded_name: Optional[str]
     _real_name: Optional[str]
     _value: _KV_Value
+    #: If parsed from a file, the line number this keyvalue starts on. This allows providing a
+    #: source location for missing-value exceptions.
     line_num: Optional[int]
 
     @overload
@@ -617,7 +619,7 @@ class Keyvalues:
         if or_blank:
             return Keyvalues(key, [])
         elif def_ is _NO_KEY_FOUND:
-            raise NoKeyError(key)
+            raise NoKeyError(key, self.line_num)
         else:
             # We were given a default, return it wrapped in a Keyvalue.
             return Keyvalues(key, def_)
@@ -640,7 +642,7 @@ class Keyvalues:
         if or_blank:
             return Keyvalues(key, [])
         else:
-            raise NoKeyError(key)
+            raise NoKeyError(key, self.line_num)
 
     def _get_value(self, key: str, def_: Union[builtins.str, T] = _NO_KEY_FOUND) -> Union[str, T]:
         """Obtain the value of the child Keyvalue with a given name.
@@ -665,7 +667,7 @@ class Keyvalues:
         if block_prop:
             warnings.warn('This will ignore block properties!', DeprecationWarning, stacklevel=3)
         if def_ is _NO_KEY_FOUND:
-            raise NoKeyError(key)
+            raise NoKeyError(key, self.line_num)
         else:
             return def_
 
@@ -1138,16 +1140,16 @@ class Keyvalues:
         item: Keyvalues
         for item in self._value[:]:
             if isinstance(item._value, list) and item._folded_name in folded_names:
-                prop = merge[item._folded_name]
-                assert isinstance(prop._value, list)
-                prop._value.extend(item)
+                kv = merge[item._folded_name]
+                assert isinstance(kv._value, list)
+                kv._value.extend(item)
             else:
                 new_list.append(item)
 
         for prop_name in names:
-            prop = merge[prop_name.casefold()]
-            if len(prop._value) > 0:
-                new_list.append(prop)
+            kv = merge[prop_name.casefold()]
+            if len(kv._value) > 0:
+                new_list.append(kv)
 
         self._value = new_list
 
@@ -1158,9 +1160,9 @@ class Keyvalues:
         try:
             return self.find_key(key)
         except NoKeyError:
-            prop = Keyvalues(key, [])
-            self._value.append(prop)
-            return prop
+            kv = Keyvalues(key, [])
+            self._value.append(kv)
+            return kv
 
     def has_children(self) -> builtins.bool:
         """Does this have child properties?"""
