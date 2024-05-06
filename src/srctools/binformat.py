@@ -3,9 +3,12 @@ The binformat module :mod:`binformat` contains functionality for handling binary
 esentially expanding on :external:mod:`struct`'s functionality.
 
 """
-from typing import IO, Any, Collection, Dict, Final, Hashable, List, Mapping, Optional, Tuple, Union
+from typing import (
+    IO, Any, Collection, Dict, Final, Hashable, List, Mapping, Optional, Tuple, TypeVar, Union,
+)
 from binascii import crc32
 from struct import Struct
+import functools
 import lzma
 
 from srctools.math import Vec
@@ -51,12 +54,14 @@ LZMA_FILT: Final = {
     'lp': 0,
     'pb': 2,
 }
+T = TypeVar("T")
+_cached_struct = functools.lru_cache()(Struct)
 
 
 def struct_read(fmt: Union[Struct, str], file: IO[bytes]) -> Tuple[Any, ...]:
     """Read a structure from the file, automatically computing the required number of bytes."""
     if not isinstance(fmt, Struct):
-        fmt = Struct(fmt)
+        fmt = _cached_struct(fmt)
     return fmt.unpack(file.read(fmt.size))
 
 
@@ -202,7 +207,7 @@ class DeferredWrites:
             if you are doing this yourself.
         """
         if isinstance(fmt, str):
-            fmt = Struct(fmt)
+            fmt = _cached_struct(fmt)
         self.loc[key] = (self.file.tell(), fmt)
         if write:
             self.file.write(bytes(fmt.size))
