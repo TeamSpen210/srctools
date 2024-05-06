@@ -1180,9 +1180,17 @@ class Keyvalues:
         return ''.join(self.export())
 
     @overload
-    def serialise(self, file: _SupportsWrite, /, *, indent: str = '\t', indent_braces: builtins.bool = True) -> None: ...
+    def serialise(
+        self, file: _SupportsWrite,
+        /, *, indent: str = '\t', indent_braces: builtins.bool = True,
+        start_indent: str = '',
+    ) -> None: ...
     @overload
-    def serialise(self, /, *, indent: str = '\t', indent_braces: builtins.bool = True) -> str: ...
+    def serialise(
+        self,
+        /, *, indent: str = '\t', indent_braces: builtins.bool = True,
+        start_indent: str = '',
+    ) -> str: ...
 
     def serialise(
         self,
@@ -1190,14 +1198,16 @@ class Keyvalues:
         /, *,
         indent: str = '\t',
         indent_braces: builtins.bool = True,
+        start_indent: str = '',
     ) -> Optional[str]:
         """Serialise the keyvalues data to a file, or return as a string.
 
         Recursive trees are not permitted.
 
         :param file: The file to write to. If omitted, the data is returned instead.
-        :param indent: The characters to use for each indentation.
+        :param indent: The characters to use for each indentation level.
         :param indent_braces: If enabled, indent the braces to match the block contents, instead of the name.
+        :param start_indent: The initial starting indentation. Useful to allow serialising inside an existing file.
         """
         buffer: Optional[io.StringIO] = None
         if file is None:
@@ -1209,7 +1219,7 @@ class Keyvalues:
         else:
             open_brace, close_brace = '{\n', '}\n'
 
-        self._serialise(file, indent, open_brace, close_brace, '')
+        self._serialise(file, indent, open_brace, close_brace, start_indent)
 
         if buffer is not None:
             return buffer.getvalue()
