@@ -62,6 +62,7 @@ class _ValidKVEnum(Protocol):
     @property
     def value(self) -> _ValidKVBasics:
         """Matches an enum with a value which itself can be converted to a keyvalue."""
+        return ""
 
 
 ValidKVs: TypeAlias = Union[_ValidKVBasics, _ValidKVEnum]
