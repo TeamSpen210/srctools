@@ -4,8 +4,8 @@ Wraps property_parser tree in a set of classes which smartly handle
 specifics of VMF files.
 """
 from typing import (
-    Callable, IO, TYPE_CHECKING, AbstractSet, Any, Dict, Final, FrozenSet, ItemsView, Iterable,
-    Iterator, KeysView, List, Mapping, Match, MutableMapping, Optional, Pattern, Set,
+    Callable, IO, Protocol, TYPE_CHECKING, AbstractSet, Any, Dict, Final, FrozenSet, ItemsView,
+    Iterable, Iterator, KeysView, List, Mapping, Match, MutableMapping, Optional, Pattern, Set,
     Tuple, TypeVar, Union, ValuesView, overload,
 )
 from typing_extensions import Literal, TypeAlias, deprecated
@@ -25,7 +25,7 @@ import attrs
 from srctools import BOOL_LOOKUP, EmptyMapping
 from srctools.keyvalues import Keyvalues, escape_text
 from srctools.math import (
-    Angle, AnyAngle, AnyMatrix, AnyVec, FrozenMatrix, FrozenVec, Matrix, Vec,
+    Angle, AnyAngle, AnyMatrix, AnyVec, FrozenAngle, FrozenMatrix, FrozenVec, Matrix, Vec,
     format_float, to_matrix,
 )
 import srctools
@@ -55,8 +55,18 @@ T = TypeVar('T')
 # Types we allow for setting keyvalues. These we can stringify into something
 # matching Valve's usual encoding.
 # Other types are just str()ed, which might produce a bad result.
-ValidKVs = Union[str, int, bool, float, AnyVec, AnyAngle, AnyMatrix]
+_ValidKVBasics = Union[str, int, bool, float, Vec, FrozenVec, AnyAngle, AnyMatrix]
+
+
+class _ValidKVEnum(Protocol):
+    @property
+    def value(self) -> _ValidKVBasics:
+        """Matches an enum with a value which itself can be converted to a keyvalue."""
+
+
+ValidKVs: TypeAlias = Union[_ValidKVBasics, _ValidKVEnum]
 ValidKV_T = TypeVar('ValidKV_T', bound=ValidKVs)
+_KVToString = (Vec, FrozenVec, Angle, FrozenAngle, int)
 
 
 class DispFlag(Flag):
@@ -115,8 +125,14 @@ def conv_kv(val: ValidKVs) -> str:
         return str(val.to_angle())
     elif isinstance(val, float):
         return format_float(val)
-    else:
+    elif isinstance(val, _KVToString):
         return str(val)
+    try:
+        val = val.value
+    except AttributeError:
+        return str(val)  # Fallback.
+    else:
+        return conv_kv(val)
 
 
 class IDMan(AbstractSet[int]):

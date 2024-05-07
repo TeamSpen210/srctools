@@ -14,6 +14,7 @@ Version (dev)
 * Added :py:attr:`Keyvalues.line_num <srctools.keyvalues.Keyvalues.line_num>`, to
   allow reporting the source location in exceptions.
 * :py:meth:`Keyvalues.export() <srctools.keyvalues.Keyvalues.export>` is now deprecated.
+* Allow directly passing enums to set VMF keyvalues and fixups, if the ``value`` is itself a valid value.
 
 --------------
 Version 2.3.17

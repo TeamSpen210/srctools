@@ -1,11 +1,12 @@
 """Tests for the VMF library."""
+from enum import Enum
 from typing import Any, Optional
 
 from dirty_equals import IsList
 import pytest
 
-from srctools import Angle, Keyvalues, Vec
-from srctools.vmf import VMF, Entity, Output
+from srctools import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Keyvalues, Matrix, Vec
+from srctools.vmf import VMF, Entity, Output, conv_kv
 
 
 def assert_output(
@@ -47,6 +48,29 @@ def assert_output(
         f'params={params!r}, delay={delay!r}, times={times!r}, i_out={inst_out!r}, '
         f'i_in={inst_in!r}, comma={comma_sep!r})'
     )
+
+
+class KVEnum(Enum):
+    """An enum with a value that can be converted to a KV."""
+    PREFIX = 0
+    SUFFIX = True
+    NONE = 2.0
+
+
+def test_valid_kvs() -> None:
+    """Test valid KV conversions."""
+    assert conv_kv(4.7) == "4.7"
+    assert conv_kv("four") == "four"
+    assert conv_kv(8) == "8"
+    assert conv_kv(False) == "0"
+    assert conv_kv(True) == "1"
+    assert conv_kv(Vec(1, 2.5, 3)) == "1 2.5 3"
+    assert conv_kv(FrozenVec(1, 2.5, 3)) == "1 2.5 3"
+    assert conv_kv(Angle(12.5, 90, 0.0)) == "12.5 90 0"
+    assert conv_kv(FrozenAngle(12.5, 90, 0.0)) == "12.5 90 0"
+    assert conv_kv(Matrix.from_roll(30)) == "0 0 30"
+    assert conv_kv(FrozenMatrix.from_roll(30)) == "0 0 30"
+    assert conv_kv(KVEnum.PREFIX) == "0"
 
 
 def test_entkey_basic() -> None:
