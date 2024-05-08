@@ -54,7 +54,7 @@ if sys.platform == 'win32':
         """Send the command to a game."""
         window: ctypes.c_void_p = _FindWindowW(classname, None)
         if not window:
-            raise ctypes.WinError(descr='No window found!')
+            raise LookupError('No window found!')
         buf = ctypes.create_string_buffer(command)
         data = CopyDataStruct(
             dWData=_ulong_ptr(),
@@ -62,7 +62,7 @@ if sys.platform == 'win32':
             lpData=ctypes.cast(buf, ctypes.c_void_p),
         )
         if not _SendMessageW(window, WM_COPYDATA, _uint_ptr(), ctypes.cast(ctypes.byref(data), _long_ptr)):
-            raise ctypes.WinError(descr="Failed to send command.")
+            raise ValueError("Failed to send command.")
 else:
     def _send_cmd(command: bytes, classname: str) -> None:
         """Not available on this OS."""
