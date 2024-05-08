@@ -1,5 +1,6 @@
 """Code which handles executing and interfacing with game binaries."""
-from typing import IO, List
+from __future__ import annotations
+from typing import IO
 import logging
 import os.path
 import subprocess
@@ -52,8 +53,8 @@ if sys.platform == 'win32':
 
     def _send_cmd(command: bytes, classname: str) -> None:
         """Send the command to a game."""
-        window: ctypes.c_void_p = _FindWindowW(classname, None)
-        if not window:
+        window: ctypes.c_void_p | None = _FindWindowW(classname, None)
+        if window is None:
             raise LookupError('No window found!')
         buf = ctypes.create_string_buffer(command)
         data = CopyDataStruct(
@@ -101,7 +102,7 @@ def get_compiler_name(program: str) -> str:
 
 def run_compiler(
     name: str,
-    args: List[str],
+    args: list[str],
     logger: logging.Logger = get_logger('<compiler>'),
     change_name: bool = True,
 ) -> int:

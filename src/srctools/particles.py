@@ -99,7 +99,6 @@ class Particle:
             return [
                 Operator(ele.name, ele.pop('functionName').val_str, copy.deepcopy(dict(ele)))
                 for ele in value.iter_elem()
-                if isinstance(ele, Element)
             ]
 
         for elem in part_list.iter_elem():

@@ -409,7 +409,7 @@ def init_logging(
         log_handler.setFormatter(long_log_format)
         logger.addHandler(log_handler)
 
-    if sys.stdout:
+    if sys.stdout is not None:
         stdout_loghandler = logging.StreamHandler(sys.stdout)
         stdout_loghandler.setLevel(
             logging.DEBUG
@@ -419,7 +419,7 @@ def init_logging(
         stdout_loghandler.setFormatter(short_log_format)
         logger.addHandler(stdout_loghandler)
 
-        if sys.stderr:
+        if sys.stderr is not None:
             def ignore_warnings(record: logging.LogRecord) -> bool:
                 """Filter out messages higher than WARNING.
 
@@ -430,7 +430,7 @@ def init_logging(
     else:
         sys.stdout = NullStream()
 
-    if sys.stderr:
+    if sys.stderr is not None:
         stderr_loghandler = logging.StreamHandler(sys.stderr)
         stderr_loghandler.setLevel(logging.WARNING)
         stderr_loghandler.setFormatter(short_log_format)

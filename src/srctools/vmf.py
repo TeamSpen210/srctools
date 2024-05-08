@@ -2225,7 +2225,6 @@ class Entity(MutableMapping[str, str]):
         """Construct an entity from scratch."""
         self.map = vmf_file
         self._keys = _KeyDict()
-        self._fixup = EntityFixup(fixup) if fixup else None
         self.outputs = list(outputs)
         self.solids = list(solids)
         self.id = vmf_file.ent_id.get_id(ent_id)
@@ -2241,6 +2240,9 @@ class Entity(MutableMapping[str, str]):
 
         for k, v in keys.items():
             self[k] = v
+
+        fixup_list = list(fixup)
+        self._fixup = EntityFixup(fixup_list) if fixup_list else None
 
     if TYPE_CHECKING:
         def keys(self) -> KeysView[str]:
@@ -2778,7 +2780,7 @@ class EntityFixup(MutableMapping[str, str]):
     name for each key is preserved.
 
     Additionally, lookups never fail - returning '' instead. Pass in a non-string
-    default or use `in` to distinguish,.
+    default or use `in` to distinguish.
     """
 
     # Because of the int(), bool(), float() methods, we need to use builtins.*

@@ -131,6 +131,18 @@ check_untyped_defs = true
 show_error_codes = true
 strict = true
 
+enable_error_code = [
+	'mutable-override',
+	'narrowed-type-not-subtype',
+	'redundant-expr',
+	'redundant-self',
+	'truthy-bool',
+	'truthy-iterable',
+	'unimported-reveal',
+	'unreachable',
+	'unused-awaitable',
+]
+
 [tool.isort]
 sections=["FUTURE", "TYPING", "FRAMEWORK", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 known_framework = []
