@@ -605,8 +605,9 @@ class Event:
 
     # Only used in VCDs.
     default_curve_type: CurveType = CURVE_DEFAULT
-    pitch: int = 0
-    yaw: int = 0
+    # Zero = unset.
+    pitch: int = attrs.field(default=0, validator=[attrs.validators.ge(-100), attrs.validators.le(100)])
+    yaw: int = attrs.field(default=0, validator=[attrs.validators.ge(-100), attrs.validators.le(100)])
 
     @property
     def has_end_time(self) -> bool:
@@ -804,8 +805,8 @@ class Event:
         tag_wav_name: str | None = None
         dist_to_targ: float = 0
         default_curve_type = CURVE_DEFAULT
-        pitch = 0.0
-        yaw = 0.0
+        pitch = 0
+        yaw = 0
 
         rel_tags: list[Tag] = []
         timing_tags: list[TimingTag] = []
