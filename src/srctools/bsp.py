@@ -4,7 +4,7 @@ Data from a read BSP is lazily parsed when each section is accessed.
 """
 from typing import (
     Any, Callable, ClassVar, Dict, Generator, Generic, Iterator, List, Mapping,
-    Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
+    Optional, Sequence, Set, Tuple, Type, TypeVar, Union, overload,
 )
 from typing_extensions import TypedDict, deprecated
 from enum import Enum, Flag
@@ -1224,14 +1224,15 @@ class ParsedLump(Generic[T]):
         """Read the lump, then discard."""
         if instance is None:  # Accessed on the class.
             return self
+        result: T
         try:
             # noinspection PyProtectedMember
-            return cast(T, instance._parsed_lumps[self.lump])
+            result = instance._parsed_lumps[self.lump]
+            return result
         except KeyError:
             pass
         if self._read is None:
             raise TypeError('ParsedLump.__set_name__ was never called!')
-        result: T
         if isinstance(self.lump, BSP_LUMPS):
             data = instance.lumps[self.lump].data
             LOGGER.debug('Load game lump {} ({} bytes)', self.lump, len(data))
@@ -1525,17 +1526,21 @@ class BSP:
             except KeyError:
                 pass
             else:
-                lump_result: bytes = cast(bytes, self._save_funcs[lump_or_game](self, data))
+                lump_result = self._save_funcs[lump_or_game](self, data)
                 # Convenience, yield to accumulate into bytes.
                 if inspect.isgenerator(lump_result):
                     buf = BytesIO()
                     for chunk in lump_result:
                         buf.write(chunk)
-                    lump_result = buf.getvalue()
-                if isinstance(lump_or_game, BSP_LUMPS):
-                    self.lumps[lump_or_game].data = lump_result
+                    result = buf.getvalue()
+                elif isinstance(lump_result, bytes):
+                    result = lump_result
                 else:
-                    self.game_lumps[lump_or_game].data = lump_result
+                    raise ValueError(lump_result)
+                if isinstance(lump_or_game, BSP_LUMPS):
+                    self.lumps[lump_or_game].data = result
+                else:
+                    self.game_lumps[lump_or_game].data = result
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
         with AtomicWriter(filename or self.filename, is_bytes=True) as file:
