@@ -586,7 +586,7 @@ def _check_event_type(
 class Event:
     """An event is an action that occurs in a choreo scene's timeline."""
     name: str
-    type: EventType = attrs.field(converter=_validate_base_event_type)
+    type: Final[EventType] = attrs.field(converter=_validate_base_event_type)
     flags: EventFlags = EventFlags(0)
     parameters: tuple[str, str, str]
     start_time: float
@@ -1058,21 +1058,22 @@ class Event:
 @attrs.define(eq=False, kw_only=True)
 class GestureEvent(Event):
     """Additional parameters for Gesture events."""
-    type: Literal[EventType.Gesture] = attrs.field(default=EventType.Gesture, init=False, repr=False)
+    # Ignore the override of the parent's Final attribute.
+    type: Final[Literal[EventType.Gesture]] = attrs.field(default=EventType.Gesture, init=False, repr=False)  # type: ignore
     gesture_sequence_duration: float
 
 
 @attrs.define(eq=False, kw_only=True)
 class LoopEvent(Event):
     """Additional parameters for Loop events."""
-    type: Literal[EventType.Loop] = attrs.field(default=EventType.Loop, init=False, repr=False)
+    type: Final[Literal[EventType.Loop]] = attrs.field(default=EventType.Loop, init=False, repr=False)  # type: ignore
     loop_count: int = 0
 
 
 @attrs.define(eq=False, kw_only=True)
 class SpeakEvent(Event):
     """Additional parameters for Speak events."""
-    type: Literal[EventType.Speak] = attrs.field(default=EventType.Speak, init=False, repr=False)
+    type: Final[Literal[EventType.Speak]] = attrs.field(default=EventType.Speak, init=False, repr=False)  # type: ignore
     caption_type: CaptionType = CaptionType.Master
     cc_token: str = ''
     suppress_caption_attenuation: bool = False
