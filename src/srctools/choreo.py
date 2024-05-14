@@ -1268,7 +1268,7 @@ class Scene:
         return file.getvalue()
 
     @classmethod
-    def parse_text(cls, file: Iterable[str]) -> Self:
+    def parse_text(cls, tokenizer: BaseTokenizer) -> Self:
         """Parse a scene from a text VCD file.
 
         This does not calculate the CRC value.
@@ -1282,8 +1282,6 @@ class Scene:
         map_name = ''
         fps = FPS_DEFAULT
         use_frame_snap = False
-
-        tokenizer = Tokenizer(file)
 
         for tok, tok_val in tokenizer.skipping_newlines():
             if tok is not Token.STRING:

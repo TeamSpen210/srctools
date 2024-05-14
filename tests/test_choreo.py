@@ -10,12 +10,13 @@ from srctools.choreo import (
     Interpolation,
     LoopEvent, Scene, SpeakEvent, Tag,
 )
+from srctools.tokenizer import Tokenizer
 
 
 def test_parse_vcd(datadir: Path) -> None:
     """Test parsing a sample VCD file."""
     with open(datadir / 'sample.vcd') as f:
-        scene = Scene.parse_text(f)
+        scene = Scene.parse_text(Tokenizer(f))
     assert scene.fps == 60
     assert scene.scale_settings == {
         'CChoreoView': '100',
@@ -165,7 +166,7 @@ def test_parse_vcd(datadir: Path) -> None:
 def test_save_text(datadir: Path, file_regression: FileRegressionFixture) -> None:
     """Test resaving a text VCD file."""
     with open(datadir / 'sample.vcd') as f:
-        scene = Scene.parse_text(f)
+        scene = Scene.parse_text(Tokenizer(f))
     buf = io.StringIO()
     scene.export_text(buf)
     file_regression.check(buf.getvalue(), extension='.vcd')
@@ -175,7 +176,7 @@ def test_save_binary(datadir: Path, file_regression: FileRegressionFixture) -> N
     """Test resaving a binary VCD file."""
     import json
     with open(datadir / 'sample.vcd') as f:
-        scene = Scene.parse_text(f)
+        scene = Scene.parse_text(Tokenizer(f))
 
     pool = []
 
