@@ -15,7 +15,7 @@ import re
 import attrs
 
 from srctools import binformat, conv_bool, conv_int, conv_float
-from srctools.tokenizer import BaseTokenizer, Token, escape_text
+from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, escape_text
 
 
 CRC = NewType('CRC', int)
@@ -233,12 +233,16 @@ NAME_TO_EVENT_TYPE = {
 PARAM_KEY_INDEXES = {
     'param': 0,
     'param2': 1,
-    'paraam3': 2,
+    'param3': 2,
 }
-CAPTION_TYPES = {
+NAME_TO_CAPTION_TYPE = {
     'cc_master': CaptionType.Master,
     'cc_slave': CaptionType.Slave,
     'cc_disabled': CaptionType.Disabled,
+}
+CAPTION_TYPE_TO_NAME = {
+    v: k for k, v in
+    NAME_TO_CAPTION_TYPE.items()
 }
 
 
@@ -859,7 +863,7 @@ class Event:
                 _check_event_type(tokenizer, folded, event_type, EventType.Speak)
                 cc_type_str = tokenizer.expect(Token.STRING, skip_newline=False)
                 try:
-                    caption_type = CAPTION_TYPES[cc_type_str.casefold()]
+                    caption_type = NAME_TO_CAPTION_TYPE[cc_type_str.casefold()]
                 except KeyError:
                     raise tokenizer.error('Invalid caption type "{}"', cc_type_str) from None
             elif folded == "cctoken":
@@ -913,6 +917,8 @@ class Event:
                 absolute_shifted_tags=abs_shifted_tags,
                 tag_name=tag_name,
                 tag_wav_name=tag_wav_name,
+                pitch=pitch,
+                yaw=yaw,
 
                 gesture_sequence_duration=gesture_sequence_duration,
             )
@@ -932,6 +938,8 @@ class Event:
                 absolute_shifted_tags=abs_shifted_tags,
                 tag_name=tag_name,
                 tag_wav_name=tag_wav_name,
+                pitch=pitch,
+                yaw=yaw,
 
                 loop_count=loop_count,
             )
@@ -951,6 +959,8 @@ class Event:
                 absolute_shifted_tags=abs_shifted_tags,
                 tag_name=tag_name,
                 tag_wav_name=tag_wav_name,
+                pitch=pitch,
+                yaw=yaw,
 
                 cc_token=cc_token,
                 caption_type=caption_type,
@@ -975,13 +985,15 @@ class Event:
                 absolute_shifted_tags=abs_shifted_tags,
                 tag_name=tag_name,
                 tag_wav_name=tag_wav_name,
+                pitch=pitch,
+                yaw=yaw,
             )
 
     def export_text(self, file: IO[str], indent: str) -> None:
         """Write this to a text VCD file."""
         file.write(f'{indent}event {self.type.name.lower()} "{escape_text(self.name)}"\n')
-        file.write(f'{indent} {{\n')
-        file.write(f'{indent} time {self.start_time} {self.end_time}\n')
+        file.write(f'{indent}{{\n')
+        file.write(f'{indent} time {self.start_time:.6f} {self.end_time:.6f}\n')
         file.write(f'{indent} param "{escape_text(self.parameters[0])}"\n')
         if self.parameters[1]:
             file.write(f'{indent} param2 "{escape_text(self.parameters[1])}"\n')
@@ -990,9 +1002,9 @@ class Event:
         if self.ramp.ramp:
             self.ramp.export_text(file, indent, 'event_ramp')
         if self.pitch:
-            file.write(f'{indent} pitch {self.pitch}\n')
+            file.write(f'{indent} pitch "{self.pitch}"\n')
         if self.yaw:
-            file.write(f'{indent} yaw {self.yaw}\n')
+            file.write(f'{indent} yaw "{self.yaw}"\n')
         if self.dist_to_targ > 0.0:
             file.write(f'{indent} distancetotarget {self.dist_to_targ:.2f}\n')
         for text, flag in NAME_TO_EVENT_FLAG.items():
@@ -1030,7 +1042,7 @@ class Event:
         if isinstance(self, LoopEvent):
             file.write(f'{indent} loopcount "{self.loop_count}"\n')
         if isinstance(self, SpeakEvent):
-            file.write(f'{indent} cctype "{self.caption_type.name.lower()}"\n')
+            file.write(f'{indent} cctype "{CAPTION_TYPE_TO_NAME[self.caption_type]}"\n')
             file.write(f'{indent} cctoken "{self.cc_token}"\n')
             if self.caption_type is not CaptionType.Disabled and self.use_combined_file:
                 file.write(f'{indent} cc_usingcombinedfile\n')
@@ -1039,7 +1051,7 @@ class Event:
             if self.suppress_caption_attenuation:
                 file.write(f'{indent} cc_noattenuate\n')
 
-        file.write(f'{indent} }}\n')
+        file.write(f'{indent}}}\n')
 
 
 @attrs.define(eq=False, kw_only=True)
@@ -1125,13 +1137,13 @@ class Channel:
     def export_text(self, file: IO[str], indent: str) -> None:
         """Write this to a text VCD file."""
         file.write(f'{indent}channel "{escape_text(self.name)}"\n')
-        file.write(f'{indent} {{\n')
+        file.write(f'{indent}{{\n')
         sub_indent = indent + ' '
         for event in self.events:
             event.export_text(file, sub_indent)
         if not self.active:
             file.write(f'{indent} active "0"\n')
-        file.write(f'{indent} }}\n')
+        file.write(f'{indent}}}\n')
 
 
 @attrs.define(eq=False)
@@ -1181,7 +1193,7 @@ class Actor:
     def export_text(self, file: IO[str], indent: str) -> None:
         """Write this to a text VCD file."""
         file.write(f'{indent}actor "{escape_text(self.name)}"\n')
-        file.write(f'{indent} {{\n')
+        file.write(f'{indent}{{\n')
         sub_indent = indent + ' '
         for channel in self.channels:
             channel.export_text(file, sub_indent)
@@ -1189,7 +1201,7 @@ class Actor:
             file.write(f'{indent} faceposermodel "{escape_text(self.faceposer_model)}"\n')
         if not self.active:
             file.write(f'{indent} active "0"\n')
-        file.write(f'{indent} }}\n')
+        file.write(f'{indent}}}\n')
 
 
 @attrs.define(eq=False, kw_only=True)
@@ -1207,6 +1219,7 @@ class Scene:
     fps: int = FPS_DEFAULT
     time_zoom_lookup: Dict[int, int] = attrs.Factory(dict)
     use_frame_snap: bool = False
+    scale_settings: dict[str, str] = attrs.Factory(dict)
 
     @classmethod
     def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Self:
@@ -1254,7 +1267,7 @@ class Scene:
         return file.getvalue()
 
     @classmethod
-    def parse_text(cls, tokenizer: BaseTokenizer) -> Self:
+    def parse_text(cls, file: Iterable[str]) -> Self:
         """Parse a scene from a text VCD file.
 
         This does not calculate the CRC value.
@@ -1262,11 +1275,14 @@ class Scene:
         events: list[Event] = []
         actors: list[Actor] = []
         time_zoom_lookup: dict[int, int] = {}
+        scale_settings: dict[str, str] = {}
         ramp = Curve()
         ignore_phonemes = False
         map_name = ''
         fps = FPS_DEFAULT
         use_frame_snap = False
+
+        tokenizer = Tokenizer(file)
 
         for tok, tok_val in tokenizer.skipping_newlines():
             if tok is not Token.STRING:
@@ -1295,7 +1311,8 @@ class Scene:
             elif folded == "ignorephonemes":
                 ignore_phonemes = tokenizer.expect(Token.STRING, skip_newline=False).casefold() == "on"
             elif folded == "scalesettings":
-                pass
+                for option in tokenizer.block('scalesettings', consume_brace=True):
+                    scale_settings[option] = tokenizer.expect(Token.STRING, skip_newline=False)
             else:
                 raise tokenizer.error('Unknown scene option "{!r}"!', tok_val)
 
@@ -1310,6 +1327,7 @@ class Scene:
             fps=fps,
             time_zoom_lookup=time_zoom_lookup,
             use_frame_snap=use_frame_snap,
+            scale_settings=scale_settings,
         )
 
     def export_text(self, file: IO[str]) -> None:
@@ -1319,15 +1337,20 @@ class Scene:
             event.export_text(file, '')
         for actor in self.actors:
             actor.export_text(file, '')
+        file.write('\n')
         self.ramp.export_text(file, '', 'scene_ramp')
         if self.map_name:
             file.write(f'map_name "{escape_text(self.map_name)}"\n')
-        if self.fps != FPS_DEFAULT:
-            file.write(f'fps {self.fps}\n')
-        if self.use_frame_snap:
-            file.write('snap on\n')
-        if self.ignore_phonemes:
-            file.write('ignorePhonemes on\n')
+
+        if self.scale_settings:
+            file.write('scalesettings\n{\n')
+            for key, value in self.scale_settings.items():
+                file.write(f' "{key}" "{escape_text(value)}"\n')
+            file.write('}\n')
+
+        file.write(f'fps {self.fps}\n')
+        file.write('snap on\n' if self.use_frame_snap else 'snap off\n')
+        file.write('ignorePhonemes on\n' if self.ignore_phonemes else 'ignorePhonemes off\n')
 
     def iter_events(self, type_filter: EventType | None = None) -> Iterator[Event]:
         """Iterate over all events, including those in actors.

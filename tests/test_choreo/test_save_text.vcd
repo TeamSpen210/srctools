@@ -1,0 +1,84 @@
+// Choreo version 1
+event loop "some loop"
+{
+ time 4.406667 -1.000000
+ param "0.000000"
+ loopcount "8"
+}
+event section "puase"
+{
+ time 3.906667 -1.000000
+ param "noaction"
+}
+event stoppoint "a_fire"
+{
+ time -0.746667 -1.000000
+ param "noaction"
+}
+actor "an_Actor"
+{
+ channel "first_channel"
+ {
+  event speak "npc_gman.welcome"
+  {
+   time -0.213333 -1.000000
+   param "npc_gman.welcome"
+   fixedlength
+   cctype "cc_master"
+   cctoken ""
+  }
+  event lookat "looking"
+  {
+   time 0.806667 1.806667
+   param "!enemy"
+   pitch "61"
+   yaw "-47"
+  }
+  event firetrigger "fire_trig"
+  {
+   time 2.213333 -1.000000
+   param "7"
+  }
+  event gesture "a_gesture"
+  {
+   time 2.260000 4.160000
+   param "circle"
+  }
+  event moveto "mover"
+  {
+   time 3.200000 3.453333
+   param "!friend"
+   param2 "Run"
+   param3 "!target2"
+   distancetotarget 59.00
+   resumecondition
+   forceshortmovement
+  }
+  event speak "barn.ditchcar"
+  {
+   time 0.780000 3.322585
+   param "barn.ditchcar"
+   param2 "0.8"
+   fixedlength
+   tags
+    {
+    "a_tag" 0.138743
+    }
+   cctype "cc_master"
+   cctoken ""
+   cc_noattenuate
+  }
+ }
+}
+
+scalesettings
+{
+ "CChoreoView" "100"
+ "RampTool" "100"
+ "GestureTool" "100"
+ "ExpressionTool" "100"
+ "SceneRampTool" "100"
+}
+fps 60
+snap off
+ignorePhonemes off
