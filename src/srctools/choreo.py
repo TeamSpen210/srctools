@@ -581,6 +581,9 @@ def _check_event_type(
             EventType.Gesture.name, key, event.name,
         )
 
+# Pyright infers the default as Literal below, causing invariance issues in the validators.
+_ZERO: int = int('0')
+
 
 @attrs.define(eq=False, kw_only=True)
 class Event:
@@ -606,8 +609,8 @@ class Event:
     # Only used in VCDs.
     default_curve_type: CurveType = CURVE_DEFAULT
     # Zero = unset.
-    pitch: int = attrs.field(default=0, validator=[attrs.validators.ge(-100), attrs.validators.le(100)])
-    yaw: int = attrs.field(default=0, validator=[attrs.validators.ge(-100), attrs.validators.le(100)])
+    pitch: int = attrs.field(default=_ZERO, validator=[attrs.validators.ge(-100), attrs.validators.le(100)])
+    yaw: int = attrs.field(default=_ZERO, validator=[attrs.validators.ge(-100), attrs.validators.le(100)])
 
     @property
     def has_end_time(self) -> bool:
