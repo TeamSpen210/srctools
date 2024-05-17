@@ -556,7 +556,7 @@ cdef inline double _vec_mag_sq(vec_t *vec) noexcept nogil:
 cdef inline double _vec_mag(vec_t *vec) noexcept nogil:
     return math.sqrt(_vec_mag_sq(vec))
 
-cdef inline float _vec_normalise(vec_t *out, vec_t *inp) except -1.0:
+cdef inline double _vec_normalise(vec_t *out, vec_t *inp) except -1.0:
     """Normalise the vector, writing to out. inp and out may be the same."""
     cdef double mag = _vec_mag(inp)
 
