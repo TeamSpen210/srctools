@@ -1,12 +1,10 @@
 """Parses VCD choreo scenes, as well as data in scenes.image."""
 from __future__ import annotations
 
-from typing import (
-    Callable, ClassVar, Final, Iterable, Iterator, List, IO,
-    NewType, Dict, Optional, Tuple, Union,
-)
+from typing import ClassVar, Final, IO, NewType, Dict
 from typing_extensions import Literal, Self, TypeAlias, assert_never
 
+from collections.abc import Callable, Iterable, Iterator
 from io import BytesIO
 import enum
 import struct
@@ -56,9 +54,9 @@ class Entry:
     checksum: CRC  # CRC hash.
     duration_ms: int  # Duration in milliseconds.
     last_speak_ms: int  # Time at which the last voice line ends.
-    sounds: List[str]  # List of sounds it uses.
+    sounds: list[str]  # List of sounds it uses.
     # Either an already parsed scene, or the raw bytes plus the whole string pool.
-    _data: Union[Scene, Tuple[bytes, List[str]]] = attrs.field(repr=False, alias='data')
+    _data: Scene | tuple[bytes, list[str]] = attrs.field(repr=False, alias='data')
 
     @classmethod
     def from_scene(cls, filename: str, scene: Scene) -> Self:
@@ -265,7 +263,7 @@ class Tag:
     value: float = attrs.field(validator=[attrs.validators.ge(0.0), attrs.validators.le(1.0)])
 
     @classmethod
-    def parse_binary(cls, file: IO[bytes], string_pool: List[str], double: bool) -> List[Self]:
+    def parse_binary(cls, file: IO[bytes], string_pool: list[str], double: bool) -> list[Self]:
         """Parse a list of tags from the file. If double is set, the value is 16-bit not 8-bit."""
         [tag_count] = file.read(1)
         tags = []
@@ -275,7 +273,7 @@ class Tag:
         return tags
 
     @classmethod
-    def export_binary(cls, file: IO[bytes], add_to_pool: Callable[[str], int], tags: List[Self]) -> None:
+    def export_binary(cls, file: IO[bytes], add_to_pool: Callable[[str], int], tags: list[Self]) -> None:
         """Write this to a binary BVCD block."""
         file.write(struct.pack('B', len(tags)))
         for tag in tags:
@@ -299,7 +297,7 @@ class Tag:
                 yield cls(name, value)
 
     @classmethod
-    def export_text(cls, file: IO[str], indent: str, tags: List[Self], block_name: str) -> None:
+    def export_text(cls, file: IO[str], indent: str, tags: list[Self], block_name: str) -> None:
         """Export a list of tags into a text VCD file."""
         if not tags:
             return
@@ -357,7 +355,7 @@ class Curve:
     """Scene or event ramp data."""
     BIN_FMT: ClassVar[struct.Struct] = struct.Struct('<fB')
 
-    ramp: List[ExpressionSample] = attrs.Factory(list)
+    ramp: list[ExpressionSample] = attrs.Factory(list)
     # VCD only
     left: CurveEdge = CurveEdge(False)
     right: CurveEdge = CurveEdge(False)
@@ -444,15 +442,15 @@ class FlexAnimTrack:
     active: bool = True
     min: float = 0.0
     max: float = 1.0
-    mag_track: List[ExpressionSample] = attrs.Factory(list)
-    dir_track: Optional[List[ExpressionSample]] = None
+    mag_track: list[ExpressionSample] = attrs.Factory(list)
+    dir_track: list[ExpressionSample] | None = None
 
     # VCD only
     left: CurveEdge = CurveEdge(False)
     right: CurveEdge = CurveEdge(False)
 
     @classmethod
-    def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> FlexAnimTrack:
+    def parse_binary(cls, file: IO[bytes], string_pool: list[str]) -> FlexAnimTrack:
         """Parse the BVCD form of this data."""
         [name_ind, flags, mins, maxes, track_count] = binformat.struct_read('<hBffh', file)
         active = flags & 1 != 0
@@ -596,15 +594,15 @@ class Event:
     end_time: float = -1.0
 
     ramp: Curve
-    tag_name: Optional[str] = None
-    tag_wav_name: Optional[str] = None
+    tag_name: str | None = None
+    tag_wav_name: str | None = None
     dist_to_targ: float = 0
 
-    relative_tags: List[Tag] = attrs.Factory(list)
-    timing_tags: List[TimingTag] = attrs.Factory(list)
-    absolute_playback_tags: List[AbsoluteTag] = attrs.Factory(list)
-    absolute_shifted_tags: List[AbsoluteTag] = attrs.Factory(list)
-    flex_anim_tracks: List[FlexAnimTrack] = attrs.Factory(list)
+    relative_tags: list[Tag] = attrs.Factory(list)
+    timing_tags: list[TimingTag] = attrs.Factory(list)
+    absolute_playback_tags: list[AbsoluteTag] = attrs.Factory(list)
+    absolute_shifted_tags: list[AbsoluteTag] = attrs.Factory(list)
+    flex_anim_tracks: list[FlexAnimTrack] = attrs.Factory(list)
 
     # Only used in VCDs.
     default_curve_type: CurveType = CURVE_DEFAULT
@@ -618,7 +616,7 @@ class Event:
         return self.end_time != -1.0
 
     @classmethod
-    def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Event:
+    def parse_binary(cls, file: IO[bytes], string_pool: list[str]) -> Event:
         """Parse the BVCD form of this data."""
         [
             type_int, name_ind, start_time, end_time,
@@ -639,8 +637,8 @@ class Event:
         else:
             gesture_sequence_duration = 0.0  # Never used.
 
-        tag_name: Optional[str]
-        tag_wav_name: Optional[str]
+        tag_name: str | None
+        tag_wav_name: str | None
         if file.read(1) != b'\x00':
             # Using a relative tag
             [tag_name_ind, wav_name_ind] = binformat.struct_read('<hh', file)
@@ -1087,7 +1085,7 @@ class SpeakEvent(Event):
     use_combined_file: bool = False
     use_gender_token: bool = False
 
-    def playback_caption(self) -> Optional[str]:
+    def playback_caption(self) -> str | None:
         """Return the caption token to use, if this event should display one."""
         if self.caption_type is CaptionType.Disabled:
             return None
@@ -1107,10 +1105,10 @@ class Channel:
     """A channel defines a set of events that an actor performs."""
     name: str
     active: bool = True
-    events: List[Event] = attrs.Factory(list)
+    events: list[Event] = attrs.Factory(list)
 
     @classmethod
-    def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Self:
+    def parse_binary(cls, file: IO[bytes], string_pool: list[str]) -> Self:
         """Parse the BVCD form of this data."""
         [name_ind, event_count] = binformat.struct_read('<hB', file)
         name = string_pool[name_ind]
@@ -1160,11 +1158,11 @@ class Actor:
     """An actor in a choreo scene."""
     name: str
     active: bool = True
-    channels: List[Channel] = attrs.Factory(list)
+    channels: list[Channel] = attrs.Factory(list)
     faceposer_model: str = ''
 
     @classmethod
-    def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Self:
+    def parse_binary(cls, file: IO[bytes], string_pool: list[str]) -> Self:
         """Parse the BVCD form of this data."""
         [name_ind, channel_count] = binformat.struct_read('<hB', file)
         name = string_pool[name_ind]
@@ -1216,8 +1214,8 @@ class Actor:
 @attrs.define(eq=False, kw_only=True)
 class Scene:
     """A choreo scene."""
-    events: List[Event] = attrs.Factory(list)
-    actors: List[Actor] = attrs.Factory(list)
+    events: list[Event] = attrs.Factory(list)
+    actors: list[Actor] = attrs.Factory(list)
     ramp: Curve = attrs.Factory(lambda: Curve([]))
     ignore_phonemes: bool = False
     # CRC for the original VCD that this scene was parsed from.
@@ -1226,12 +1224,12 @@ class Scene:
     # Text VCD only.
     map_name: str = ''
     fps: int = FPS_DEFAULT
-    time_zoom_lookup: Dict[int, int] = attrs.Factory(dict)
+    time_zoom_lookup: dict[int, int] = attrs.Factory(dict)
     use_frame_snap: bool = False
     scale_settings: dict[str, str] = attrs.Factory(dict)
 
     @classmethod
-    def parse_binary(cls, file: IO[bytes], string_pool: List[str]) -> Self:
+    def parse_binary(cls, file: IO[bytes], string_pool: list[str]) -> Self:
         """Parse the BVCD form of this data."""
         if file.read(4) != b'bvcd':
             raise ValueError('File is not a binary VCD scene!')
@@ -1413,7 +1411,7 @@ def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
     scenes: ScenesImage = {}
 
     file.seek(scene_off)
-    scene_data: List[Tuple[CRC, int, int, int]] = [
+    scene_data: list[tuple[CRC, int, int, int]] = [
         binformat.struct_read('<Iiii', file)
         for _ in range(scene_count)
     ]
@@ -1448,7 +1446,7 @@ def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
 # noinspection PyProtectedMember
 def save_scenes_image(
     file: IO[bytes],
-    scenes: Union[ScenesImage, Iterable[Entry]],
+    scenes: ScenesImage | Iterable[Entry],
     *,
     version: Literal[2, 3] = 3,
     encoding: str = 'latin1',
@@ -1464,7 +1462,7 @@ def save_scenes_image(
         scene_list = list(scenes)
 
     # First, loop through and see if we do have a string pool to reuse.
-    pool: Optional[List[str]] = None
+    pool: list[str] | None = None
     two_pools = False
     for entry in scene_list:
         if isinstance(entry._data, Scene):
