@@ -15,7 +15,7 @@ import re
 import attrs
 
 from srctools import binformat, conv_bool, conv_int, conv_float
-from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, escape_text
+from srctools.tokenizer import BaseTokenizer, Token, escape_text
 
 
 CRC = NewType('CRC', int)
