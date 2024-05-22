@@ -1,0 +1,6 @@
+UnlitGeneric
+	{
+	// Allow viewing ingame
+	$basetexture "test_vtf/sample_strata_comp_-1"
+	$model 0
+	}

@@ -1,0 +1,6 @@
+UnlitGeneric
+	{
+	// Allow viewing ingame
+	$basetexture "test_vtf/test_cython_strata_save_comp_0"
+	$model 0
+	}
