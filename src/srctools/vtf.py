@@ -290,7 +290,7 @@ class ResourceID(bytes, Enum):
     LOD_SETTINGS = b'LOD'
 
     #: 4 extra bytes of bitflags.
-    EXTRA_FLAGS = b'TSO'
+    EXTRA_FLAGS = b'TS0'
 
     #: Block of keyvalues data.
     KEYVALUES = b'KVD'
@@ -952,6 +952,15 @@ class VTF:
             if version_minor >= 6:
                 res_count += 1
             file.write(struct.pack('<3xI8x', res_count))
+
+            if version_minor == 6:  # Strata Source.
+                # Do uncompressed inline, otherwise write it in later.
+                if self.strata_compression == 0:
+                    file.write(struct.pack('<3sBI', ResourceID.STRATA_DEFLATE.value, RES_INLINE, 0))
+                else:
+                    file.write(struct.pack('<3sB', ResourceID.STRATA_DEFLATE.value, 0))
+                    deferred.defer('strata_compress_pos', '<I', write=True)
+
             for res_id, res in self.resources.items():
                 if isinstance(res.data, bytes):
                     # It's later in the file.
@@ -969,13 +978,6 @@ class VTF:
             if self.sheet_info:
                 file.write(struct.pack('<3sB', ResourceID.PARTICLE_SHEET.value, 0))
                 deferred.defer('particle', '<I', write=True)
-            if version_minor == 6:  # Strata Source.
-                # Do uncompressed inline, otherwise write it in later.
-                if self.strata_compression == 0:
-                    file.write(struct.pack('<3sBI', ResourceID.STRATA_DEFLATE.value, RES_INLINE, 0))
-                else:
-                    file.write(struct.pack('<3sB', ResourceID.STRATA_DEFLATE.value, 0))
-                    deferred.defer('strata_compress_pos', '<I', write=True)
         else:
             file.write(bytes(15))  # Pad to 80 bytes.
 
@@ -984,17 +986,6 @@ class VTF:
 
         if version_minor >= 3:
             # Write the data itself.
-            for res_id, res in self.resources.items():
-                if isinstance(res.data, bytes):
-                    # There's actual data elsewhere in the file.
-                    deferred.set_data(('res', res_id), file.tell())
-                    file.write(struct.pack('<I', len(res.data)))
-                    file.write(res.data)
-            if self.sheet_info:
-                particle_data = SheetSequence.make_data(self.sheet_info, sheet_seq_version)
-                deferred.set_data('particle', file.tell())
-                file.write(struct.pack('<I', len(particle_data)))
-                file.write(particle_data)
             if self.strata_compression != 0:
                 deferred.set_data('strata_compress_pos', file.tell())
                 frames = len(depth_seq) * self.mipmap_count * self.frame_count
@@ -1006,6 +997,18 @@ class VTF:
                     self.strata_compression,
                 ))
                 deferred.defer('strata_compress_sizes', f'<{frames}I', write=True)
+
+            for res_id, res in self.resources.items():
+                if isinstance(res.data, bytes):
+                    # There's actual data elsewhere in the file.
+                    deferred.set_data(('res', res_id), file.tell())
+                    file.write(struct.pack('<I', len(res.data)))
+                    file.write(res.data)
+            if self.sheet_info:
+                particle_data = SheetSequence.make_data(self.sheet_info, sheet_seq_version)
+                deferred.set_data('particle', file.tell())
+                file.write(struct.pack('<I', len(particle_data)))
+                file.write(particle_data)
 
         self.compute_mipmaps()
         self._low_res.load()
