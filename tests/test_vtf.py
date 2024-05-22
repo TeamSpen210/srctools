@@ -202,6 +202,7 @@ def test_load_strata_compression(
         check_fn=compare_img,
     )
 
+
 @pytest.mark.parametrize("level", STRATA_LEVELS)
 def test_save_strata_compression(
     cy_py_format_funcs: str,
@@ -227,4 +228,19 @@ def test_save_strata_compression(
         binary=True,
         extension=".vtf",
         basename=f"test_{cy_py_format_funcs}_strata_save_comp_{level}"
+    )
+
+    # Test that these can be read.
+    buf.seek(0)
+    roundtrip = VTF.read(buf)
+    roundtrip.load()
+
+    buf = BytesIO()
+    roundtrip.get().to_PIL().save(buf, "png")
+
+    file_regression.check(
+        buf.getvalue(),
+        binary=True,
+        extension=".png",
+        basename=f"test_{cy_py_format_funcs}_strata_roundtrip_comp_{level}"
     )

@@ -9,7 +9,7 @@ To compress to DXT formats, this uses the `libsquish`_ library.
 .. _`libsquish`: https://sourceforge.net/projects/libsquish/
 """
 from typing import (
-    IO, MutableMapping, TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence,
+    IO, TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence,
     Tuple, Type, Union, overload,
 )
 from typing_extensions import Final
@@ -793,8 +793,8 @@ class VTF:
         vtf.resources = {}
         vtf.sheet_info = {}
 
-        # If Strata Source's compression is enabled, the size of each frame.
-        compressed_size: list[int] | None = None
+        # If Strata Source's compression is enabled, the size of each compressed block.
+        compressed_size: Iterator[int] | None = None
 
         # If cubemaps are present, we iterate that instead of depth.
         depth_seq = vtf._depth_range()
@@ -851,10 +851,10 @@ class VTF:
                 else:
                     offset = 0
                     [vtf.strata_compression] = struct.unpack_from('<i', deflate_data, 0)
-                    compressed_size = binformat.read_array('I', deflate_data)
-                    # Reverse so popping pulls items in order, then remove the compression level.
-                    compressed_size.reverse()
-                    compressed_size.pop()
+                    compressed_size = iter(binformat.read_array('I', deflate_data))
+                    # Discard the compression level. Keep as an iterator so that we can step
+                    # through, this is in the same order as the frames loop below.
+                    next(compressed_size)
         else:
             low_res_offset = header_size
             high_res_offset = low_res_offset + low_fmt.frame_size(low_width, low_height)
@@ -880,7 +880,7 @@ class VTF:
                     key = (frame_ind, depth_or_cube, data_mipmap)
                     frame = vtf._frames[key] = Frame(mip_width, mip_height)
                     if compressed_size is not None:
-                        comp = compressed_size.pop()
+                        comp = next(compressed_size)
                         frame._fileinfo = (file, high_res_offset, comp, fmt)
                         high_res_offset += comp
                     else:
@@ -1104,7 +1104,7 @@ class VTF:
         depth_seq = self._depth_range()
         for frame_num in range(self.frame_count):
             for depth_side in depth_seq:
-                # Force to blank if cleared, we can't load it from aynthing.
+                # Force to blank if cleared, we can't load it from anything.
                 self._frames[frame_num, depth_side, 0].load()
                 for mipmap in range(1, self.mipmap_count):
                     frm = self._frames[frame_num, depth_side, mipmap]
