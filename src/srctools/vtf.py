@@ -405,9 +405,13 @@ class Frame:
         stream.seek(file_off)
 
         if comp_size is not None:
-            # Strata Source's DEFLATE compression.
+            # Strata Source's DEFLATE compression. This omits the zlib trailer, so we must use
+            # a decompression object to skip it.
+            # Frames smaller than 8x8 also do not work, use a blank image.
+            if self.width <= 8 or self.height <= 8:
+                return
             data = stream.read(comp_size)
-            data = zlib.decompress(data, STRATA_WINDOW_BITS, frame_size)
+            data = zlib.decompressobj(STRATA_WINDOW_BITS).decompress(data, frame_size)
         else:
             data = stream.read(frame_size)
         _format_funcs.load(fmt, self._data, data, self.width, self.height)
@@ -790,7 +794,7 @@ class VTF:
         vtf.sheet_info = {}
 
         # If Strata Source's compression is enabled, the size of each frame.
-        compressed_size: MutableMapping[Tuple[int, Union[CubeSide, int], int], int] = EmptyMapping
+        compressed_size: list[int] | None = None
 
         # If cubemaps are present, we iterate that instead of depth.
         depth_seq = vtf._depth_range()
@@ -847,14 +851,10 @@ class VTF:
                 else:
                     offset = 0
                     [vtf.strata_compression] = struct.unpack_from('<i', deflate_data, 0)
-                    compress_iter = struct.iter_unpack('<I', deflate_data)
-                    next(compress_iter)  # Skip compression level, it's signed, the rest is unsigned.
-                    compressed_size = {}
-                    for data_mipmap in reversed(range(mipmap_count)):
-                        for frame_ind in range(frame_count):
-                            for depth_or_cube in depth_seq:
-                                key = (frame_ind, depth_or_cube, data_mipmap)
-                                [compressed_size[key]] = next(compress_iter)
+                    compressed_size = binformat.read_array('I', deflate_data)
+                    # Reverse so popping pulls items in order, then remove the compression level.
+                    compressed_size.reverse()
+                    compressed_size.pop()
         else:
             low_res_offset = header_size
             high_res_offset = low_res_offset + low_fmt.frame_size(low_width, low_height)
@@ -879,9 +879,13 @@ class VTF:
                 for depth_or_cube in depth_seq:
                     key = (frame_ind, depth_or_cube, data_mipmap)
                     frame = vtf._frames[key] = Frame(mip_width, mip_height)
-                    # noinspection PyProtectedMember
-                    frame._fileinfo = (file, high_res_offset, compressed_size.get(key), fmt)
-                    high_res_offset += fmt.frame_size(mip_width, mip_height)
+                    if compressed_size is not None:
+                        comp = compressed_size.pop()
+                        frame._fileinfo = (file, high_res_offset, comp, fmt)
+                        high_res_offset += comp
+                    else:
+                        frame._fileinfo = (file, high_res_offset, None, fmt)
+                        high_res_offset += fmt.frame_size(mip_width, mip_height)
         return vtf
 
     def save(
