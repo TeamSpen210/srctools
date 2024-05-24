@@ -1,17 +1,40 @@
 """Test the FGD module."""
-from typing import Callable
+from typing import Callable, Any, Generator
 import copy
 import io
 
 import pytest
 
-from srctools import Vec
+from srctools import Vec, fgd as fgd_mod
 from srctools.filesys import VirtualFileSystem
+# noinspection PyProtectedMember
+from srctools.tokenizer import Cy_Tokenizer, Py_Tokenizer, Tokenizer
+
+from srctools.fgd import (
+    FGD, EntityDef, AutoVisgroup, ValueTypes, EntityTypes, Snippet, KVDef, IODef,
+    HelperSphere, UnknownHelper, HelperLine, HelperHalfGridSnap, HelperExtAppliesTo,
+    HelperModel, HelperSize,
+)
 
 
-with pytest.deprecated_call(match=r'srctools\.fgd\.KeyValues is renamed to srctools\.fgd\.KVDef'):
-    from srctools.fgd import *
-    from srctools.fgd import Snippet
+if Cy_Tokenizer is not None:
+    parms = [Cy_Tokenizer, Py_Tokenizer]
+    ids = ['Cython tokenizer', 'Python tokenizer']
+else:
+    pytest.fail('No _tokenizer')
+    parms = [Py_Tokenizer]
+    ids = ['Python tokenizer']
+
+
+@pytest.fixture(params=parms, ids=ids)
+def py_c_token(request: Any) -> Generator[None, None, None]:
+    """Run the test twice, for the Python and C versions of Tokenizer."""
+    orig_tok = fgd_mod.Tokenizer
+    try:
+        fgd_mod.Tokenizer = request.param
+        yield None
+    finally:
+        fgd_mod.Tokenizer = orig_tok
 
 
 @pytest.mark.parametrize('name1', ['alpha', 'beta', 'gamma'])
@@ -29,7 +52,13 @@ def test_autovisgroup_cmp(name1: str, name2: str) -> None:
     assert (vis1 >= vis2) == (name1 >= name2), 'Mismatch'
 
 
-def test_entity_parse() -> None:
+def test_deprecated_kvdef() -> None:
+    """Test that this produces a warning when imported."""
+    with pytest.deprecated_call(match=r'srctools\.fgd\.KeyValues is renamed to srctools\.fgd\.KVDef'):
+        from srctools.fgd import KeyValues  # noqa
+
+
+def test_entity_parse(py_c_token) -> None:
     """Verify parsing an entity produces the correct results."""
     fsys = VirtualFileSystem({'test.fgd': """
 
@@ -144,7 +173,7 @@ appliesto(tag1, tag2, !tag3)
     ('(*int) report: "Redundant"', False, True),
     ('(*int) readonly report: "Redundant + readonly"', True, True),
 ])
-def test_parse_kv_flags(code, is_readonly, is_report) -> None:
+def test_parse_kv_flags(py_c_token, code, is_readonly, is_report) -> None:
     """Test the readonly and reportable flags can be set."""
     fsys = VirtualFileSystem({'test.fgd': f"""
     @PointClass = ent
@@ -160,7 +189,7 @@ def test_parse_kv_flags(code, is_readonly, is_report) -> None:
     assert kv.reportable is is_report, kv
 
 
-def test_snippet_desc() -> None:
+def test_snippet_desc(py_c_token) -> None:
     """Test snippet descriptions."""
     fgd = FGD()
     fsys = VirtualFileSystem({
@@ -220,7 +249,7 @@ def test_snippet_desc() -> None:
     )
 
 
-def test_snippet_choices() -> None:
+def test_snippet_choices(py_c_token) -> None:
     """Test parsing snippet choices."""
     fgd = FGD()
     fsys = VirtualFileSystem({'snippets.fgd': """\
@@ -257,7 +286,7 @@ def test_snippet_choices() -> None:
     assert kv.val_list is not fgd.snippet_choices['trinary'].value
 
 
-def test_snippet_spawnflags() -> None:
+def test_snippet_spawnflags(py_c_token) -> None:
     """Test parsing snippet spawnflags."""
     fgd = FGD()
     fsys = VirtualFileSystem({'snippets.fgd': """\
@@ -308,7 +337,7 @@ def test_snippet_spawnflags() -> None:
     assert kv.val_list is not fgd.snippet_flags['trigger'].value
 
 
-def test_snippet_keyvalues() -> None:
+def test_snippet_keyvalues(py_c_token) -> None:
     """Test parsing snippet keyvalues."""
     fgd = FGD()
     fsys = VirtualFileSystem({'snippets.fgd': """\
@@ -336,7 +365,7 @@ def test_snippet_keyvalues() -> None:
     }
 
 
-def test_snippet_io() -> None:
+def test_snippet_io(py_c_token) -> None:
     """Test parsing snippet i/o."""
     fgd = FGD()
     fsys = VirtualFileSystem({'snippets.fgd': """\
