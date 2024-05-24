@@ -175,9 +175,21 @@ class BaseTokenizer(abc.ABC):
      It then provides tools for using those to parse data. This is an :external:py:class:`abc.ABC`,
      a subclass must be used to provide a source for the tokens.
     """
-    filename: Optional[str]
     error_type: Type[TokenSyntaxError]
+    """The exception class to produce if an error occurs. This must be a subtype of 
+    :py:class:`TokenSyntaxError`, since it is passed the line number and filename in addition to
+    the error message. The :py:meth:`error()` method can be used to intelligently construct an
+    instance to raise.
+    """
+    filename: Optional[str]
+    """The filename that is being parsed. This is passed along to the error class, 
+    to produce relevant errors.
+    """
     line_num: int
+    """The line number of the last token. Can be changed, but is automatically updated whenever
+    :py:attr:`Token.NEWLINE` tokens are seen.
+    """
+
     #: If set, this token will be returned next.
     _pushback: Optional[Tuple[Token, str]] = None
 
@@ -378,28 +390,29 @@ class Tokenizer(BaseTokenizer):
 
     Due to many inconsistencies in Valve's parsing of files,
     several options are available to control whether different
-    syntaxes are accepted:
-
-    * string_bracket parses `[bracket]` blocks as a single string-like block. \
-        If disabled these are parsed as :py:const:`~Token.BRACK_OPEN`, :py:const:`~Token.STRING` \
-        then :py:const:`~Token.BRACK_CLOSE`.
-    * allow_escapes controls whether ``\\n``-style escapes are expanded.
-    * allow_star_comments if enabled allows ``/* */`` comments.
-    * preserve_comments causes :py:const:`Token.COMMENT` tokens to be produced.
-    * colon_operator controls if ``:`` produces :py:const:`~Token.COLON` tokens, or is treated as
-      a bare string.
-    * plus_operator controls if ``+`` produces :py:const:`~Token.PLUS` tokens, or is treated as
-      a bare string.
+    syntaxes are accepted.
     """
-    chunk_iter: Iterator[str]
-    cur_chunk: str
-    char_index: int
+    _chunk_iter: Iterator[str]
+    _cur_chunk: str
+    _char_index: int
+
     string_bracket: bool
+    """If set, `[bracket]` blocks are parsed as a single string-like block. \
+    If disabled these are parsed as :py:const:`~Token.BRACK_OPEN`, :py:const:`~Token.STRING` \
+    then :py:const:`~Token.BRACK_CLOSE`.
+    """
     allow_escapes: bool
+    """This determines whether ``\\n``-style escapes are expanded."""
     allow_star_comments: bool
+    """If enabled, this allows ``/* */`` comments. Otherwise, an immediate error is produced."""
     preserve_comments: bool
+    """:py:const:`Token.COMMENT` are produced if this is set."""
     colon_operator: bool
+    """This controls whether ``:`` produces :py:const:`~Token.COLON` tokens, or is treated as
+      part of a bare string."""
     plus_operator: bool
+    """This controls whether ``+`` produces :py:const:`~Token.PLUS` tokens, or is treated as
+      part of a bare string."""
     _last_was_cr: bool
 
     def __init__(
@@ -432,12 +445,12 @@ class Tokenizer(BaseTokenizer):
         # So just keep it as a single chunk, and set the iterator to immediately
         # quit.
         if isinstance(data, str):
-            self.cur_chunk = data
-            self.chunk_iter = iter(())
+            self._cur_chunk = data
+            self._chunk_iter = iter(())
         else:
-            self.cur_chunk = ''
-            self.chunk_iter = iter(data)
-        self.char_index = -1
+            self._cur_chunk = ''
+            self._chunk_iter = iter(data)
+        self._char_index = -1
 
         self.string_bracket = bool(string_bracket)
         self.allow_escapes = bool(allow_escapes)
@@ -449,21 +462,21 @@ class Tokenizer(BaseTokenizer):
 
     def _next_char(self) -> Optional[str]:
         """Return the next character, or None if no more characters are there."""
-        self.char_index += 1
+        self._char_index += 1
         try:
-            return self.cur_chunk[self.char_index]
+            return self._cur_chunk[self._char_index]
         except IndexError:
             # Retrieve a chunk from the iterable.
             # Skip empty chunks (shouldn't be there.)
             try:
-                for chunk in self.chunk_iter:
+                for chunk in self._chunk_iter:
                     if isinstance(chunk, bytes):
                         raise ValueError('Cannot parse binary data!')
                     if not isinstance(chunk, str):
                         raise ValueError("Data was not a string!")
                     if chunk:
-                        self.cur_chunk = chunk
-                        self.char_index = 0
+                        self._cur_chunk = chunk
+                        self._char_index = 0
                         return chunk[0]
             except UnicodeDecodeError as exc:
                 raise self.error("Could not decode file!") from exc
@@ -576,7 +589,7 @@ class Tokenizer(BaseTokenizer):
                     if next_char in BARE_DISALLOWED:
                         # We need to repeat this, so we return the ending char next.
                         # If it's not allowed, that'll error on next call.
-                        self.char_index -= 1
+                        self._char_index -= 1
                         return Token.DIRECTIVE, ''.join(value_chars)
                     elif next_char is None:
                         # A directive could be the last value in the file.
@@ -596,7 +609,7 @@ class Tokenizer(BaseTokenizer):
                     ):
                         # We need to repeat this, so we return the ending char next.
                         # If it's not allowed, that'll error on next call.
-                        self.char_index -= 1
+                        self._char_index -= 1
                         return Token.STRING, ''.join(value_chars)
                     elif next_char is None:
                         # Bare names at the end are actually fine.
@@ -643,7 +656,7 @@ class Tokenizer(BaseTokenizer):
                         else:
                             # We need to reparse this, to ensure
                             # "**/" parses correctly!
-                            self.char_index -= 1
+                            self._char_index -= 1
                     elif comment_buf is not None:
                         comment_buf.append(next_char)
                 if comment_buf is not None:
@@ -671,7 +684,7 @@ class Tokenizer(BaseTokenizer):
                     comment_buf.append(next_char)
 
             # We want to produce the token for the end character.
-            self.char_index -= 1
+            self._char_index -= 1
             if comment_buf is not None:
                 return Token.COMMENT, ''.join(comment_buf)
         return None  # Swallow the comment.
@@ -711,7 +724,7 @@ class Tokenizer(BaseTokenizer):
                         raise self.error('Unterminated string!') from None
                     else:
                         next_char = '\\' + escape
-                        # raise self.error('Unknown escape "\\{}" in {}!', escape, self.cur_chunk)
+                        # raise self.error('Unknown escape "\\{}" in {}!', escape, self._cur_chunk)
             if next_char is None:
                 raise self.error('Unterminated string!')
             else:

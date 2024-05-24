@@ -110,7 +110,7 @@ cdef class BaseTokenizer:
      This is an abstract class, a subclass must be used to provide a source
      for the tokens.
     """
-    # Class to call when errors occur..
+    # Class to call when errors occur...
     cdef object error_type
 
     cdef str filename
@@ -808,7 +808,7 @@ cdef class Tokenizer(BaseTokenizer):
                             self.buf_add_char(b'\\')
                             self.buf_add_char(escape_char)
                             continue
-                            # raise self.error('Unknown escape_char "\\{}" in {}!', escape_char, self.cur_chunk)
+                            # raise self.error('Unknown escape_char "\\{}" in {}!', escape_char, self._cur_chunk)
                     self.buf_add_char(next_char)
 
             elif next_char == b'[':
