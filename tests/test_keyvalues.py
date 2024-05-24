@@ -120,7 +120,7 @@ parse_test = '''
         "Extra"        "Spaces"
     // "Commented" "out"
     "Block"  {
-        "Empty"
+        Empty
              {
              } }
     "Block" // "with value"
@@ -133,7 +133,7 @@ parse_test = '''
     "Root2"
     {
     "Name with \\" in it" "Value with \\" inside"
-    "multiline" "text
+    multi+line "text
 \tcan continue
 for many \\"lines\\" of
   possibly indented
@@ -151,8 +151,8 @@ text"
         "Flag" "blocksthis" [!test_enabled]
 
         "Replaced" "shouldbe"
-        "Replaced" "toreplace" [test_enabled]
-        "Replaced" "alsothis"  [test_enabled]
+        "Replaced" to+replace [test_enabled]
+        "Replaced" also+this  [test_enabled]
         
         "Replaced" "shouldbe2"
         "Replaced" "toreplace2" [!test_disabled]
@@ -165,8 +165,8 @@ text"
             }
         "Replaced" [test_enabled]
             {
-            "lambda" "should"
-            "replace" "above"
+            lambda should
+            replace above
             }
         
         "Replaced"
@@ -208,7 +208,7 @@ parse_result = Keyvalues.root(
     ]),
     P('Root2', [
         P('Name with " in it', 'Value with \" inside'),
-        P('multiline',
+        P('multi+line',
           'text\n\tcan continue\nfor many "lines" of\n  possibly indented\n\ntext'
           ),
         # Note, invalid = unchanged.
@@ -219,8 +219,8 @@ parse_result = Keyvalues.root(
         P('after ', 'value'),
         P('Flag', 'allowed'),
         P('FlagAllows', 'This'),
-        P('Replaced', 'toreplace'),
-        P('Replaced', 'alsothis'),
+        P('Replaced', 'to+replace'),
+        P('Replaced', 'also+this'),
         P('Replaced', 'toreplace2'),
         P('Replaced', 'alsothis2'),
         P('Replaced', [
@@ -284,7 +284,7 @@ def test_build() -> None:
                     b.block('he\tre')
         with b.Root2:
             b['Name with " in it']('Value with \" inside')
-            b.multiline(
+            b['multi+line'](
               'text\n\tcan continue\nfor many "lines" of\n  possibly '
               'indented\n\ntext'
             )
@@ -297,8 +297,8 @@ def test_build() -> None:
             b['after ']('value')
             b.Flag('allowed')
             b.FlagAllows('This')
-            b.Replaced('toreplace')
-            b.Replaced('alsothis')
+            b.Replaced('to+replace')
+            b.Replaced('also+this')
             b.Replaced('toreplace2')
             b.Replaced('alsothis2')
             with b.Replaced:

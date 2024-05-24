@@ -2192,6 +2192,7 @@ class FGD:
                 error=FGDParseError,
                 string_bracket=False,
                 colon_operator=True,
+                plus_operator=True,
             )
             for token, token_value in tokeniser:
                 # The only things at top-level would be bare strings, and empty lines.

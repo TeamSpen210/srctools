@@ -48,7 +48,7 @@ prop_parse_tokens = [
     (T.STRING, "Root2"), T.NEWLINE,
     T.BRACE_OPEN, T.NEWLINE,
     (T.STRING, "Name with \" in it"), (T.STRING, "Value with \" inside"), T.NEWLINE,
-    (T.STRING, "multiline"), (T.STRING, 'text\n\tcan continue\nfor many "lines" of\n  possibly indented\n\ntext'), T.NEWLINE,
+    (T.STRING, "multi+line"), (T.STRING, 'text\n\tcan continue\nfor many "lines" of\n  possibly indented\n\ntext'), T.NEWLINE,
     (T.STRING, "Escapes"), (T.STRING, '\t \n \\d'), T.NEWLINE,
     (T.STRING, "Oneliner"), T.BRACE_OPEN, (T.STRING, 'name'), (T.STRING, 'value'), T.BRACE_CLOSE, T.NEWLINE,
     T.BRACE_CLOSE, T.NEWLINE,
@@ -61,8 +61,8 @@ prop_parse_tokens = [
     (T.STRING, "Flag"), (T.STRING, "blocksthis"), (T.PROP_FLAG, "!test_enabled"), T.NEWLINE,
     T.NEWLINE,
     (T.STRING, "Replaced"), (T.STRING, "shouldbe"), T.NEWLINE,
-    (T.STRING, "Replaced"), (T.STRING, "toreplace"), (T.PROP_FLAG, "test_enabled"), T.NEWLINE,
-    (T.STRING, "Replaced"), (T.STRING, "alsothis"), (T.PROP_FLAG, "test_enabled"), T.NEWLINE,
+    (T.STRING, "Replaced"), (T.STRING, "to+replace"), (T.PROP_FLAG, "test_enabled"), T.NEWLINE,
+    (T.STRING, "Replaced"), (T.STRING, "also+this"), (T.PROP_FLAG, "test_enabled"), T.NEWLINE,
     T.NEWLINE,
     (T.STRING, "Replaced"), (T.STRING, "shouldbe2"), T.NEWLINE,
     (T.STRING, "Replaced"), (T.STRING, "toreplace2"), (T.PROP_FLAG, "!test_disabled"), T.NEWLINE,
@@ -108,7 +108,7 @@ noprop_parse_test = """
 #ﬁmport test
 #EXclßÀde value\r
 #caseA\u0345\u03a3test
-{ ]]{ }}}[[ {{] + = "test" + "ing" == vaLUE= 4+6
+{ ]]{ }}}[[ {{] = "test" "ing" == vaLUE= 4 6
 """
 
 noprop_parse_tokens = [
@@ -118,9 +118,9 @@ noprop_parse_tokens = [
     (T.DIRECTIVE, "exclssàde"), (T.STRING, "value"), T.NEWLINE,
     (T.DIRECTIVE, "casea\u03b9\u03c3test"), T.NEWLINE,
     T.BRACE_OPEN, T.BRACK_CLOSE, T.BRACK_CLOSE, T.BRACE_OPEN, T.BRACE_CLOSE, T.BRACE_CLOSE, T.BRACE_CLOSE,
-    T.BRACK_OPEN, T.BRACK_OPEN, T.BRACE_OPEN, T.BRACE_OPEN, T.BRACK_CLOSE, T.PLUS,
-    T.EQUALS, (T.STRING, "test"), T.PLUS, (T.STRING, "ing"),
-    T.EQUALS, T.EQUALS, (T.STRING, "vaLUE"), T.EQUALS, (T.STRING, "4"), T.PLUS, (T.STRING, "6"), T.NEWLINE
+    T.BRACK_OPEN, T.BRACK_OPEN, T.BRACE_OPEN, T.BRACE_OPEN, T.BRACK_CLOSE,
+    T.EQUALS, (T.STRING, "test"), (T.STRING, "ing"),
+    T.EQUALS, T.EQUALS, (T.STRING, "vaLUE"), T.EQUALS, (T.STRING, "4"), (T.STRING, "6"), T.NEWLINE
 ]
 
 
@@ -281,7 +281,7 @@ def test_pushback_opvalues(py_c_token: Type[Tokenizer], token: Token, val: str) 
 
 def test_call_next(py_c_token: Type[Tokenizer]) -> None:
     """Test that tok() functions, and it can be mixed with iteration."""
-    tok: Tokenizer = py_c_token('''{ "test" } "test" { + } ''', 'file')
+    tok: Tokenizer = py_c_token('''{ "test" } "test" { = } ''', 'file')
 
     tok_type, tok_value = tok_tup = tok()
     assert tok_type is Token.BRACE_OPEN, tok_tup
@@ -293,7 +293,7 @@ def test_call_next(py_c_token: Type[Tokenizer]) -> None:
     assert tok() == (Token.BRACE_CLOSE, '}')
     assert next(it1) == (Token.STRING, "test")
     assert next(it1) == (Token.BRACE_OPEN, '{')
-    assert tok() == (Token.PLUS, '+')
+    assert tok() == (Token.EQUALS, '=')
     # Another iterator doesn't restart.
     assert next(iter(tok)) == (Token.BRACE_CLOSE, '}')
     assert tok() == (Token.EOF, '')
@@ -492,6 +492,7 @@ def test_tok_filename(py_c_token: Type[Tokenizer]) -> None:
     ('allow_star_comments', False),
     ('preserve_comments', False),
     ('colon_operator', False),
+    ('plus_operator', False),
 ])
 def test_obj_config(py_c_token: Type[Tokenizer], parm: str, default: bool) -> None:
     """Test getting and setting configuration attributes."""
@@ -577,38 +578,45 @@ def test_brackets(py_c_token: Type[Tokenizer]) -> None:
     ])
 
 
-def test_colon_op(py_c_token: Type[Tokenizer]) -> None:
-    """Test : can be detected as a string or operator depending on the option."""
+@pytest.mark.parametrize('op, tok, option', [
+    (':', Token.COLON, 'colon_operator'),
+    ('+', Token.PLUS, 'plus_operator'),
+], ids=['colon', 'plus'])
+def test_conditional_op(py_c_token: Type[Tokenizer], op: str, option: str, tok: Token) -> None:
+    """Test : and + can be detected as a string or operator depending on the option."""
+    disabled = {option: False}
+    enabled = {option: True}
+
     # Explicit string, unaffected.
-    check_tokens(py_c_token('"test:call"', colon_operator=False), [
-        (Token.STRING, 'test:call'),
+    check_tokens(py_c_token(f'"test{op}call"', **disabled), [
+        (Token.STRING, f'test{op}call'),
     ])
-    check_tokens(py_c_token('"test:call"', colon_operator=True), [
-        (Token.STRING, 'test:call'),
+    check_tokens(py_c_token(f'"test{op}call"', **enabled), [
+        (Token.STRING, f'test{op}call'),
     ])
 
     # Applies to bare strings, also note another char after.
-    check_tokens(py_c_token('test:call:{}', colon_operator=False), [
-        (Token.STRING, 'test:call:'),
+    check_tokens(py_c_token('test%call%{}'.replace('%', op), **disabled), [
+        (Token.STRING, f'test{op}call{op}'),
         Token.BRACE_OPEN, Token.BRACE_CLOSE,
     ])
-    check_tokens(py_c_token('test:call:{}', colon_operator=True), [
+    check_tokens(py_c_token('test%call%{}'.replace('%', op), **enabled), [
         (Token.STRING, 'test'),
-        Token.COLON,
+        tok,
         (Token.STRING, 'call'),
-        Token.COLON,
+        tok,
         Token.BRACE_OPEN, Token.BRACE_CLOSE,
     ])
 
-    # Test the string starting with a colon.
-    check_tokens(py_c_token('{:test:call}', colon_operator=False), [
+    # Test the string starting with the character.
+    check_tokens(py_c_token('{%test%call}'.replace('%', op), **disabled), [
         Token.BRACE_OPEN,
-        (Token.STRING, ':test:call'),
+        (Token.STRING, f'{op}test{op}call'),
         Token.BRACE_CLOSE,
     ])
-    check_tokens(py_c_token('{:test:call}', colon_operator=True), [
-        Token.BRACE_OPEN, Token.COLON,
-        (Token.STRING, 'test'), Token.COLON,
+    check_tokens(py_c_token('{%test%call}'.replace('%', op), **enabled), [
+        Token.BRACE_OPEN, tok,
+        (Token.STRING, 'test'), tok,
         (Token.STRING, 'call'), Token.BRACE_CLOSE,
     ])
 
@@ -851,11 +859,11 @@ def test_block_iter(py_c_token: Type[Tokenizer]) -> None:
     assert list(py_c_token('{}').block('')) == []
 
     # We can remove tokens halfway through on the original tokenizer.
-    tok = py_c_token(' { \n\n"legal" { + } block } ')
+    tok = py_c_token(' { \n\n"legal" { = } block } ')
     bl = tok.block("test")
     assert next(bl) == 'legal'
     assert tok() == (Token.BRACE_OPEN, '{')
-    assert tok() == (Token.PLUS, '+')
+    assert tok() == (Token.EQUALS, '=')
     assert tok() == (Token.BRACE_CLOSE, '}')
     assert next(bl) == 'block'
     with pytest.raises(StopIteration):

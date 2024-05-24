@@ -69,7 +69,7 @@ cdef:
 
 # Characters not allowed for bare names on a line.
 # TODO: Make this an actual constant value, but that won't do the switch optimisation.
-DEF BARE_DISALLOWED = b'"\'{};,=+[]()\r\n\t '
+DEF BARE_DISALLOWED = b'"\'{};,=[]()\r\n\t '
 
 # Pack flags into a bitfield.
 cdef extern from *:
@@ -78,6 +78,7 @@ struct TokFlags {
     unsigned char string_brackets: 1;
     unsigned char allow_escapes: 1;
     unsigned char colon_operator: 1;
+    unsigned char plus_operator: 1;
     unsigned char allow_star_comments: 1;
     unsigned char preserve_comments: 1;
     unsigned char file_input: 1;
@@ -88,6 +89,7 @@ struct TokFlags {
         bint string_brackets
         bint allow_escapes
         bint colon_operator
+        bint plus_operator
         bint allow_star_comments
         bint preserve_comments
         # If set, the file_iter is a bound read() method.
@@ -419,11 +421,12 @@ cdef class Tokenizer(BaseTokenizer):
         object filename=None,
         error=None,
         *,
-        bint string_bracket=False,
-        bint allow_escapes=True,
-        bint allow_star_comments=False,
-        bint preserve_comments=False,
-        bint colon_operator=False,
+        bint string_bracket: bool = False,
+        bint allow_escapes: bool = True,
+        bint allow_star_comments: bool = False,
+        bint preserve_comments: bool = False,
+        bint colon_operator: bool = False,
+        bint plus_operator: bool = False,
     ):
         # Early warning for this particular error.
         if isinstance(data, bytes) or isinstance(data, bytearray):
@@ -438,6 +441,7 @@ cdef class Tokenizer(BaseTokenizer):
             'allow_star_comments': allow_star_comments,
             'preserve_comments': preserve_comments,
             'colon_operator': colon_operator,
+            'plus_operator': plus_operator,
             'file_input': 0,
             'last_was_cr': 0,
         }
@@ -492,7 +496,7 @@ cdef class Tokenizer(BaseTokenizer):
 
     @property
     def string_bracket(self) -> bool:
-        """Check if [bracket] blocks are parsed as a single string-like block.
+        """Controls whether [bracket] blocks are parsed as a single string-like block.
 
         If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
         """
@@ -500,51 +504,52 @@ cdef class Tokenizer(BaseTokenizer):
 
     @string_bracket.setter
     def string_bracket(self, bint value) -> None:
-        """Set if [bracket] blocks are parsed as a single string-like block.
-
-        If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
-        """
         self.flags.string_brackets = value
 
     @property
     def allow_escapes(self) -> bool:
-        """Check if backslash escapes will be parsed."""
+        """Controls whether backslash escapes will be parsed."""
         return self.flags.allow_escapes
 
     @allow_escapes.setter
     def allow_escapes(self, bint value) -> None:
-        """Set if backslash escapes will be parsed."""
         self.flags.allow_escapes = value
 
     @property
     def allow_star_comments(self) -> bool:
-        """Check if /**/ style comments will be enabled."""
+        """Controls whether /**/ style comments will be enabled."""
         return self.flags.allow_star_comments
 
     @allow_star_comments.setter
     def allow_star_comments(self, bint value) -> None:
-        """Set if /**/ style comments are enabled."""
         self.flags.allow_star_comments = value
 
     @property
     def preserve_comments(self) -> bool:
-        """Check if comments will be output as tokens."""
+        """Controls whether comments will be output as tokens."""
         return self.flags.preserve_comments
 
     @preserve_comments.setter
     def preserve_comments(self, bint value) -> None:
-        """Set if comments will be output as tokens."""
         self.flags.preserve_comments = value
 
     @property
     def colon_operator(self) -> bool:
-        """Check if : characters are treated as a COLON token, or part of strings."""
+        """Controls whether : characters are treated as a COLON token, or part of strings."""
         return self.flags.colon_operator
 
     @colon_operator.setter
     def colon_operator(self, bint value) -> None:
-        """Set if : characters are treated as a COLON token, or part of strings."""
         self.flags.colon_operator = value
+
+    @property
+    def plus_operator(self) -> bool:
+        """Controls whether + characters are treated as a PLUS token, or part of strings."""
+        return self.flags.plus_operator
+
+    @plus_operator.setter
+    def plus_operator(self, bint value) -> None:
+        self.flags.plus_operator = value
 
     cdef inline bint buf_reset(self) except False:
         """Reset the temporary buffer."""
@@ -669,8 +674,6 @@ cdef class Tokenizer(BaseTokenizer):
                 return BRACE_OPEN_TUP
             elif next_char == b'}':
                 return BRACE_CLOSE_TUP
-            elif next_char == b'+':
-                return PLUS_TUP
             elif next_char == b'=':
                 return EQUALS_TUP
             elif next_char == b',':
@@ -896,6 +899,8 @@ cdef class Tokenizer(BaseTokenizer):
             else:  # These complex checks can't be in a switch, so we need to nest this.
                 if next_char == b':' and self.flags.colon_operator:
                     return COLON_TUP
+                if next_char == b'+' and self.flags.plus_operator:
+                    return PLUS_TUP
                 # Bare names
                 if next_char not in BARE_DISALLOWED:
                     self.buf_reset()
@@ -908,12 +913,12 @@ cdef class Tokenizer(BaseTokenizer):
                             return STRING, self.buf_get_text()
 
                         elif (
-                            next_char in BARE_DISALLOWED or
-                            (next_char == b':' and self.flags.colon_operator)
+                            next_char in BARE_DISALLOWED
+                            or (next_char == b':' and self.flags.colon_operator)
+                            or (next_char == b'+' and self.flags.plus_operator)
                         ):  # We need to repeat this so we return the ending
                             # char next. If it's not allowed, that'll error on
                             # next call.
-                            # We need to repeat this so we return the newline.
                             self.char_index -= 1
                             return STRING, self.buf_get_text()
                         else:

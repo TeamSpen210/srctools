@@ -116,9 +116,9 @@ class Token(Enum):
     BRACK_OPEN = 12  #: A ``[`` character. Only used if ``PROP_FLAG`` is not.
     BRACK_CLOSE = 13  #: A ``]`` character.
 
-    COLON = 14  #: A ``:`` character.
+    COLON = 14  #: A ``:`` character, if :py:attr:`~Tokenizer.colon_operator` is enabled.
     EQUALS = 15  #: A ``=`` character.
-    PLUS = 16  #: A ``+`` character.
+    PLUS = 16  #: A ``+`` character, if :py:attr:`Tokenizer.plus_operator` is enabled.
     COMMA = 17  #: A ``,`` character.
 
     @property
@@ -149,7 +149,6 @@ _OPERATORS = {
     '}': Token.BRACE_CLOSE,
 
     '=': Token.EQUALS,
-    '+': Token.PLUS,
     ',': Token.COMMA,
 }
 
@@ -167,7 +166,7 @@ ESCAPES = {
 }
 
 #: Characters not allowed for bare strings. These must be quoted.
-BARE_DISALLOWED: Final = frozenset('"\'{};,=+[]()\r\n\t ')
+BARE_DISALLOWED: Final = frozenset('"\'{};,=[]()\r\n\t ')
 
 
 class BaseTokenizer(abc.ABC):
@@ -389,6 +388,8 @@ class Tokenizer(BaseTokenizer):
     * preserve_comments causes :py:const:`Token.COMMENT` tokens to be produced.
     * colon_operator controls if ``:`` produces :py:const:`~Token.COLON` tokens, or is treated as
       a bare string.
+    * plus_operator controls if ``+`` produces :py:const:`~Token.PLUS` tokens, or is treated as
+      a bare string.
     """
     chunk_iter: Iterator[str]
     cur_chunk: str
@@ -398,6 +399,7 @@ class Tokenizer(BaseTokenizer):
     allow_star_comments: bool
     preserve_comments: bool
     colon_operator: bool
+    plus_operator: bool
     _last_was_cr: bool
 
     def __init__(
@@ -411,6 +413,7 @@ class Tokenizer(BaseTokenizer):
         allow_star_comments: bool = False,
         preserve_comments: bool = False,
         colon_operator: bool = False,
+        plus_operator: bool = False,
     ) -> None:
         # If a file-like object, automatically use the configured name.
         if filename is None and hasattr(data, 'name'):
@@ -440,6 +443,7 @@ class Tokenizer(BaseTokenizer):
         self.allow_escapes = bool(allow_escapes)
         self.allow_star_comments = bool(allow_star_comments)
         self.colon_operator = bool(colon_operator)
+        self.plus_operator = bool(plus_operator)
         self.preserve_comments = bool(preserve_comments)
         self._last_was_cr = False
 
@@ -552,6 +556,9 @@ class Tokenizer(BaseTokenizer):
             elif next_char == ':' and self.colon_operator:
                 return Token.COLON, ':'
 
+            elif next_char == '+' and self.plus_operator:
+                return Token.PLUS, '+'
+
             elif next_char == ']':
                 if self.string_bracket:
                     # If string_bracket is set (using PROP_FLAG), this is a
@@ -582,7 +589,11 @@ class Tokenizer(BaseTokenizer):
                 value_chars = [next_char]
                 while True:
                     next_char = self._next_char()
-                    if next_char in BARE_DISALLOWED or (next_char == ':' and self.colon_operator):
+                    if (
+                        next_char in BARE_DISALLOWED
+                        or (next_char == ':' and self.colon_operator)
+                        or (next_char == '+' and self.plus_operator)
+                    ):
                         # We need to repeat this, so we return the ending char next.
                         # If it's not allowed, that'll error on next call.
                         self.char_index -= 1

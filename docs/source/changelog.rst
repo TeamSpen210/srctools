@@ -16,6 +16,9 @@ Version (dev)
   allow reporting the source location in exceptions.
 * :py:meth:`Keyvalues.export() <srctools.keyvalues.Keyvalues.export>` is now deprecated.
 * Allow directly passing enums to set VMF keyvalues and fixups, if the ``value`` is itself a valid value.
+* Add :py:attr:`~srctools.tokenizer.Tokenizer.plus_operator`, allowing `+` to be
+  parsed as an operator for FGDs but still be valid inside bare strings elsewhere.
+  These are common in ``gameinfo.txt``.
 
 --------------
 Version 2.3.17
