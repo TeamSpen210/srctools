@@ -3,6 +3,7 @@
 Wraps property_parser tree in a set of classes which smartly handle
 specifics of VMF files.
 """
+import enum
 from typing import (
     Callable, IO, Protocol, TYPE_CHECKING, AbstractSet, Any, Dict, Final, FrozenSet, ItemsView,
     Iterable, Iterator, KeysView, List, Mapping, Match, MutableMapping, Optional, Pattern, Set,
@@ -38,6 +39,7 @@ __all__ = [
     'VMF', 'Camera', 'Cordon', 'VisGroup', 'Solid', 'Side', 'Entity', 'EntityGroup',
     'DispFlag', 'TriangleTag', 'DispVertex',
     'PrismFace', 'UVAxis', 'EntityFixup', 'FixupValue',  # For typing, shouldn't be constructed.
+    'StrataInstanceVisibility',
     'Output', 'OUTPUT_SEP',
 ]
 
@@ -326,6 +328,13 @@ def _remove_copyset(mapping: MutableMapping[T, CopySet['Entity']], key: T, ent: 
             del mapping[key]
 
 
+class StrataInstanceVisibility(enum.Enum):
+    """Strata Source saves and restores the 'view instances' option."""
+    HIDDEN = 0  #: Do not preview instances.
+    TINTED = 1  #: Show with a green tint
+    NORMAL = 2  #: Show normally.
+
+
 @attrs.frozen
 class PrismFace:
     """Return value for VMF.make_prism().
@@ -402,6 +411,8 @@ class VMF:
     grid_spacing: int
     active_cam: int
     quickhide_count: int
+    # If None, this is omitted in the file.
+    strata_instance_vis: Optional[StrataInstanceVisibility]
 
     def __init__(
         self,
@@ -460,6 +471,14 @@ class VMF:
         self.grid_spacing = srctools.conv_int(map_info.get('gridspacing', '64'), 64)
         self.active_cam = srctools.conv_int(map_info.get('active_cam', '-1'), -1)
         self.quickhide_count = srctools.conv_int(map_info.get('quickhide', '-1'), -1)
+        inst_vis = map_info.get('instancevisibility', '1')
+        if inst_vis:
+            try:
+                self.strata_instance_vis = StrataInstanceVisibility(int(inst_vis))
+            except ValueError:
+                self.strata_instance_vis = StrataInstanceVisibility.TINTED
+        else:
+            self.strata_instance_vis = None
 
     def add_brush(self, item: Union['Solid', PrismFace]) -> None:
         """Add a world brush to this map."""
@@ -580,15 +599,15 @@ class VMF:
             )
 
         view_opt = tree.find_block('viewsettings', or_blank=True)
-        view_dict = {
-            'bSnapToGrid': 'snaptogrid',
-            'bShowGrid': 'showgrid',
-            'bShow3DGrid': 'show3dgrid',
-            'bShowLogicalGrid': 'showlogicalgrid',
-            'nGridSpacing': 'gridspacing'
-        }
-        for key in view_dict:
-            map_info[view_dict[key]] = view_opt[key, '']
+        for key, dest in [
+            ('bSnapToGrid', 'snaptogrid'),
+            ('bShowGrid', 'showgrid'),
+            ('bShow3DGrid', 'show3dgrid'),
+            ('bShowLogicalGrid', 'showlogicalgrid'),
+            ('nGridSpacing', 'gridspacing'),
+            ('nInstanceVisibility', 'instancevisibility'),
+        ]:
+            map_info[dest] = view_opt[key, '']
 
         cordons = tree.find_block('cordons', or_blank=True)
         map_info['cordons_on'] = cordons['active', '0']
@@ -700,7 +719,10 @@ class VMF:
                             srctools.bool_as_int(self.show_logic_grid) + '"\n')
             dest_file.write(f'\t"nGridSpacing" "{self.grid_spacing}"\n')
             dest_file.write('\t"bShow3DGrid" "' +
-                            srctools.bool_as_int(self.show_3d_grid) + '"\n}\n')
+                            srctools.bool_as_int(self.show_3d_grid) + '"\n')
+            if self.strata_instance_vis is not None:
+                dest_file.write(f'\t"nInstanceVisibility" "{self.strata_instance_vis.value}"\n')
+            dest_file.write('}\n')
 
         # The worldspawn version should always match the global value.
         # Also force the classname, since this will crash if it's different.

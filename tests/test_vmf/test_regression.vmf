@@ -1,8 +1,8 @@
 versioninfo
 {
 	"editorversion" "400"
-	"editorbuild" "5304"
-	"mapversion" "1"
+	"editorbuild" "9999"
+	"mapversion" "8193"
 	"formatversion" "100"
 	"prefab" "0"
 }
@@ -11,17 +11,18 @@ visgroups
 }
 viewsettings
 {
-	"bSnapToGrid" "1"
+	"bSnapToGrid" "0"
 	"bShowGrid" "1"
 	"bShowLogicalGrid" "0"
-	"nGridSpacing" "64"
+	"nGridSpacing" "512"
 	"bShow3DGrid" "0"
+	"nInstanceVisibility" "1"
 }
 world
 {
 	"id" "1"
 	"classname" "worldspawn"
-	"mapversion" "1"
+	"mapversion" "8193"
 	editor
 	{
 		"color" "255 255 255"

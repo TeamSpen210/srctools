@@ -6,7 +6,7 @@ from dirty_equals import IsList
 import pytest
 
 from srctools import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Keyvalues, Matrix, Vec
-from srctools.vmf import VMF, Entity, Output, conv_kv
+from srctools.vmf import StrataInstanceVisibility, VMF, Entity, Output, conv_kv
 
 
 def assert_output(
@@ -456,6 +456,12 @@ def test_regression(file_regression: Any) -> None:
     ).add_out(
         Output('OnUser1', '!player', 'HolsterWeapon', delay=0.1),
     )
+    vmf.map_ver = 8192
+    vmf.show_grid = True
+    vmf.snap_grid = False
+    vmf.hammer_build = 9999
+    vmf.grid_spacing = 512
+    vmf.strata_instance_vis = StrataInstanceVisibility.NORMAL
     file_regression.check(vmf.export(), extension='.vmf')
 
 
