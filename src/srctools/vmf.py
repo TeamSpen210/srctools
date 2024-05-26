@@ -34,7 +34,7 @@ import srctools
 
 __all__ = [
     'CURRENT_HAMMER_BUILD', 'CURRENT_HAMMER_VERSION',
-    'conv_kv', 'ValidKVs',
+    'conv_kv', 'ValidKVs', 'Axis',
     'overlay_bounds', 'make_overlay', 'localise_overlay',
     'VMF', 'Camera', 'Cordon', 'VisGroup', 'Solid', 'Side', 'Entity', 'EntityGroup',
     'DispFlag', 'TriangleTag', 'DispVertex',
@@ -68,6 +68,7 @@ class _ValidKVEnum(Protocol):
 
 
 ValidKVs: TypeAlias = Union[_ValidKVBasics, _ValidKVEnum]
+Axis: TypeAlias = Literal['x', 'y', 'z']
 ValidKV_T = TypeVar('ValidKV_T', bound=ValidKVs)
 _KVToString = (Vec, FrozenVec, Angle, FrozenAngle, int)
 
@@ -367,6 +368,101 @@ class PrismFace:
             raise KeyError(item)
 
 
+@attrs.define
+class Strata2DViewport:
+    """Represents the position of a 2D viewport in Strata Source.
+
+    In the file this is specified as a single vector, with the planar axis set to ±65536.
+    """
+    axis: Axis
+    u: float
+    v: float
+    zoom: float
+
+    @classmethod
+    def from_vector(cls, pos: Vec, zoom: float = 1.0) -> 'Strata2DViewport':
+        """Determine the appropriate axis from the position vector."""
+        chosen_axis: Optional[Axis] = None
+        axis: Axis
+        for axis in ('x', 'y', 'z'):  # type: ignore[assignment]  # Doesn't infer literal
+            if pos[axis] in (0.0, -65536.0, 65536.0):
+                if chosen_axis is not None:
+                    raise ValueError(f'Multiple axes specified for 2D view position "{pos}"!')
+                chosen_axis = axis
+        if chosen_axis is None:
+            raise ValueError(f'No axis for 2D view position "{pos}"!')
+        u, v = Vec.INV_AXIS[chosen_axis]
+        return cls(chosen_axis, pos[u], pos[v], zoom)
+
+    def export(self, buffer: IO[str], title: str) -> None:
+        """Export the 2D viewport definition."""
+        buffer.write(f'\t\t{title}\n')
+        buffer.write('\t\t{\n')
+        buffer.write('\t\t\t"3d" "0"\n')
+        if self.axis == 'x':
+            buffer.write(f'\t\t\t"position" "(65536 {format_float(self.u)} {format_float(self.v)})"\n')
+        elif self.axis == 'y':
+            buffer.write(f'\t\t\t"position" "({format_float(self.u)} -65536 {format_float(self.v)})"\n')
+        elif self.axis == 'z':
+            buffer.write(f'\t\t\t"position" "({format_float(self.u)} {format_float(self.v)} 65536)"\n')
+        buffer.write(f'\t\t\t"zoom" "{format_float(self.zoom)}"\n')
+        buffer.write('\t\t}\n')
+
+
+@attrs.define
+class Strata3DViewport:
+    """Represents the position of a 3D viewport in Strata Source.
+
+    Changing roll does work, but should be avoided since Hammer doesn't allow control of that
+    axis.
+    """
+    position: Vec
+    angle: Angle
+
+    def export(self, buffer: IO[str], title: str) -> None:
+        """Export the 3D viewport definition."""
+        buffer.write(f'\t\t{title}\n')
+        buffer.write('\t\t{\n')
+        buffer.write('\t\t\t"3d" "1"\n')
+        buffer.write(f'\t\t\t"position" "({self.position})"\n')
+        buffer.write(f'\t\t\t"angle" "[{self.angle}]"\n')
+        buffer.write('\t\t}\n')
+
+
+def _parse_strata_viewport(kvs: Keyvalues) -> Optional[List[Union[Strata2DViewport, Strata3DViewport]]]:
+    """Look for and parse the Strata viewport definitions."""
+    try:
+        vp_block = kvs.find_key('views')
+    except LookupError:
+        return None
+
+    ports: List[Union[Strata2DViewport, Strata3DViewport]] = []
+    default_2d: Axis
+
+    for key, default_2d in [  # type: ignore[assignment]  # Doesn't infer literal
+        ('v0', 'x'),
+        ('v1', 'x'),
+        ('v2', 'y'),
+        ('v3', 'z'),
+    ]:
+        sub_kv = vp_block.find_key(key, or_blank=True)
+        pos = sub_kv.vec('position')
+        # Default the upper-left view to 3D.
+        if sub_kv.bool('3d', key == 'v0'):
+            ports.append(Strata3DViewport(
+                pos,
+                Angle.from_str(sub_kv['angle', '[0 0 0]']),
+            ))
+        else:
+            zoom = sub_kv.float('zoom', 1.0)
+            if pos:
+                ports.append(Strata2DViewport.from_vector(pos, zoom))
+            else:
+                # All zero, use a default axis to produce the default behaviour.
+                ports.append(Strata2DViewport(default_2d, 0, 0, zoom))
+    return ports
+
+
 class VMF:
     """Represents a VMF file, and holds counters for various IDs used.
 
@@ -411,8 +507,9 @@ class VMF:
     grid_spacing: int
     active_cam: int
     quickhide_count: int
-    # If None, this is omitted in the file.
+    # If None, these are omitted in the exported file.
     strata_instance_vis: Optional[StrataInstanceVisibility]
+    strata_viewports: Optional[List[Union[Strata2DViewport, Strata3DViewport]]]
 
     def __init__(
         self,
@@ -479,6 +576,7 @@ class VMF:
                 self.strata_instance_vis = StrataInstanceVisibility.TINTED
         else:
             self.strata_instance_vis = None
+        self.strata_viewports = None
 
     def add_brush(self, item: Union['Solid', PrismFace]) -> None:
         """Add a world brush to this map."""
@@ -621,6 +719,8 @@ class VMF:
         # ensure unique IDs in brushes, entities and faces.
         map_obj = VMF(map_info=map_info, preserve_ids=preserve_ids)
 
+        map_obj.strata_viewports = _parse_strata_viewport(view_opt)
+
         for vis in tree.find_all('visgroups', 'visgroup'):
             map_obj.vis_tree.append(VisGroup.parse(map_obj, vis))
 
@@ -722,6 +822,11 @@ class VMF:
                             srctools.bool_as_int(self.show_3d_grid) + '"\n')
             if self.strata_instance_vis is not None:
                 dest_file.write(f'\t"nInstanceVisibility" "{self.strata_instance_vis.value}"\n')
+            if self.strata_viewports is not None:
+                dest_file.write('\tviews\n\t{\n')
+                for name, view in zip(('v0', 'v1', 'v2', 'v3'), self.strata_viewports):
+                    view.export(dest_file, name)
+                dest_file.write('\t}\n}\n')
             dest_file.write('}\n')
 
         # The worldspawn version should always match the global value.

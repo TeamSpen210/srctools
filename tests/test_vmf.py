@@ -4,9 +4,13 @@ from typing import Any, Optional
 
 from dirty_equals import IsList
 import pytest
+from pytest_regressions.file_regression import FileRegressionFixture
 
 from srctools import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Keyvalues, Matrix, Vec
-from srctools.vmf import StrataInstanceVisibility, VMF, Entity, Output, conv_kv
+from srctools.vmf import (
+    Axis, VMF, Entity, Output, conv_kv,
+    StrataInstanceVisibility, Strata2DViewport, Strata3DViewport,
+)
 
 
 def assert_output(
@@ -446,7 +450,13 @@ def test_output_parse() -> None:
     )
 
 
-def test_regression(file_regression: Any) -> None:
+def test_blank_vmf(file_regression: FileRegressionFixture) -> None:
+    """Test parsing a blank file produces a default VMF."""
+    vmf = VMF.parse(Keyvalues.root())
+    file_regression.check(vmf.export(), extension='.vmf')
+
+
+def test_regression(file_regression: FileRegressionFixture) -> None:
     """Generate a VMF to ensure code doesn't unintentionally alter output."""
     vmf = VMF()
     vmf.create_ent(
@@ -462,6 +472,12 @@ def test_regression(file_regression: Any) -> None:
     vmf.hammer_build = 9999
     vmf.grid_spacing = 512
     vmf.strata_instance_vis = StrataInstanceVisibility.NORMAL
+    vmf.strata_viewports = [
+        Strata3DViewport(Vec(8, -3, 128), Angle(0, 90, 0)),
+        Strata2DViewport('y', 128.384, -12.7467, 4.0),
+        Strata2DViewport('x', 128.75, 36.25, 0.125),
+        Strata2DViewport('z', 7181, -282.875, 1.0),
+    ]
     file_regression.check(vmf.export(), extension='.vmf')
 
 
@@ -491,3 +507,14 @@ def test_make_unique() -> None:
     # Check double-digits work.
     alpha12 = vmf.create_ent('info_target').make_unique('alpha')
     assert alpha12['targetname'] == 'alpha12'
+
+
+@pytest.mark.parametrize('position, axis, u, v', [
+    (Vec(65536, 8.75, -12), 'x', 8.75, -12),
+    (Vec(8.75, 65536,  -12), 'y', 8.75, -12),
+    (Vec(8.75, -12, -65536), 'z', 8.75, -12),
+    (Vec(0, -8.75, 12), 'x', -8.75, 12),
+])
+def test_strata_2d_viewport_position(position: Vec, axis: Axis, u: float, v: float) -> None:
+    """The 2D viewport value encodes both a position and axis."""
+    assert Strata2DViewport.from_vector(position, 8.0) == Strata2DViewport(axis, u, v, 8.0)
