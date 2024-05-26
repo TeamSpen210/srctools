@@ -45,12 +45,135 @@ viewsettings
 		}
 	}
 }
-}
 world
 {
 	"id" "1"
 	"classname" "worldspawn"
 	"mapversion" "8193"
+	solid
+	{
+		"id" "1"
+		side
+		{
+			"id" "1"
+			"plane" "(128 128 128) (256 128 128) (256 512 128)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 -1 0 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+			"point_data"
+			{
+				"numpts" "4"
+				"point" "0 128 128 128"
+				"point" "1 256 128 128"
+				"point" "2 256 512 128"
+				"point" "3 128 512 128"
+			}
+		}
+		side
+		{
+			"id" "2"
+			"plane" "(128 512 1024) (256 512 1024) (256 128 1024)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 -1 0 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+			"point_data"
+			{
+				"numpts" "4"
+				"point" "0 128 512 1024"
+				"point" "1 256 512 1024"
+				"point" "2 256 128 1024"
+				"point" "3 128 128 1024"
+			}
+		}
+		side
+		{
+			"id" "6"
+			"plane" "(128 512 128) (256 512 128) (256 512 1024)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+			"point_data"
+			{
+				"numpts" "4"
+				"point" "0 128 512 128"
+				"point" "1 256 512 128"
+				"point" "2 256 512 1024"
+				"point" "3 128 512 1024"
+			}
+		}
+		side
+		{
+			"id" "5"
+			"plane" "(256 128 128) (128 128 128) (128 128 1024)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+			"point_data"
+			{
+				"numpts" "4"
+				"point" "0 256 128 128"
+				"point" "1 128 128 128"
+				"point" "2 128 128 1024"
+				"point" "3 256 128 1024"
+			}
+		}
+		side
+		{
+			"id" "4"
+			"plane" "(256 512 128) (256 128 128) (256 128 1024)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[0 1 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+			"point_data"
+			{
+				"numpts" "4"
+				"point" "0 256 512 128"
+				"point" "1 256 128 128"
+				"point" "2 256 128 1024"
+				"point" "3 256 512 1024"
+			}
+		}
+		side
+		{
+			"id" "3"
+			"plane" "(128 512 1024) (128 128 1024) (128 128 128)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[0 1 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+			"point_data"
+			{
+				"numpts" "4"
+				"point" "0 128 512 1024"
+				"point" "1 128 128 1024"
+				"point" "2 128 128 128"
+				"point" "3 128 512 128"
+			}
+		}
+		editor
+		{
+			"color" "255 255 255"
+			"visgroupshown" "1"
+			"visgroupautoshown" "1"
+		}
+	}
 	editor
 	{
 		"color" "255 255 255"

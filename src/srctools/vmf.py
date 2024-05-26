@@ -3,7 +3,6 @@
 Wraps property_parser tree in a set of classes which smartly handle
 specifics of VMF files.
 """
-import enum
 from typing import (
     Callable, IO, Protocol, TYPE_CHECKING, AbstractSet, Any, Dict, Final, FrozenSet, ItemsView,
     Iterable, Iterator, KeysView, List, Mapping, Match, MutableMapping, Optional, Pattern, Set,
@@ -12,7 +11,7 @@ from typing import (
 from typing_extensions import Literal, TypeAlias, deprecated
 from array import ArrayType as Array
 from collections import defaultdict
-from enum import Flag
+from enum import Flag, Enum
 from sys import intern
 import builtins
 import io
@@ -329,7 +328,7 @@ def _remove_copyset(mapping: MutableMapping[T, CopySet['Entity']], key: T, ent: 
             del mapping[key]
 
 
-class StrataInstanceVisibility(enum.Enum):
+class StrataInstanceVisibility(Enum):
     """Strata Source saves and restores the 'view instances' option."""
     HIDDEN = 0  #: Do not preview instances.
     TINTED = 1  #: Show with a green tint
@@ -826,7 +825,7 @@ class VMF:
                 dest_file.write('\tviews\n\t{\n')
                 for name, view in zip(('v0', 'v1', 'v2', 'v3'), self.strata_viewports):
                     view.export(dest_file, name)
-                dest_file.write('\t}\n}\n')
+                dest_file.write('\t}\n')
             dest_file.write('}\n')
 
         # The worldspawn version should always match the global value.
@@ -972,12 +971,14 @@ class VMF:
         p1: Union[Vec, FrozenVec],
         p2: Union[Vec, FrozenVec],
         mat: str = 'tools/toolsnodraw',
+        set_points: bool = False,
     ) -> PrismFace:
         """Create an axis-aligned brush connecting the two points.
 
         A PrismFaces tuple will be returned which contains the six
         faces, as well as the solid.
         All faces will be textured with 'mat'.
+        If set_points is defined, explicit vertex info will be included.
         """
         b_min, b_max = Vec.bbox(p1, p2)
 
@@ -997,6 +998,13 @@ class VMF:
             uaxis=UVAxis(1, 0, 0),
             vaxis=UVAxis(0, -1, 0),
         )
+        if set_points:
+            f_bottom.strata_points = [
+                Vec(b_min.x, b_min.y, b_min.z),
+                Vec(b_max.x, b_min.y, b_min.z),
+                Vec(b_max.x, b_max.y, b_min.z),
+                Vec(b_min.x, b_max.y, b_min.z),
+            ]
 
         f_top = Side(
             self,
@@ -1009,6 +1017,13 @@ class VMF:
             uaxis=UVAxis(1, 0, 0),
             vaxis=UVAxis(0, -1, 0),
         )
+        if set_points:
+            f_top.strata_points = [
+                Vec(b_min.x, b_max.y, b_max.z),
+                Vec(b_max.x, b_max.y, b_max.z),
+                Vec(b_max.x, b_min.y, b_max.z),
+                Vec(b_min.x, b_min.y, b_max.z),
+            ]
 
         f_west = Side(
             self,
@@ -1021,6 +1036,13 @@ class VMF:
             uaxis=UVAxis(0, 1, 0),
             vaxis=UVAxis(0, 0, -1),
         )
+        if set_points:
+            f_west.strata_points = [
+                Vec(b_min.x, b_max.y, b_max.z),
+                Vec(b_min.x, b_min.y, b_max.z),
+                Vec(b_min.x, b_min.y, b_min.z),
+                Vec(b_min.x, b_max.y, b_min.z),
+            ]
 
         f_east = Side(
             self,
@@ -1033,6 +1055,13 @@ class VMF:
             uaxis=UVAxis(0, 1, 0),
             vaxis=UVAxis(0, 0, -1),
         )
+        if set_points:
+            f_east.strata_points = [
+                Vec(b_max.x, b_max.y, b_min.z),
+                Vec(b_max.x, b_min.y, b_min.z),
+                Vec(b_max.x, b_min.y, b_max.z),
+                Vec(b_max.x, b_max.y, b_max.z),
+            ]
 
         f_south = Side(
             self,
@@ -1045,6 +1074,13 @@ class VMF:
             uaxis=UVAxis(1, 0, 0),
             vaxis=UVAxis(0, 0, -1),
         )
+        if set_points:
+            f_south.strata_points = [
+                Vec(b_max.x, b_min.y, b_min.z),
+                Vec(b_min.x, b_min.y, b_min.z),
+                Vec(b_min.x, b_min.y, b_max.z),
+                Vec(b_max.x, b_min.y, b_max.z),
+            ]
 
         f_north = Side(
             self,
@@ -1057,6 +1093,13 @@ class VMF:
             uaxis=UVAxis(1, 0, 0),
             vaxis=UVAxis(0, 0, -1),
         )
+        if set_points:
+            f_north.strata_points = [
+                Vec(b_min.x, b_max.y, b_min.z),
+                Vec(b_max.x, b_max.y, b_min.z),
+                Vec(b_max.x, b_max.y, b_max.z),
+                Vec(b_min.x, b_max.y, b_max.z),
+            ]
 
         solid = Solid(
             self,
@@ -1683,6 +1726,7 @@ class Side:
         'ham_rot',
         'uaxis',
         'vaxis',
+        'strata_points',
         'disp_power',
         'disp_pos',
         'disp_elevation',
@@ -1699,6 +1743,7 @@ class Side:
     ham_rot: float
     uaxis: UVAxis
     vaxis: UVAxis
+    strata_points: Optional[List[Vec]]
 
     disp_power: DispPower
     disp_pos: Optional[Vec]
@@ -1732,6 +1777,7 @@ class Side:
         self.ham_rot = rotation
         self.uaxis = uaxis or UVAxis(0, 1, 0)
         self.vaxis = vaxis or UVAxis(0, 0, -1)
+        self.strata_points = None
 
         self.disp_power = disp_power
         self.disp_flags = DispFlag.COLL_ALL
@@ -1790,6 +1836,13 @@ class Side:
             pass
         else:
             side._parse_displacement_data(disp_tree)
+
+        try:
+            points_block = tree.find_block('point_data')
+        except LookupError:
+            pass
+        else:
+            side._parse_strata_points(points_block)
         return side
 
     def _parse_displacement_data(self, disp_tree: Keyvalues) -> None:
@@ -1836,7 +1889,7 @@ class Side:
             for y in range(size)
             for x in range(size)
         ]
-        # Parse all the rows..
+        # Parse all the rows...
         self._parse_disp_vecrow(disp_tree, 'normals', _disprow_set_norm)
         self._parse_disp_vecrow(disp_tree, 'offsets', _disprow_set_off)
         self._parse_disp_vecrow(disp_tree, 'offset_normals', _disprow_set_off_norm)
@@ -1880,7 +1933,10 @@ class Side:
         # Else: Parse multiblend too.
         # First initialise this list.
         for vert in self._disp_verts:
-            vert.multi_colors = [Vec(1, 1, 1), Vec(1, 1, 1), Vec(1, 1, 1), Vec(1, 1, 1)]
+            vert.multi_colors = [
+                Vec(1, 1, 1), Vec(1, 1, 1),
+                Vec(1, 1, 1), Vec(1, 1, 1),
+            ]
         for name, setter in _disprow_multiblend:
             self._parse_disp_vecrow(disp_tree, name, setter)
 
@@ -1952,6 +2008,28 @@ class Side:
                     f'Displacement array for {name} in side {self.id}, '
                     f'row {y} had invalid number: {exc.args[0]}'
                 ) from None
+
+    def _parse_strata_points(self, block: Keyvalues) -> None:
+        """Parse Strata Source's additional vertices block."""
+        points: List[Optional[Vec]] = [None] * block.int('numpts')
+        for child in block:
+            if child.name == 'point':
+                ind_str, pos_str = child.value.split(' ', 1)
+                point = Vec.from_str(pos_str)
+                try:
+                    ind = int(ind_str)
+                    existing = points[ind]
+                except (ValueError, IndexError) as exc:
+                    raise ValueError(
+                        f'Invalid points value "{child.value}" '
+                        f'for array of length {len(points)} in face #{self.id}!'
+                    ) from exc
+                if existing is not None:
+                    raise ValueError(f'Duplicate points index "{ind}" in face #{self.id}!')
+                points[ind] = point
+        if None in points:
+            raise ValueError(f'Missing points in array for face #{self.id}: {points}')
+        self.strata_points = points  # type: ignore[assignment]  # We checked for None.
 
     @classmethod
     def from_plane(
@@ -2029,6 +2107,8 @@ class Side:
                     vert.triangle_b,
                 ) for vert in self._disp_verts
             ]
+        if self.strata_points is not None:
+            new_side.strata_points = [point.copy() for point in self.strata_points]
         return new_side
 
     # noinspection PyProtectedMember
@@ -2050,6 +2130,13 @@ class Side:
             f'{ind}\t"lightmapscale" "{self.lightmap}"\n'
             f'{ind}\t"smoothing_groups" "{self.smooth}"\n'
         )
+        if self.strata_points is not None:
+            buffer.write(f'{ind}\t"point_data"\n')
+            buffer.write(f'{ind}\t{{\n')
+            buffer.write(f'{ind}\t\t"numpts" "{len(self.strata_points)}"\n')
+            for i, point in enumerate(self.strata_points):
+                buffer.write(f'{ind}\t\t"point" "{i} {point}"\n')
+            buffer.write(f'{ind}\t}}\n')
         if self.disp_power > 0:
             self._export_displacement(buffer, ind, disp_multiblend)
 

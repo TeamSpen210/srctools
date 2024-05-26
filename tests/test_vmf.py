@@ -478,6 +478,11 @@ def test_regression(file_regression: FileRegressionFixture) -> None:
         Strata2DViewport('x', 128.75, 36.25, 0.125),
         Strata2DViewport('z', 7181, -282.875, 1.0),
     ]
+
+    vmf.add_brush(vmf.make_prism(
+        Vec(128, 128, 128), Vec(256, 512, 1024),
+        set_points=True,
+    ))
     file_regression.check(vmf.export(), extension='.vmf')
 
 
