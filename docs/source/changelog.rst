@@ -61,7 +61,7 @@ Version 2.3.14
 * Fix VMT parsing not handling `Proxies {` style braces.
 * Add Cythonised versions of :py:func:`~srctools.conv_int`, :py:func`~srctools.conv_float` and :py:func`~srctools.conv_bool`.
 * Added a ``repr()`` for :py:class:`srctools.vmf.Entity`.
-* Automatically clean up up empty sets when removing entities from :py:class:`VMF.by_class <srctools.vmf.VMF.by_class>` and :py:class:`.by_target <srctools.vmf.VMF.by_target>`.
+* Automatically clean up up empty sets when removing entities from :py:attr:`VMF.by_class <srctools.vmf.VMF.by_class>` and :py:attr:`.by_target <srctools.vmf.VMF.by_target>`.
 * Fixed saving/loading issues with a number of VTF formats.
 
 --------------
@@ -277,7 +277,7 @@ Version 2.3.0
 * Elide long arrays in element reprs.
 * Add some additional logs when finding propcombine models fails.
 * Clean up :py:meth:`!srctools.Property.build()` API.
-* Make error messages more clear when :py:meth:`srctools.tokenizer.Tokenizer.error()` is used
+* Make error messages more clear when :py:meth:`Tokenizer.error() <srctools.tokenizer.BaseTokenizer.error()>` is used
   directly with a :py:class:`~srctools.tokenizer.Token`.
 * Include potential variables in :external:py:class:`KeyError` from
   :py:meth:`srctools.vmf.EntityFixup.substitute()`.
@@ -296,7 +296,7 @@ Version 2.2.5
 -------------
 
 * Restore :py:meth:`srctools.dmx.Attribute.iter_str()` etc method's ability to iterate scalars.
-* Suppress warnings in :py:meth:`srctools.Property.copy()`.
+* Suppress warnings in :py:meth:`Property.copy() <srctools.keyvalues.Keyvalues.copy>`.
 
 
 -------------
@@ -311,7 +311,7 @@ Version 2.2.4
 * Pass through unknown model flag bits unchanged.
 * Fix VPK ascii check.
 * Handle VMF groups correctly.
-* Add :py:meth:`srctools.math.Vec.bbox_intersect`.
+* Add :py:meth:`Vec.bbox_intersect() <srctools.math.VecBase.bbox_intersect>`.
 * Allow indexing :py:class:`~srctools.vmf.PrismFace` objects by a normal to get a :py:class:`~srctools.vmf.Side`.
 * Add :py:meth:`srctools.dmx.Attribute.iter_str()` etc methods for iterating converted values. Directly iterating the :py:class:`~srctools.dmx.Attribute` is deprecated.
 * Add :py:meth:`srctools.dmx.Attribute.append()`, :py:meth:`~srctools.dmx.Attribute.extend()` and :py:meth:`~srctools.dmx.Attribute.clear_array()` methods.
@@ -349,7 +349,7 @@ Version 2.2.0
 * Add :py:mod:`srctools.particles`.
 * DMX attributes may now be copied using the :external:py:mod:`copy` module, and also tested for equality.
 * :py:class:`srctools.sndscript.Sound` now lazily creates operator stack keyvalue objects.
-* :py:class:`srctools.packlist.Packlist` now can pack particle systems, and generate particle manifests.
+* :py:class:`srctools.packlist.PackList` now can pack particle systems, and generate particle manifests.
 * Animation events which spawn particles are also detected.
 
 -------------
@@ -357,7 +357,7 @@ Version 2.1.0
 -------------
 
 * Fix ``%``-formatted logs breaking when :py:mod:`srctools.logger` is used.
-* Add :py:meth:`Property.extend() <Keyvalues.extend>`, instead of using ``+`` or :py:meth:`<Property.append() <Keyvalues.append>` with a block. That usage is deprecated.
+* Add :py:meth:`Property.extend() <srctools.keyvalues.Keyvalues.extend>`, instead of using ``+`` or :py:meth:`<Property.append() <srctools.keyvalues.Keyvalues.append>` with a block. That usage is deprecated.
 * Deprecate creating root properties with ``name=None``.
 * :py:class:`srctools.filesys.FileSystemChain` is no longer generic, this is not useful.
 * Add functions which embed a Keyvalues1 tree in a DMX tree.
