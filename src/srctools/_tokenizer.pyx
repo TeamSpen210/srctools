@@ -149,6 +149,7 @@ cdef class BaseTokenizer:
             'string_brackets': 0,
             'allow_escapes': 0,
             'colon_operator': 0,
+            'plus_operator': 0,
             'allow_star_comments': 0,
             'preserve_comments': 0,
             'file_input': 0,
