@@ -1,11 +1,11 @@
 """Analyse structs."""
-from functools import partial
 from typing import Iterator, Literal
 
 import attrs
 
 
 INDENT = ''
+
 
 class Member:
     """A member in a struct."""
@@ -22,7 +22,7 @@ class Fixed(Member):
     """A fixed size member."""
     size: int
     kind: Literal['s', 'u', 'f', 'pad', 'unk', 'str']
-    def __len__(self):
+    def __len__(self) -> int:
         return self.size
 
     def display(self, indent: str, name: str) -> Iterator[str]:

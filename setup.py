@@ -48,7 +48,8 @@ extensions = [
         ],
         extra_compile_args=[
             # '/FAs',  # MS ASM dump
-        ] + openmp,
+            *openmp,
+        ],
         extra_link_args=openmp_link,
     ),
     Extension(

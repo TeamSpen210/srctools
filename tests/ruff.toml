@@ -1,5 +1,6 @@
 extend = "../pyproject.toml"
 
+[lint]
 extend-ignore = [
 	# Type checking isn't particularly important in test code.
 	"ANN",
@@ -10,6 +11,6 @@ extend-ignore = [
 # Enable pytest-specific checks.
 extend-select = ["PT"]
 
-[flake8-pytest-style]
+[lint.flake8-pytest-style]
 mark-parentheses = false
 parametrize-names-type = "csv"
