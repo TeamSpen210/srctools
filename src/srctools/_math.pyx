@@ -6,7 +6,7 @@ from cpython.mem cimport PyMem_Free, PyMem_Malloc
 from cpython.object cimport Py_EQ, Py_GE, Py_GT, Py_LE, Py_LT, Py_NE, PyObject, PyTypeObject
 from cpython.ref cimport Py_INCREF
 from libc cimport math
-from libc.math cimport M_PI, NAN, cos, llround, sin, tan
+from libc.math cimport M_PI, NAN, cos, llround, sin, tan, isnan
 from libc.stdint cimport uint16_t, uint32_t, uint_fast8_t
 from libc.stdio cimport snprintf, sscanf
 from libc.string cimport memcmp, memcpy, memset
@@ -644,6 +644,7 @@ cdef inline bint _mat_to_angle(vec_t *ang, mat_t mat) except False:
 cdef bint _mat_from_basis(mat_t mat, VecBase x, VecBase y, VecBase z) except False:
     """Implement the shared parts of Matrix/Angle .from_basis()."""
     cdef vec_t vec_x, vec_y, vec_z
+    vec_x = vec_y = vec_z = {'x': NAN, 'y': NAN, 'z': NAN}
 
     if x is not None:
         if _vec_normalise(&vec_x, &x.val) < 1e-6:
@@ -701,6 +702,13 @@ cdef bint _mat_from_basis(mat_t mat, VecBase x, VecBase y, VecBase z) except Fal
                 # None provided, identity.
                 _mat_identity(mat)
                 return True
+
+    if (
+        isnan(vec_x.x) or isnan(vec_x.y) or isnan(vec_x.z) or
+        isnan(vec_y.x) or isnan(vec_y.y) or isnan(vec_y.z) or
+        isnan(vec_z.x) or isnan(vec_z.y) or isnan(vec_z.z)
+    ):
+        raise SystemError('Some values were not initialised.')
 
     mat[0] = vec_x.x, vec_x.y, vec_x.z
     mat[1] = vec_y.x, vec_y.y, vec_y.z

@@ -277,6 +277,29 @@ def test_from_basis_basics(
         Matrix.from_basis(z=Vec(0, 0, 0))
 
 
+@pytest.mark.parametrize('z', [False, True], ids=['', 'z'])
+@pytest.mark.parametrize('y', [False, True], ids=['', 'y'])
+@pytest.mark.parametrize('x', [False, True], ids=['', 'x'])
+def test_from_basis_combos(
+    py_c_vec: PyCVec,
+    frozen_thawed_matrix: MatrixClass,
+    x: bool,
+    y: bool,
+    z: bool,
+) -> None:
+    """Test all possible combinations of parameters work."""
+    Matrix = frozen_thawed_matrix
+
+    kwds = {}
+    if x:
+        kwds['x'] = vec_mod.Vec(1, 0, 0)
+    if y:
+        kwds['y'] = vec_mod.Vec(0, 1, 0)
+    if z:
+        kwds['z'] = vec_mod.Vec(0, 0, 1)
+    assert_rot(Matrix.from_basis(**kwds), Matrix(), type=Matrix)
+
+
 @pytest.mark.parametrize('direction', DIRECTIONS, ids=DIRECTION_IDS)
 def test_from_basis_x(
     py_c_vec: PyCVec,
