@@ -1,6 +1,6 @@
 """Tests for the VMF library."""
 from enum import Enum
-from typing import Any, Optional
+from typing import Optional
 
 from dirty_equals import IsList
 import pytest
@@ -486,9 +486,13 @@ def test_regression(file_regression: FileRegressionFixture) -> None:
     file_regression.check(vmf.export(), extension='.vmf')
 
 
-def test_vmf_defaults() -> None:
+@pytest.mark.parametrize('source', ['constructor', 'parse'])
+def test_vmf_defaults(source: str) -> None:
     """Check a blank VMF produces sensible results."""
-    vmf = VMF()
+    if source == 'constructor':
+        vmf = VMF()
+    else:
+        vmf = VMF.parse(Keyvalues.root())
     # Check default options.
     assert vmf.map_ver == 0
     assert vmf.show_grid is True
@@ -507,25 +511,25 @@ def test_map_info() -> None:
     # No warning with an empty map info.
     VMF(map_info={})
 
-    vmf = VMF(map_info={'showgrid': '0'})
+    vmf = pytest.deprecated_call(VMF,  map_info={'showgrid': '0'})
     assert vmf.show_grid is False
 
-    vmf = VMF(map_info={'snaptogrid': '0'})
+    vmf = pytest.deprecated_call(VMF,  map_info={'snaptogrid': '0'})
     assert vmf.snap_grid is False
 
-    vmf = VMF(map_info={'show3dgrid': '1'})
+    vmf = pytest.deprecated_call(VMF,  map_info={'show3dgrid': '1'})
     assert vmf.show_3d_grid is True
 
-    vmf = VMF(map_info={'showlogicalgrid': '1'})
+    vmf = pytest.deprecated_call(VMF,  map_info={'showlogicalgrid': '1'})
     assert vmf.show_logic_grid is True
 
-    vmf = VMF(map_info={'gridspacing': '1024'})
+    vmf = pytest.deprecated_call(VMF,  map_info={'gridspacing': '1024'})
     assert vmf.grid_spacing == 1024
 
-    vmf = VMF(map_info={'active_cam': '84'})
+    vmf = pytest.deprecated_call(VMF,  map_info={'active_cam': '84'})
     assert vmf.active_cam == 84
 
-    vmf = VMF(map_info={'quickhide': '12'})
+    vmf = pytest.deprecated_call(VMF,  map_info={'quickhide': '12'})
     assert vmf.quickhide_count == 12
 
 

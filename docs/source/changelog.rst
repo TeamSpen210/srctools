@@ -15,6 +15,7 @@ Version (dev)
 * Added :py:attr:`Keyvalues.line_num <srctools.keyvalues.Keyvalues.line_num>`, to
   allow reporting the source location in exceptions.
 * :py:meth:`Keyvalues.export() <srctools.keyvalues.Keyvalues.export>` is now deprecated.
+* Allow passing VMF settings via keyword arguments - the ``map_info`` dictionary parameter is now deprecated.
 * Allow directly passing enums to set VMF keyvalues and fixups, if the ``value`` is itself a valid value.
 * Parse Strata Source's other VMF additions - viewport configuration, brush face vertices and instance visibility.
 * Add :py:attr:`~srctools.tokenizer.Tokenizer.plus_operator`, allowing `+` to be

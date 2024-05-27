@@ -462,6 +462,48 @@ def _parse_strata_viewport(kvs: Keyvalues) -> Optional[List[Union[Strata2DViewpo
     return ports
 
 
+def _mapinfo_int(
+    map_info: Mapping[str, str],
+    key: str,
+    value: Optional[int],
+    default: int,
+) -> int:
+    """Handle reading a value from the map_info dictionary."""
+    if value is not None:
+        return value
+    try:
+        val_str = map_info[key]
+    except KeyError:
+        return default
+    warnings.warn(
+        'Passing parameters via the map_info dict is deprecated. '
+        'Use keyword arguments instead.',
+        DeprecationWarning, stacklevel=2,
+    )
+    return srctools.conv_int(val_str, default)
+
+
+def _mapinfo_bool(
+    map_info: Mapping[str, str],
+    key: str,
+    value: Optional[bool],
+    default: bool,
+) -> bool:
+    """Handle reading a value from the map_info dictionary."""
+    if value is not None:
+        return value
+    try:
+        val_str = map_info[key]
+    except KeyError:
+        return default
+    warnings.warn(
+        'Passing parameters via the map_info dict is deprecated. '
+        'Use keyword arguments instead.',
+        DeprecationWarning, stacklevel=2,
+    )
+    return srctools.conv_bool(val_str, default)
+
+
 class VMF:
     """Represents a VMF file, and holds counters for various IDs used.
 
@@ -510,16 +552,49 @@ class VMF:
     strata_instance_vis: Optional[StrataInstanceVisibility]
     strata_viewports: Optional[List[Union[Strata2DViewport, Strata3DViewport]]]
 
+    # Ignore our own deprecation helper function.
+    # noinspection PyDeprecation
     def __init__(
         self,
         map_info: Mapping[str, str] = EmptyMapping,
         preserve_ids: bool = False,
+        *,
+        format_version: Optional[int] = None,
+        hammer_version: Optional[int] = None,
+        hammer_build: Optional[int] = None,
+        is_prefab: Optional[bool] = None,
+        cordon_enabled: Optional[bool] = None,
+        map_version: Optional[int] = None,
+        show_grid: Optional[bool] = None,
+        show_3d_grid: Optional[bool] = None,
+        snap_grid: Optional[bool] = None,
+        show_logic_grid: Optional[bool] = None,
+        grid_spacing: Optional[int] = None,
+        active_cam: Optional[int] = None,
+        quickhide_count: Optional[int] = None,
+        strata_inst_visibility: Optional[StrataInstanceVisibility] = None,
     ) -> None:
         """Create a VMF.
 
-        If preserve_ids is False (default), various IDs will be changed to ensure they are unique
-        when adding items to the VMF. If True the IDs will be preseved. New items will aquire a
-        unique ID.
+        :param preserve_ids: If False (default), various IDs will be changed to ensure they are unique
+          when adding items to the VMF. If True the IDs will be preseved. New items will aquire a
+          unique ID.
+        :param map_info: Deprecated method for passing along the other parameters.
+
+        :param format_version: The version of the VMF format, always 100.
+        :param hammer_version: Version number for Hammer.
+        :param hammer_build: This encodes the date Hammer was built.
+        :param is_prefab: Indicates if this map was saved to be a prefab.
+        :param cordon_enabled: Sets whether corndons are currently being used.
+        :param map_version: The map version is incremented whenever the map is saved.
+        :param show_grid: Whether the grid is visible in the 2D viewports.
+        :param show_3d_grid: Whether the grid is visible in the 3D viewport.
+        :param snap_grid: Whether objects snap to the selected grid.
+        :param show_logic_grid: Unused option.
+        :param grid_spacing: The current size of the grid. Should be a power of two.
+        :param active_cam: The ID of the currently active camera.
+        :param quickhide_count: The number of quick-hidden objects.
+        :param strata_inst_visibility: Strata Source stores the visibility of instances.
         """
         id_man = NullIDMan if preserve_ids else IDMan
         self.solid_id = id_man()  # All occupied solid ids
@@ -544,37 +619,28 @@ class VMF:
         # mapspawn entity, which is the entity world brushes are saved to.
         self.spawn = Entity(self)
         self.spawn.solids = self.brushes  # Shared list!
-        self.is_prefab = srctools.conv_bool(map_info.get('prefab', '0'), False)
-        self.cordon_enabled = srctools.conv_bool(map_info.get('cordons_on', '0'), False)
-        self.map_ver = srctools.conv_int(map_info.get('mapversion', '0'))
 
         # The worldspawn entity should always be worldspawn.
         self.spawn['classname'] = 'worldspawn'
         self.by_target[None].add(self.spawn)
 
-        self.format_ver = srctools.conv_int(
-            map_info.get('formatversion', '100'), 100)
-        self.hammer_ver = srctools.conv_int(
-            map_info.get('editorversion', ''), CURRENT_HAMMER_VERSION)
-        self.hammer_build = srctools.conv_int(
-            map_info.get('editorbuild', ''), CURRENT_HAMMER_BUILD)
+        self.is_prefab = _mapinfo_bool(map_info, 'prefab', is_prefab, False)
+        self.cordon_enabled = _mapinfo_bool(map_info, 'cordons_on', cordon_enabled, False)
+        self.map_ver = _mapinfo_int(map_info, 'mapversion', map_version, 0)
+        self.format_ver = _mapinfo_int(map_info,'formatversion', format_version, 100)
+        self.hammer_ver = _mapinfo_int(map_info, 'editorversion', hammer_version, CURRENT_HAMMER_VERSION)
+        self.hammer_build = _mapinfo_int(map_info, 'editorbuild', hammer_build, CURRENT_HAMMER_BUILD)
 
         # Various Hammer settings
-        self.show_grid = srctools.conv_bool(map_info.get('showgrid', '1'), True)
-        self.show_3d_grid = srctools.conv_bool(map_info.get('show3dgrid', '0'), False)
-        self.snap_grid = srctools.conv_bool(map_info.get('snaptogrid', '1'), True)
-        self.show_logic_grid = srctools.conv_bool(map_info.get('showlogicalgrid', '0'), False)
-        self.grid_spacing = srctools.conv_int(map_info.get('gridspacing', '64'), 64)
-        self.active_cam = srctools.conv_int(map_info.get('active_cam', '-1'), -1)
-        self.quickhide_count = srctools.conv_int(map_info.get('quickhide', '-1'), -1)
-        inst_vis = map_info.get('instancevisibility', '1')
-        if inst_vis:
-            try:
-                self.strata_instance_vis = StrataInstanceVisibility(int(inst_vis))
-            except ValueError:
-                self.strata_instance_vis = StrataInstanceVisibility.TINTED
-        else:
-            self.strata_instance_vis = None
+        self.show_grid = _mapinfo_bool(map_info, 'showgrid', show_grid, True)
+        self.show_3d_grid = _mapinfo_bool(map_info, 'show3dgrid', show_3d_grid, False)
+        self.snap_grid = _mapinfo_bool(map_info, 'snaptogrid', snap_grid, True)
+        self.show_logic_grid = _mapinfo_bool(map_info, 'showlogicalgrid', show_logic_grid, False)
+        self.grid_spacing = _mapinfo_int(map_info, 'gridspacing', grid_spacing, 64)
+        self.active_cam = _mapinfo_int(map_info, 'active_cam', active_cam, -1)
+        self.quickhide_count = _mapinfo_int(map_info, 'quickhide', quickhide_count, 0)
+
+        self.strata_instance_vis = strata_inst_visibility
         self.strata_viewports = None
 
     def add_brush(self, item: Union['Solid', PrismFace]) -> None:
@@ -679,51 +745,55 @@ class VMF:
             with open(tree, encoding='cp1251') as file:
                 tree = Keyvalues.parse(file)
 
-        map_info = {}
         ver_info = tree.find_block('versioninfo', or_blank=True)
-        for key in ('editorversion',
-                    'mapversion',
-                    'editorbuild',
-                    'prefab'):
-            map_info[key] = ver_info[key, '']
 
-        map_info['formatversion'] = ver_info['formatversion', '100']
-        if map_info['formatversion'] != '100':
+        format_version = ver_info['formatversion', '100']
+        if format_version != '100':
             # If the version is different, we're probably about to fail horribly
-            raise Exception(
-                'Unknown VMF format version " ' +
-                map_info['formatversion'] + '"!'
-            )
+            raise Exception(f'Unknown VMF format version "{format_version}"!')
 
         view_opt = tree.find_block('viewsettings', or_blank=True)
-        for key, dest in [
-            ('bSnapToGrid', 'snaptogrid'),
-            ('bShowGrid', 'showgrid'),
-            ('bShow3DGrid', 'show3dgrid'),
-            ('bShowLogicalGrid', 'showlogicalgrid'),
-            ('nGridSpacing', 'gridspacing'),
-            ('nInstanceVisibility', 'instancevisibility'),
-        ]:
-            map_info[dest] = view_opt[key, '']
-
         cordons = tree.find_block('cordons', or_blank=True)
-        map_info['cordons_on'] = cordons['active', '0']
+        cam_kv = tree.find_block('cameras', or_blank=True)
+        quickhide_kv = tree.find_block('quickhide', or_blank=True)
 
-        cam_props = tree.find_block('cameras', or_blank=True)
-        map_info['active_cam'] = cam_props['activecamera', '-1']
-        map_info['quickhide'] = tree.find_block('quickhide', or_blank=True)['count', '']
+        try:
+            inst_vis = StrataInstanceVisibility(int(view_opt['nInstanceVisibility']))
+        except LookupError:
+            inst_vis = None
+        except ValueError:
+            inst_vis = StrataInstanceVisibility.TINTED
 
         # We have to create an incomplete map before parsing any data.
         # This ensures the ID manager objects have been created, so we can
         # ensure unique IDs in brushes, entities and faces.
-        map_obj = VMF(map_info=map_info, preserve_ids=preserve_ids)
+        map_obj = VMF(
+            preserve_ids=preserve_ids,
+
+            format_version=srctools.conv_int(format_version, 100),
+            hammer_version=ver_info.int('editorversion', CURRENT_HAMMER_VERSION),
+            hammer_build=ver_info.int('editorbuild', CURRENT_HAMMER_BUILD),
+            is_prefab=ver_info.bool('prefab'),
+            map_version=ver_info.int('mapversion', 0),
+
+            snap_grid=view_opt.bool('bSnapToGrid', True),
+            show_grid=view_opt.bool('bShowGrid', True),
+            show_3d_grid=view_opt.bool('bShow3DGrid', False),
+            show_logic_grid=view_opt.bool('bShowLogicalGrid', False),
+            grid_spacing=view_opt.int('nGridSpacing', 64),
+
+            cordon_enabled=cordons.bool('active'),
+            active_cam=cam_kv.int('activecamera', -1),
+            quickhide_count=quickhide_kv.int('count'),
+            strata_inst_visibility=inst_vis,
+        )
 
         map_obj.strata_viewports = _parse_strata_viewport(view_opt)
 
         for vis in tree.find_all('visgroups', 'visgroup'):
             map_obj.vis_tree.append(VisGroup.parse(map_obj, vis))
 
-        for c in cam_props:
+        for c in cam_kv:
             if c.name != 'activecamera':
                 Camera.parse(map_obj, c)
 
