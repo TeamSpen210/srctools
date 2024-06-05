@@ -2353,7 +2353,7 @@ def _conv_vec3_to_bool(v: Vec3) -> bool: return bool(v.x or v.y or v.z)
 def _conv_vec3_to_vec2(v: Vec3) -> Vec2: return Vec2(v.x, v.y)
 def _conv_vec3_to_vec4(v: Vec3) -> Vec4: return Vec4(v.x, v.y, v.z, 0.0)
 def _conv_vec3_to_angle(v: Vec3) -> FrozenAngle: return FrozenAngle(v.x, v.y, v.z)
-def _conv_vec3_to_color(v: Vec3) -> Color: return Color(v.x, v.y, v.z)
+def _conv_vec3_to_color(v: Vec3) -> Color: return Color(_clamp_color(v.x), _clamp_color(v.y), _clamp_color(v.z))
 
 def _conv_vec4_to_string(v: Vec4) -> str:
     return f'{_fmt_float(v.x)} {_fmt_float(v.y)} {_fmt_float(v.z)} {_fmt_float(v.w)}'
@@ -2361,7 +2361,7 @@ def _conv_vec4_to_bool(v: Vec4) -> bool: return bool(v.x or v.y or v.z or v.w)
 def _conv_vec4_to_vec3(v: Vec4) -> Vec3: return FrozenVec(v.x, v.y, v.z)
 def _conv_vec4_to_vec2(v: Vec4) -> Vec2: return Vec2(v.x, v.y)
 def _conv_vec4_to_quaternion(v: Vec4) -> Quaternion: return Quaternion(v.x, v.y, v.z, v.w)
-def _conv_vec4_to_color(v: Vec4) -> Color: return Color(v.x, v.y, v.z, v.w)
+def _conv_vec4_to_color(v: Vec4) -> Color: return Color(_clamp_color(v.x), _clamp_color(v.y), _clamp_color(v.z), _clamp_color(v.w))
 
 def _conv_matrix_to_angle(mat: Matrix) -> FrozenAngle: return mat.to_angle().freeze()
 
