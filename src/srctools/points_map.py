@@ -13,6 +13,7 @@ from typing import (
 from srctools.math import AnyVec, FrozenVec, Vec
 
 
+__all__ = ['PointsMap']
 ValueT = TypeVar('ValueT')
 _State = Tuple[float, List[Tuple[float, float, float, ValueT]]]
 
