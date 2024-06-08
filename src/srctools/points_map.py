@@ -19,9 +19,9 @@ ValueT = TypeVar('ValueT')
 def _cell_neighbours(x: int, y: int, z: int) -> Iterator[Tuple[int, int, int]]:
     """Iterate over the cells this index could match."""
     return itertools.product(
-        [x - 1, x, x + 1],
-        [y - 1, y, x + 1],
-        [z - 1, z, x + 1],
+        (x - 1, x, x + 1),
+        (y - 1, y, y + 1),
+        (z - 1, z, z + 1),
     )
 
 
