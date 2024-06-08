@@ -14,14 +14,17 @@ from srctools.math import AnyVec, FrozenVec, Vec
 
 
 ValueT = TypeVar('ValueT')
+_State = Tuple[float, List[Tuple[float, float, float, ValueT]]]
 
 
 def _cell_neighbours(x: int, y: int, z: int) -> Iterator[Tuple[int, int, int]]:
     """Iterate over the cells this index could match."""
+    # Reorder such that (x, y, z) is the first result. Lookups are fairly likely
+    # to be using the exact position, so ensure that is checked first.
     return itertools.product(
-        (x - 1, x, x + 1),
-        (y - 1, y, y + 1),
-        (z - 1, z, z + 1),
+        (x, x - 1, x + 1),
+        (y, y - 1, y + 1),
+        (z, z - 1, z + 1),
     )
 
 
@@ -132,7 +135,7 @@ class PointsMap(MutableMapping[AnyVec, ValueT], Generic[ValueT]):
         """Remove all items."""
         self._map.clear()
 
-    def __getstate__(self) -> Tuple[float, List[Tuple[float, float, float, ValueT]]]:
+    def __getstate__(self) -> _State[ValueT]:
         """Allow pickling of a PointsMap."""
         return self._dist_sq, [
             (pos.x, pos.y, pos.z, value)
@@ -140,10 +143,7 @@ class PointsMap(MutableMapping[AnyVec, ValueT], Generic[ValueT]):
             for pos, value in points
         ]
 
-    def __setstate__(
-        self,
-        state: Tuple[float, List[Tuple[float, float, float, ValueT]]],
-    ) -> None:
+    def __setstate__(self, state: _State[ValueT]) -> None:
         """Apply the pickled state."""
         self._dist_sq, points = state
         self._map = {}  # Pickle skips __init__!
@@ -157,10 +157,7 @@ class PointsMap(MutableMapping[AnyVec, ValueT], Generic[ValueT]):
         copy = PointsMap.__new__(PointsMap)
         copy._dist_sq = self._dist_sq
         copy._map = {
-            key: [
-                (pos.copy(), value)
-                for pos, value in points
-            ]
+            key: points.copy()
             for key, points in self._map.items()
         }
         return copy
@@ -171,7 +168,7 @@ class PointsMap(MutableMapping[AnyVec, ValueT], Generic[ValueT]):
         copy._dist_sq = self._dist_sq
         copy._map = {
             key: [
-                (pos.copy(), deepcopy(value, memodict))
+                (pos, deepcopy(value, memodict))
                 for pos, value in points
             ]
             for key, points in self._map.items()
