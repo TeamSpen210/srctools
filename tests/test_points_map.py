@@ -72,6 +72,7 @@ def test_init() -> None:
     assert points[FrozenVec(1, 1, 1)] == 'b'
 
     points = PointsMap((
+        ((1.0, 1.5000001, 1.0), 'a'),
         ((1.0, 1.5, 1.0), 'b'),
     ))
     assert len(points) == 1
