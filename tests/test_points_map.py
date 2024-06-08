@@ -3,7 +3,7 @@ import copy
 import pickle
 
 import pytest
-from srctools.math import Vec, Vec_tuple
+from srctools.math import FrozenVec, Vec
 from srctools.points_map import PointsMap
 from collections.abc import KeysView, ValuesView, ItemsView
 
@@ -42,10 +42,10 @@ def test_init() -> None:
     assert list(points) == list(points.keys()) == []
     assert list(points.values()) == list(points.items()) == []
 
-    points = PointsMap(
+    points = PointsMap([
         (Vec(1, 2, 3), 'a'),
         (Vec(4, 5, 6), 'b'),
-    )
+    ])
     assert len(points) == 2
     assert points[1, 2, 3] == 'a'
     assert points[4, 5, 6] == 'b'
@@ -58,32 +58,33 @@ def test_init() -> None:
     assert points[1, 2, 3] == 'a'
     assert points[4, 5, 6] == 'b'
 
-    # Edge case, a single tuple could be an iterable or KV pair.
-    points = PointsMap((Vec(), 'e'))
+    points = PointsMap([(Vec(), 'e')])
+    assert len(points) == 1
     assert points[0, 0, 0] == 'e'
 
     points = PointsMap((
         (Vec(), 'a'),
-        (Vec(1, 1, 1), 'b')
+        (FrozenVec(1, 1, 1), 'b')
     ))
     assert len(points) == 2
     assert points[0, 0, 0], 'a'
     assert points[Vec(1, 1, 1)] == 'b'
+    assert points[FrozenVec(1, 1, 1)] == 'b'
 
     points = PointsMap((
-        ((1.0, 1.5, 1.0), 'b')
+        ((1.0, 1.5, 1.0), 'b'),
     ))
     assert len(points) == 1
     assert points[1.0, 1.5, 1.0] == 'b'
 
     with pytest.raises(TypeError):
-        PointsMap([Vec(), 'a'])
+        PointsMap([Vec(), 'a'])  # type: ignore
     with pytest.raises(TypeError):
-        PointsMap((Vec(), 'a', 'c'))
+        PointsMap((Vec(), 'a', 'c'))  # type: ignore
     with pytest.raises(TypeError):
-        PointsMap(Vec())
+        PointsMap(Vec())  # type: ignore
     with pytest.raises(TypeError):
-        PointsMap('ab')
+        PointsMap('ab')  # type: ignore
 
 
 def test_keys() -> None:
@@ -99,6 +100,7 @@ def test_keys() -> None:
     assert len(points.keys()) == 2
     assert Vec(1, 2, 3) in points.keys()
     assert (1.0, 2, 3.001) in points.keys()
+    assert FrozenVec(1.0, 2, 3.001) in points.keys()
     assert (39, -20, 12) not in points.keys()
     assert sorted(points.keys()) == [Vec(1, 2, 3), Vec(4, 5, 6)]
 
@@ -117,6 +119,7 @@ def test_values() -> None:
     assert 'a' in points.values()
     assert 'b' in points.values()
     assert Vec() not in points.values()
+    assert FrozenVec(1, 2, 3) not in points.values()
     assert 'c' not in points.values()
     assert sorted(points.values()) == ['a', 'b']
 
@@ -125,7 +128,7 @@ def test_items() -> None:
     """Test items()."""
     points = PointsMap([
         (Vec(1, 2, 3), 'a'),
-        (Vec(4, 5, 6), 'b'),
+        (FrozenVec(4, 5, 6), 'b'),
     ], epsilon=0.01)
     assert not isinstance(points.items(), KeysView)
     assert not isinstance(points.items(), ValuesView)
@@ -134,6 +137,7 @@ def test_items() -> None:
     assert len(points.items()) == 2
     assert (Vec(1, 2, 3), 'a') in points.items()
     assert ((1, 2, 3.01), 'a') in points.items()
+    assert (FrozenVec(1, 2, 3.01), 'a') in points.items()
     assert ((3.991, 5, 6), 'b') in points.items()
     assert ((45, 29,-20), 'c') not in points.items()
     assert sorted(points.items()) == [
@@ -144,10 +148,10 @@ def test_items() -> None:
 
 
 def test_deletion() -> None:
-    points = PointsMap(
+    points = PointsMap([
         (Vec(), 'a'),
         (Vec(1, 1, 1), 'b')
-    )
+    ])
     del points[1, 1, 1]
 
     with pytest.raises(KeyError):
@@ -161,10 +165,10 @@ def test_copying() -> None:
     """Test copying pointsmaps."""
     list1 = [1, 2, 3]
     list2 = [4, 5, 6]
-    orig = PointsMap(
+    orig = PointsMap([
         (Vec(1, 0, 0), list1),
         (Vec(2, 0, 0), list2),
-    )
+    ])
     cp = copy.copy(orig)
     assert len(cp) == 2
     assert cp[1, 0, 0] is list1
