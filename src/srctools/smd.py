@@ -11,6 +11,7 @@ import re
 import warnings
 
 from srctools.math import Angle, Matrix, Vec, to_matrix
+from srctools.points_map import PointsMap
 
 
 __all__ = [
@@ -748,18 +749,17 @@ class Mesh:
         same unique normal.
         """
         # pos -> list of vertexes close to here.
-        weld_table: dict[tuple[float, float, float], list[Vertex]] = {}
+        weld_table: PointsMap[list[Vertex]] = PointsMap(epsilon=dist_tol)
         for tri in self.triangles:
             vert: Vertex
             for i, vert in enumerate(tri):
-                key = vert.pos.x // 2.0, vert.pos.y // 2.0, vert.pos.z // 2.0
                 try:
-                    existing = weld_table[key]
+                    existing = weld_table[vert.pos]
                 except KeyError:
-                    weld_table[key] = [vert]
+                    weld_table[vert.pos] = [vert]
                     continue
                 for other_vert in existing:
-                    if (vert.pos - other_vert.pos).mag() < dist_tol and Vec.dot(vert.norm, other_vert.norm) > normal_tol:
+                    if Vec.dot(vert.norm, other_vert.norm) > normal_tol:
                         tri[i] = other_vert
                         break
                 else:
@@ -815,16 +815,19 @@ class Mesh:
 
     def smooth_normals(self) -> None:
         """Replace all normals with ones smoothing adjacient faces."""
-        vert_to_tris: dict[
-            tuple[float, float, float],
+        vert_to_tris: PointsMap[
             tuple[list[Triangle], list[Vertex]]
-        ] = defaultdict(lambda: ([], []))
+        ] = PointsMap()
         tri_to_normal: dict[Triangle, Vec] = {}
         for tri in self.triangles:
             for vert in tri:
-                tris, verts = vert_to_tris[vert.pos.as_tuple()]
-                tris.append(tri)
-                verts.append(vert)
+                try:
+                    tris, verts = vert_to_tris[vert.pos]
+                except KeyError:
+                    vert_to_tris[vert.pos] = ([tri], [vert])
+                else:
+                    tris.append(tri)
+                    verts.append(vert)
             tri_to_normal[tri] = tri.normal()
         for tris, verts in vert_to_tris.values():
             normal = sum(map(tri_to_normal.__getitem__, tris), Vec()).norm()
