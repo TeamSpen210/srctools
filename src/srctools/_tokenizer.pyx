@@ -100,7 +100,6 @@ struct TokFlags {
 # The number of characters to read from a file each time.
 cdef enum:
     FILE_BUFFER = 1024
-    CHR_EOF = 0x03  # Indicate the end of the file.
 
 # noinspection PyMissingTypeHints
 cdef class BaseTokenizer:
@@ -488,11 +487,11 @@ cdef class Tokenizer(BaseTokenizer):
         # So pull off the first three characters, and if they don't match,
         # rebuild the cur_chunk to allow them.
         # The BOM is b'\xef\xbb\xbf'.
-        if self._next_char() != 0xef:
+        if self._next_char()[0] != 0xef:
             self.char_index -= 1
-        elif self._next_char() != 0xbb:
+        elif self._next_char()[0] != 0xbb:
             self.char_index -= 2
-        elif self._next_char() != 0xbf:
+        elif self._next_char()[0] != 0xbf:
             self.char_index -= 3
 
     @property
@@ -588,17 +587,17 @@ cdef class Tokenizer(BaseTokenizer):
     # We check all the getitem[] accesses, so don't have Cython recheck.
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    cdef uchar _next_char(self) except? CHR_EOF:
-        """Return the next character, or 0 if no more characters are there."""
+    cdef (uchar, bint) _next_char(self):
+        """Return the next character, and a flag to indicate if more characters are present."""
         cdef str chunk
         cdef object chunk_obj
 
         self.char_index += 1
         if self.char_index < self.chunk_size:
-            return self.chunk_buf[self.char_index]
+            return self.chunk_buf[self.char_index], False
 
         if self.chunk_iter is None:
-            return CHR_EOF
+            return b'\x00', True
 
         if self.flags.file_input:
             try:
@@ -613,10 +612,10 @@ cdef class Tokenizer(BaseTokenizer):
                 raise ValueError('Expected string, got ' + type(self.cur_chunk).__name__)
 
             if self.chunk_size > 0:
-                return self.chunk_buf[0]
+                return self.chunk_buf[0], False
             else:
                 self.chunk_iter = None
-                return CHR_EOF
+                return b'\x00', True
 
         # Retrieve a chunk from the iterable.
         # Skip empty chunks (shouldn't be there.)
@@ -630,7 +629,7 @@ cdef class Tokenizer(BaseTokenizer):
             if chunk_obj is None:
                 # Out of characters after empty chunks
                 self.chunk_iter = None
-                return CHR_EOF
+                return  b'\x00', True
 
             if isinstance(chunk_obj, bytes):
                 raise ValueError('Cannot parse binary data!')
@@ -641,7 +640,7 @@ cdef class Tokenizer(BaseTokenizer):
                 self.cur_chunk = chunk_obj
                 self.char_index = 0
                 self.chunk_buf = <const uchar *>PyUnicode_AsUTF8AndSize(self.cur_chunk, &self.chunk_size)
-                return self.chunk_buf[0]
+                return self.chunk_buf[0], False
 
     def _get_token(self):
         """Compute the next token."""
@@ -653,6 +652,7 @@ cdef class Tokenizer(BaseTokenizer):
             uchar next_char
             uchar escape_char
             uchar peek_char
+            bint is_eof
             int start_line
             bint ascii_only
             uchar decode[5]
@@ -666,12 +666,12 @@ cdef class Tokenizer(BaseTokenizer):
             return output
 
         while True:
-            next_char = self._next_char()
+            next_char, is_eof = self._next_char()
             # First try simple operators & EOF.
-            if next_char == CHR_EOF:
+            if is_eof:
                 return EOF_TUP
 
-            elif next_char == b'{':
+            if next_char == b'{':
                 return BRACE_OPEN_TUP
             elif next_char == b'}':
                 return BRACE_CLOSE_TUP
@@ -696,32 +696,32 @@ cdef class Tokenizer(BaseTokenizer):
                 self.flags.last_was_cr = False
 
             if next_char in b' \t':
-                # Ignore whitespace..
+                # Ignore whitespace...
                 continue
 
             # Comments
             elif next_char == b'/':
                 # The next must be another slash! (//)
-                next_char = self._next_char()
+                next_char, is_eof = self._next_char()
                 if next_char == b'*': # /* comment.
                     if self.flags.allow_star_comments:
                         start_line = self.line_num
                         save_comments = self.flags.preserve_comments
                         while True:
-                            next_char = self._next_char()
-                            if next_char == CHR_EOF:
+                            next_char, is_eof = self._next_char()
+                            if is_eof:
                                 raise self._error(
                                     f'Unclosed /* comment '
                                     f'(starting on line {start_line})!',
                                 )
-                            elif next_char == b'\n':
+                            if next_char == b'\n':
                                 self.line_num += 1
                                 if save_comments:
                                     self.buf_add_char(next_char)
                             elif next_char == b'*':
                                 # Check next, next character!
-                                peek_char = self._next_char()
-                                if peek_char == CHR_EOF:
+                                peek_char, is_eof = self._next_char()
+                                if is_eof:
                                     raise self._error(
                                         f'Unclosed /* comment '
                                         f'(starting on line {start_line})!',
@@ -745,8 +745,8 @@ cdef class Tokenizer(BaseTokenizer):
                     # Skip to end of line.
                     save_comments = self.flags.preserve_comments
                     while True:
-                        next_char = self._next_char()
-                        if next_char == CHR_EOF or next_char == b'\n':
+                        next_char, is_eof = self._next_char()
+                        if is_eof or next_char == b'\n':
                             break
                         if save_comments:
                             self.buf_add_char(next_char)
@@ -770,10 +770,10 @@ cdef class Tokenizer(BaseTokenizer):
                 self.buf_reset()
                 last_was_cr = False
                 while True:
-                    next_char = self._next_char()
-                    if next_char == CHR_EOF:
+                    next_char, is_eof = self._next_char()
+                    if is_eof:
                         raise self._error('Unterminated string!')
-                    elif next_char == b'"':
+                    if next_char == b'"':
                         return STRING, self.buf_get_text()
                     elif next_char == b'\r':
                         self.line_num += 1
@@ -790,8 +790,8 @@ cdef class Tokenizer(BaseTokenizer):
 
                     if next_char == b'\\' and self.flags.allow_escapes:
                         # Escape text
-                        escape_char = self._next_char()
-                        if escape_char == CHR_EOF:
+                        escape_char, is_eof = self._next_char()
+                        if is_eof:
                             raise self._error('Unterminated string!')
 
                         if escape_char == b'n':
@@ -819,18 +819,18 @@ cdef class Tokenizer(BaseTokenizer):
 
                 self.buf_reset()
                 while True:
-                    next_char = self._next_char()
+                    next_char, is_eof = self._next_char()
+                    # Must be one line!
+                    if is_eof or next_char == b'\n':
+                        raise self._error(
+                            'Reached end of line '
+                            'without closing "]"!'
+                        )
                     if next_char == b'[':
                         # Don't allow nesting, that's bad.
                         raise self._error('Cannot nest [] brackets!')
                     elif next_char == b']':
                         return PROP_FLAG, self.buf_get_text()
-                    # Must be one line!
-                    elif next_char == CHR_EOF or next_char == b'\n':
-                        raise self._error(
-                            'Reached end of line '
-                            'without closing "]"!'
-                        )
                     self.buf_add_char(next_char)
 
             elif next_char == b']':
@@ -844,10 +844,10 @@ cdef class Tokenizer(BaseTokenizer):
                 # Parentheses around text...
                 self.buf_reset()
                 while True:
-                    next_char = self._next_char()
-                    if next_char == CHR_EOF:
+                    next_char, is_eof = self._next_char()
+                    if is_eof:
                         raise self._error('Unterminated parentheses!')
-                    elif next_char == b'(':
+                    if next_char == b'(':
                         raise self._error('Cannot nest () brackets!')
                     elif next_char == b')':
                         return PAREN_ARGS, self.buf_get_text()
@@ -863,8 +863,8 @@ cdef class Tokenizer(BaseTokenizer):
                 self.buf_reset()
                 ascii_only = True
                 while True:
-                    next_char = self._next_char()
-                    if next_char == CHR_EOF:
+                    next_char, is_eof = self._next_char()
+                    if is_eof:
                         # A directive could be the last value in the file.
                         if ascii_only:
                             return DIRECTIVE, self.buf_get_text()
@@ -907,8 +907,8 @@ cdef class Tokenizer(BaseTokenizer):
                     self.buf_reset()
                     self.buf_add_char(next_char)
                     while True:
-                        next_char = self._next_char()
-                        if next_char == CHR_EOF:
+                        next_char, is_eof = self._next_char()
+                        if is_eof:
                             # Bare names at the end are actually fine.
                             # It could be a value for the last prop.
                             return STRING, self.buf_get_text()
@@ -928,9 +928,9 @@ cdef class Tokenizer(BaseTokenizer):
                     # Add in a few more bytes, so we can decode the UTF8 fully.
                     decode = [
                         next_char,
-                        self._next_char(),
-                        self._next_char(),
-                        self._next_char(),
+                        self._next_char()[0],
+                        self._next_char()[0],
+                        self._next_char()[0],
                         0x00,
                     ]
                     raise self._error(f'Unexpected characters "{decode[:4].decode("utf8", "backslashreplace")}"' '!')

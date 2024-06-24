@@ -105,6 +105,7 @@ prop_parse_tokens = [
 # Additional text not valid as a property.
 noprop_parse_test = """
 #letter_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ
+"\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0c\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"
 #ﬁmport test
 #EXclßÀde value\r
 #caseA\u0345\u03a3test
@@ -114,6 +115,8 @@ noprop_parse_test = """
 noprop_parse_tokens = [
     T.NEWLINE,
     (T.DIRECTIVE, "letter_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz"), T.NEWLINE,
+    # Test all control characters are valid.
+    (T.STRING, "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0c\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"), T.NEWLINE,
     (T.DIRECTIVE, "fimport"), (T.STRING, "test"), T.NEWLINE,
     (T.DIRECTIVE, "exclssàde"), (T.STRING, "value"), T.NEWLINE,
     (T.DIRECTIVE, "casea\u03b9\u03c3test"), T.NEWLINE,

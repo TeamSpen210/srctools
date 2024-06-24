@@ -21,6 +21,7 @@ Version (dev)
 * Add :py:attr:`~srctools.tokenizer.Tokenizer.plus_operator`, allowing `+` to be
   parsed as an operator for FGDs but still be valid inside bare strings elsewhere.
   These are common in ``gameinfo.txt``.
+* Fix #29: Fix 0x03 causing early EOF with tokeniser.
 
 --------------
 Version 2.3.17
