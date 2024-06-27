@@ -586,7 +586,11 @@ class Tokenizer(BaseTokenizer):
                 value_chars = []
                 while True:
                     next_char = self._next_char()
-                    if next_char in BARE_DISALLOWED:
+                    if (
+                        next_char in BARE_DISALLOWED
+                        or (next_char == ':' and self.colon_operator)
+                        or (next_char == '+' and self.plus_operator)
+                    ):
                         # We need to repeat this, so we return the ending char next.
                         # If it's not allowed, that'll error on next call.
                         self._char_index -= 1

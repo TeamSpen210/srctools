@@ -872,8 +872,9 @@ cdef class Tokenizer(BaseTokenizer):
                             return DIRECTIVE, self.buf_get_text().casefold()
 
                     elif (
-                        next_char in BARE_DISALLOWED or
-                        (next_char == b':' and self.flags.colon_operator)
+                        next_char in BARE_DISALLOWED
+                        or (next_char == b':' and self.flags.colon_operator)
+                        or (next_char == b'+' and self.flags.plus_operator)
                     ):
                         # We need to repeat this, so we return the ending
                         # char next. If it's not allowed, that'll error on

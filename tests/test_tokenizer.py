@@ -172,7 +172,7 @@ def check_tokens(
         assert isinstance(token, tuple)
         if isinstance(comp_token, tuple):
             comp_type, comp_value = comp_token
-            assert comp_type is token[0] and comp_value == token[1], (
+            assert token[0] is comp_type and token[1] == comp_value, (
                 f"got {token[0]}({token[1]!r}), "
                 f"expected {comp_type}({comp_value!r}) @ pos {i}={tokens[i - 2: i + 1]}"
             )
@@ -621,6 +621,15 @@ def test_conditional_op(py_c_token: Type[Tokenizer], op: str, option: str, tok: 
         Token.BRACE_OPEN, tok,
         (Token.STRING, 'test'), tok,
         (Token.STRING, 'call'), Token.BRACE_CLOSE,
+    ])
+
+    # Test directives
+    check_tokens(py_c_token(f'\n#word{op}Two', **disabled), [
+        Token.NEWLINE, (Token.DIRECTIVE, f'word{op}two'),
+    ])
+    check_tokens(py_c_token(f'\n#word{op}Two', **enabled), [
+        Token.NEWLINE, (Token.DIRECTIVE, 'word'),
+        tok, (Token.STRING, 'Two'),
     ])
 
 
