@@ -15,7 +15,7 @@ Basic usage
 
 An example for reading and writing VCDs and ``scenes.image``::
 
-    from srctools.choreo import Scene, Entry, parse_scenes_image
+    from srctools.choreo import *
     from srctools.tokenizer import Tokenizer
 
     with open('some_scene.vcd') as file:
@@ -26,7 +26,7 @@ An example for reading and writing VCDs and ``scenes.image``::
     with open('scenes.image', 'rb') as file:
         image = parse_scenes_image(file)
     with open('new_scenes.image', 'wb') as file:
-        save_scenes_image(file, image)
+        save_scenes_image_sync(file, image)
 
 =================
 Scenes.image

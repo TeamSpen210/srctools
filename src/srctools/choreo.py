@@ -1444,7 +1444,7 @@ def parse_scenes_image(file: IO[bytes]) -> ScenesImage:
 
 
 # noinspection PyProtectedMember
-def save_scenes_image(
+def save_scenes_image_sync(
     file: IO[bytes],
     scenes: ScenesImage | Iterable[Entry],
     *,

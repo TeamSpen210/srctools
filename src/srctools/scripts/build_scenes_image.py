@@ -5,7 +5,7 @@ import sys
 from pathlib import Path
 from typing import Literal, cast
 
-from srctools.choreo import CRC, Scene, Entry, parse_scenes_image, save_scenes_image
+from srctools.choreo import CRC, Scene, Entry, parse_scenes_image, save_scenes_image_sync
 from srctools.binformat import checksum
 from srctools.tokenizer import Tokenizer
 
@@ -97,7 +97,7 @@ def main(args: list[str]) -> None:
 
     print(f'{len(scenes)} scenes. Writing {opts.output}')
     with opts.output.open('wb') as f2:
-        save_scenes_image(
+        save_scenes_image_sync(
             f2, scenes,
             version=opts.version,
             encoding=opts.encoding,
