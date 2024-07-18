@@ -50,3 +50,5 @@ def test_read(datadir: Path) -> None:
 
     assert target['angles'] == '-189.8792 27.2189 1.91'
     assert target['multiline_key'] == 'This is a key which happens\nto have multiple lines.'
+    # Strata Source supports properly escaped strings.
+    assert target['escape_test'] == r'a string which "has quotes" and \ in it.'

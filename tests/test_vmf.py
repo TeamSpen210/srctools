@@ -462,9 +462,10 @@ def test_regression(file_regression: FileRegressionFixture) -> None:
     vmf.create_ent(
         'info_target',
         origin=Vec(24, 38, 1028),
-        angles=Angle(10, 270, 0)
+        angles=Angle(10, 270, 0),
+        escaped_key='Some key with "quotes" in it.',
     ).add_out(
-        Output('OnUser1', '!player', 'HolsterWeapon', delay=0.1),
+        Output('OnUser1', '!player', 'Holster"Weapon"', delay=0.1),
     )
     vmf.map_ver = 8192
     vmf.show_grid = True

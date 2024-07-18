@@ -1,6 +1,6 @@
 """ VMF Library
 
-Wraps property_parser tree in a set of classes which smartly handle
+Wraps Keyvalues trees in a set of classes which smartly handle
 specifics of VMF files.
 """
 from typing import (
@@ -3721,11 +3721,16 @@ class Output:
         buffer.write(ind + self.as_keyvalue())
 
     def as_keyvalue(self) -> str:
-        """Generate the text form of the output."""
+        """Generate the text form of the output.
+
+        This backslash-escapes characters where necessary.
+        """
         sep = ',' if self.comma_sep else self.SEP
+        # Don't bother escaping the delay/times values, since those can't be text.
         return (
-            f'"{self.exp_out()}" "{self.target}{sep}{self.exp_in()}'
-            f'{sep}{self.params}{sep}{self.delay:g}{sep}{self.times}"\n'
+            f'"{escape_text(self.exp_out())}" "{escape_text(self.target)}{sep}'
+            f'{escape_text(self.exp_in())}{sep}{escape_text(self.params)}{sep}'
+            f'{self.delay:g}{sep}{self.times}"\n'
         )
 
     def copy(self) -> 'Output':
@@ -3751,7 +3756,7 @@ class Output:
             raise ValueError('Inst_out is not useable in AddOutput.')
 
         if self.inst_in:
-            target = self.target + '-' + self.inst_in
+            target = f'{self.target}-{self.inst_in}'
         else:
             target = self.target
 

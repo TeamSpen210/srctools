@@ -184,10 +184,11 @@ entity
 	"id" "2"
 	"angles" "10 270 0"
 	"classname" "info_target"
+	"escaped_key" "Some key with \"quotes\" in it."
 	"origin" "24 38 1028"
 	connections
 	{
-		"OnUser1" "!playerHolsterWeapon0.1-1"
+		"OnUser1" "!playerHolster\"Weapon\"0.1-1"
 	}
 	editor
 	{

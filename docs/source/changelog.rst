@@ -11,7 +11,7 @@ Version (dev)
 * Added :py:mod:`srctools.choreo`, for parsing choreographed scenes.
 * Allow passing :py:class:`~srctools.math.FrozenVec` to :py:meth:`VMF.make_prism() <srctools.vmf.VMF.make_prism>`/:py:meth:`~srctools.vmf.VMF.make_hollow`.
 * Fix bare strings on the end of CRLF lines eating the ``\r``.
-* Escape characters like `"` when exporting VMFs. This isn't supported by regular Source, but can be added by mods.
+* Escape characters like `"` when exporting VMFs and BSPs. This isn't supported by regular Source, but can be added by mods.
 * Added :py:attr:`Keyvalues.line_num <srctools.keyvalues.Keyvalues.line_num>`, to
   allow reporting the source location in exceptions.
 * :py:meth:`Keyvalues.export() <srctools.keyvalues.Keyvalues.export>` is now deprecated.

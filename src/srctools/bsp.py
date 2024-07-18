@@ -30,7 +30,7 @@ from srctools.const import BSPContents as BrushContents, SurfFlags, add_unknown
 from srctools.filesys import FileSystem
 from srctools.keyvalues import Keyvalues
 from srctools.math import Angle, AnyVec, FrozenVec, Vec
-from srctools.tokenizer import Token, Tokenizer
+from srctools.tokenizer import Token, Tokenizer, escape_text
 from srctools.vmf import VMF, Entity, Output
 from srctools.vmt import Material
 from srctools.vtf import VTF
@@ -2857,7 +2857,7 @@ class BSP:
         seen_spawn = False  # The first entity is worldspawn.
 
         # We have to use the tokenizer to handle newlines inside quotes.
-        # Use surrogateescape, to preserve bytes > 127 - VMFs don't have a clear encoding.
+        # Use surrogate-escape, to preserve bytes > 127 - VMFs don't have a clear encoding.
         tok = Tokenizer(ent_data.decode('ascii', 'surrogateescape'), allow_escapes=True)
         for tok_typ, tok_value in tok:
             if tok_typ is Token.BRACE_OPEN:
@@ -2956,7 +2956,7 @@ class BSP:
         for ent in itertools.chain([vmf.spawn], vmf.entities):
             out.write(b'{\n')
             for key, value in ent.items():
-                out.write(f'"{key}" "{value}"\n'.encode('ascii', 'surrogateescape'))
+                out.write(f'"{key}" "{escape_text(value)}"\n'.encode('ascii', 'surrogateescape'))
             for output in ent.outputs:
                 if use_comma_sep is not None:
                     output.comma_sep = use_comma_sep
