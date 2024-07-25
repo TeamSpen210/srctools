@@ -383,7 +383,7 @@ class Strata2DViewport:
         """Determine the appropriate axis from the position vector."""
         chosen_axis: Optional[Axis] = None
         axis: Axis
-        for axis in ('x', 'y', 'z'):  # type: ignore[assignment]  # Doesn't infer literal
+        for axis in ('x', 'y', 'z'):
             if pos[axis] in (0.0, -65536.0, 65536.0):
                 if chosen_axis is not None:
                     raise ValueError(f'Multiple axes specified for 2D view position "{pos}"!')
@@ -2969,7 +2969,8 @@ class Entity(MutableMapping[str, str]):
 
         for k in self._keys:
             if k.casefold() == key:
-                val = self._keys.pop(k)
+                # After popping we break out and won't iterate.
+                val = self._keys.pop(k)  # noqa: B909
                 if key == 'nodeid':
                     try:
                         node_id = int(val)
