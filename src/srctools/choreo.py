@@ -1,18 +1,16 @@
 """Parses VCD choreo scenes, as well as data in scenes.image."""
 from __future__ import annotations
-
-from typing import ClassVar, Final, IO, NewType, Dict
+from typing import IO, ClassVar, Dict, Final, NewType
 from typing_extensions import Literal, Self, TypeAlias, assert_never
-
 from collections.abc import Callable, Iterable, Iterator
 from io import BytesIO
 import enum
-import struct
 import re
+import struct
 
 import attrs
 
-from srctools import binformat, conv_bool, conv_int, conv_float
+from srctools import binformat, conv_bool, conv_float, conv_int
 from srctools.tokenizer import BaseTokenizer, Token, escape_text
 
 

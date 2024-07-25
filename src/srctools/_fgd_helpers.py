@@ -5,7 +5,7 @@ from typing_extensions import Self
 import attrs
 
 from srctools.fgd import EntityDef, Helper, HelperTypes
-from srctools.math import Vec, parse_vec_str, format_float
+from srctools.math import Vec, format_float, parse_vec_str
 
 
 __all__ = [

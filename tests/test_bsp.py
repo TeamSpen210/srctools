@@ -5,7 +5,8 @@ import unittest.mock
 import pytest
 
 from srctools.bsp import (
-    BSP, BSP_LUMPS, VERSIONS, GameLump, GameVersion, Lump, runlength_decode, runlength_encode,
+    BSP, BSP_LUMPS, VERSIONS, GameLump, GameVersion, Lump, runlength_decode,
+    runlength_encode,
 )
 
 

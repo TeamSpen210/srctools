@@ -1,5 +1,6 @@
 """Test the Vector object."""
 from typing import Union
+from typing_extensions import Literal, TypeAlias
 from fractions import Fraction
 from pathlib import Path
 from random import Random
@@ -12,7 +13,6 @@ import re
 
 from dirty_equals import IsFloat
 import pytest
-from typing_extensions import Literal, TypeAlias
 
 from helpers import *
 from srctools import Vec_tuple, math as vec_mod

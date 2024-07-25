@@ -1,6 +1,6 @@
 """Test functionality in srctools.__init__."""
-from pathlib import Path
 from typing import Any
+from pathlib import Path
 
 from dirty_equals import IsList
 import pytest

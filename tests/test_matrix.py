@@ -1,9 +1,9 @@
 """Tests the Matrix/FrozenMatrix class in srctools.math."""
+from typing import Tuple
 import copy
 import fractions
 import itertools
 import pickle
-from typing import Tuple
 
 from dirty_equals import IsFloat
 import pytest

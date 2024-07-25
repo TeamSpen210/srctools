@@ -74,8 +74,7 @@ import warnings
 from srctools import BOOL_LOOKUP, EmptyMapping, StringPath
 from srctools.math import Vec as _Vec
 from srctools.tokenizer import (
-    BaseTokenizer, Token, Tokenizer, TokenSyntaxError,
-    escape_text, format_exc_fileinfo,
+    BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text, format_exc_fileinfo,
 )
 
 

@@ -4,7 +4,7 @@ esentially expanding on :external:mod:`struct`'s functionality.
 
 """
 from typing import (
-    Callable, IO, Any, Collection, Dict, Final, Hashable, List, Mapping, Optional, Tuple,
+    IO, Any, Callable, Collection, Dict, Final, Hashable, List, Mapping, Optional, Tuple,
     TypeVar, Union,
 )
 from binascii import crc32

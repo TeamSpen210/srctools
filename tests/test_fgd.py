@@ -1,20 +1,19 @@
 """Test the FGD module."""
-from typing import Callable, Any, Generator
+from typing import Any, Callable, Generator
 import copy
 import io
 
 import pytest
 
 from srctools import Vec, fgd as fgd_mod
+from srctools.fgd import (
+    FGD, AutoVisgroup, EntityDef, EntityTypes, HelperExtAppliesTo, HelperHalfGridSnap,
+    HelperLine, HelperModel, HelperSize, HelperSphere, IODef, KVDef, Snippet,
+    UnknownHelper, ValueTypes,
+)
 from srctools.filesys import VirtualFileSystem
 # noinspection PyProtectedMember
 from srctools.tokenizer import Cy_Tokenizer, Py_Tokenizer, Tokenizer
-
-from srctools.fgd import (
-    FGD, EntityDef, AutoVisgroup, ValueTypes, EntityTypes, Snippet, KVDef, IODef,
-    HelperSphere, UnknownHelper, HelperLine, HelperHalfGridSnap, HelperExtAppliesTo,
-    HelperModel, HelperSize,
-)
 
 
 if Cy_Tokenizer is not None:

@@ -1,8 +1,9 @@
 """Handles the list of files which are desired to be packed into the BSP."""
 from typing import (
-    Callable, Collection, Dict, Generic, Iterable, Iterator, List, Optional, Set, Tuple, Union,
+    Callable, Collection, Dict, Generic, Iterable, Iterator, List, Optional, Set, Tuple,
+    Union,
 )
-from typing_extensions import deprecated, TypeVar
+from typing_extensions import TypeVar, deprecated
 from collections import OrderedDict
 from enum import Enum
 from pathlib import Path

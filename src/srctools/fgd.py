@@ -10,7 +10,7 @@ from collections import ChainMap, defaultdict
 from copy import deepcopy
 from enum import Enum
 from importlib_resources import files
-from pathlib import PurePosixPath, Path
+from pathlib import Path, PurePosixPath
 import io
 import itertools
 import math

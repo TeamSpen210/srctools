@@ -1,6 +1,6 @@
 """Test the VTF library."""
-from array import array
 from typing import Generator
+from array import array
 from io import BytesIO
 from pathlib import Path
 import colorsys

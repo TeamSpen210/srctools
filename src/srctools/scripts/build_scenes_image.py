@@ -1,12 +1,12 @@
 """Builds a ``scenes.image`` file. Unlike the original this allows merging into an existing image."""
 from __future__ import annotations
+from typing import Literal, cast
+from pathlib import Path
 import argparse
 import sys
-from pathlib import Path
-from typing import Literal, cast
 
-from srctools.choreo import CRC, Scene, Entry, parse_scenes_image, save_scenes_image_sync
 from srctools.binformat import checksum
+from srctools.choreo import CRC, Entry, Scene, parse_scenes_image, save_scenes_image_sync
 from srctools.tokenizer import Tokenizer
 
 

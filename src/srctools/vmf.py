@@ -4,21 +4,21 @@ Wraps Keyvalues trees in a set of classes which smartly handle
 specifics of VMF files.
 """
 from typing import (
-    Callable, IO, Protocol, TYPE_CHECKING, AbstractSet, Any, Dict, Final, FrozenSet, ItemsView,
-    Iterable, Iterator, KeysView, List, Mapping, Match, MutableMapping, Optional, Pattern, Set,
-    Tuple, TypeVar, Union, ValuesView, overload,
+    IO, TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Final, FrozenSet, ItemsView,
+    Iterable, Iterator, KeysView, List, Mapping, Match, MutableMapping, Optional, Pattern,
+    Protocol, Set, Tuple, TypeVar, Union, ValuesView, overload,
 )
 from typing_extensions import Literal, TypeAlias, deprecated
 from array import ArrayType as Array
 from collections import defaultdict
-from enum import Flag, Enum
+from enum import Enum, Flag
 from sys import intern
 import builtins
 import io
 import operator
 import re
-import warnings
 import struct
+import warnings
 
 import attrs
 

@@ -26,7 +26,7 @@ from typing import (
     Any, BinaryIO, Dict, Final, Generic, Iterator, List, Mapping, Optional, Set, TextIO,
     Tuple, Union, cast,
 )
-from typing_extensions import Self, deprecated, TypeVar
+from typing_extensions import Self, TypeVar, deprecated
 from zipfile import ZipFile, ZipInfo
 import io
 import os

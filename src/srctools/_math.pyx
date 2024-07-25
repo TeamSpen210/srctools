@@ -6,7 +6,7 @@ from cpython.mem cimport PyMem_Free, PyMem_Malloc
 from cpython.object cimport Py_EQ, Py_GE, Py_GT, Py_LE, Py_LT, Py_NE, PyObject, PyTypeObject
 from cpython.ref cimport Py_INCREF
 from libc cimport math
-from libc.math cimport M_PI, NAN, cos, llround, sin, tan, isnan
+from libc.math cimport M_PI, NAN, cos, isnan, llround, sin, tan
 from libc.stdint cimport uint16_t, uint32_t, uint_fast8_t
 from libc.stdio cimport snprintf, sscanf
 from libc.string cimport memcmp, memcpy, memset

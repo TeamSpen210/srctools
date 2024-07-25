@@ -15,7 +15,8 @@ the current line number as data is read, letting you ``raise BaseTokenizer.error
 produce an exception listing the relevant line number and filename.
 """
 from typing import (
-    Final, Iterable, Iterator, List, NoReturn, Optional, TYPE_CHECKING, Tuple, Type, Union,
+    TYPE_CHECKING, Final, Iterable, Iterator, List, NoReturn, Optional, Tuple, Type,
+    Union,
 )
 from typing_extensions import Self, TypeAlias, overload
 from enum import Enum

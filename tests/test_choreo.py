@@ -1,14 +1,13 @@
 """Test choreographed scene parsing."""
-import io
 from pathlib import Path
+import io
 
-import dirty_equals
 from pytest_regressions.file_regression import FileRegressionFixture
+import dirty_equals
 
 from srctools.choreo import (
     CaptionType, Curve, CurveEdge, CurveType, Event, EventFlags, EventType, GestureEvent,
-    Interpolation,
-    LoopEvent, Scene, SpeakEvent, Tag,
+    Interpolation, LoopEvent, Scene, SpeakEvent, Tag,
 )
 from srctools.tokenizer import Tokenizer
 

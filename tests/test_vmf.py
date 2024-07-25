@@ -1,15 +1,15 @@
 """Tests for the VMF library."""
-from enum import Enum
 from typing import Optional
+from enum import Enum
 
 from dirty_equals import IsList
-import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
+import pytest
 
 from srctools import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Keyvalues, Matrix, Vec
 from srctools.vmf import (
-    Axis, VMF, Entity, Output, conv_kv,
-    StrataInstanceVisibility, Strata2DViewport, Strata3DViewport,
+    VMF, Axis, Entity, Output, Strata2DViewport, Strata3DViewport,
+    StrataInstanceVisibility, conv_kv,
 )
 
 

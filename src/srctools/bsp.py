@@ -3,8 +3,8 @@
 Data from a read BSP is lazily parsed when each section is accessed.
 """
 from typing import (
-    Any, Callable, ClassVar, Dict, Generator, Generic, Iterator, List, Mapping,
-    Optional, Sequence, Set, Tuple, Type, TypeVar, Union, overload,
+    Any, Callable, ClassVar, Dict, Generator, Generic, Iterator, List, Mapping, Optional,
+    Sequence, Set, Tuple, Type, TypeVar, Union, overload,
 )
 from typing_extensions import TypedDict, deprecated
 from enum import Enum, Flag
@@ -23,8 +23,8 @@ import attrs
 
 from srctools import AtomicWriter, StringPath, conv_int, logger
 from srctools.binformat import (
-    DeferredWrites, compress_lzma, decompress_lzma, read_array, struct_read, write_array,
-    find_or_insert, find_or_extend,
+    DeferredWrites, compress_lzma, decompress_lzma, find_or_extend, find_or_insert,
+    read_array, struct_read, write_array,
 )
 from srctools.const import BSPContents as BrushContents, SurfFlags, add_unknown
 from srctools.filesys import FileSystem

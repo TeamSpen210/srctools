@@ -9,8 +9,8 @@ To compress to DXT formats, this uses the `libsquish`_ library.
 .. _`libsquish`: https://sourceforge.net/projects/libsquish/
 """
 from typing import (
-    IO, TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional,
-    Sequence, Tuple, Type, Union, overload,
+    IO, TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple,
+    Type, Union, overload,
 )
 from array import array
 from enum import Enum, Flag
