@@ -269,11 +269,11 @@ def test_from_basis_basics(
 
     assert_rot(Matrix.from_basis(), Matrix(), type=Matrix)
     # Passing a zero vector is an error.
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='non-zero'):
         Matrix.from_basis(x=Vec(0, 0, 0))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='non-zero'):
         Matrix.from_basis(y=Vec(0, 0, 0))
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match='non-zero'):
         Matrix.from_basis(z=Vec(0, 0, 0))
 
 

@@ -232,8 +232,9 @@ def test_by_class() -> None:
         'math_counter': {ent1},
     }
 
-    with pytest.raises(ValueError):  # Not allowed to change this.
+    with pytest.raises(ValueError, match='worldspawn'):  # Not allowed to change this.
         vmf.spawn['classname'] = 'func_brush'
+    assert vmf.spawn['classname'] == 'worldspawn'  # Change did not apply.
 
 
 def test_fixup_basic() -> None:

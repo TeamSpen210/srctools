@@ -467,7 +467,7 @@ def test_vec_lerp(frozen_thawed_vec: VecClass) -> None:
         Vec.lerp(48.4, -64.0, -64.0, Vec(), Vec())
 
 
-def test_vec_clamped_args(frozen_thawed_vec: VecClass) -> None:
+def test_vec_clamped_invalid(frozen_thawed_vec: VecClass) -> None:
     """Test Vec.clamped()."""
     Vec = frozen_thawed_vec
     vec = Vec(48, 23, 284)
@@ -490,7 +490,7 @@ def test_vec_clamped_args(frozen_thawed_vec: VecClass) -> None:
     ("y", "x", "z"),
     ("z", "x", "y"),
 ])
-def test_vec_clamped_args(frozen_thawed_vec: VecClass, axis: Axis, u: Axis, v: Axis) -> None:
+def test_vec_clamped_axis(frozen_thawed_vec: VecClass, axis: Axis, u: Axis, v: Axis) -> None:
     """Test each axis is independent and behaves correctly."""
     Vec = frozen_thawed_vec
     vec = Vec.with_axes(axis, 400, u, 500, v, 800)

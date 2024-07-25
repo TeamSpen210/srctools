@@ -8,9 +8,9 @@ import pytest
 from srctools.keyvalues import KeyValError
 # noinspection PyProtectedMember
 from srctools.tokenizer import (
-    _OPERATOR_VALS as TOK_VALS, BaseTokenizer, Cy_BaseTokenizer, Cy_IterTokenizer,
-    Cy_Tokenizer, Py_BaseTokenizer, Py_IterTokenizer, Py_Tokenizer, Token, Tokenizer,
-    TokenSyntaxError, _py_escape_text, escape_text,
+    _OPERATOR_VALS as TOK_VALS, BaseTokenizer, Cy_BaseTokenizer, Cy_Tokenizer,
+    Py_BaseTokenizer, Py_Tokenizer, Token, Tokenizer, TokenSyntaxError, _py_escape_text,
+    escape_text,
 )
 from test_keyvalues import parse_test as prop_parse_test
 
@@ -172,7 +172,9 @@ def check_tokens(
         assert isinstance(token, tuple)
         if isinstance(comp_token, tuple):
             comp_type, comp_value = comp_token
-            assert token[0] is comp_type and token[1] == comp_value, (
+            # Compare together, we want identity for the enum. Ignore split-assertion warning,
+            # we print out the values ourselves so PyTest assertion rewriting is not necessary.
+            assert token[0] is comp_type and token[1] == comp_value, (  # noqa: PT018
                 f"got {token[0]}({token[1]!r}), "
                 f"expected {comp_type}({comp_value!r}) @ pos {i}={tokens[i - 2: i + 1]}"
             )

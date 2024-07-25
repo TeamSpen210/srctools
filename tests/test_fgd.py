@@ -13,7 +13,7 @@ from srctools.fgd import (
 )
 from srctools.filesys import VirtualFileSystem
 # noinspection PyProtectedMember
-from srctools.tokenizer import Cy_Tokenizer, Py_Tokenizer, Tokenizer
+from srctools.tokenizer import Cy_Tokenizer, Py_Tokenizer
 
 
 if Cy_Tokenizer is not None:

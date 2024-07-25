@@ -1,6 +1,5 @@
 """Test the keyvalues module."""
 from typing import Any, Generator, List, Type, Union
-import io
 import itertools
 
 import pytest
