@@ -471,7 +471,7 @@ def test_vec_clamped_invalid(frozen_thawed_vec: VecClass) -> None:
     """Test Vec.clamped()."""
     Vec = frozen_thawed_vec
     vec = Vec(48, 23, 284)
-    with pytest.raises(TypeError, match='not both'):
+    with pytest.raises(TypeError, match='either 2 positional arguments or 1-2 keyword arguments'):
         vec.clamped(vec, vec, mins=vec, maxs=vec)
     with pytest.raises(TypeError, match='missing either'):
         vec.clamped()

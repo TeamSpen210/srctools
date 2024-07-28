@@ -838,7 +838,10 @@ class VecBase:
         """
         if args:
             if mins is not None or maxs is not None:
-                raise TypeError('Bounds may not be provided both positionally or by keyword.')
+                raise TypeError(
+                    f"{type(self).__name__}.clamped() accepts either 2 positional arguments "
+                    f"or 1-2 keyword arguments ('mins' and 'maxs'), not both"
+                )
             if len(args) == 2:
                 mins, maxs = args
             elif len(args) == 1:
