@@ -505,7 +505,8 @@ class Frame:
         # C-contiguous and will deny F-contiguous requests.
         self.load()
         assert self._data is not None
-        return memoryview(self._data).cast('B', (self.height, self.width, 4))
+        # Pyright thinks this is typing.cast?
+        return memoryview(self._data).cast('B', (self.height, self.width, 4))  # pyright: ignore[reportUndefinedVariable]
 
     def to_PIL(self) -> 'PIL_Image':
         """Convert the given frame into a PIL image.

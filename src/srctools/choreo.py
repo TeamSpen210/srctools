@@ -288,11 +288,12 @@ class Tag:
                 value = float(value_str)
             except ValueError as exc:
                 raise tokenizer.error('Invalid tag amount "{}"!', value_str) from exc
-            if cls is TimingTag:
-                locked = conv_bool(tokenizer.expect(Token.STRING, skip_newline=False))
-                yield cls(name, value, locked)  # type: ignore
-            else:
-                yield cls(name, value)
+            yield cls._from_text(tokenizer, name, value)
+
+    @classmethod
+    def _from_text(cls, tokenizer: BaseTokenizer, name: str, value: float) -> Self:
+        """Helper to implement parse_text()."""
+        return cls(name, value)
 
     @classmethod
     def export_text(cls, file: IO[str], indent: str, tags: list[Self], block_name: str) -> None:
@@ -315,6 +316,11 @@ class TimingTag(Tag):
     # VCD only.
     locked: bool = False
 
+    @classmethod
+    def _from_text(cls, tokenizer: BaseTokenizer, name: str, value: float) -> Self:
+        """Helper to implement parse_text()."""
+        locked = conv_bool(tokenizer.expect(Token.STRING, skip_newline=False))
+        return cls(name, value, locked)
 
 class AbsoluteTag(Tag):
     """Absolute tags have an increased range and precision."""

@@ -484,7 +484,7 @@ class VecBase:
             bbox_min.min(point)
             bbox_max.max(point)
         if cls is Py_FrozenVec:
-            return cls(bbox_min), cls(bbox_max)
+            return cls(bbox_min), cls(bbox_max)  # pyright: ignore (FrozenSet != VecT)
         elif cls is Py_Vec:
             # We know cls is Py_Vec, and these are too.
             return bbox_min, bbox_max  # type: ignore
