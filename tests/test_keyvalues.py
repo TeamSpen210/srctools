@@ -59,7 +59,7 @@ def test_docstring() -> None:
 
 def test_constructor() -> None:
     """Test the constructor for Keyvalues objects."""
-    with pytest.deprecated_call(match='Root properties'):
+    with pytest.deprecated_call(match='[rR]oot [kK]eyvalues'):
         Keyvalues(None, [])
     Keyvalues('Test', 'value with spaces and ""')
     block = Keyvalues('Test_block', [
@@ -101,9 +101,9 @@ def test_names() -> None:
     assert prop.real_name == 'SECOND_test'
 
     # It can also be set to None - deprecated
-    with pytest.deprecated_call(match='[r|R]oot [p|P]ropert[y|ies]'):
+    with pytest.deprecated_call(match='[rR]oot [kK]eyvalues'):
         prop.name = None  # type: ignore
-    with pytest.deprecated_call(match='[r|R]oot [p|P]ropert[y|ies]'):
+    with pytest.deprecated_call(match='[rR]oot [kK]eyvalues'):
         assert prop.name is prop.real_name is None
 
 # If edited, update test_parse() and tokeniser check too!
