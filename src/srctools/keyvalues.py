@@ -81,7 +81,7 @@ from srctools.tokenizer import (
 __all__ = ['KeyValError', 'NoKeyError', 'LeafKeyvalueError', 'Keyvalues', 'escape_text']
 
 # Sentinel value to indicate that no default was given to find_key()
-_NO_KEY_FOUND = cast(str, object())
+_NO_KEY_FOUND: str = cast(str, object())
 
 _KV_Value = Union[List['Keyvalues'], str, Any]
 _As_Dict_Ret: TypeAlias = Union[str, Dict[str, '_As_Dict_Ret']]
@@ -533,8 +533,9 @@ class Keyvalues:
                         'An extra closing bracket was added which would '
                         'close the outermost level.',
                     ) from None
-                # We know this isn't a leaf prop, we made it earlier.
-                cur_block_contents = cur_block._value  # type: ignore
+                # We know this isn't a leaf KV, we made it earlier.
+                assert not isinstance(cur_block._value, str)
+                cur_block_contents = cur_block._value
                 # For replacing the block.
                 can_flag_replace = True
             else:
@@ -643,7 +644,16 @@ class Keyvalues:
         else:
             raise NoKeyError(key, self.line_num)
 
-    def _get_value(self, key: str, def_: Union[builtins.str, T] = _NO_KEY_FOUND) -> Union[str, T]:
+    @overload
+    def _get_value(self, key: str, /) -> builtins.str: ...
+    @overload
+    def _get_value(self, key: str, default: T, /) -> Union[builtins.str, T]: ...
+    def _get_value(
+        self,
+        key: str,
+        default: Union[builtins.str, T] = _NO_KEY_FOUND,
+        /,
+    ) -> Union[builtins.str, T]:
         """Obtain the value of the child Keyvalue with a given name.
 
         Effectively :py:meth:`find_key()` but doesn't make a new keyvalue.
