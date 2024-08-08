@@ -22,7 +22,9 @@ from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, Final, Iterable, Iterator, List,
     NamedTuple, Optional, SupportsFloat, SupportsIndex, Tuple, Type, TypeVar, Union, cast,
 )
-from typing_extensions import Literal, Protocol, TypeAlias, TypeGuard, deprecated, final, overload
+from typing_extensions import (
+    Literal, Protocol, Self, TypeAlias, TypeGuard, deprecated, final, overload,
+)
 import contextlib
 import math
 
@@ -388,15 +390,15 @@ class VecBase:
         """Return the Z axis."""
         return self._z
 
-    def copy(self: VecT) -> VecT:
+    def copy(self) -> Self:
         """Implemented by subclasses."""
         raise NotImplementedError
 
     @classmethod
     def from_str(
-        cls: Type[VecT], val: Union[str, 'VecBase'],
+        cls, val: Union[str, 'VecBase'],
         x: float = 0.0, y: float = 0.0, z: float = 0.0,
-    ) -> VecT:
+    ) -> Self:
         """Convert a string in the form ``(4 6 -4)`` into a Vector.
 
         If the string is unparsable, this uses the defaults ``(x,y,z)``.
@@ -412,27 +414,27 @@ class VecBase:
 
     @classmethod
     @overload
-    def with_axes(cls: Type[VecT], axis1: str, val1: Union[Numeric, 'VecBase']) -> VecT: ...
+    def with_axes(cls, axis1: str, val1: Union[Numeric, 'VecBase']) -> Self: ...
 
     @classmethod
     @overload
     def with_axes(
-        cls: Type[VecT],
+        cls,
         axis1: str, val1: Union[Numeric, 'VecBase'],
         axis2: str, val2: Union[Numeric, 'VecBase'],
-    ) -> VecT: ...
+    ) -> Self: ...
 
     @classmethod
     @overload
     def with_axes(
-        cls: Type[VecT],
+        cls,
         axis1: str, val1: Union[Numeric, 'VecBase'],
         axis2: str, val2: Union[Numeric, 'VecBase'],
         axis3: str, val3: Union[Numeric, 'VecBase'],
-    ) -> VecT: ...
+    ) -> Self: ...
 
     @classmethod
-    def with_axes(cls: Type[VecT], *args: Union[str, Numeric, 'VecBase'], **kwargs: Union[str, Numeric, 'VecBase']) -> VecT:
+    def with_axes(cls, *args: Union[str, Numeric, 'VecBase'], **kwargs: Union[str, Numeric, 'VecBase']) -> Self:
         """Create a Vector, given a number of axes and corresponding values.
 
         This is a convenience for doing the following::
@@ -448,13 +450,13 @@ class VecBase:
 
     @classmethod
     @overload
-    def bbox(cls: Type[VecT], __point: Iterable['VecBase']) -> Tuple[VecT, VecT]: ...
+    def bbox(cls, __point: Iterable['VecBase']) -> Tuple[Self, Self]: ...
     @classmethod
     @overload
-    def bbox(cls: Type[VecT], *points: 'VecBase') -> Tuple[VecT, VecT]: ...
+    def bbox(cls, *points: 'VecBase') -> Tuple[Self, Self]: ...
 
     @classmethod
-    def bbox(cls: Type[VecT], *points: Union[Iterable['VecBase'], 'VecBase']) -> Tuple[VecT, VecT]:
+    def bbox(cls, *points: Union[Iterable['VecBase'], 'VecBase']) -> Tuple[Self, Self]:
         """Compute the bounding box for a set of points.
 
         Pass either several Vecs, or an iterable of Vecs.
@@ -493,11 +495,11 @@ class VecBase:
 
     @classmethod
     def iter_grid(
-        cls: Type[VecT],
+        cls,
         min_pos: 'VecBase',
         max_pos: 'VecBase',
         stride: int = 1,
-    ) -> Iterator[VecT]:
+    ) -> Iterator[Self]:
         """Loop over points in a bounding box. All coordinates should be integers.
 
         Both borders will be included.
@@ -515,7 +517,7 @@ class VecBase:
                 for z in range(min_z, max_z + 1, stride):
                     yield cls(x, y, z)
 
-    def iter_line(self: VecT, end: 'VecBase', stride: int = 1) -> Iterator[VecT]:
+    def iter_line(self, end: 'VecBase', stride: int = 1) -> Iterator[Self]:
         """Yield points in a line (including both endpoints).
 
         :param stride: This specifies the distance between each point.
@@ -574,7 +576,7 @@ class VecBase:
             roll,
         )
 
-    def __abs__(self: VecT) -> VecT:
+    def __abs__(self) -> Self:
         """Performing :external:py:func:`abs()` on a Vec takes the absolute value of all axes."""
         return type(self)(
             abs(self.x),
@@ -586,23 +588,23 @@ class VecBase:
     # to annotate them in a way a type-checker can understand.
     # These are immediately overwritten.
     if TYPE_CHECKING:
-        def __add__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
-        def __radd__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
+        def __add__(self, other: Union['VecBase', Tuple3, int, float]) -> Self: ...
+        def __radd__(self, other: Union['VecBase', Tuple3, int, float]) -> Self: ...
 
-        def __sub__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
-        def __rsub__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
+        def __sub__(self, other: Union['VecBase', Tuple3, int, float]) -> Self: ...
+        def __rsub__(self, other: Union['VecBase', Tuple3, int, float]) -> Self: ...
 
-        def __mul__(self: VecT, other: float) -> VecT: ...
-        def __rmul__(self: VecT, other: float) -> VecT: ...
+        def __mul__(self, other: float) -> Self: ...
+        def __rmul__(self, other: float) -> Self: ...
 
-        def __truediv__(self: VecT, other: float) -> VecT: ...
-        def __rtruediv__(self: VecT, other: float) -> VecT: ...
+        def __truediv__(self, other: float) -> Self: ...
+        def __rtruediv__(self, other: float) -> Self: ...
 
-        def __floordiv__(self: VecT, other: float) -> VecT: ...
-        def __rfloordiv__(self: VecT, other: float) -> VecT: ...
+        def __floordiv__(self, other: float) -> Self: ...
+        def __rfloordiv__(self, other: float) -> Self: ...
 
-        def __mod__(self: VecT, other: float) -> VecT: ...
-        def __rmod__(self: VecT, other: float) -> VecT: ...
+        def __mod__(self, other: float) -> Self: ...
+        def __rmod__(self, other: float) -> Self: ...
 
     _funcname = _op = _pretty = ''
     # Use exec() to generate all the number magic methods. This reduces code
@@ -630,7 +632,7 @@ class VecBase:
     del _funcname, _op, _pretty
 
     # Divmod is entirely unique.
-    def __divmod__(self: VecT, other: float) -> Tuple[VecT, VecT]:
+    def __divmod__(self, other: float) -> Tuple[Self, Self]:
         """Divide the vector by a scalar, returning the result and remainder."""
         if isinstance(other, VecBase):
             raise TypeError("Cannot divide 2 Vectors.")
@@ -643,7 +645,7 @@ class VecBase:
         else:
             return type(self)(x1, y1, z1), type(self)(x2, y2, z2)
 
-    def __rdivmod__(self: VecT, other: float) -> Tuple[VecT, VecT]:
+    def __rdivmod__(self, other: float) -> Tuple[Self, Self]:
         """Divide a scalar by a vector, returning the result and remainder."""
         if isinstance(other, VecBase):
             raise TypeError("Cannot divide 2 Vectors.")
@@ -656,7 +658,7 @@ class VecBase:
         else:
             return type(self)(x1, y1, z1), type(self)(x2, y2, z2)
 
-    def __matmul__(self: VecT, other: Union['AngleBase', 'MatrixBase']) -> VecT:
+    def __matmul__(self, other: Union['AngleBase', 'MatrixBase']) -> Self:
         """Rotate this vector by an angle or matrix."""
         if isinstance(other, MatrixBase):
             mat = other
@@ -806,7 +808,7 @@ class VecBase:
             return NotImplemented
 
     @classmethod
-    def lerp(cls: Type[VecT], x: float, in_min: float, in_max: float, out_min: 'VecBase', out_max: 'VecBase') -> VecT:
+    def lerp(cls, x: float, in_min: float, in_max: float, out_min: 'VecBase', out_max: 'VecBase') -> Self:
         """Linerarly interpolate between two vectors.
 
         :raises ZeroDivisionError: If ``in_min`` and ``in_max`` are the same.
@@ -820,18 +822,18 @@ class VecBase:
         )
 
     @overload
-    def clamped(self: VecT, mins: AnyVec, maxs: AnyVec, /) -> VecT: ...
+    def clamped(self, mins: AnyVec, maxs: AnyVec, /) -> Self: ...
     @overload
-    def clamped(self: VecT, /, *, mins: AnyVec) -> VecT: ...
+    def clamped(self, /, *, mins: AnyVec) -> Self: ...
     @overload
-    def clamped(self: VecT, /, *, maxs: AnyVec) -> VecT: ...
+    def clamped(self, /, *, maxs: AnyVec) -> Self: ...
     @overload
-    def clamped(self: VecT, /, *, mins: AnyVec, maxs: AnyVec) -> VecT: ...
+    def clamped(self, /, *, mins: AnyVec, maxs: AnyVec) -> Self: ...
     def clamped(
-        self: VecT, *args: AnyVec,
+        self, *args: AnyVec,
         mins: Optional[AnyVec] = None,
         maxs: Optional[AnyVec] = None,
-    ) -> VecT:
+    ) -> Self:
         """Return a copy of this vector, constrained by the given min/max values.
 
         Either both can be provided positionally, or at least one can be provided by keyword.
@@ -888,7 +890,7 @@ class VecBase:
         else:
             return type(self)(x, y, z)
 
-    def __round__(self: VecT, ndigits: int = 0) -> VecT:
+    def __round__(self, ndigits: int = 0) -> Self:
         """Performing :external:py:func:`round()` on a vector rounds each axis."""
         return type(self)(
             round(self._x, ndigits),
@@ -1007,15 +1009,15 @@ class VecBase:
         """Check to see if an axis is set to the given value."""
         return abs(val - self._x) < 1e-6 or abs(val - self._y) < 1e-6 or abs(val - self._z) < 1e-6
 
-    def __neg__(self: VecT) -> VecT:
+    def __neg__(self) -> Self:
         """The inverted form of a Vector has inverted axes."""
         return type(self)(-self._x, -self._y, -self._z)
 
-    def __pos__(self: VecT) -> VecT:
+    def __pos__(self) -> Self:
         """``+`` on a Vector simply copies it."""
         return type(self)(self._x, self._y, self._z)
 
-    def norm(self: VecT) -> VecT:
+    def norm(self) -> Self:
         """Normalise the Vector.
 
          This is done by transforming it to have a magnitude of 1 but the same
@@ -1047,7 +1049,7 @@ class VecBase:
             self._z * other[2]
         )
 
-    def cross(self: VecT, other: AnyVec) -> VecT:
+    def cross(self, other: AnyVec) -> Self:
         """Return the cross product of both Vectors.
 
         If this is called as a method (``a.cross(b)``), the result will have the
@@ -1060,7 +1062,7 @@ class VecBase:
             self._x * other[1] - self._y * other[0],
         )
 
-    def norm_mask(self: VecT, normal: 'Vec | FrozenVec') -> VecT:
+    def norm_mask(self, normal: 'Vec | FrozenVec') -> Self:
         """Subtract the components of this vector not in the direction of the normal.
 
         If the normal is axis-aligned, this will zero out the other axes.
@@ -1620,11 +1622,11 @@ class MatrixBase:
 
     @classmethod
     def _from_raw(
-        cls: Type[MatrixT],
+        cls,
         aa: float, ab: float, ac: float,
         ba: float, bb: float, bc: float,
         ca: float, cb: float, cc: float,
-    ) -> MatrixT:
+    ) -> Self:
         """Construct from individual data values."""
         self = cls.__new__(cls)
         self._aa, self._ab, self._ac = aa, ab, ac
@@ -1652,12 +1654,12 @@ class MatrixBase:
             '>'
         )
 
-    def copy(self: MatrixT) -> MatrixT:
+    def copy(self) -> Self:
         """Duplicate this matrix."""
         raise NotImplementedError
 
     @classmethod
-    def from_pitch(cls: Type[MatrixT], pitch: float) -> MatrixT:
+    def from_pitch(cls, pitch: float) -> Self:
         """Return the matrix representing a pitch rotation (Y axis)."""
         rad_pitch = math.radians(pitch)
         cos = math.cos(rad_pitch)
@@ -1672,7 +1674,7 @@ class MatrixBase:
         return rot
 
     @classmethod
-    def from_yaw(cls: Type[MatrixT], yaw: float) -> MatrixT:
+    def from_yaw(cls, yaw: float) -> Self:
         """Return the matrix representing a yaw rotation (Z axis)."""
         rad_yaw = math.radians(yaw)
         sin = math.sin(rad_yaw)
@@ -1687,7 +1689,7 @@ class MatrixBase:
         return rot
 
     @classmethod
-    def from_roll(cls: Type[MatrixT], roll: float) -> MatrixT:
+    def from_roll(cls, roll: float) -> Self:
         """Return the matrix representing a roll rotation (X axis)."""
         rad_roll = math.radians(roll)
         cos_r = math.cos(rad_roll)
@@ -1703,19 +1705,19 @@ class MatrixBase:
 
     @classmethod
     @overload
-    def from_angle(cls: Type[MatrixT], __angle: 'AngleBase') -> MatrixT: ...
+    def from_angle(cls, __angle: 'AngleBase') -> Self: ...
 
     @classmethod
     @overload
-    def from_angle(cls: Type[MatrixT], pitch: float, yaw: float, roll: float) -> MatrixT: ...
+    def from_angle(cls, pitch: float, yaw: float, roll: float) -> Self: ...
 
     @classmethod
     def from_angle(
-        cls: Type[MatrixT],
+        cls,
         pitch: Union['AngleBase', float],
         yaw: Optional[float] = None,
         roll: Optional[float] = None,
-    ) -> MatrixT:
+    ) -> Self:
         """Return the rotation representing an Euler angle.
 
         Either an Angle can be passed, or the raw pitch/yaw/roll angles.
@@ -1762,12 +1764,12 @@ class MatrixBase:
 
     @classmethod
     def from_angstr(
-        cls: Type[MatrixT],
+        cls,
         val: Union[str, 'Angle'],
         pitch: float = 0.0,
         yaw: float = 0.0,
         roll: float = 0.0,
-    ) -> MatrixT:
+    ) -> Self:
         """Parse a string of the form "pitch yaw roll", then convert to a Matrix.
 
         This is equivalent to combining :py:func:`MatrixBase.from_angle()` and
@@ -1777,7 +1779,7 @@ class MatrixBase:
         return cls.from_angle(pitch, yaw, roll)
 
     @classmethod
-    def axis_angle(cls: Type[MatrixT], axis: Union[Vec, Tuple3], angle: float) -> MatrixT:
+    def axis_angle(cls, axis: Union[Vec, Tuple3], angle: float) -> Self:
         """Compute the rotation matrix forming a rotation around an axis by a specific angle."""
         x, y, z = Vec(axis).norm()
         # Invert, so it matches the orientation of Angles().
@@ -1853,9 +1855,9 @@ class MatrixBase:
             ang._roll = 0.0  # Can't produce.
         return ang
 
-    def transpose(self: MatrixT) -> MatrixT:
+    def transpose(self) -> Self:
         """Return the transpose of this matrix."""
-        cls: Type[MatrixT] = type(self)
+        cls = type(self)
         rot = cls.__new__(cls)
 
         rot._aa, rot._ab, rot._ac = self._aa, self._ba, self._ca
@@ -1864,7 +1866,7 @@ class MatrixBase:
 
         return rot
 
-    def inverse(self: MatrixT) -> MatrixT:
+    def inverse(self) -> Self:
         """Return the inverse of this matrix.
 
         :raises ArithmeticError: If the matrix does not have an inverse.
@@ -1939,7 +1941,7 @@ class MatrixBase:
             mat_l[n] /= v
             mat_r[n] /= v
 
-        cls: Type[MatrixT] = type(self)
+        cls = type(self)
         out = cls.__new__(cls)
 
         out._aa, out._ab, out._ac = mat_r[0][0], mat_r[0][1], mat_r[0][2]
@@ -1950,11 +1952,11 @@ class MatrixBase:
 
     @classmethod
     def from_basis(
-        cls: Type[MatrixT], *,
+        cls, *,
         x: Optional[VecUnion] = None,
         y: Optional[VecUnion] = None,
         z: Optional[VecUnion] = None,
-    ) -> MatrixT:
+    ) -> Self:
         """Construct a matrix from existing basis vectors.
 
         If at least two are provided, only one result is possible. Otherwise, the result is
@@ -2051,7 +2053,7 @@ class MatrixBase:
         vec._y = (x * self._ab) + (y * self._bb) + (z * self._cb)
         vec._z = (x * self._ac) + (y * self._bc) + (z * self._cc)
 
-    def __matmul__(self: MatrixT, other: 'MatrixBase | AngleBase') -> MatrixT:
+    def __matmul__(self, other: 'MatrixBase | AngleBase') -> Self:
         if isinstance(other, MatrixBase):
             mat = self.copy()
             mat._mat_mul(other)
@@ -2283,9 +2285,9 @@ class AngleBase:
 
     @classmethod
     def from_str(
-        cls: Type[AngleT], val: Union[str, 'AngleBase'],
+        cls, val: Union[str, 'AngleBase'],
         pitch: float = 0.0, yaw: float = 0.0, roll: float = 0.0,
-    ) -> AngleT:
+    ) -> Self:
         """Convert a string in the form ``(4 6 -4)`` into an Angle.
 
         If the string is unparsable, the provided default values are used instead.
@@ -2301,11 +2303,11 @@ class AngleBase:
 
     @classmethod
     def from_basis(
-        cls: Type[AngleT], *,
+        cls, *,
         x: Optional[VecUnion] = None,
         y: Optional[VecUnion] = None,
         z: Optional[VecUnion] = None,
-    ) -> AngleT:
+    ) -> Self:
         """Return the rotation which results in the specified local axes.
 
         At least two must be specified, with the third computed if necessary.
@@ -2316,33 +2318,33 @@ class AngleBase:
 
     @classmethod
     @overload
-    def with_axes(cls: Type[AngleT], axis1: str, val1: Union[float, 'AngleBase']) -> AngleT: ...
+    def with_axes(cls, axis1: str, val1: Union[float, 'AngleBase']) -> Self: ...
 
     @classmethod
     @overload
     def with_axes(
-        cls: Type[AngleT],
+        cls,
         axis1: str, val1: Union[float, 'AngleBase'],
         axis2: str, val2: Union[float, 'AngleBase'],
-    ) -> AngleT:
+    ) -> Self:
         ...
 
     @classmethod
     @overload
     def with_axes(
-        cls: Type[AngleT],
+        cls,
         axis1: str, val1: Union[float, 'AngleBase'],
         axis2: str, val2: Union[float, 'AngleBase'],
         axis3: str, val3: Union[float, 'AngleBase'],
-    ) -> AngleT:
+    ) -> Self:
         ...
 
     @classmethod
     def with_axes(
-        cls: Type[AngleT],
+        cls,
         *args: Union[str, float, 'AngleBase'],
         **kwargs: Union[str, float, 'AngleBase'],
-    ) -> AngleT:
+    ) -> Self:
         """Create an Angle, given a number of axes and corresponding values.
 
         This is a convenience for doing the following::
@@ -2481,7 +2483,7 @@ class AngleBase:
 
     # No ordering, there isn't any sensible relationship.
 
-    def __mul__(self: AngleT, other: Union[int, float]) -> AngleT:
+    def __mul__(self, other: Union[int, float]) -> Self:
         """Angle * float multiplies each value."""
         if isinstance(other, (int, float)):
             return type(self)(
@@ -2491,7 +2493,7 @@ class AngleBase:
             )
         return NotImplemented
 
-    def __rmul__(self: AngleT, other: Union[int, float]) -> AngleT:
+    def __rmul__(self, other: Union[int, float]) -> Self:
         """Angle * float multiplies each value."""
         if isinstance(other, (int, float)):
             return type(self)(
@@ -2512,7 +2514,7 @@ class AngleBase:
         return mat._to_angle(cls.__new__(cls))
 
     # noinspection PyProtectedMember
-    def __matmul__(self: AngleT, other: 'AngleBase | MatrixBase') -> AngleT:
+    def __matmul__(self, other: 'AngleBase | MatrixBase') -> Self:
         """Angle @ Angle or Angle @ Matrix rotates the first by the second."""
         if isinstance(other, AngleBase):
             return other._rotate_angle(self, type(self))
@@ -2525,13 +2527,13 @@ class AngleBase:
             return NotImplemented
 
     @overload
-    def __rmatmul__(self: AngleT, other: 'AngleBase') -> AngleT: ...
+    def __rmatmul__(self, other: 'AngleBase') -> Self: ...
     @overload
     def __rmatmul__(self, other: Tuple3) -> 'Vec': ...
     @overload
     def __rmatmul__(self, other: VecT) -> VecT: ...
 
-    def __rmatmul__(self: AngleT, other: 'AngleBase | Tuple3 | VecT') -> 'Vec | FrozenVec | VecT | AngleT':
+    def __rmatmul__(self, other: 'AngleBase | Tuple3 | VecT') -> Union[Vec, FrozenVec, VecT, Self]:
         """Vec @ Angle rotates the first by the second."""
         if isinstance(other, (Vec, FrozenVec)):
             return other @ Py_Matrix.from_angle(self)
