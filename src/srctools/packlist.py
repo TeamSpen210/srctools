@@ -878,7 +878,7 @@ class PackList:
                 # entity is pledging it will restrict itself to.
                 skinset = {
                     int(x)
-                    for x in ent.pop('skinset').split()
+                    for x in ent['skinset'].split()
                 }
             else:
                 skinset = None
