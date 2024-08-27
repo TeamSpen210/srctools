@@ -167,6 +167,9 @@ def test_vec_as_tuple(frozen_thawed_vec: VecClass) -> None:
         assert isinstance(tup, tuple)
         assert (x, y, z) == tup
         assert hash((x, y, z)) == hash(tup)
+        assert tup[0] == x
+        assert tup[1] == y
+        assert tup[2] == z
         # Bypass subclass functions.
         assert tuple.__getitem__(tup, 0) == x
         assert tuple.__getitem__(tup, 1) == y
@@ -1474,13 +1477,13 @@ def test_bbox(frozen_thawed_vec: VecClass) -> None:
 
     def test(*values):
         """Test these values work."""
-        min_x = min([v.x for v in values])
-        min_y = min([v.y for v in values])
-        min_z = min([v.z for v in values])
+        min_x = min(v.x for v in values)
+        min_y = min(v.y for v in values)
+        min_z = min(v.z for v in values)
 
-        max_x = max([v.x for v in values])
-        max_y = max([v.y for v in values])
-        max_z = max([v.z for v in values])
+        max_x = max(v.x for v in values)
+        max_y = max(v.y for v in values)
+        max_z = max(v.z for v in values)
 
         # Check passing a single iterable.
         bb_min, bb_max = Vec.bbox(values)

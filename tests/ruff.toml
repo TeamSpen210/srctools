@@ -9,6 +9,10 @@ extend-ignore = [
 	"PT012",
 	# Allow star imports.
 	"F403", "F405",
+	# Allow direct dunder calls, we want to test specific code paths.
+	"PLC2801",
+	# Private functions are exposed for testing specific parts of the implementation
+	"PLC2701",
 ]
 # Enable pytest-specific checks.
 extend-select = ["PT"]

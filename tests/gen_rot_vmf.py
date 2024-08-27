@@ -61,10 +61,10 @@ for pitch in range(0, 360, 45):
             inst.fixup['$rot_yaw'] = yaw
             inst.fixup['$rot_roll'] = roll
 
-with open('instances/rot_inst.vmf', 'w') as f:
+with open('instances/rot_inst.vmf', 'w', encoding='utf8') as f:
     inst_vmf.export(f)
 
-with open('rot_main.vmf', 'w') as f:
+with open('rot_main.vmf', 'w', encoding='utf8') as f:
     main_vmf.export(f)
 
 print('Done.')
