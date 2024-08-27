@@ -2,10 +2,13 @@
 from setuptools import setup, Extension
 import sys
 import os
+import setuptools
 
 WIN = sys.platform.startswith('win')
 MAC = sys.platform.startswith('darwin')
 root = os.path.dirname(__file__)
+
+print(f'Srctools, {WIN=}, {MAC=}, setuptools={getattr(setuptools, "__version__", "???")}')
 
 # Mandatory in CI!
 optional_ext = os.environ.get('CIBUILDWHEEL', '0') != '1'
