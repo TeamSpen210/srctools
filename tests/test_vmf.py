@@ -6,7 +6,7 @@ from dirty_equals import IsList
 from pytest_regressions.file_regression import FileRegressionFixture
 import pytest
 
-from srctools import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Keyvalues, Matrix, Vec
+from srctools import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Keyvalues, Matrix, Solid, Vec
 from srctools.vmf import (
     VMF, Axis, Entity, Output, Strata2DViewport, Strata3DViewport,
     StrataInstanceVisibility, conv_kv,
@@ -572,3 +572,17 @@ def test_make_unique() -> None:
 def test_strata_2d_viewport_position(position: Vec, axis: Axis, u: float, v: float) -> None:
     """The 2D viewport value encodes both a position and axis."""
     assert Strata2DViewport.from_vector(position, 8.0) == Strata2DViewport(axis, u, v, 8.0)
+
+
+def test_deprecated_cordonsolid() -> None:
+    """Solid.is_cordon used to be a cordon_solid attribute."""
+    vmf = VMF()
+    solid = vmf.make_prism(Vec(-128, -128, -128), Vec(+128, +128, +128)).solid
+    with pytest.deprecated_call():
+        assert solid.cordon_solid is None
+    solid.is_cordon = True
+    with pytest.deprecated_call():
+        assert solid.cordon_solid == 1
+    with pytest.deprecated_call():
+        solid.cordon_solid = None
+    assert solid.is_cordon is False

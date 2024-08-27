@@ -18,9 +18,11 @@ Version (dev)
 * Allow passing VMF settings via keyword arguments - the ``map_info`` dictionary parameter is now deprecated.
 * Allow directly passing enums to set VMF keyvalues and fixups, if the ``value`` is itself a valid value.
 * Parse Strata Source's other VMF additions - viewport configuration, brush face vertices and instance visibility.
-* Add :py:attr:`~srctools.tokenizer.Tokenizer.plus_operator`, allowing `+` to be
-  parsed as an operator for FGDs but still be valid inside bare strings elsewhere.
+* Add :py:attr:`Tokenizer.plus_operator <srctools.tokenizer.Tokenizer.plus_operator>`, allowing
+  `+` to be parsed as an operator for FGDs but still be valid inside bare strings elsewhere.
   These are common in ``gameinfo.txt``.
+* Add :py:attr:`Solid.is_cordon <srctools.vmf.Solid.is_cordon>` to replace
+  :py:attr:`cordon_solid <srctools.vmf.Solid.is_cordon>`, better representing its boolean nature.
 * Fix #29: Fix ``0x03`` characters causing an early EOF in the tokeniser.
 
 --------------
@@ -85,7 +87,7 @@ Version 2.3.12
 * Handle the special ``$gender`` "variable" in WAV filenames.
 * Add ``prop_door_rotating`` class resource function.
 * Remove ``weapon_script`` class resource function, instead use a direct resource in the FGD.
-* Use :py:func:`typing_extensions.deprecated` to mark functions and methods which should not be used.
+* Use py:func:`!typing_extensions.deprecated` to mark functions and methods which should not be used.
 
 --------------
 Version 2.3.11

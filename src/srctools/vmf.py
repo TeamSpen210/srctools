@@ -1475,7 +1475,7 @@ class Solid:
     group_id: Optional[int] = None
     vis_shown: bool = True
     vis_auto_shown: bool = True
-    cordon_solid: Optional[int] = None
+    is_cordon: bool = False
     editor_color: Vec = attrs.field(factory=lambda: Vec(255, 255, 255))
 
     def __attrs_post_init__(self) -> None:
@@ -1504,7 +1504,7 @@ class Solid:
             self.group_id,
             self.vis_shown if keep_vis else True,
             self.vis_auto_shown if keep_vis else True,
-            self.cordon_solid,
+            self.is_cordon,
             self.editor_color,
         )
 
@@ -1519,7 +1519,7 @@ class Solid:
         visgroups = set()
         group_id = None
         vis_shown = vis_auto_shown = True
-        cordon_solid = None
+        is_cordon = False
         editor_color = Vec(255, 255, 255)
 
         for v in tree.find_children("editor"):
@@ -1528,7 +1528,9 @@ class Solid:
             elif v.name == "visgroupautoshown":
                 vis_auto_shown = srctools.conv_bool(v.value, default=True)
             elif v.name == "cordonsolid":
-                cordon_solid = srctools.conv_int(v.value, default=None)
+                # This is a little odd, any value is treated as 'true', despite being a
+                # boolean.
+                is_cordon = True
             elif v.name == 'color':
                 editor_color = Vec.from_str(v.value, 255, 255, 255)
             elif v.name == 'group':
@@ -1548,7 +1550,7 @@ class Solid:
             group_id,
             vis_shown,
             vis_auto_shown,
-            cordon_solid,
+            is_cordon,
             editor_color,
         )
 
@@ -1587,8 +1589,9 @@ class Solid:
 
         buffer.write(f'{ind}\t\t"visgroupshown" "{"1" if self.vis_shown else "0"}"\n')
         buffer.write(f'{ind}\t\t"visgroupautoshown" "{"1" if self.vis_auto_shown else "0"}"\n')
-        if self.cordon_solid is not None:
-            buffer.write(f'{ind}\t\t"cordonsolid" "{self.cordon_solid}"\n')
+        if self.is_cordon:
+            # If present this is always treated as true.
+            buffer.write(f'{ind}\t\t"cordonsolid" "1"\n')
 
         buffer.write(f'{ind}\t}}\n')
 
@@ -1648,6 +1651,19 @@ class Solid:
             if offset > threshold:
                 return False
         return True
+
+    @property
+    @deprecated('Use is_cordon instead', category=DeprecationWarning)
+    def cordon_solid(self) -> Optional[int]:
+        """Deprecated old version of :py:attr:`is_cordon`."""
+        return 1 if self.is_cordon else None
+
+    # noinspection PyDeprecation
+    @cordon_solid.setter
+    @deprecated('Use is_cordon instead', category=DeprecationWarning)
+    def cordon_solid(self, value: Optional[int]) -> None:
+        """Deprected old version of :py:attr:`is_cordon`."""
+        self.is_cordon = bool(value)
 
 
 @attrs.define(frozen=True, hash=True, order=True)
@@ -2390,7 +2406,7 @@ class Side:
                 vert_tl, vert_br, vert_tr,
             )
 
-    @deprecated('This is useless and will be removed.')
+    @deprecated('This is useless and will be removed.', category=DeprecationWarning)
     def plane_desc(self) -> str:
         """Return a string which describes this face.
 
