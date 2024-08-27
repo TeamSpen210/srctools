@@ -42,7 +42,7 @@ Entry instances represent the additional metadata contained in an image file.
 
 .. autofunction:: parse_scenes_image
 
-.. autofunction:: save_scenes_image
+.. autofunction:: save_scenes_image_sync
 
 
 
