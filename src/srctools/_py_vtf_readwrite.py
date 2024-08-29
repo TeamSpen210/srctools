@@ -3,7 +3,7 @@
 # Wherever possible, use memoryview slicing to copy channels all in one go. This is much faster
 # than a loop.
 
-from typing import TYPE_CHECKING, NewType, Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import TYPE_CHECKING, NewType, Callable, Dict, Iterable, List, Optional, Tuple
 from typing_extensions import TypeAlias, Buffer
 import array
 
