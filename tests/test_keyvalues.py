@@ -285,12 +285,23 @@ def test_lineno() -> None:
     assert root2.line_num == 23
     assert root2.find_key('Escapes').line_num == 32
     comment_checks = result.find_key('CommentChecks')
+    assert comment_checks.line_num == 35
     assert comment_checks.find_key('Flag').line_num == 39
 
     with pytest.raises(NoKeyError) as raises:
         root1.find_key('MissingKey')
     assert raises.value.key == 'MissingKey'
     assert raises.value.line_num == 5
+    assert raises.value.filename is None
+
+    with pytest.raises(NoKeyError) as raises:
+        with NoKeyError.apply_filename('ignored.vdf') as filename:
+            assert filename == 'ignored.vdf'
+            with NoKeyError.apply_filename('inner.vdf'):
+                comment_checks.find_key('MissingKey')
+    assert raises.value.key == 'MissingKey'
+    assert raises.value.line_num == 35
+    assert raises.value.filename == 'inner.vdf'
 
 
 def test_build() -> None:

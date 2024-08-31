@@ -62,7 +62,7 @@ from typing import (
     Any, Callable, ClassVar, Dict, Final, Iterable, Iterator, List, Mapping, Optional,
     Protocol, Tuple, Type, TypeVar, Union, cast,
 )
-from typing_extensions import Literal, TypeAlias, deprecated, overload
+from typing_extensions import Literal, TypeAlias, deprecated, overload, ContextManager
 import builtins  # Keyvalues.bool etc shadows these.
 import io
 import keyword
@@ -132,6 +132,34 @@ class NoKeyError(LookupError):
 
     def __str__(self) -> str:
         return format_exc_fileinfo(f"No key {self.key}!", self.filename, self.line_num)
+
+    @staticmethod
+    def apply_filename(filename: str) -> ContextManager[str, None]:
+        """Applies a filename to all :py:class:`NoKeyError`s raised inside this scope.
+
+        This will cause the errors to display that filename. Has no effect if the filename
+        was already set, potentially by another :py:func:`apply_filename` call closer to the
+        exception source.
+        """
+        return _FilenameSetter(filename)
+
+
+class _FilenameSetter(ContextManager[str, None]):
+    """Applies a filename to all :py:class:`NoKeyError`s raised inside this scope."""
+    def __init__(self, filename: str) -> None:
+        self.filename = filename
+
+    def __enter__(self) -> str:
+        return self.filename
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[types.TracebackType],
+    ) -> None:
+        if isinstance(exc_val, NoKeyError) and exc_val.filename is None:
+            exc_val.filename = self.filename
 
 
 class LeafKeyvalueError(ValueError):
