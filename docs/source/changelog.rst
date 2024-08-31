@@ -5,16 +5,16 @@ Changelog
 	:local:
 	:backlinks: none
 
---------------
-Version (dev)
---------------
+-------------
+Version 2.3.4
+-------------
 * Added :py:mod:`srctools.choreo`, for parsing choreographed scenes.
 * Allow passing :py:class:`~srctools.math.FrozenVec` to :py:meth:`VMF.make_prism() <srctools.vmf.VMF.make_prism>`/:py:meth:`~srctools.vmf.VMF.make_hollow`.
 * Fix bare strings on the end of CRLF lines eating the ``\r``.
-* Escape characters like `"` when exporting VMFs and BSPs. This isn't supported by regular Source, but can be added by mods.
+* Escape characters like `"` when exporting VMFs and BSPs. This isn't supported by regular Source, but can be added by other branches.
 * Added :py:attr:`Keyvalues.line_num <srctools.keyvalues.Keyvalues.line_num>`, to
   allow reporting the source location in exceptions.
-* :py:meth:`Keyvalues.export() <srctools.keyvalues.Keyvalues.export>` is now deprecated.
+* :py:meth:`Keyvalues.export() <srctools.keyvalues.Keyvalues.export>` is now deprecated, use :py:meth:`serialise() <srctools.keyvalues.Keyvalues.serialise>` instead.
 * Allow passing VMF settings via keyword arguments - the ``map_info`` dictionary parameter is now deprecated.
 * Allow directly passing enums to set VMF keyvalues and fixups, if the ``value`` is itself a valid value.
 * Parse Strata Source's other VMF additions - viewport configuration, brush face vertices and instance visibility.
@@ -24,7 +24,7 @@ Version (dev)
 * Add :py:attr:`Solid.is_cordon <srctools.vmf.Solid.is_cordon>` to replace
   :py:attr:`cordon_solid <srctools.vmf.Solid.is_cordon>`, better representing its boolean nature.
 * Fix #29: Fix ``0x03`` characters causing an early EOF in the tokeniser.
-* Preserve passed in key casing in :py:meth:`~srctools.keyvalues.Keyvalues.find_key`/:py:meth:`~srctools.keyvalues.Keyvalues.find_blovk`'s return values.
+* Preserve passed in key casing in :py:meth:`~srctools.keyvalues.Keyvalues.find_key`/:py:meth:`~srctools.keyvalues.Keyvalues.find_block`'s return values.
 
 --------------
 Version 2.3.17
@@ -55,7 +55,7 @@ Version 2.3.15
 --------------
 * `HammerAddons#237 <https://github.com/TeamSpen210/HammerAddons/issues/237>`_: FGD model helpers should override each other.
 * Fix #20: VTF.compute_mipmaps() not working for cubemaps.
-* Correctly handle `.vvd`/`.vtx` etc files being packed as :py:class:`MODEL <srctools.packlist.FileType.GENERIC`.
+* Correctly handle `.vvd`/`.vtx` etc files being packed as :py:class:`MODEL <srctools.const.FileType.GENERIC`.
 * Improve performance of pure-Python VTF save/loading code.
 * Add :py:meth:`Vec.clamped() <srctools.math.VecBase.clamped>`, for applying min/max bounds to a vector.
 * Fix :py:meth:`Entity.make_unique() <srctools.vmf.Entity.make_unique>` renaming entities with numeric suffixes which were already unique.
