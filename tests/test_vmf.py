@@ -6,7 +6,7 @@ from dirty_equals import IsList
 from pytest_regressions.file_regression import FileRegressionFixture
 import pytest
 
-from srctools import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Keyvalues, Matrix, Solid, Vec
+from srctools import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Keyvalues, Matrix, Vec
 from srctools.vmf import (
     VMF, Axis, Entity, Output, Strata2DViewport, Strata3DViewport,
     StrataInstanceVisibility, conv_kv,
