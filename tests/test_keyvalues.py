@@ -71,6 +71,7 @@ def test_constructor() -> None:
         Keyvalues('Block', []),
     ])
     assert block.real_name == 'Test_block'
+    assert block.line_num is None
     children = list(block)
     assert children[0].real_name == 'Test'
     assert children[1].real_name == 'Test'
@@ -265,6 +266,31 @@ def test_parse(py_c_token: Type[Tokenizer]) -> None:
 
     # Check serialise roundtrips.
     assert_tree(parse_result, Keyvalues.parse(parse_result.serialise()))
+
+
+def test_lineno() -> None:
+    """Test parsing properly includes line numbers."""
+    result = Keyvalues.parse(
+        parse_test,
+        flags={
+            'test_enabled': True,
+            'test_disabled': False,
+        },
+    )
+    assert result.line_num == 1
+    root1 = result.find_block('Root1')
+    assert root1.line_num == 5
+    assert root1.find_key('Key').line_num == 9
+    root2 = result.find_block('Root2')
+    assert root2.line_num == 23
+    assert root2.find_key('Escapes').line_num == 32
+    comment_checks = result.find_key('CommentChecks')
+    assert comment_checks.find_key('Flag').line_num == 39
+
+    with pytest.raises(NoKeyError) as raises:
+        root1.find_key('MissingKey')
+    assert raises.value.key == 'MissingKey'
+    assert raises.value.line_num == 5
 
 
 def test_build() -> None:
