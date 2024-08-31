@@ -2,6 +2,7 @@
 from typing import Any, Generator, List, Type, Union
 import itertools
 
+from exceptiongroup import ExceptionGroup
 import pytest
 
 from srctools import keyvalues as kv_mod
@@ -294,14 +295,47 @@ def test_lineno() -> None:
     assert raises.value.line_num == 5
     assert raises.value.filename is None
 
+
+def test_apply_filename() -> None:
+    """Test the apply_filename() context manager."""
+    block = Keyvalues('Block', [])
+    block.line_num = 85
+
     with pytest.raises(NoKeyError) as raises:
         with NoKeyError.apply_filename('ignored.vdf') as filename:
             assert filename == 'ignored.vdf'
             with NoKeyError.apply_filename('inner.vdf'):
-                comment_checks.find_key('MissingKey')
+                block.find_key('MissingKey')
     assert raises.value.key == 'MissingKey'
-    assert raises.value.line_num == 35
+    assert raises.value.line_num == 85
     assert raises.value.filename == 'inner.vdf'
+
+    outer_group = ExceptionGroup('outer', [
+        val_err := ValueError('unrelated'),
+        outer_err := NoKeyError('OuterKey', 12),
+        inner_group := ExceptionGroup('inner', [
+            already_set := NoKeyError('AlreadySet', 14, 'another.kv'),
+            inner_err := NoKeyError('InnerKey', 48),
+        ]),
+    ])
+
+    with pytest.raises(ExceptionGroup) as raises_group:
+        with NoKeyError.apply_filename('test_filename.vdf'):
+            raise outer_group
+    assert raises_group.value is outer_group
+    assert val_err.args == ('unrelated', )
+
+    assert outer_err.key == 'OuterKey'
+    assert outer_err.filename == 'test_filename.vdf'
+    assert outer_err.line_num == 12
+
+    assert already_set.key == 'AlreadySet'
+    assert already_set.filename == 'another.kv'
+    assert already_set.line_num == 14
+
+    assert inner_err.key == 'InnerKey'
+    assert inner_err.filename == 'test_filename.vdf'
+    assert inner_err.line_num == 48
 
 
 def test_build() -> None:

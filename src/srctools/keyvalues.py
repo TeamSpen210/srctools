@@ -71,6 +71,8 @@ import sys
 import types
 import warnings
 
+from exceptiongroup import BaseExceptionGroup
+
 from srctools import BOOL_LOOKUP, EmptyMapping, StringPath
 from srctools.math import Vec as _Vec
 from srctools.tokenizer import (
@@ -135,11 +137,12 @@ class NoKeyError(LookupError):
 
     @staticmethod
     def apply_filename(filename: str) -> ContextManager[str, None]:
-        """Applies a filename to all :py:class:`NoKeyError`s raised inside this scope.
+        """Applies a filename to any :py:class:`NoKeyError` raised inside this scope.
 
         This will cause the errors to display that filename. Has no effect if the filename
         was already set, potentially by another :py:func:`apply_filename` call closer to the
         exception source.
+        This recurses into any raised :py:class:`ExceptionGroup`.
         """
         return _FilenameSetter(filename)
 
@@ -158,8 +161,21 @@ class _FilenameSetter(ContextManager[str, None]):
         exc_val: Optional[BaseException],
         exc_tb: Optional[types.TracebackType],
     ) -> None:
-        if isinstance(exc_val, NoKeyError) and exc_val.filename is None:
-            exc_val.filename = self.filename
+        if exc_val is None:
+            return
+        if isinstance(exc_val, NoKeyError):
+            if exc_val.filename is None:
+                exc_val.filename = self.filename
+        elif isinstance(exc_val, BaseExceptionGroup):
+            self._modify_group(exc_val)
+
+    def _modify_group(self, group: BaseExceptionGroup) -> None:
+        """Recursively modify ExceptionGroups."""
+        for exc in group.exceptions:
+            if isinstance(exc, BaseExceptionGroup):
+                self._modify_group(exc)
+            elif isinstance(exc, NoKeyError) and  exc.filename is None:
+                exc.filename = self.filename
 
 
 class LeafKeyvalueError(ValueError):
