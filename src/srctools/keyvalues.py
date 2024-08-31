@@ -169,7 +169,7 @@ class _FilenameSetter(ContextManager[str, None]):
         elif isinstance(exc_val, BaseExceptionGroup):
             self._modify_group(exc_val)
 
-    def _modify_group(self, group: BaseExceptionGroup) -> None:
+    def _modify_group(self, group: BaseExceptionGroup[BaseException]) -> None:
         """Recursively modify ExceptionGroups."""
         for exc in group.exceptions:
             if isinstance(exc, BaseExceptionGroup):
