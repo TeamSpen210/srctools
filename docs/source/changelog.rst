@@ -24,6 +24,7 @@ Version (dev)
 * Add :py:attr:`Solid.is_cordon <srctools.vmf.Solid.is_cordon>` to replace
   :py:attr:`cordon_solid <srctools.vmf.Solid.is_cordon>`, better representing its boolean nature.
 * Fix #29: Fix ``0x03`` characters causing an early EOF in the tokeniser.
+* Preserve passed in key casing in :py:meth:`~srctools.keyvalues.Keyvalues.find_key`/:py:meth:`~srctools.keyvalues.Keyvalues.find_blovk`'s return values.
 
 --------------
 Version 2.3.17

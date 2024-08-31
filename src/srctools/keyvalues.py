@@ -638,10 +638,10 @@ class Keyvalues:
         """
         if not isinstance(self._value, list):
             raise LeafKeyvalueError(self, 'find a key in')
-        key = key.casefold()
+        folded = key.casefold()
         kv: Keyvalues
         for kv in reversed(self._value):
-            if kv._folded_name == key:
+            if kv._folded_name == folded:
                 return kv
         if or_blank:
             return Keyvalues(key, [])
@@ -661,10 +661,10 @@ class Keyvalues:
         """
         if not isinstance(self._value, list):
             raise LeafKeyvalueError(self, 'find a sub-block in')
-        key = key.casefold()
+        folded = key.casefold()
         kv: Keyvalues
         for kv in reversed(self._value):
-            if kv._folded_name == key and kv.has_children():
+            if kv._folded_name == folded and kv.has_children():
                 return kv
         if or_blank:
             return Keyvalues(key, [])
@@ -691,11 +691,11 @@ class Keyvalues:
         """
         if not isinstance(self._value, list):
             raise LeafKeyvalueError(self, 'find a key in')
-        key = key.casefold()
+        folded = key.casefold()
         kv: Keyvalues
         block_kv = False
         for kv in reversed(self._value):
-            if kv._folded_name == key:
+            if kv._folded_name == folded:
                 if kv.has_children():
                     block_kv = True
                 else:

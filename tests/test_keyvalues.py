@@ -751,8 +751,8 @@ def test_search() -> None:
     assert test1.find_key('keY1') is kEy1
     assert test1.find_key('key2') is key2
     # Default values.
-    assert test1.find_key('missing', '45') == Keyvalues('missing', '45')
-    assert test1.find_key('missing', or_blank=True) == Keyvalues('missing', [])
+    assert_tree(test1.find_key('missINg', '45'), Keyvalues('missINg', '45'))
+    assert_tree(test1.find_key('mIssing', or_blank=True), Keyvalues('mIssing', []))
     assert test1.find_key('key1', '45') is kEy1
     assert test1.find_key('key1', or_blank=True) is kEy1
 
@@ -762,17 +762,22 @@ def test_search() -> None:
 
     assert list(test1.find_all('Key1')) == [key1, kEy1]
 
-    with pytest.raises(IndexError):
-        test1['notpresent']
-    with pytest.raises(NoKeyError):
-        test1.find_key('nonpresent')
+    with pytest.raises(IndexError) as ind:
+        test1['notPresent']
+    assert isinstance(ind.value.__cause__, NoKeyError)
+    assert ind.value.__cause__.key == 'notPresent'
+    with pytest.raises(NoKeyError) as nokey:
+        test1.find_key('nonPresent')
+    assert nokey.value.key == 'nonPresent'
     # Find_block ignores leaf keys.
-    with pytest.raises(NoKeyError):
-        test1.find_block('key1')
-    with pytest.raises(NoKeyError):
+    with pytest.raises(NoKeyError) as nokey:
+        test1.find_block('kEy1')
+    assert nokey.value.key == 'kEy1'
+    with pytest.raises(NoKeyError) as nokey:
         test1.find_block('Block2')
+    assert nokey.value.key == 'Block2'
     assert test1.find_block('blOCk1') is bLock1
-    assert test1.find_block('Block2', or_blank=True) == Keyvalues('Block2', [])
+    assert_tree(test1.find_block('Block2', or_blank=True), Keyvalues('Block2', []))
 
 
 def test_getitem() -> None:
