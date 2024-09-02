@@ -1207,8 +1207,8 @@ class _EntityView(Generic[T]):
 
         yield getattr(ent, self._attr)
         for base in ent.bases:
-            assert isinstance(base, EntityDef)
-            yield from self._maps(base)
+            if isinstance(base, EntityDef):
+                yield from self._maps(base)
 
     def __getitem__(self, name: Union[str, Tuple[str, Collection[str]]]) -> T:
         """Lookup the value in the entity.
@@ -1546,7 +1546,7 @@ class EntityDef:
                 entity.resources = resources
             else:
                 # noinspection PyProtectedMember
-                tags, kv_def = KVDef._parse(fgd, io_type, tok, entity.classname)
+                tags, kv_def = KVDef._parse(fgd, token_value, tok, entity.classname)
                 kv_tags_map = entity.keyvalues.setdefault(kv_def.name.casefold(), {})
                 if not kv_tags_map:
                     # New, add to the ordering.

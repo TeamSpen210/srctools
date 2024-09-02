@@ -6,6 +6,11 @@ Changelog
 	:backlinks: none
 
 -------------
+Version (dev)
+-------------
+* Fix casing not being preserved for names of FGD keyvalues during parsing.
+
+-------------
 Version 2.3.4
 -------------
 * Added :py:mod:`srctools.choreo`, for parsing choreographed scenes.

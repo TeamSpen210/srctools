@@ -73,7 +73,7 @@ appliesto(tag1, tag2, !tag3)
 + "multiple lines."
     [
     keyvalue1(string): "Name" : "default": "documentation"
-    keyvalue2(int): "Hi": 4
+    keyVAlue2(int): "Hi": 4
     keyvalue1[tag](boolean): "Tagged Name": 0
     target(target_destination): "An ent"
     
@@ -84,6 +84,10 @@ appliesto(tag1, tag2, !tag3)
         8 : "D value" : 0 [old, !good]
         8 : "E" : 1 [new]
     ]
+    
+    input Trigger(void): "Trigger the entity."
+    output OnTrigger(void): "Handle triggering."
+    output OnTrigger[adv](float): "Handle triggering, with value."
     
     choicelist(choices) : "A Choice" : 0 : "Blahdy blah" = 
         [
@@ -125,7 +129,7 @@ appliesto(tag1, tag2, !tag3)
         '',
     )
     assert ent.kv['keyvalue2'] == KVDef(
-        'keyvalue2',
+        'keyVAlue2',
         ValueTypes.INT,
         'Hi',
         '4',
@@ -158,6 +162,22 @@ appliesto(tag1, tag2, !tag3)
             ('2', 'Third', frozenset()),
             ('four', 'Fourth', frozenset()),
         ],
+    )
+
+    assert ent.inp['trigger'] == IODef(
+        'Trigger',
+        ValueTypes.VOID,
+        'Trigger the entity.'
+    )
+    assert ent.out['onTrigger', set()] == IODef(
+        'OnTrigger',
+        ValueTypes.VOID,
+        'Handle triggering.'
+    )
+    assert ent.out['onTrigger', {'adv'}] == IODef(
+        'OnTrigger',
+        ValueTypes.FLOAT,
+        'Handle triggering, with value.'
     )
 
 
