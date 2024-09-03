@@ -22,8 +22,8 @@ author = 'TeamSpen210'
 try:
     release = os.environ['READTHEDOCS_VERSION_NAME']
 except KeyError:
-    import srctools
-    release = srctools.__version__
+    import importlib.metadata
+    release = importlib.metadata.version('srctools')
 
 
 # -- General configuration ---------------------------------------------------
