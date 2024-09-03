@@ -1,7 +1,7 @@
 project(
     'srctools',
     'cython', 'c', 'cpp',
-    version: '2.3.14',
+    version: '2.4.0',
     )
 
 fs = import('fs')

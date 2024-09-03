@@ -10,24 +10,12 @@ from types import TracebackType
 import io
 import itertools as _itertools
 import os as _os
-import sys as _sys
 import warnings
 
 from useful_types import SupportsKeysAndGetItem
 
 
-__version__: str
-if not TYPE_CHECKING:
-    try:
-        from ._version import __version__
-    except ImportError:
-        __version__ = '<unknown>'
-    else:
-        # Discard the now-useless module. Use globals so static analysis ignores this.
-        del _sys.modules[globals().pop('_version').__name__]
-
 __all__ = [
-    '__version__',
     'Vec', 'FrozenVec', 'parse_vec_str', 'lerp',
     'Angle', 'FrozenAngle', 'Matrix', 'FrozenMatrix',
 
@@ -589,6 +577,7 @@ _py_conv_bool = _cy_conv_bool = conv_bool
 
 if TYPE_CHECKING:
     Property = Keyvalues  #: :deprecated: Use srctools.Keyvalues.
+    __version__: str  #: :deprecated: Use importlib.metadata instead.
 else:
     def __getattr__(name: str) -> object:
         if name == 'Property':
@@ -598,6 +587,14 @@ else:
                 stacklevel=2,
             )
             return Keyvalues
+        elif name == '__version__':
+            warnings.warn(
+                'Use importlib.metadata instead.',
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            from importlib.metadata import version
+            return version('srctools')
         raise AttributeError(name)
 
     try:

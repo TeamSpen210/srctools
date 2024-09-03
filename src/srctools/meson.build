@@ -7,6 +7,7 @@ pure_python = files(
     '_shaderdb.py',
     'binformat.py',
     'bsp.py',
+    'choreo.py',
     'cmdseq.py',
     'const.py',
     'dmx.py',
@@ -36,11 +37,6 @@ pure_python += files(
     'py.typed',
     'fgd.lzma',
 )
-
-pure_python += vcs_tag(
-    input: '_version.input.py',
-    output: '_version.py',
-).full_path()
 
 py.install_sources(pure_python, subdir: 'srctools')
 
