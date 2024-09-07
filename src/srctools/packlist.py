@@ -792,7 +792,9 @@ class PackList:
         ])
 
         buf = io.BytesIO()
-        manifest.serialise(io.TextIOWrapper(buf, encoding='cp1252'))
+        wrapper = io.TextIOWrapper(buf, encoding='cp1252')
+        manifest.serialise(wrapper)
+        wrapper.detach()
         self.pack_file('scripts/game_sounds_manifest.txt', FileType.GENERIC, buf.getvalue())
 
     def write_particles_manifest(self, manifest_name: str) -> None:
@@ -804,7 +806,9 @@ class PackList:
             manifest.append(Keyvalues('file', filename))
 
         buf = io.BytesIO()
-        manifest.serialise(io.TextIOWrapper(buf, encoding='cp1252'))
+        wrapper = io.TextIOWrapper(buf, encoding='cp1252')
+        manifest.serialise(wrapper)
+        wrapper.detach()
         self.pack_file(manifest_name, FileType.GENERIC, buf.getvalue())
 
     def pack_from_bsp(self, bsp: BSP) -> None:

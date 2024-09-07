@@ -9,6 +9,8 @@ Changelog
 Version (dev)
 -------------
 * Fix casing not being preserved for names of FGD keyvalues during parsing.
+* Fix :py:meth:`PackList.write_soundscript_manifest() <srctools.packlist.PackList.write_soundscript_manifest>`,
+:py:meth:`~srctools.packlist.PackList.write_particles_manifest` and :py:meth:`~srctools.packlist.PackList.write_manifest` trying to write to a closed file.
 
 -------------
 Version 2.3.4
