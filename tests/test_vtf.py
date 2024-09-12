@@ -106,9 +106,6 @@ def test_load(
 
     These samples were created using VTFEdit Reloaded.
     """
-    if fmt.name in ("ATI1N", "ATI2N"):
-        pytest.xfail("VTFEdit doesn't support these.")
-
     with open(datadir / f"sample_{fmt.name.lower()}.vtf", "rb") as f:
         vtf = VTF.read(f)
         assert vtf.format is fmt
@@ -125,6 +122,22 @@ def test_load(
         basename=f"test_load_{cy_py_format_funcs}_{fmt.name.lower()}",
         check_fn=compare_img,
     )
+
+
+@pytest.mark.parametrize("fmt", FORMATS, ids=lambda fmt: fmt.name.lower())
+def test_load_header_only(
+    fmt: ImageFormats,
+    datadir: Path,
+) -> None:
+    """Test loading only the header."""
+    with open(datadir / f"sample_{fmt.name.lower()}.vtf", "rb") as f:
+        vtf = VTF.read(f, header_only=True)
+        assert vtf.format is fmt
+    # Check loading doesn't need the stream, it's not using them.
+    img = vtf.get().to_PIL()
+    # Check image is 64x64 and fully black.
+    assert img.size == (64, 64)
+    assert img.getextrema() == ((0, 0), (0, 0), (0, 0), (255, 255))
 
 
 @pytest.mark.parametrize("fmt", FORMATS, ids=lambda fmt: fmt.name.lower())

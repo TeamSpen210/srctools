@@ -3,7 +3,8 @@
 This is designed to be used with the `Python Imaging Library`_ to do the editing of pixels or
 saving/loading standard image files.
 
-To compress to DXT formats, this uses the `libsquish`_ library.
+To compress to DXT formats, this uses the `libsquish`_ library. Currently, 16-bit HDR formats are
+not supported, only metdata can be read.
 
 .. _`Python Imaging Library`: https://pillow.readthedocs.io/en/stable/
 .. _`libsquish`: https://sourceforge.net/projects/libsquish/
@@ -377,7 +378,7 @@ class Frame:
         if getattr(stream, 'closed', False):
             warnings.warn(
                 'VTF image frame read after stream was closed!\n'
-                'If passing in a stream, close the VTF before closing '
+                'If passing in a stream, load the VTF before closing '
                 'the file.',
                 ResourceWarning,
                 source=stream,
@@ -690,8 +691,13 @@ class VTF:
         self.mipmap_count = mip_count
 
     @classmethod
-    def read(cls: 'Type[VTF]', file: IO[bytes]) -> 'VTF':
-        """Read in a VTF file."""
+    def read(cls: 'Type[VTF]', file: IO[bytes], header_only: bool = False) -> 'VTF':
+        """Read in a VTF file.
+
+        :param file: The file to read from, must be seekable.
+        :param header_only: If set, only read metadata, skip the frames entirely.
+           If accessed the image data will be opaque black.
+        """
         signature = file.read(4)
         if signature != b'VTF\0':
             raise ValueError('Bad file signature!')
@@ -799,12 +805,12 @@ class VTF:
         if high_res_offset < 0:
             raise ValueError('Missing main image resource!')
 
-        # We don't implement these high-res formats.
+        # We don't implement these high-res formats, just return metadata.
         if fmt is ImageFormats.RGBA16161616 or fmt is ImageFormats.RGBA16161616F:
-            return vtf
+            header_only = True
 
         vtf._low_res = Frame(low_width, low_height)
-        if low_fmt is not ImageFormats.NONE:
+        if low_fmt is not ImageFormats.NONE and not header_only:
             if low_res_offset < 0:
                 raise ValueError('Missing low-res thumbnail resource!')
             vtf._low_res._fileinfo = (file, low_res_offset, low_fmt)
@@ -819,9 +825,10 @@ class VTF:
                         depth_or_cube,
                         data_mipmap,
                     ] = Frame(mip_width, mip_height)
-                    # noinspection PyProtectedMember
-                    frame._fileinfo = (file, high_res_offset, fmt)
-                    high_res_offset += fmt.frame_size(mip_width, mip_height)
+                    if not header_only:
+                        # noinspection PyProtectedMember
+                        frame._fileinfo = (file, high_res_offset, fmt)
+                        high_res_offset += fmt.frame_size(mip_width, mip_height)
         return vtf
 
     def save(
@@ -955,6 +962,7 @@ class VTF:
         exc_type: Type[BaseException], exc_val: BaseException, exc_tb: types.TracebackType,
     ) -> None:
         """Close the streams if any frames still have them open."""
+        self._low_res._fileinfo = None
         for frame in self._frames.values():
             frame._fileinfo = None
 
