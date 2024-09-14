@@ -6,6 +6,7 @@ from dirty_equals import IsList
 from pytest_regressions.file_regression import FileRegressionFixture
 import pytest
 
+from helpers import ExactType
 from srctools import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Keyvalues, Matrix, Vec
 from srctools.vmf import (
     VMF, Axis, Entity, Output, Strata2DViewport, Strata3DViewport,
@@ -61,6 +62,18 @@ class KVEnum(Enum):
     NONE = 2.0
 
 
+class StrClass(str):
+    """A string subclass."""
+
+
+class FloatClass(str):
+    """A float subclass."""
+
+
+class IntClass(str):
+    """An integer subclass."""
+
+
 def test_valid_kvs() -> None:
     """Test valid KV conversions."""
     assert conv_kv(4.7) == "4.7"
@@ -74,7 +87,13 @@ def test_valid_kvs() -> None:
     assert conv_kv(FrozenAngle(12.5, 90, 0.0)) == "12.5 90 0"
     assert conv_kv(Matrix.from_roll(30)) == "0 0 30"
     assert conv_kv(FrozenMatrix.from_roll(30)) == "0 0 30"
-    assert conv_kv(KVEnum.PREFIX) == "0"
+    assert conv_kv(KVEnum.PREFIX) == ExactType("0")
+    assert conv_kv(KVEnum.SUFFIX) == ExactType("1")
+    assert conv_kv(KVEnum.NONE) == ExactType("2")
+    # Check subclasses are valid, and produce the same types.
+    assert conv_kv(StrClass("subclass")) == ExactType("subclass")
+    assert conv_kv(FloatClass(4.7)) == ExactType("4.7")
+    assert conv_kv(IntClass(8)) == ExactType("8")
 
 
 def test_entkey_basic() -> None:

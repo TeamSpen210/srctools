@@ -8,10 +8,11 @@ Changelog
 -------------
 Version (dev)
 -------------
+* Add `header_only` option for :py:meth:`VTF.read() <srctools.vtf.VTF.read>`, allowing reading only metadata if the image is not required.
 * Fix casing not being preserved for names of FGD keyvalues during parsing.
 * Fix :py:meth:`PackList.write_soundscript_manifest() <srctools.packlist.PackList.write_soundscript_manifest>`,
-:py:meth:`~srctools.packlist.PackList.write_particles_manifest` and :py:meth:`~srctools.packlist.PackList.write_manifest` trying to write to a closed file.
-* Add `header_only` option for :py:meth:`VTF.read() <srctools.vtf.VTF.read>`, allowing reading only metadata if the image is not required.
+    :py:meth:`~srctools.packlist.PackList.write_particles_manifest` and :py:meth:`~srctools.packlist.PackList.write_manifest` trying to write to a closed file.
+* Handle string/int/float subclasses being assigned to VMF keys.
 
 -------------
 Version 2.3.4
