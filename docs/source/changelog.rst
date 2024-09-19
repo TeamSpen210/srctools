@@ -13,6 +13,8 @@ Version (dev)
 * Fix :py:meth:`PackList.write_soundscript_manifest() <srctools.packlist.PackList.write_soundscript_manifest>`,
     :py:meth:`~srctools.packlist.PackList.write_particles_manifest` and :py:meth:`~srctools.packlist.PackList.write_manifest` trying to write to a closed file.
 * Handle string/int/float subclasses being assigned to VMF keys.
+* Add `single_block` argument to :py:meth:`Keyvalues.parse() <srctools.keyvalues.Keyvalues.parse>`,
+  allowing parsing blocks in the middle of a document.
 
 -------------
 Version 2.3.4

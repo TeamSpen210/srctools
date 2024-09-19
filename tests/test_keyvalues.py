@@ -210,7 +210,7 @@ parse_result = Keyvalues.root(
             ]),
         ]),
     ]),
-    P('Root2', [
+    RESULT_ROOT2 := P('Root2', [
         P('Name with " in it', 'Value with \" inside'),
         P('multi+line',
           'text\n\tcan continue\nfor many "lines" of\n  possibly indented\n\ntext'
@@ -307,6 +307,38 @@ def test_lineno() -> None:
     assert raises.value.key == 'MissingKey'
     assert raises.value.line_num == 5
     assert raises.value.filename is None
+
+
+def test_single_block(py_c_token: Type[Tokenizer]) -> None:
+    """Test the single_block option for parsing."""
+    tokenizer = py_c_token(parse_test, string_bracket=True)
+    # Skip to the root2 section.
+    for tok, tok_value in tokenizer:
+        if tok is Token.STRING and tok_value == 'Root2':
+            tokenizer.push_back(tok, tok_value)
+            break
+    result = Keyvalues.parse(tokenizer, single_block=True)
+    assert_tree(result, RESULT_ROOT2)
+    # We continue immediately after the brace.
+    # Check that matches, then skip down to the next leaf.
+    tokenizer.expect(Token.NEWLINE)
+    assert tokenizer.expect(Token.STRING) == 'CommentChecks'
+    tokenizer.expect(Token.NEWLINE)
+    tokenizer.expect(Token.BRACE_OPEN)
+    # Check a leaf is output.
+    result = Keyvalues.parse(tokenizer, single_block=True)
+    assert_tree(result, Keyvalues('after ', 'value'))
+
+    # Next has a disabled flag, check we skip to the actual next value.
+    result = Keyvalues.parse(
+        tokenizer,
+        single_block=True,
+        flags={
+            'test_enabled': True,
+            'test_disabled': False,
+        },
+    )
+    assert_tree(result, Keyvalues('Flag', 'allowed'))
 
 
 def test_apply_filename() -> None:

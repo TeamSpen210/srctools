@@ -367,6 +367,7 @@ class Keyvalues:
         newline_values: bool = True,
         allow_escapes: bool = True,
         single_line: bool = False,
+        single_block: bool = False,
     ) -> "Keyvalues":
         """Returns a Keyvalues tree parsed from given text.
 
@@ -374,11 +375,14 @@ class Keyvalues:
         file_contents may be an already created tokenizer. In this case ``allow_escapes`` is ignored.
         :param filename: If set this should be the source of the text for debug purposes. If not \
         supplied, ``file_contents.name`` will be used if present.
+        :param single_block: If set, parse a single keyvalues block, instead of a file with multiple
+        roots. Importantly this will exit after hitting this brace, allowing it to be called in
+        the middle of parsing a larger document.
         :param flags: This should be a mapping for additional ``[flag]`` suffixes to accept.
         :param allow_escapes: This allows choosing if ``\\t`` or similar escapes are parsed.
         :param single_line: If this is set, allow multiple keyvalues to be on the same line. \
         This means unterminated strings will be caught late (if at all), but it allows parsing \
-        some 'internal' data blocks.
+        some generated data blocks inside things like `.PHY` files.
         :param newline_keys: This specifies if newline characters are allowed in keys. \
         Keys are prohibited by default, since this is fairly useless, but if quote characters are \
         mismatched it'll catch the mistake early.
@@ -532,6 +536,9 @@ class Keyvalues:
                                 cur_block_contents.append(keyvalue)
                             # Can't do twice in a row
                             can_flag_replace = False
+                        else:
+                            # Flag was disabled, so ignore this block.
+                            continue  # Skip the single_block check below.
                     elif flag_token is STRING:
                         # Specifically disallow multiple text on the same line
                         # normally.
@@ -552,6 +559,9 @@ class Keyvalues:
                         cur_block_contents.append(keyvalue)
                         can_flag_replace = True
                         tokenizer.push_back(flag_token, flag_val)
+                    if single_block and cur_block is root:
+                        # The 'single block' turned out to be just a value, return it.
+                        return keyvalue
                     continue
                 else:
                     # Something else - treat this as a block, and
@@ -576,6 +586,10 @@ class Keyvalues:
                         'An extra closing bracket was added which would '
                         'close the outermost level.',
                     ) from None
+                if single_block and cur_block is root:
+                    # Single-block mode - we just exited out of the main block.
+                    # Return our child.
+                    return root[0]
                 # We know this isn't a leaf KV, we made it earlier.
                 assert not isinstance(cur_block._value, str)
                 cur_block_contents = cur_block._value
