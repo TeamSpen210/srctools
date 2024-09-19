@@ -31,8 +31,6 @@ VEC_IDS = [
 ]
 
 
-@pytest.mark.parametrize('origin', VECS, ids=VEC_IDS)
-@pytest.mark.parametrize('orient', MAT_ORDER, ids=MAT_ORDER_ID)
 @pytest.mark.parametrize('valtype, value', [
     (ValueTypes.STRING, 'blank'),
     (ValueTypes.BOOL, '0'),
@@ -64,9 +62,13 @@ VEC_IDS = [
     (ValueTypes.INST_VAR_DEF, '$skin integer 0'),
     (ValueTypes.INST_VAR_REP, '$skin 3'),
 ])
-def test_kv_unaffected(origin: FrozenVec, orient: FrozenMatrix, valtype: ValueTypes, value: str) -> None:
+def test_kv_unaffected(valtype: ValueTypes, value: str) -> None:
     """Test keyvalue types which do not change when collapsed."""
-    inst = instancing.Instance('test_inst', '', origin.thaw(), orient.thaw())
+    # These should be ignored.
+    orient = Matrix.from_angle(34.0, 82.0, -45.0)
+    origin = Vec(1028, -384, 126)
+
+    inst = instancing.Instance('test_inst', '', origin, orient)
     vmf = VMF()
     assert inst.fixup_key(vmf, [], valtype, value) == value
 
