@@ -1,5 +1,5 @@
 """Test the keyvalues module."""
-from typing import Any, Generator, List, Type, Union
+from typing import Generator, List, Type, Union
 import itertools
 
 from exceptiongroup import ExceptionGroup
@@ -8,27 +8,30 @@ import pytest
 from srctools import keyvalues as kv_mod
 from srctools.keyvalues import KeyValError, Keyvalues, LeafKeyvalueError, NoKeyError
 # noinspection PyProtectedMember
-from srctools.tokenizer import Cy_Tokenizer, Py_Tokenizer, Tokenizer
+from srctools.tokenizer import (
+    Cy_BaseTokenizer, Cy_Tokenizer, Py_BaseTokenizer, Py_Tokenizer,
+    Tokenizer, Token,
+)
 
 
 if Cy_Tokenizer is not None:
-    parms = [Cy_Tokenizer, Py_Tokenizer]
+    parms = [(Cy_Tokenizer, Cy_BaseTokenizer), (Py_Tokenizer, Py_BaseTokenizer)]
     ids = ['Cython tokenizer', 'Python tokenizer']
 else:
     pytest.fail('No _tokenizer')
-    parms = [Py_Tokenizer]
+    parms = [(Py_Tokenizer, Py_BaseTokenizer)]
     ids = ['Python tokenizer']
 
 
 @pytest.fixture(params=parms, ids=ids)
-def py_c_token(request: Any) -> Generator[None, None, None]:
+def py_c_token(request) -> Generator[type[Tokenizer], None, None]:
     """Run the test twice, for the Python and C versions of Tokenizer."""
-    orig_tok = kv_mod.Tokenizer
+    orig_tok = kv_mod.Tokenizer, kv_mod.BaseTokenizer
     try:
-        kv_mod.Tokenizer = request.param
-        yield None
+        kv_mod.Tokenizer, kv_mod.BaseTokenizer = request.param
+        yield request.param[0]
     finally:
-        kv_mod.Tokenizer = orig_tok
+        kv_mod.Tokenizer, kv_mod.BaseTokenizer = orig_tok
 
 
 def assert_tree(first: Keyvalues, second: Keyvalues, path: str = '') -> None:
@@ -267,6 +270,16 @@ def test_parse(py_c_token: Type[Tokenizer]) -> None:
 
     # Check serialise roundtrips.
     assert_tree(parse_result, Keyvalues.parse(parse_result.serialise()))
+
+    # Test parsing a tokenizer in manually.
+    result = Keyvalues.parse(
+        py_c_token(parse_test, string_bracket=True),
+        flags={
+            'test_enabled': True,
+            'test_disabled': False,
+        },
+    )
+    assert_tree(parse_result, result)
 
 
 def test_lineno() -> None:
