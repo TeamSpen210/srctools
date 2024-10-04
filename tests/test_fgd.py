@@ -4,6 +4,7 @@ import copy
 import io
 
 import pytest
+from pytest_regressions.file_regression import FileRegressionFixture
 
 from srctools import Vec, fgd as fgd_mod
 from srctools.fgd import (
@@ -79,8 +80,8 @@ appliesto(tag1, tag2, !tag3)
     
     spawnflags(flags) : "Flags" = [
         1 : "A" : 0
-        2 : "B" : 1
-        4 : "C" : 0
+        2 : "[2]  B" : 1
+        4 : "[48] C" : 0
         8 : "D value" : 0 [old, !good]
         8 : "E" : 1 [new]
     ]
@@ -143,7 +144,7 @@ appliesto(tag1, tag2, !tag3)
         val_list=[
             (1, 'A', False, frozenset()),
             (2, 'B', True, frozenset()),
-            (4, 'C', False, frozenset()),
+            (4, '[48] C', False, frozenset()),
             (8, 'D value', False, frozenset({'OLD', '!GOOD'})),
             (8, 'E', True, frozenset({'NEW'})),
         ],
@@ -415,7 +416,7 @@ def test_snippet_io(py_c_token) -> None:
     }
 
 
-def test_export_regressions(file_regression) -> None:
+def test_export_regressions(file_regression: FileRegressionFixture) -> None:
     """Generate a FGD file to ensure code doesn't unintentionally alter output."""
     fgd = FGD()
     base_origin = EntityDef(EntityTypes.BASE, 'Origin')
@@ -536,7 +537,35 @@ def test_export_regressions(file_regression) -> None:
 
     buf = io.StringIO()
     fgd.export(buf)
+    file_res = buf.getvalue()
+    direct_res = fgd.export()
+    # Check fgd.export() produces a string directly in the same way.
+    assert file_res == direct_res
+
     file_regression.check(buf.getvalue(), extension='.fgd')
+
+
+@pytest.mark.parametrize('label', [False, True])
+def test_export_spawnflag_label(file_regression: FileRegressionFixture, label: bool) -> None:
+    """Test both options for labelling spawnflags."""
+    fgd = FGD()
+    fgd.entities['demo_ent'] = ent = EntityDef(EntityTypes.ROPES, 'demo_ent')
+    ent.keyvalues['spawnflags'] = {frozenset(): KVDef(
+        'spawnflags',
+        ValueTypes.SPAWNFLAGS,
+        'Flags',
+        val_list=[
+            (1, 'A', False, frozenset()),
+            (2, 'B', True, frozenset()),
+            (4, 'C', False, frozenset()),
+            (8, 'D', False, frozenset()),
+            (8, 'E', True, frozenset({'NEW'})),
+        ],
+    )}
+
+    result = fgd.export(label_spawnflags=label)
+    assert ('"[4] C"' in result) is label
+    file_regression.check(result, extension='.fgd')
 
 
 @pytest.mark.parametrize('func', [

@@ -15,6 +15,7 @@ Version (dev)
 * Handle string/int/float subclasses being assigned to VMF keys.
 * Add `single_block` argument to :py:meth:`Keyvalues.parse() <srctools.keyvalues.Keyvalues.parse>`,
   allowing parsing blocks in the middle of a document.
+* Allow disabling the 'spawnflag labelling' FGD feature.
 
 -------------
 Version 2.3.4

@@ -480,9 +480,9 @@ def _parse_flags(
         )
     # Spawnflags can have a default, others may not.
     if len(vals) == 2:
-        return (spawnflag, vals[0], vals[1].strip() == '1', tags)
+        default = vals[1].strip() == '1'
     elif len(vals) == 1:
-        return (spawnflag, vals[0], True, tags)
+        default = True
     elif len(vals) == 0:
         raise tok.error('Expected value for spawnflags, got none!')
     else:
@@ -490,6 +490,13 @@ def _parse_flags(
             'Too many values for spawnflags definition in ({}):\n{}',
             error_desc, vals,
         )
+    name = vals[0]
+    # We optionally prepend [64] to spawnflags to show the numeric value.
+    # Make sure we strip those to prevent duplication.
+    generated_num = f'[{spawnflag}]'
+    if name.startswith(generated_num):
+        name = name[len(generated_num):].lstrip()
+    return spawnflag, name, default, tags
 
 
 def _parse_choices(
@@ -1024,7 +1031,12 @@ class KVDef(EntAttribute):
             reportable=show_in_report,
         )
 
-    def export(self, file: TextIO, tags: Collection[str] = ()) -> None:
+    def export(
+        self,
+        file: TextIO,
+        tags: Collection[str] = (),
+        label_spawnflags: bool = True,
+    ) -> None:
         """Write this back out to a FGD file."""
         file.write('\t' + self.name)
         if tags:
@@ -1069,7 +1081,12 @@ class KVDef(EntAttribute):
                 for index, name, flag_default, tags in self.flags_list:
                     file.write(f'\t\t{index}: ')
                     # Newlines aren't functional here, just replace.
-                    _write_longstring(file, f'[{index}] ' + name.replace('\n', ' '), indent='\t\t')
+                    name = name.replace('\n', ' ')
+                    _write_longstring(
+                        file,
+                        f'[{index}] {name}' if label_spawnflags else name,
+                        indent='\t\t',
+                    )
                     file.write(' : 1' if flag_default else ' : 0')
                     if tags:
                         file.write(f' [{", ".join(sorted(tags))}]\n')
@@ -1793,7 +1810,7 @@ class EntityDef:
                 else:
                     del category[key]
 
-    def export(self, file: TextIO) -> None:
+    def export(self, file: TextIO, label_spawnflags: bool = True) -> None:
         """Write the entity out to a FGD file."""
         # Make it look pretty: BaseClass
         file.write(f'@{self.type.value.title().replace("class", "Class")} ')
@@ -1843,7 +1860,7 @@ class EntityDef:
             key=lambda name_kv: kv_order.get(name_kv[0], 2**64),
         ):
             for tags, kv in kv_map.items():
-                kv.export(file, tags)
+                kv.export(file, tags, label_spawnflags)
 
         if self.inputs:
             file.write('\n\t// Inputs\n')
@@ -2077,15 +2094,25 @@ class FGD:
                 ent.resources = parent_resources
 
     @overload
-    def export(self, file: TextIO) -> None: ...
+    def export(
+        self, file: TextIO, *,
+        label_spawnflags: bool = True,
+    ) -> None: ...
 
     @overload
-    def export(self) -> str: ...
+    def export(
+        self, *,
+        label_spawnflags: bool = True,
+    ) -> str: ...
 
-    def export(self, file: Optional[TextIO] = None) -> Optional[str]:
-        """Write the FGD contents into a text file.
+    def export(
+        self, file: Optional[TextIO] = None, *,
+        label_spawnflags: bool = True,
+    ) -> Optional[str]:
+        """Write out the FGD file.
 
-        If none are provided, the text will be returned.
+        :param file: The file to write to. If `None`, the contents will be returned instead.
+        :param label_spawnflags: If set, prepend `[X]` to each spawnflag name to indicate the numeric value.
         """
         if file is None:
             string_buf = io.StringIO()
@@ -2158,7 +2185,7 @@ class FGD:
 
         for ent_def in self.sorted_ents():
             file.write('\n')
-            ent_def.export(file)
+            ent_def.export(file, label_spawnflags)
 
         if string_buf is not None:
             return string_buf.getvalue()
