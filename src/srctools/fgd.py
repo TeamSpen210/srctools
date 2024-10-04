@@ -1109,7 +1109,7 @@ class KVDef(EntAttribute):
                         file.write('\n')
             else:
                 raise AssertionError('No other types possible!')
-            file.write('\t\t]\n')
+            file.write('\t\t]')  # No newline, done unconditionally below.
 
         file.write('\n')
 

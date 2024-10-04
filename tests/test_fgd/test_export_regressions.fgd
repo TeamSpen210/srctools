@@ -27,7 +27,6 @@
 		8: "[8] D value" : 0 [!GOOD, OLD]
 		8: "[8] E" : 1 [NEW]
 		]
-
 	multichoice(choices) : "Multiple Choice" =
 		[
 		-1: "Loss"
@@ -35,7 +34,6 @@
 		1: "Win"
 		"bad": "Very Bad" [NEW]
 		]
-
 	test_both(string) : "Both default and desc" : "defaulted" : "A description"
 	test_desc(string) : "just desc" : : "A description"
 	test_def(string) : "Just default" : "defaulted"
