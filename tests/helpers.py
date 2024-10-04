@@ -42,7 +42,7 @@ VALID_NUMS = [
 ]
 VALID_NUMS += [-x for x in VALID_NUMS]
 
-VALID_ZERONUMS = [*VALID_NUMS, 0, -0]
+VALID_ZERONUMS = [*VALID_NUMS, 0, -0, 2.535047750982637e-175]
 
 # In SMD files the maximum precision is this, so it should be a good reference.
 EPSILON = 1e-6

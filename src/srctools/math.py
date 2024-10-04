@@ -1024,13 +1024,13 @@ class VecBase:
          direction.
          The vector is left unchanged if it is equal to ``(0, 0, 0)``, instead of raising.
          """
-        if self._x == 0.0 and self._y == 0.0 and self._z == 0.0:
+        mag = self.mag()
+        if mag == 0:
             # Don't do anything for this - otherwise we'd get division
             # by zero errors - we want this to be a valid normal!
             return self.copy()
         else:
             # Adding 0 clears -0 values - we don't want those.
-            mag = self.mag()
             return type(self)(
                 self._x / mag + 0,
                 self._y / mag + 0,

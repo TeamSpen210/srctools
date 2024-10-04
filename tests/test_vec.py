@@ -162,6 +162,9 @@ def test_vec_as_tuple(frozen_thawed_vec: VecClass) -> None:
     for x, y, z in iter_vec(VALID_ZERONUMS):
         # Check as_tuple() makes an equivalent tuple
         orig = Vec(x, y, z)
+        x = round(x, 6)
+        y = round(y, 6)
+        z = round(z, 6)
         with pytest.deprecated_call():
             tup = orig.as_tuple()
         assert isinstance(tup, tuple)
@@ -402,7 +405,7 @@ def test_mag(frozen_thawed_vec: VecClass) -> None:
         assert mag_sq == len_sq, "Exact equality, should be identical."
         assert len_sq == pytest.approx(x**2 + y**2 + z**2)
 
-        if x == y == z == 0:
+        if mag == 0:
             # Vec(0, 0, 0).norm() = 0, 0, 0
             # Not ZeroDivisionError
             assert_vec(vec.norm(), 0, 0, 0, type=Vec)
@@ -415,7 +418,7 @@ def test_contains(frozen_thawed_vec: VecClass) -> None:
     Vec = frozen_thawed_vec
     for num in VALID_NUMS:
         for x, y, z in iter_vec(VALID_NUMS):
-            assert (num in Vec(x, y, z)) == (num in [x, y, z])
+            assert (num in Vec(x, y, z)) == (abs(num - x) < 1e-6 or abs(num - y) < 1e-6 or abs(num - z) < 1e-6)
 
 
 def test_iteration(frozen_thawed_vec: VecClass) -> None:
@@ -939,7 +942,32 @@ def test_order(py_c_vec) -> None:
     Vec = vec_mod.Vec
     FrozenVec = vec_mod.FrozenVec
 
-    comp_ops = [op.eq, op.le, op.lt, op.ge, op.gt, op.ne]
+    def cmp_eq(a: float, b: float) -> bool:
+        return abs(a - b) < 1e-6
+
+    def cmp_ne(a: float, b: float) -> bool:
+        return abs(a - b) >= 1e-6
+
+    def cmp_le(a: float, b: float) -> bool:
+        return (a - b) <= 1e-6
+
+    def cmp_gt(a: float, b: float) -> bool:
+        return (a - b) > 1e-6
+
+    def cmp_lt(a: float, b: float) -> bool:
+        return (b - a) > 1e-6
+
+    def cmp_ge(a: float, b: float) -> bool:
+        return (b - a) <= 1e-6
+
+    comp_ops = [
+        (op.eq, cmp_eq),
+        (op.ne, cmp_ne),
+        (op.le, cmp_le),
+        (op.lt, cmp_lt),
+        (op.ge, cmp_ge),
+        (op.gt, cmp_gt),
+    ]
 
     def test(x1, y1, z1, x2, y2, z2):
         """Check a Vec pair for incorrect comparisons."""
@@ -948,24 +976,28 @@ def test_order(py_c_vec) -> None:
         fvec1 = FrozenVec(x1, y1, z1)
         fvec2 = FrozenVec(x2, y2, z2)
         vec2_tup = pytest.deprecated_call(Vec_tuple, x2, y2, z2)
-        for op_func in comp_ops:
-            if op_func is op.ne:
+        for op_func, float_func in comp_ops:
+            if float_func is cmp_ne:
                 # special-case - != uses or, not and
-                corr_result = x1 != x2 or y1 != y2 or z1 != z2
+                corr_result = float_func(x1, x2) or float_func(y1, y2) or float_func(z1, z2)
             else:
-                corr_result = op_func(x1, x2) and op_func(y1, y2) and op_func(z1, z2)
-            comp = (
-                f'Incorrect {op_func.__name__} comparison for '
-                f'{{}}({x1} {y1} {z1}) {op_func.__name__} {{}}({x2} {y2} {z2})'
-            )
-            assert corr_result == op_func(vec1, vec2), comp.format('Vec', 'Vec')
-            assert corr_result == op_func(fvec1, vec2), comp.format('FrozenVec', 'Vec')
-            assert corr_result == op_func(fvec1, vec2), comp.format('Vec', 'FrozenVec')
-            assert corr_result == op_func(fvec1, fvec2), comp.format('FrozenVec', 'FrozenVec')
-            assert corr_result == op_func(vec1, vec2_tup), comp.format('Vec', 'Vec_tuple')
-            assert corr_result == op_func(fvec1, vec2_tup), comp.format('FrozenVec', 'Vec_tuple')
-            assert corr_result == op_func(vec1, (x2, y2, z2)), comp.format('Vec', 'tuple')
-            assert corr_result == op_func(fvec1, (x2, y2, z2)), comp.format('FrozenVec', 'tuple')
+                corr_result = float_func(x1, x2) and float_func(y1, y2) and float_func(z1, z2)
+            for left, right in [
+                (vec1, vec2),
+                (fvec1, vec2),
+                (vec1, fvec2),
+                (fvec1, fvec2),
+                (vec1, vec2_tup),
+                (fvec1, vec2_tup),
+                (vec1, (x2, y2, z2)),
+                (fvec1, (x2, y2, z2))
+            ]:
+                # Assert rewriting doesn't work in this nested function?
+                if (res := op_func(vec1, vec2)) is not corr_result:
+                    pytest.fail((
+                        f'Incorrect {float_func.__name__} comparison for '
+                        f'{type(left)}({x1} {y1} {z1}) {op_func.__name__} {type(right)}({x2} {y2} {z2}) = {res}'
+                    ))
 
     for num in VALID_ZERONUMS:
         for num2 in VALID_ZERONUMS:
@@ -977,6 +1009,10 @@ def test_order(py_c_vec) -> None:
             test(num, num, num, 0, num2, num2)
             test(num, num, num, num, 0, num2)
             test(num, num, num, num, num, 0)
+            if abs(num - num2) > 1e-6:
+                for op_func, float_func in comp_ops:
+                    if op_func(num, num2) is not float_func(num, num2):
+                        pytest.fail(f'{op_func}, {float_func}, {num}, {num2}')
 
 
 def test_binop_fail(frozen_thawed_vec) -> None:
