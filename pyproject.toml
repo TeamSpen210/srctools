@@ -55,9 +55,12 @@ test = [
 
 
 [project.scripts]
-srctools_dump_parms = "srctools.scripts.dump_parms:main"
-srctools_diff = "srctools.scripts.diff:main"
-srctools_find_deps = "srctools.scripts.find_deps:main"
+src_dump_parms = "srctools.scripts.dump_parms:main"
+src_diff = "srctools.scripts.diff:main"
+src_find_deps = "srctools.scripts.find_deps:main"
+src_build_scenes = "srctools.scripts.build_scenes_image:main"
+src_mdl_mkdir = "srctools.scripts.make_model_folders:main"
+src_collapse_manifest = "srctools.scripts.collapse_manifest:main"
 
 [project.entry-points]
 pyinstaller40 = {hook-dirs="srctools._pyinstaller:get_hook_dirs"}
