@@ -448,6 +448,7 @@ def test_export_regressions(file_regression: FileRegressionFixture, custom_synta
     ent.helpers = [
         HelperSphere(255.0, 128.0, 64.0, 'radius'),
         HelperModel('models/editor/a_prop.mdl'),
+        HelperExtAppliesTo(['-episodic']),
         UnknownHelper('extrahelper', ['1', '15', 'thirtytwo']),
         HelperSize(Vec(-16, -16, -16), Vec(16, 16, 16)),
     ]

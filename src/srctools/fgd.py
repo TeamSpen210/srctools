@@ -206,6 +206,10 @@ RESTYPE_BY_NAME = {
     'break_chunk': FileType.BREAKABLE_CHUNK,
     'weapon_script': FileType.WEAPON_SCRIPT,
 }
+RESTYPE_TO_NAME = {
+    restype: name
+    for name, restype in RESTYPE_BY_NAME.items()
+}
 
 
 class EntityTypes(Enum):
@@ -1887,6 +1891,17 @@ class EntityDef:
             for out_map in self.outputs.values():
                 for tags, out in out_map.items():
                     out.export(file, 'output', tags if custom_syntax else ())
+
+        if custom_syntax and self.resources:
+            file.write('\n\t@resources\n\t\t[\n')
+            for res in self.resources:
+                file.write(f'\t\t{RESTYPE_TO_NAME[res.type]} "{escape_text(res.filename)}"')
+                if res.tags:
+                    file.write(f' [{", ".join(sorted(res.tags))}]\n')
+                else:
+                    file.write('\n')
+            file.write('\t\t]\n')
+
         file.write('\t]\n')
 
     def iter_bases(self, _done: Optional[Set[EntityDef]] = None) -> Iterator[EntityDef]:
