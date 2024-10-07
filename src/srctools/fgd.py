@@ -221,11 +221,12 @@ class EntityTypes(Enum):
     TRACK = 'moveclass'  #: Used for ``path_track`` etc
     FILTER = 'filterclass'  #: Used for filters.
     NPC = 'npcclass'  #: An NPC.
+    EXTEND = 'extendclass'  #: Modifies an existing entity entry (Hammer++ extension)
 
     @property
     def is_point(self) -> bool:
         """Return whether this is a point entity."""
-        return self.value not in ['baseclass', 'solidclass']
+        return self.value not in ['baseclass', 'solidclass', 'extendclass']
 
 
 class HelperTypes(Enum):
@@ -1333,11 +1334,13 @@ class EntityDef:
         tok: BaseTokenizer,
         ent_type: EntityTypes,
         eval_bases: bool = True,
+        eval_extensions: bool = True
     ) -> None:
         """Parse an entity definition from an FGD file.
 
         The ``@PointClass`` etc keyword should already have been read, and is passed as ``ent_type``.
         """
+
         entity = cls(ent_type)
 
         # First parse the bases part - lots of name(args) sections until an '='.
@@ -1485,8 +1488,6 @@ class EntityDef:
             else:
                 raise tok.error(doc_token, token_value)
 
-        fgd.entities[entity.classname.casefold()] = entity
-
         # Now apply EXT_AUTO_VISGROUP, since we have the classname.
         for auto_visgroup in ext_autovisgroups:
             for vis_parent, vis_name in zip(auto_visgroup, auto_visgroup[1:]):
@@ -1574,6 +1575,17 @@ class EntityDef:
                     # New, add to the ordering.
                     entity.kv_order.append(kv_def.name.casefold())
                 kv_tags_map[tags] = kv_def
+        
+        if eval_extensions and ent_type == EntityTypes.EXTEND:
+            # Check for if the entry already exists. If it does, extend it.
+            # Otherwise, we'll just store it in there...
+            try:
+                original_ent = fgd.entities[entity.classname.casefold()]
+                original_ent.extend(entity)
+            except KeyError:
+                fgd.entities[entity.classname.casefold()] = entity
+        else:
+            fgd.entities[entity.classname.casefold()] = entity
 
     @classmethod
     def engine_def(cls, classname: str) -> EntityDef:
@@ -1919,6 +1931,47 @@ class EntityDef:
             yield ent
             yield from ent.iter_bases(_done)
 
+    def extend(self, other: EntityDef) -> bool:
+        """Take another entity definition and extend this definition with its data.
+        
+        Returns true if any changes are made to the entity.
+        """
+        # Partially based on HA FGD import
+        # Note: assuming classname, type, kv_order, and is_alias don't change 
+        # TODO: Implement support for resources?
+
+        has_changes = False
+
+        # Directly overwrite the description if it's not empty
+        if len(other.desc) > 0:
+            self.desc = other.desc
+            has_changes = True
+
+        # Merge bases. We just combine overall...
+        for base in other.bases:
+            if base == self.classname:
+                continue
+            if base not in self.bases:
+                self.bases.append(base)
+                has_changes = True
+
+        # Merge helpers. We just combine overall...
+        for helper in other.helpers:
+            # Sorta ew, quadratic search. But helper sizes shouldn't get too big.
+            if helper not in self.helpers:
+                self.helpers.append(helper)
+                has_changes = True
+
+        # Directly copy over new keyvalues, inputs, and outputs
+        for cat in ('keyvalues', 'inputs', 'outputs'):
+            self_map: dict[str, dict[frozenset[str], EntityDef]] = getattr(self, cat)
+            other_map: dict[str, dict[frozenset[str], EntityDef]] = getattr(other, cat)
+            for name, tag_map in other_map.items():
+                self_map[name] = other_map[name]
+                has_changes = True # Just assuming they're different in some way or another 
+
+        return has_changes
+
 
 class FGD:
     """A FGD set for a game. May be composed of several files."""
@@ -2228,6 +2281,7 @@ class FGD:
         file: File[FileSysT],
         *,
         eval_bases: bool = True,
+        eval_extensions: bool = True,
         encoding: str = 'cp1252',
     ) -> None:
         """Parse one file (recursively if needed).
@@ -2272,6 +2326,7 @@ class FGD:
                         filesys,
                         include,
                         eval_bases=eval_bases,
+                        eval_extensions=eval_extensions,
                         encoding=encoding,
                     )
 
@@ -2355,7 +2410,7 @@ class FGD:
                             'Invalid Entity type "{}"!',
                             token_value[1:],
                         ) from None
-                    EntityDef.parse(self, tokeniser, ent_type, eval_bases)
+                    EntityDef.parse(self, tokeniser, ent_type, eval_bases, eval_extensions)
                 else:
                     raise tokeniser.error('Bad keyword {!r}', token_value)
 

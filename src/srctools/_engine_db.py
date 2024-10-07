@@ -58,6 +58,7 @@ class EntFlags(IntFlag):
     TYPE_TRACK = 0b100
     TYPE_FILTER = 0b101
     TYPE_NPC = 0b110
+    TYPE_EXTEND = 0b111
 
     MASK_TYPE = 0b111
 

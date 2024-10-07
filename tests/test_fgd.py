@@ -183,6 +183,89 @@ appliesto(tag1, tag2, !tag3)
     )
 
 
+def test_entity_extend(py_c_token) -> None:
+    """Verify handling ExtendClass."""
+    fsys = VirtualFileSystem({'test.fgd': """
+
+@PointClass base(Base1, Base2, Base3)
+sphere(radii)
+= some_entity: "Some description" 
+    [
+    keyvalue1(string): "Name" : "default": "documentation"
+    keyVAlue2(int): "Hi": 4
+    input Trigger(void): "Trigger the entity."
+    output OnTrigger(void): "Handle triggering."
+
+    ]
+
+@ExtendClass base(Base4, base_5)
+unknown(a, b, c)
+= some_entity: "New description" 
+    [
+    keyvalue3(string): "Name3" : "default3": "documentation3"
+    input Trigger2(void): "Trigger the entity."
+    output OnTrigger2(void): "Handle triggering."
+    ]
+
+"""})
+    fgd = FGD()
+    fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False, eval_extensions=True)
+    ent = fgd['Some_ENtity']
+    assert ent.type is EntityTypes.POINT
+    assert ent.classname == 'some_entity'
+    assert ent.desc == 'New description'
+    assert ent.bases == ['Base1', 'Base2', 'Base3', 'Base4', 'base_5']
+
+    assert ent.helpers == [
+        HelperSphere(255, 255, 255, 'radii'),
+        UnknownHelper('unknown', ['a', 'b', 'c']),
+    ]
+
+    assert ent.kv['keyvalue1'] == KVDef(
+        'keyvalue1',
+        ValueTypes.STRING,
+        'Name',
+        'default',
+        'documentation',
+    )
+    assert ent.kv['keyvalue2'] == KVDef(
+        'keyVAlue2',
+        ValueTypes.INT,
+        'Hi',
+        '4',
+        '',
+    )
+    assert ent.kv['keyvalue3'] == KVDef(
+        'keyvalue3',
+        ValueTypes.STRING,
+        'Name3',
+        'default3',
+        'documentation3',
+    )
+
+    assert ent.inp['trigger'] == IODef(
+        'Trigger',
+        ValueTypes.VOID,
+        'Trigger the entity.'
+    )
+    assert ent.out['onTrigger'] == IODef(
+        'OnTrigger',
+        ValueTypes.VOID,
+        'Handle triggering.'
+    )
+
+    assert ent.inp['trigger2'] == IODef(
+        'Trigger2',
+        ValueTypes.VOID,
+        'Trigger the entity.'
+    )
+    assert ent.out['onTrigger2'] == IODef(
+        'OnTrigger2',
+        ValueTypes.VOID,
+        'Handle triggering.'
+    )
+
+
 @pytest.mark.parametrize('code, is_readonly, is_report', [
     ('(int): "None"', False, False),
     ('(int) readonly: "Readonly"', True, False),
