@@ -217,12 +217,12 @@ class EntityTypes(Enum):
     TRACK = 'moveclass'  #: Used for ``path_track`` etc
     FILTER = 'filterclass'  #: Used for filters.
     NPC = 'npcclass'  #: An NPC.
-    EXTEND = 'extendclass' #: Modifies an existing entity entry (Hammer++ extension)
+    EXTEND = 'extendclass'  #: Modifies an existing entity entry (Hammer++ extension)
 
     @property
     def is_point(self) -> bool:
         """Return whether this is a point entity."""
-        return self.value not in ['baseclass', 'solidclass']
+        return self.value not in ['baseclass', 'solidclass', 'extendclass']
 
 
 class HelperTypes(Enum):
@@ -1572,7 +1572,8 @@ class EntityDef:
                 kv_tags_map[tags] = kv_def
         
         if eval_extensions and ent_type == EntityTypes.EXTEND:
-            # Check for if the entry already exists. If it does, extend it. Otherwise, we'll just store it in there...
+            # Check for if the entry already exists. If it does, extend it.
+            # Otherwise, we'll just store it in there...
             try:
                 original_ent = fgd.entities[entity.classname.casefold()]
                 original_ent.extend(entity)
@@ -1580,7 +1581,6 @@ class EntityDef:
                 fgd.entities[entity.classname.casefold()] = entity
         else:
             fgd.entities[entity.classname.casefold()] = entity
-        
 
     @classmethod
     def engine_def(cls, classname: str) -> EntityDef:
