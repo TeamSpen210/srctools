@@ -487,6 +487,14 @@ class HelperSprite(Helper):
         for material in materials:
             material = material.replace('\\', '/')
 
+            # Strip leading and trailing quotation marks if both present
+            if material.startswith('"') and material.endswith('"'):
+                material = material[1:-1]
+
+            # Don't append if the string is just empty!
+            if len(material) == 0:
+                continue
+
             if not material.casefold().endswith('.vmt'):
                 material += '.vmt'
             if not material.casefold().startswith('materials/'):
@@ -551,6 +559,14 @@ class HelperModel(Helper):
 
         for mdl in models:
             mdl = mdl.replace('\\', '/')
+
+            # Strip leading and trailing quotation marks if both present
+            if mdl.startswith('"') and mdl.endswith('"'):
+                mdl = mdl[1:-1]
+
+            # Don't append if the string is just empty!
+            if len(mdl) == 0:
+                continue
 
             if not mdl.casefold().endswith('.mdl'):
                 mdl += '.mdl'
