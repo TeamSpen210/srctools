@@ -9,9 +9,10 @@ from pytest_regressions.file_regression import FileRegressionFixture
 from srctools import Vec, fgd as fgd_mod
 from srctools.fgd import (
     FGD, AutoVisgroup, EntityDef, EntityTypes, HelperExtAppliesTo, HelperHalfGridSnap,
-    HelperLine, HelperModel, HelperSize, HelperSphere, IODef, KVDef, Snippet,
+    HelperLine, HelperModel, HelperSize, HelperSphere, IODef, KVDef, Resource, Snippet,
     UnknownHelper, ValueTypes,
 )
+from srctools.const import FileType
 from srctools.filesys import VirtualFileSystem
 # noinspection PyProtectedMember
 from srctools.tokenizer import Cy_Tokenizer, Py_Tokenizer
@@ -416,7 +417,8 @@ def test_snippet_io(py_c_token) -> None:
     }
 
 
-def test_export_regressions(file_regression: FileRegressionFixture) -> None:
+@pytest.mark.parametrize('custom_syntax', [False, True], ids=['vanilla', 'custom'])
+def test_export_regressions(file_regression: FileRegressionFixture, custom_syntax: bool) -> None:
     """Generate a FGD file to ensure code doesn't unintentionally alter output."""
     fgd = FGD()
     base_origin = EntityDef(EntityTypes.BASE, 'Origin')
@@ -535,17 +537,25 @@ def test_export_regressions(file_regression: FileRegressionFixture) -> None:
         'Get some value',
     )}
 
+    ent.resources = [
+        Resource.mdl('models/error.mdl', frozenset({'!hl2'})),
+        Resource.mat('tools/toolsnodraw'),
+        Resource.snd('Default.Null'),
+        Resource('testing/test.nut', FileType.VSCRIPT_SQUIRREL),
+        Resource('func_button_sounds', FileType.ENTCLASS_FUNC),
+    ]
+
     buf = io.StringIO()
-    fgd.export(buf)
+    fgd.export(buf, custom_syntax=custom_syntax)
     file_res = buf.getvalue()
-    direct_res = fgd.export()
+    direct_res = fgd.export(custom_syntax=custom_syntax)
     # Check fgd.export() produces a string directly in the same way.
     assert file_res == direct_res
 
     file_regression.check(buf.getvalue(), extension='.fgd')
 
 
-@pytest.mark.parametrize('label', [False, True])
+@pytest.mark.parametrize('label', [False, True], ids=['none', 'added'])
 def test_export_spawnflag_label(file_regression: FileRegressionFixture, label: bool) -> None:
     """Test both options for labelling spawnflags."""
     fgd = FGD()

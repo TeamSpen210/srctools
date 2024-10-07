@@ -1036,10 +1036,11 @@ class KVDef(EntAttribute):
         file: TextIO,
         tags: Collection[str] = (),
         label_spawnflags: bool = True,
+        custom_syntax: bool = True,
     ) -> None:
         """Write this back out to a FGD file."""
         file.write('\t' + self.name)
-        if tags:
+        if tags and custom_syntax:
             file.write(f'[{", ".join(sorted(tags))}]')
         file.write(f'({self.type.value}) ')
 
@@ -1088,7 +1089,7 @@ class KVDef(EntAttribute):
                         indent='\t\t',
                     )
                     file.write(' : 1' if flag_default else ' : 0')
-                    if tags:
+                    if tags and custom_syntax:
                         file.write(f' [{", ".join(sorted(tags))}]\n')
                     else:
                         file.write('\n')
@@ -1103,7 +1104,7 @@ class KVDef(EntAttribute):
                     file.write(f'\t\t{value}: ')
                     # Newlines aren't functional here, just replace.
                     _write_longstring(file, name.replace('\n', ' '), indent='\t\t')
-                    if tags:
+                    if tags and custom_syntax:
                         file.write(f' [{", ".join(sorted(tags))}]\n')
                     else:
                         file.write('\n')
@@ -1810,8 +1811,16 @@ class EntityDef:
                 else:
                     del category[key]
 
-    def export(self, file: TextIO, label_spawnflags: bool = True) -> None:
-        """Write the entity out to a FGD file."""
+    def export(
+        self,
+        file: TextIO,
+        label_spawnflags: bool = True,
+        custom_syntax: bool = True,
+    ) -> None:
+        """Write the entity out to a FGD file.
+
+        See :py:meth:`FGD.export()` for the meaning of the parameters.
+        """
         # Make it look pretty: BaseClass
         file.write(f'@{self.type.value.title().replace("class", "Class")} ')
         if self.bases:
@@ -1826,6 +1835,11 @@ class EntityDef:
 
         for helper in self.helpers:
             args = helper.export()
+            if isinstance(helper, HelperExtOrderBy):
+                # Even if custom syntax is off, still apply this helper.
+                kv_order_list += [arg.casefold() for arg in args]
+            if helper.IS_EXTENSION and not custom_syntax:
+                continue
             if isinstance(helper, HelperHalfGridSnap):
                 # Special case, no args.
                 file.write('\n\thalfgridsnap')
@@ -1835,8 +1849,6 @@ class EntityDef:
                 file.write(f'\n\t{helper.TYPE.value}({", ".join(args)})')
             else:
                 raise TypeError(f'Helper {helper!r} has no TYPE attr?')
-            if isinstance(helper, HelperExtOrderBy):
-                kv_order_list += [arg.casefold() for arg in args]
 
         if self.helpers:
             file.write('\n')  # Put the classname on the following line.
@@ -1860,21 +1872,21 @@ class EntityDef:
             key=lambda name_kv: kv_order.get(name_kv[0], 2**64),
         ):
             for tags, kv in kv_map.items():
-                kv.export(file, tags, label_spawnflags)
+                kv.export(file, tags, label_spawnflags, custom_syntax)
 
         if self.inputs:
             file.write('\n\t// Inputs\n')
 
             for inp_map in self.inputs.values():
                 for tags, inp in inp_map.items():
-                    inp.export(file, 'input', tags)
+                    inp.export(file, 'input', tags if custom_syntax else ())
 
         if self.outputs:
             file.write('\n\t// Outputs\n')
 
             for out_map in self.outputs.values():
                 for tags, out in out_map.items():
-                    out.export(file, 'output', tags)
+                    out.export(file, 'output', tags if custom_syntax else ())
         file.write('\t]\n')
 
     def iter_bases(self, _done: Optional[Set[EntityDef]] = None) -> Iterator[EntityDef]:
@@ -2108,11 +2120,14 @@ class FGD:
     def export(
         self, file: Optional[TextIO] = None, *,
         label_spawnflags: bool = True,
+        custom_syntax: bool = True,
     ) -> Optional[str]:
         """Write out the FGD file.
 
         :param file: The file to write to. If `None`, the contents will be returned instead.
         :param label_spawnflags: If set, prepend `[X]` to each spawnflag name to indicate the numeric value.
+        :param custom_syntax: If disabled, all custom syntax like tags and @resources will be skipped.
+            For tagged values, this can write out duplicate copies from different tags.
         """
         if file is None:
             string_buf = io.StringIO()
@@ -2185,7 +2200,7 @@ class FGD:
 
         for ent_def in self.sorted_ents():
             file.write('\n')
-            ent_def.export(file, label_spawnflags)
+            ent_def.export(file, label_spawnflags, custom_syntax)
 
         if string_buf is not None:
             return string_buf.getvalue()
