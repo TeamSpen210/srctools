@@ -2667,7 +2667,7 @@ class BSP:
                 add_faces(model.faces), len(model.faces),
             )
             if model.phys_keyvalues is not None:
-                kvs = '\n'.join(model.phys_keyvalues.export()).encode('ascii') + b'\x00'
+                kvs = '\n'.join(model.phys_keyvalues.serialise()).encode('ascii') + b'\x00'
             else:
                 kvs = b'\x00'
                 if not model._phys_solids:
@@ -2938,7 +2938,7 @@ class BSP:
         return vmf
 
     def _lmp_write_ents(self, vmf: VMF) -> bytes:
-        return self.write_ent_data(vmf, self.out_comma_sep, _show_dep=False)
+        return self.write_ent_data(vmf, self.out_comma_sep, _show_dep=False)  # type: ignore[deprecated]
 
     @staticmethod
     @deprecated('Modify bsp.ents instead', category=None)

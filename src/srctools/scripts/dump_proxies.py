@@ -31,28 +31,27 @@ def main(args: List[str]) -> None:
     shader_params = DefaultDict[str, Counter[str]](Counter)
     shader_proxies = DefaultDict[str, Counter[str]](Counter)
 
-    with fsys:
-        for file in fsys.walk_folder('materials/'):
-            if not file.path.endswith('.vmt'):
-                continue
+    for file in fsys.walk_folder('materials/'):
+        if not file.path.endswith('.vmt'):
+            continue
 
-            print('.', end='', flush=True)
-            try:
-                with file.open_str() as f:
-                    mat = Material.parse(f)
-                mat = mat.apply_patches(fsys)
-            except Exception:
-                traceback.print_exc()
-                continue
+        print('.', end='', flush=True)
+        try:
+            with file.open_str() as f:
+                mat = Material.parse(f)
+            mat = mat.apply_patches(fsys)
+        except Exception:
+            traceback.print_exc()
+            continue
 
-            param_count = shader_params[mat.shader.casefold()]
-            for name in mat:
-                param_count[name.casefold()] += 1
+        param_count = shader_params[mat.shader.casefold()]
+        for name in mat:
+            param_count[name.casefold()] += 1
 
-            for prox in mat.proxies:
-                param_count = shader_proxies[prox.name]
-                for prop in prox:
-                    param_count[prop.name] += 1
+        for prox in mat.proxies:
+            param_count = shader_proxies[prox.name]
+            for prop in prox:
+                param_count[prop.name] += 1
 
     print('\n\nShaders:')
     for shader in sorted(shader_params):

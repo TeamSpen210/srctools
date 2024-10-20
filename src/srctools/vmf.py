@@ -1489,7 +1489,7 @@ class Solid:
     #: The faces for this brush.
     sides: List['Side'] = attrs.field(factory=list)
     #: The set of IDs of user-authored visgroups this brush belongs to.
-    visgroup_ids: Set[int] = attrs.field(default=(), converter=_conv_visgroups)
+    visgroup_ids: Set[int] = attrs.field(default=(), converter=_conv_visgroups)  # pyright: ignore
     #: If set, this brush has been hidden in some way (quick hide, cordons, visgroups). It will
     #: not be compiled into the final map.
     hidden: bool = False
