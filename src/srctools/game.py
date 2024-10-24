@@ -7,7 +7,7 @@ import sys
 
 from srctools.filesys import FileSystemChain, RawFileSystem, VPKFileSystem
 from srctools.keyvalues import Keyvalues
-from srctools.steam import GetAppInstallPath
+from srctools.steam import get_app_install_path
 
 __all__ = ['GINFO', 'Game', 'find_gameinfo']
 GINFO: Final = 'gameinfo.txt'
@@ -135,7 +135,7 @@ class Game:
             # Selects if we want to mount the "mod_folder" key as a folder or omit
             mountmoddir = mount.bool("mountmoddir", True)
             
-            app_path: Optional[Path] = GetAppInstallPath(appid)
+            app_path: Optional[Path] = get_app_install_path(appid)
             if app_path is None:
                 if required:
                     raise RuntimeError(f"Required mount of app-id {appid} specified, but app is not installed!")

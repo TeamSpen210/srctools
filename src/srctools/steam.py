@@ -1,5 +1,7 @@
 from pathlib import Path
 from sys import platform
+from typing import List
+
 from srctools import Keyvalues
 
 if platform == "win32":
@@ -10,34 +12,33 @@ REG_STEAM = "SOFTWARE\\WOW6432Node\\Valve\\Steam"
 GAMES_DICTIONARY = {}
 
 
-def GetSteamInstallPath() -> Path:
+def get_steam_install_path() -> Path:
     """Retrieve the installation path of Steam."""
     if platform == "linux" or platform == "linux2":
-        return GetSteamInstallPathLinux()
+        return _get_steam_install_path_linux()
     elif platform == "win32":
-        return GetSteamInstallPathWin32()
+        return _get_steam_install_path_win32()
     else:
         return None # type: ignore
 
 
 
-def GetSteamInstallPathLinux() -> Path:
+def _get_steam_install_path_linux() -> Path:
     #TODO: Test if this works properly.
     path = "~/.local/share/Steam" # Default path, there is a 99% chance a user has installed steam there.
     path = Path(path)
     if not path.exists():
-        return None # type: ignore
+        return None  # type: ignore
     
     path = path.resolve()
     return path
 
 
-
-def GetSteamInstallPathWin32() -> Path:
+def _get_steam_install_path_win32() -> Path:
+    """Find Steam's installation path, using the Registry."""
     try:
         key = OpenKeyEx(HKEY_LOCAL_MACHINE, REG_STEAM) # type: ignore
         installpath = QueryValueEx(key, "InstallPath")[0] # type: ignore
-
         if key:
             CloseKey(key) # type: ignore
     except:
@@ -47,37 +48,34 @@ def GetSteamInstallPathWin32() -> Path:
     return installpath
 
 
-
-def GetInstallationDirs(steam_installpath: Path) -> list:
-    """Retrieve information about where installed Steam games are stored in."""
-    fpath = steam_installpath.joinpath("steamapps/libraryfolders.vdf") # This file contains information on the directories where games are installed
+def get_libraries(steam_installpath: Path) -> List[Path]:
+    """Locate all Steam library folders."""
+    # This file contains information on the directories where games are installed
+    fpath = steam_installpath.joinpath("steamapps/libraryfolders.vdf")
 
     if not fpath.exists():
         return None # type: ignore
 
     with open(fpath, "r") as libraryfolders:
-        lf = Keyvalues.parse(libraryfolders) # type: ignore
+        lf = Keyvalues.parse(libraryfolders)
     
-    lf = lf.find_key("libraryfolders")  # type: ignore
-    lf: dict = lf.as_dict() # type: ignore
+    lf = lf.find_key("libraryfolders")
 
     dirs = []
 
-    for _, block in lf.items():
+    for block in lf:
         dirs.append(block["path"])
 
-    dirs = [Path(x).joinpath("steamapps") for x in dirs] # Already convert to also include steamapps
-    dirs = [x for x in dirs if x.exists()] # Make sure this path exists
+    dirs = [Path(x).joinpath("steamapps") for x in dirs]  # Already convert to also include steamapps
+    dirs = [x for x in dirs if x.exists()]  # Make sure this path exists
 
     return dirs
 
 
-
-def _ProcesACF(filepath: Path) -> tuple:
+def _parse_acf(filepath: Path) -> tuple:
     """Internal, processes an ACF file. Returns (appid, name, installation folder name). Ensure the file exists!"""
     if not filepath.exists():
-        return None # type: ignore
-    
+        return None  # type: ignore
 
     with open(filepath, "r") as acf_f:
             acf = Keyvalues.parse(acf_f)
@@ -90,9 +88,8 @@ def _ProcesACF(filepath: Path) -> tuple:
     return appid, name, installdir
 
 
-def BuildInstallationDictionary(gameinstalldirs: list, only_appid = -1) -> dict: 
+def build_installation_dictionary(gameinstalldirs: list, only_appid = -1) -> dict:
     """Builds and returns a dictionary, {int appid : (str app_name, Path installationPath)}"""
-
 
     games_dict = {}
     for dir_ in gameinstalldirs:
@@ -101,7 +98,7 @@ def BuildInstallationDictionary(gameinstalldirs: list, only_appid = -1) -> dict:
         if only_appid >= 0:
             # Try to nail where the file could be
             acf_file = dir_.joinpath(f"appmanifest_{only_appid}.acf")
-            if not (acf_file := _ProcesACF(acf_file)):
+            if not (acf_file := _parse_acf(acf_file)):
                 continue
             #Ensure the file actually exists
             appid, name, installpath = acf_file # Unpack
@@ -114,7 +111,7 @@ def BuildInstallationDictionary(gameinstalldirs: list, only_appid = -1) -> dict:
             acf_files = dir_.rglob("appmanifest_*.acf") # Locate every ACF file.
             for acf_p in acf_files:
 
-                appid, name, installpath = _ProcesACF(acf_p)
+                appid, name, installpath = _parse_acf(acf_p)
 
                 installpath = local_path.joinpath(installpath)
 
@@ -123,7 +120,7 @@ def BuildInstallationDictionary(gameinstalldirs: list, only_appid = -1) -> dict:
     return games_dict
 
 
-def _EnsureDictIsBuilt(app_id = -1) -> None:
+def _ensure_dict_is_built(app_id = -1) -> None:
     """Ensures the game dictionary is ready to be delivered to the caller."""
     global GAMES_DICTIONARY
 
@@ -137,47 +134,47 @@ def _EnsureDictIsBuilt(app_id = -1) -> None:
         except:
             pass # It doesn't, find it
     
-    installpath = GetSteamInstallPath()
+    installpath = get_steam_install_path()
     if not installpath:
         return None
     
-    gameinstalldirs = GetInstallationDirs(installpath)
+    gameinstalldirs = get_libraries(installpath)
     if not gameinstalldirs:
         return None
     
-    GAMES_DICTIONARY = BuildInstallationDictionary(gameinstalldirs, only_appid=app_id)
+    GAMES_DICTIONARY = build_installation_dictionary(gameinstalldirs, only_appid=app_id)
 
 
-
-
-def GetAppsDictionary() -> dict:
+def get_apps_dictionary() -> dict:
     """Retrieve the whole dictionary of installation paths."""
 
-    _EnsureDictIsBuilt()
+    _ensure_dict_is_built()
 
     return GAMES_DICTIONARY
 
-def GetAppInstallPath(app_id: int) -> Path:
+
+def get_app_install_path(app_id: int) -> Path:
     """Get only the installation path of a specific app-id. Returns None if app was not found."""
-    _EnsureDictIsBuilt(app_id)
+    _ensure_dict_is_built(app_id)
     try:
         return GAMES_DICTIONARY[app_id][1] # type: ignore
     except KeyError:
         return None # type: ignore
 
 
-def GetAppName(app_id: int) -> str:
+def get_app_name(app_id: int) -> str:
     """Get only the app name of a specific app-id. Returns None if app was not found."""
-    _EnsureDictIsBuilt(app_id)
+    _ensure_dict_is_built(app_id)
     try:
         return GAMES_DICTIONARY[app_id][0]
     except KeyError:
-        return None # type: ignore
-    
-def GetApp(app_id: int) -> tuple:
+        return None  # type: ignore
+
+
+def get_app(app_id: int) -> tuple:
     """Get a tuple (name, installpath) a specific app-id. Returns None if app was not found."""
-    _EnsureDictIsBuilt(app_id)
+    _ensure_dict_is_built(app_id)
     try:
         return GAMES_DICTIONARY[app_id]
     except KeyError:
-        return None # type: ignore
+        return None  # type: ignore
