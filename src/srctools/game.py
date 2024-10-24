@@ -1,5 +1,5 @@
 """Reads the GameInfo file to determine where Source game data is stored."""
-from typing import Final, List, Optional, Union
+from typing import Final, List, Optional, Tuple, Union
 from pathlib import Path
 import itertools
 import os
@@ -23,6 +23,9 @@ class Game:
     additional_content: Optional[str]
     fgd_loc: Optional[str]
     search_paths: List[Path]
+    #: Mount configurations used in Strata Source.
+    #: Allows loading searchpaths from other games, based on appid.
+    strata_mounts: List[Keyvalues]
 
     def __init__(self, path: Union[str, Path], encoding: str = 'utf8') -> None:
         """Parse a game from a folder."""
@@ -43,7 +46,7 @@ class Game:
         self.additional_content = fsystems['AdditionalContentId', None]
         self.fgd_loc = gameinfo['GameData', None]
         self.search_paths = []
-        self.mounts: list[Keyvalues] = list(gameinfo.find_children("mount"))
+        self.strata_mounts = list(gameinfo.find_children("mount"))
 
         # Note: the behaviour of Source can be examined via the "path" command.
         for search_path in fsystems.find_children('SearchPaths'):
@@ -93,24 +96,21 @@ class Game:
                 mountskv = Keyvalues.parse(m)
 
             mountskv = list(mountskv.find_children("Mounts"))
-            self.mounts.extend(mountskv)
+            self.strata_mounts.extend(mountskv)
 
     @property
     def root(self) -> Path:
         """Return the game's root folder."""
         return self.path.parent
-    
-    def parse_mounts(self) -> tuple: # Strata mount compatibility, both in gameinfo and in mounts.kv
-        """Parses the mounts in self.mounts and returns two lists of paths. One is the head list that should be merged above"""
-        parsed_mounts = []
-        parsed_mounts_heads = []
 
-        def add_to_list(p: Path, head_: bool) -> None:
-            """Append to the appropriate list."""
-            if head_:
-                parsed_mounts_heads.append(p)
-            else:
-                parsed_mounts.append(p)
+    # Strata mount compatibility, both in gameinfo and in mounts.kv
+    def parse_strata_mounts(self) -> Tuple[List[Path], List[Path]]:
+        """
+        Parses the mounts in self.strata_mounts and returns two lists of paths.
+        The first should take priority over gameinfo, the second comes after.
+        """
+        parsed_mounts: List[Path] = []
+        parsed_mounts_heads: List[Path] = []
         
         def vpk_patch(p: Path) -> Path:
             """Determine the correct filename for a VPK."""
@@ -124,13 +124,13 @@ class Game:
                 else:
                     return v
 
-        for mount in self.mounts:
+        for mount in self.strata_mounts:
             try:
                 appid = int(mount.name)
             except ValueError:
                 raise RuntimeError(f"Invalid appid declaration {mount.name}")
             
-            head =       mount.bool("head", False)
+            target_list = parsed_mounts_heads if mount.bool("head", False) else parsed_mounts
             required =   mount.bool("required", False)
             # Selects if we want to mount the "mod_folder" key as a folder or omit
             mountmoddir = mount.bool("mountmoddir", True)
@@ -153,15 +153,15 @@ class Game:
                     local_path = this_path / local_path
                     
                     if local_mount.name == "vpk":  # We're mounting a VPK
-                        add_to_list(vpk_patch(local_path), head)
+                        target_list.append(vpk_patch(local_path))
                     elif local_mount.name == "dir":  # We're mounting a mod inside a mod
-                        add_to_list(local_path, head)
+                        target_list.append(local_path)
                     else:
                         raise ValueError(f'Unknown mount type "{local_mount.real_name}"!')
 
                 # Considered last, as per docs of strata
                 if mountmoddir:
-                    add_to_list(this_path, head)
+                    target_list.append(this_path)
 
         return parsed_mounts_heads, parsed_mounts
 
@@ -183,11 +183,10 @@ class Game:
         vpks = []
         raw_folders = []
 
-        mounts_head, mounts = self.parse_mounts()
+        mounts_head, mounts = self.parse_strata_mounts()
         fsys = FileSystemChain()
 
-
-        for path in mounts_head[::-1]: # We need to reverse the list here
+        for path in reversed(mounts_head):  # We need to reverse the list here
             if path.suffix == ".vpk" and path.is_file():
                 fsys.add_sys(VPKFileSystem(path), priority=True)
             else:
