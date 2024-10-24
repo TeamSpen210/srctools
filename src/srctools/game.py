@@ -140,7 +140,7 @@ class Game:
                 if required:
                     raise ValueError(
                         f"Required mount of app-id {appid} specified, "
-                        f"but app is not installed!"
+                        "but app is not installed!"
                     ) from None
                 continue
 
