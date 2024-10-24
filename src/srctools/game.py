@@ -7,7 +7,7 @@ import sys
 
 from srctools.filesys import FileSystemChain, RawFileSystem, VPKFileSystem
 from srctools.keyvalues import Keyvalues
-from srctools.steam import get_app_install_path
+from srctools.steam import find_app
 
 __all__ = ['GINFO', 'Game', 'find_gameinfo']
 GINFO: Final = 'gameinfo.txt'
@@ -127,18 +127,19 @@ class Game:
         for mount in self.strata_mounts:
             try:
                 appid = int(mount.name)
-            except ValueError:
-                raise RuntimeError(f"Invalid appid declaration {mount.name}")
+            except KeyError:
+                raise ValueError(f"Invalid appid declaration {mount.name}") from None
             
             target_list = parsed_mounts_heads if mount.bool("head", False) else parsed_mounts
             required =   mount.bool("required", False)
             # Selects if we want to mount the "mod_folder" key as a folder or omit
             mountmoddir = mount.bool("mountmoddir", True)
             
-            app_path: Optional[Path] = get_app_install_path(appid)
-            if app_path is None:
+            try:
+                app_path = find_app(appid)
+            except KeyError:
                 if required:
-                    raise RuntimeError(f"Required mount of app-id {appid} specified, but app is not installed!")
+                    raise ValueError(f"Required mount of app-id {appid} specified, but app is not installed!")
                 continue
 
             for child in mount:
