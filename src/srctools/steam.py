@@ -10,6 +10,14 @@ from srctools import Keyvalues
 
 
 REG_STEAM = "SOFTWARE\\WOW6432Node\\Valve\\Steam"
+# Known Steam install locations.
+_STEAM_LOCS = [
+    Path('C:/Program Files (x86)/Steam/'),  # Win64
+    Path('C:/Program Files/Steam/'),  # Win32
+    Path('~/Library/Application Support/Steam/'),  # OS X
+    Path('~/.local/share/Steam/'),  # Linux
+    Path('~/.steam/steam/'),  # Linux, older.
+]
 
 
 @attrs.frozen
@@ -52,34 +60,18 @@ def get_steam_install_path() -> Path:
 
     :raises FileNotFoundError: If no Steam installation could be located.
     """
-    if sys.platform == "linux" or sys.platform == "linux2":
-        return _get_steam_install_path_linux()
-    elif sys.platform == "win32":
-        return _get_steam_install_path_win32()
-    else:
-        raise FileNotFoundError("No known Steam locations for this platform.")
-
-
-def _get_steam_install_path_linux() -> Path:
-    # TODO: Test if this works properly.
-    # Default path, there is a 99% chance a user has installed steam there.
-    path = Path("~/.local/share/Steam").resolve()
-    if not path.exists():
-        raise FileNotFoundError("Steam not found in default location.")
-    return path
-
-
-def _get_steam_install_path_win32() -> Path:
-    """Find Steam's installation path, using the Registry."""
-    assert sys.platform == 'win32'
-    from winreg import OpenKeyEx, QueryValueEx, HKEY_LOCAL_MACHINE
-    try:
-        with OpenKeyEx(HKEY_LOCAL_MACHINE, REG_STEAM) as key:
-            installpath = QueryValueEx(key, "InstallPath")[0]
-    except OSError:
-        raise FileNotFoundError("Steam not present in registry.")
-
-    return Path(installpath)
+    if sys.platform == "win32":
+        # The registry is very reliable.
+        from winreg import OpenKeyEx, QueryValueEx, HKEY_LOCAL_MACHINE
+        try:
+            with OpenKeyEx(HKEY_LOCAL_MACHINE, REG_STEAM) as key:
+                return Path(QueryValueEx(key, "InstallPath")[0])
+        except OSError:
+            pass  # Try default locations.
+    for possible_loc in _STEAM_LOCS:
+        if possible_loc.exists():
+            return possible_loc
+    raise FileNotFoundError("No known Steam locations for this platform.")
 
 
 def get_libraries(steam_installpath: Path) -> Collection[Path]:
