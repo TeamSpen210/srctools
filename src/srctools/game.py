@@ -7,7 +7,7 @@ import sys
 
 from srctools.filesys import FileSystemChain, RawFileSystem, VPKFileSystem
 from srctools.keyvalues import Keyvalues
-from pysteampathprovider import GetAppInstallPath
+from srctools.game_mount import GetAppInstallPath
 
 __all__ = ['GINFO', 'Game', 'find_gameinfo']
 GINFO: Final = 'gameinfo.txt'

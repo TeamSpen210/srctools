@@ -42,8 +42,7 @@ dependencies=[
 	"typing_extensions >= 4.12.0",
 	"importlib_resources >= 5.8.0",
 	"exceptiongroup >= 1.2.0",
-	"useful_types >= 0.1.0",
-	"pysteampathprovider >= 1.3"
+	"useful_types >= 0.1.0"
 ]
 [optional-dependencies]
 # VTF support.
