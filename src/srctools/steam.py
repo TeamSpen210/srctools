@@ -1,4 +1,5 @@
-from typing import Dict, Iterable, Iterator, Mapping
+"""Parse Steam configuration files to locate apps by their ID."""
+from typing import Collection, Dict, List, Mapping, Optional
 
 from pathlib import Path
 import sys
@@ -31,7 +32,19 @@ class AppInfo:
             Path(folder, acf["installdir"])
         )
 
-GAMES_DICTIONARY: Dict[int, AppInfo] = {}
+# Locations of Steam folders.
+_library_folders: Optional[List[Path]] = None
+# Already parsed games.
+_parsed_games: Dict[int, AppInfo] = {}
+_parsed_all: bool = False
+
+
+def clear_caches() -> None:
+    """Clear cached data, so they will be parsed again."""
+    global _library_folders, _parsed_all
+    _library_folders = None
+    _parsed_games.clear()
+    _parsed_all = False
 
 
 def get_steam_install_path() -> Path:
@@ -69,73 +82,49 @@ def _get_steam_install_path_win32() -> Path:
     return Path(installpath)
 
 
-def get_libraries(steam_installpath: Path) -> Iterator[Path]:
+def get_libraries(steam_installpath: Path) -> Collection[Path]:
     """Locate all Steam library folders."""
+    global _library_folders
+    if _library_folders is not None:
+        return _library_folders
+
     # This file contains information on the directories where games are installed
     fpath = steam_installpath.joinpath("steamapps/libraryfolders.vdf")
 
-    if not fpath.exists():
-        return None # type: ignore
-
-    with open(fpath, "r") as libraryfolders:
-        lf = Keyvalues.parse(libraryfolders)
+    try:
+        with open(fpath, "r") as libraryfolders:
+            lf = Keyvalues.parse(libraryfolders)
+    except FileNotFoundError:
+        return ()
     
     lf = lf.find_key("libraryfolders")
+    _library_folders = []
 
     for block in lf:
         path = Path(block["path"], "steamapps")
         if path.exists():
-            yield path
-
-
-def build_installation_dictionary(library_folders: Iterable[Path], only_appid: int=-1) -> dict:
-    """Builds and returns a dictionary, {int appid : (str app_name, Path installationPath)}"""
-
-    games_dict = {}
-    for libfolder in library_folders:
-        local_path = libfolder.joinpath("common")  # Games are located in the common folder
-
-        if only_appid >= 0:
-            # Try to nail where the file could be
-            acf_filename = libfolder.joinpath(f"appmanifest_{only_appid}.acf")
-            try:
-                appinfo = AppInfo.parse(local_path, acf_filename)
-            except FileNotFoundError:
-                continue
-            games_dict[appinfo.id] = appinfo
-
-        else:
-            # Locate every ACF file.
-            for acf_filename in libfolder.rglob("appmanifest_*.acf"):
-                try:
-                    appinfo = AppInfo.parse(local_path, acf_filename)
-                except FileNotFoundError:
-                    continue
-                games_dict[appinfo.id] = appinfo
-    
-    return games_dict
-
-
-def _ensure_dict_is_built(app_id: int=-1) -> None:
-    """Ensures the game dictionary is ready to be delivered to the caller."""
-    global GAMES_DICTIONARY
-
-    if app_id <= 0:
-        if GAMES_DICTIONARY:  # If not we need to build it
-            return
-    else:
-        if app_id in GAMES_DICTIONARY:
-            return
-    
-    installpath = get_steam_install_path()
-    
-    GAMES_DICTIONARY = build_installation_dictionary(get_libraries(installpath), only_appid=app_id)
+            _library_folders.append(path)
+    return _library_folders
 
 
 def find_all_apps() -> Mapping[int, AppInfo]:
     """Parse all apps, then return a appid -> info mapping."""
-    _ensure_dict_is_built()
-    return GAMES_DICTIONARY
+    global _parsed_all
+    if _parsed_all:
+        return _parsed_games
+
+    steam_path = get_steam_install_path()
+    for libfolder in get_libraries(steam_path):
+        local_path = libfolder.joinpath("common")
+        for acf_filename in libfolder.rglob("appmanifest_*.acf"):
+            try:
+                appinfo = AppInfo.parse(local_path, acf_filename)
+            except FileNotFoundError:
+                continue
+            _parsed_games.setdefault(appinfo.id, appinfo)
+
+    _parsed_all = True
+    return _parsed_games
 
 
 def find_app(app_id: int) -> AppInfo:
@@ -143,5 +132,23 @@ def find_app(app_id: int) -> AppInfo:
 
     :raises KeyError: if the app could not be found.
     """
-    _ensure_dict_is_built(app_id)
-    return GAMES_DICTIONARY[app_id]  # Or keyError
+    try:
+        return _parsed_games[app_id]
+    except KeyError:
+        # find_all_apps() was called, it's definitely not there.
+        if _parsed_all:
+            raise
+
+    steam_path = get_steam_install_path()
+    for libfolder in get_libraries(steam_path):
+        local_path = libfolder.joinpath("common")
+        # Try to nail where the file could be
+        acf_filename = libfolder.joinpath(f"appmanifest_{app_id}.acf")
+        try:
+            appinfo = AppInfo.parse(local_path, acf_filename)
+        except FileNotFoundError:
+            continue
+        _parsed_games.setdefault(appinfo.id, appinfo)
+        return appinfo
+
+    raise KeyError(app_id)

@@ -95,8 +95,7 @@ class Game:
             with open(mounts_path, encoding=encoding) as m:
                 mountskv = Keyvalues.parse(m)
 
-            mountskv = list(mountskv.find_children("Mounts"))
-            self.strata_mounts.extend(mountskv)
+            self.strata_mounts.extend(mountskv.find_children("Mounts"))
 
     @property
     def root(self) -> Path:
@@ -131,12 +130,12 @@ class Game:
                 raise ValueError(f"Invalid appid declaration {mount.name}") from None
             
             target_list = parsed_mounts_heads if mount.bool("head", False) else parsed_mounts
-            required =   mount.bool("required", False)
+            required = mount.bool("required", False)
             # Selects if we want to mount the "mod_folder" key as a folder or omit
             mountmoddir = mount.bool("mountmoddir", True)
             
             try:
-                app_path = find_app(appid)
+                app_info = find_app(appid)
             except KeyError:
                 if required:
                     raise ValueError(f"Required mount of app-id {appid} specified, but app is not installed!")
@@ -147,11 +146,10 @@ class Game:
                     continue  # Ignore
 
                 # Else we're working with a mod folder
-                this_path = app_path / child.real_name
+                this_path = app_info.path / child.real_name
 
                 for local_mount in child.iter_tree():
-                    local_path = local_mount.value
-                    local_path = this_path / local_path
+                    local_path = this_path / local_mount.value
                     
                     if local_mount.name == "vpk":  # We're mounting a VPK
                         target_list.append(vpk_patch(local_path))
