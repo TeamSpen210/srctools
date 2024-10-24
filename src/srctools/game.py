@@ -105,13 +105,15 @@ class Game:
         parsed_mounts = []
         parsed_mounts_heads = []
 
-        def add_to_list(p, head_) -> None: # Local helper func
+        def add_to_list(p: Path, head_: bool) -> None:
+            """Append to the appropriate list."""
             if head_:
                 parsed_mounts_heads.append(p)
             else:
                 parsed_mounts.append(p)
         
-        def vpk_patch(p: Path) -> Path: #Patches vpk paths
+        def vpk_patch(p: Path) -> Path:
+            """Determine the correct filename for a VPK."""
             v = p.with_suffix(".vpk")
             if v.exists():
                 return v
@@ -122,51 +124,46 @@ class Game:
                 else:
                     return v
 
-
         for mount in self.mounts:
             try:
-                appid = int(mount.get_key())
+                appid = int(mount.name)
             except ValueError:
-                raise RuntimeError(f"Invalid appid declaration {mount.get_key()}")
+                raise RuntimeError(f"Invalid appid declaration {mount.name}")
             
-            head =          mount.bool("head", False)
-            required =      mount.bool("required", False)
-            mountmoddir =   mount.bool("mountmoddir", True) # Selects if we want to mount the "mod_folder" key as a folder or omit
+            head =       mount.bool("head", False)
+            required =   mount.bool("required", False)
+            # Selects if we want to mount the "mod_folder" key as a folder or omit
+            mountmoddir = mount.bool("mountmoddir", True)
             
-            app_path: Path = GetAppInstallPath(appid) # type: ignore
-            if required and app_path == None:
-                raise RuntimeError(f"Required mount of app-id {appid} specified, but app is not installed!")
-            
-            
-            for child in mount.get_child_keys():
-                if child == "head" or child == "required":
-                    continue #Ignore
+            app_path: Optional[Path] = GetAppInstallPath(appid)
+            if app_path is None:
+                if required:
+                    raise RuntimeError(f"Required mount of app-id {appid} specified, but app is not installed!")
+                continue
 
-                #Else we're working with a mod folder
-                this_path = app_path / child
+            for child in mount:
+                if child.name in ("head", "required"):
+                    continue  # Ignore
 
-                for local_mount in mount.find_key(child).iter_tree():
+                # Else we're working with a mod folder
+                this_path = app_path / child.real_name
+
+                for local_mount in child.iter_tree():
                     local_path = local_mount.value
                     local_path = this_path / local_path
                     
-                    if local_mount.get_key() == "vpk": # We're mounting a VPK
+                    if local_mount.name == "vpk":  # We're mounting a VPK
                         add_to_list(vpk_patch(local_path), head)
-                        continue
-
-                    if local_mount.get_key() == "dir": # We're mounting a mod inside a mod
+                    elif local_mount.name == "dir":  # We're mounting a mod inside a mod
                         add_to_list(local_path, head)
-                    
+                    else:
+                        raise ValueError(f'Unknown mount type "{local_mount.real_name}"!')
 
-
-                #Considered last, as per docs of strata
+                # Considered last, as per docs of strata
                 if mountmoddir:
                     add_to_list(this_path, head)
-        
+
         return parsed_mounts_heads, parsed_mounts
-            
-            
-
-
 
     def parse_search_path(self, prop: Keyvalues) -> Path:
         """Evaluate options like :code:`|gameinfo_path|`."""

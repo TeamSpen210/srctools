@@ -899,14 +899,6 @@ class Keyvalues:
             return arr
         else:
             return [conv(self._value)]
-    
-    def get_key(self) -> str:
-        """Get the key of this keyvalue pair."""
-        return self.name
-        
-    def get_child_keys(self) -> List[str]:
-        """Returns the keys (names) of children keyvalues as a list, with duplicates and order."""
-        return [item.name for item in self]
 
     __hash__ = None  # type: ignore[assignment]
 
