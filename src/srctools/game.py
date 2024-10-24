@@ -138,7 +138,10 @@ class Game:
                 app_info = find_app(appid)
             except KeyError:
                 if required:
-                    raise ValueError(f"Required mount of app-id {appid} specified, but app is not installed!")
+                    raise ValueError(
+                        f"Required mount of app-id {appid} specified, "
+                        f"but app is not installed!"
+                    ) from None
                 continue
 
             for child in mount:
