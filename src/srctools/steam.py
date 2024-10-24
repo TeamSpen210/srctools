@@ -9,6 +9,7 @@ REG_STEAM = "SOFTWARE\\WOW6432Node\\Valve\\Steam"
 
 GAMES_DICTIONARY = {}
 
+
 def GetSteamInstallPath() -> Path:
     """Retrieve the installation path of Steam."""
     if platform == "linux" or platform == "linux2":
