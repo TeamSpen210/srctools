@@ -8,6 +8,9 @@ Changelog
 -------------
 Version (dev)
 -------------
+* Add py:mod:`srctools.steam`, written by `Thenderek0 <https://github.com/TheEnderek0>`_.
+  This allows locating Steam games based on their app ID. Support was also added for parsing Strata
+  mount definitions in gameinfo.txt.
 * Add `header_only` option for :py:meth:`VTF.read() <srctools.vtf.VTF.read>`, allowing reading only metadata if the image is not required.
 * Fix casing not being preserved for names of FGD keyvalues during parsing.
 * Fix :py:meth:`PackList.write_soundscript_manifest() <srctools.packlist.PackList.write_soundscript_manifest>`,
