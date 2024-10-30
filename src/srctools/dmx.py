@@ -1153,18 +1153,15 @@ class Attribute(Generic[ValueT], _ValProps):
         If not already an array, it is converted to one
         holding the existing value.
         """
-        if not isinstance(self._value, list):
-            self._value = [self._value]
         [val_type, result] = deduce_type_single(value)
-        if val_type is not self._typ:
-            # Try converting.
-            try:
-                func = cast('Callable[[Value], ValueT]', TYPE_CONVERT[val_type, self._typ])
-            except KeyError:
-                raise ValueError(f'Cannot convert {val_type} to {self._typ} type!') from None
+        try:
+            func = cast('Callable[[Value], ValueT]', TYPE_CONVERT[val_type, self._typ])
+        except KeyError:
+            raise ValueError(f'Cannot convert {val_type} to {self._typ} type!') from None
+        if isinstance(self._value, list):
             self._value.append(func(result))
         else:
-            self._value.append(result)  # type: ignore # (we know it's right)
+            self._value = [self._value, func(result)]
 
     def extend(self, values: Iterable[ConvValue]) -> None:
         """Append multiple values to the array.
@@ -1172,19 +1169,8 @@ class Attribute(Generic[ValueT], _ValProps):
         If not already an array, it is converted to one
         holding the existing value.
         """
-        if not isinstance(self._value, list):
-            self._value = [self._value]
         for value in values:
-            [val_type, result] = deduce_type_single(value)
-            if val_type is not self._typ:
-                # Try converting.
-                try:
-                    func = cast('Callable[[Value], ValueT]', TYPE_CONVERT[val_type, self._typ])
-                except KeyError:
-                    raise ValueError(f'Cannot convert {val_type} to {self._typ} type!') from None
-                self._value.append(func(result))
-            else:
-                self._value.append(result)  # type: ignore # (we know it's right)
+            self.append(value)
 
     def clear_array(self) -> None:
         """Remove all items in this, if it is an array."""
