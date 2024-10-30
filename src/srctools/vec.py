@@ -15,7 +15,7 @@ warnings.warn(
 )
 
 if TYPE_CHECKING:
-    from srctools.math import (  # type: ignore[deprecated]
+    from srctools.math import (
         Angle as Angle, Matrix as Matrix, Vec as Vec, Vec_tuple as Vec_tuple,
         lerp as lerp, parse_vec_str as parse_vec_str, to_matrix as to_matrix,
     )

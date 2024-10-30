@@ -2938,7 +2938,7 @@ class BSP:
         return vmf
 
     def _lmp_write_ents(self, vmf: VMF) -> bytes:
-        return self.write_ent_data(vmf, self.out_comma_sep, _show_dep=False)  # type: ignore[deprecated]
+        return self.write_ent_data(vmf, self.out_comma_sep, _show_dep=False)
 
     @staticmethod
     @deprecated('Modify bsp.ents instead', category=None)
