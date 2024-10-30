@@ -90,7 +90,7 @@ class Game:
             if path.exists():
                 self.search_paths.insert(0, path)
         
-        mounts_path = self.path / MOUNTSKV # Process mounts.kv file if exists
+        mounts_path = self.path / MOUNTSKV  # Process mounts.kv file if exists
         if mounts_path.is_file():
             with open(mounts_path, encoding=encoding) as m:
                 mountskv = Keyvalues.parse(m)
@@ -145,7 +145,7 @@ class Game:
                 continue
 
             for child in mount:
-                if child.name in ("head", "required"):
+                if child.name in ("head", "required", "mountmoddir"):
                     continue  # Ignore
 
                 # Else we're working with a mod folder
