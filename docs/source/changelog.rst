@@ -19,6 +19,7 @@ Version (dev)
 * Add `single_block` argument to :py:meth:`Keyvalues.parse() <srctools.keyvalues.Keyvalues.parse>`,
   allowing parsing blocks in the middle of a document.
 * Allow disabling the 'spawnflag labelling' FGD feature.
+* :py:mod`srctools.logging` log files will now always be written as UTF-8.
 * Add a `custom_syntax` option to :py:meth:`FGD.export() <srctools.fgd.FGD.export>`, disabling
   export of custom syntax. Resources can now be exported.
 
