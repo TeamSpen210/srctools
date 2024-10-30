@@ -46,6 +46,7 @@ Srctools is a library for parsing and manipulating the various file formats used
 	:caption: Other Modules
 
 	modules/game
+	modules/steam
 	modules/instancing
 	modules/packlist
 	modules/run

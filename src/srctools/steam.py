@@ -23,8 +23,8 @@ _STEAM_LOCS = [
 @attrs.frozen
 class AppInfo:
     """Information about a Steam app, parsed from the ACF file."""
-    id: int  #: Steam appid
-    name: str
+    id: int  #: Steam appid.
+    name: str  #: Display name for the app.
     path: Path  #: Install directory.
 
     @classmethod
