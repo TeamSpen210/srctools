@@ -13,7 +13,12 @@ token/value pair. One token of lookahead is supported, accessed by the
 :py:func:`BaseTokenizer.peek()` and  :py:func:`BaseTokenizer.push_back()` methods. They also track
 the current line number as data is read, letting you ``raise BaseTokenizer.error(...)`` to easily
 produce an exception listing the relevant line number and filename.
+
+Character escapes match matches `utilbuffer.cpp <https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/tier1/utlbuffer.cpp#L57-L69>`_ in the SDK.
+Specifically, the following characters are escaped:
+`\\\\n`, `\\\\t`, `\\\\v`, `\\\\b`, `\\\\r`, `\\\\f`, `\\\\a`, `\\`, `?`, `'` and `"`.
 """
+import re
 from typing import (
     TYPE_CHECKING, Final, Iterable, Iterator, List, NoReturn, Optional, Tuple, Type,
     Union,
@@ -154,17 +159,25 @@ _OPERATORS = {
 }
 
 
+# See https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/tier1/utlbuffer.cpp#L57-L69
 ESCAPES = {
     'n': '\n',
     't': '\t',
-    # Escape function of the following
+    'v': '\v',
+    'b': '\b',
+    'r': '\r',
+    'f': '\f',
+    'a': '\a',
+
+    # If present, disables special parsing.
     '"': '"',
+    "'": "'",
     '/': '/',
     '\\': '\\',
-
-    # \ at end of line to ignore the newline.
-    '\n': '',
+    '?': '?',
 }
+ESCAPES_INV = {char: f'\\{sym}' for sym, char in ESCAPES.items()}
+ESCAPE_RE = re.compile('|'.join(map(re.escape, ESCAPES_INV)))
 
 #: Characters not allowed for bare strings. These must be quoted.
 BARE_DISALLOWED: Final = frozenset('"\'{};,=[]()\r\n\t ')
@@ -720,6 +733,8 @@ class Tokenizer(BaseTokenizer):
                 escape = self._next_char()
                 if escape is None:
                     raise self.error('No character to escape!')
+                elif escape == '\n':
+                    continue  # Allow \ at the end of a line to skip.
                 try:
                     next_char = ESCAPES[escape]
                 except KeyError:
@@ -767,17 +782,8 @@ class IterTokenizer(BaseTokenizer):
 
 
 def escape_text(text: str) -> str:
-    r"""Escape special characters and backslashes, so tokenising reproduces them.
-
-    Specifically: ``\\``, ``"``, tab, and newline.
-    """
-    return (
-        text.
-        replace('\\', '\\\\').
-        replace('"', '\\"').
-        replace('\t', '\\t').
-        replace('\n', '\\n')
-    )
+    r"""Escape special characters and backslashes, so tokenising reproduces them."""
+    return ESCAPE_RE.sub(lambda match: ESCAPES_INV[match.group()], text)
 
 
 # This is available as both C and Python versions, plus the unprefixed

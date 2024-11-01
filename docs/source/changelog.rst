@@ -22,6 +22,7 @@ Version (dev)
 * :py:mod`srctools.logging` log files will now always be written as UTF-8.
 * Add a `custom_syntax` option to :py:meth:`FGD.export() <srctools.fgd.FGD.export>`, disabling
   export of custom syntax. Resources can now be exported.
+* Escape all characters `utilbuffer.cpp` does - `\\n`, `\\t`, `\\v`, `\\b`, `\\r`, `\\f`, `\\a`, `\\`, `?`, `'`, `"`.
 
 -------------
 Version 2.3.4

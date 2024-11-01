@@ -794,14 +794,26 @@ cdef class Tokenizer(BaseTokenizer):
                         if is_eof:
                             raise self._error('Unterminated string!')
 
-                        if escape_char == b'n':
-                            next_char = b'\n'
+                        # See this code:
+                        # https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/tier1/utlbuffer.cpp#L57-L69
+                        if escape_char == b'a':
+                            next_char = b'\a'
+                        elif escape_char == b'b':
+                            next_char = b'\b'
                         elif escape_char == b't':
                             next_char = b'\t'
+                        elif escape_char == b'n':
+                            next_char = b'\n'
+                        elif escape_char == b'v':
+                            next_char = b'\v'
+                        elif escape_char == b'f':
+                            next_char = b'\f'
+                        elif escape_char == b'r':
+                            next_char = b'\r'
                         elif escape_char == b'\n':
                             # \ at end of line ignores the newline.
                             continue
-                        elif escape_char in (b'"', b'\\', b'/'):
+                        elif escape_char in (b'"', b'\\', b'/', b"'", b'?'):
                             # For these, we escape to give the literal value.
                             next_char = escape_char
                         else:
@@ -1057,17 +1069,30 @@ cdef class BlockIter:
         raise NotImplementedError('Cannot pickle BlockIter!')
 
 
+cdef inline Py_ssize_t _write_escape(
+    uchar *out_buff,
+    Py_ssize_t off,
+    uchar symbol,
+) noexcept:
+    # Escape a single letter.
+    out_buff[off] = b'\\'
+    off += 1
+    out_buff[off] = symbol
+    return off
+
+
 @cython.nonecheck(False)
 def escape_text(str text not None: str) -> str:
     r"""Escape special characters and backslashes, so tokenising reproduces them.
 
-    Specifically, \, ", tab, and newline.
+    This matches utilbuffer.cpp in the SDK.
+    The following characters are escaped: \n, \t, \v, \b, \r, \f, \a, \, /, ?, ', ".
     """
     # UTF8 = ASCII for the chars we care about, so we can just loop over the
     # UTF8 data.
     cdef Py_ssize_t size = 0
     cdef Py_ssize_t final_size = 0
-    cdef int i, j
+    cdef Py_ssize_t i, j
     cdef uchar letter
     cdef const uchar *in_buf = <const uchar *>PyUnicode_AsUTF8AndSize(text, &size)
     final_size = size
@@ -1075,7 +1100,7 @@ def escape_text(str text not None: str) -> str:
     # First loop to compute the full string length, and check if we need to
     # escape at all.
     for i in range(size):
-        if in_buf[i] in b'\\"\t\n':
+        if in_buf[i] in b'\n\t\v\b\r\f\a\\?\'"':
             final_size += 1
 
     if size == final_size:  # Unchanged, return original
@@ -1089,22 +1114,29 @@ def escape_text(str text not None: str) -> str:
             raise MemoryError
         for i in range(size):
             letter = in_buf[i]
-            if letter == b'\\':
-                out_buff[j] = b'\\'
-                j += 1
-                out_buff[j] = b'\\'
-            elif letter == b'"':
-                out_buff[j] = b'\\'
-                j += 1
-                out_buff[j] = b'"'
+            # b'ntvbrfa?\'"'
+            if letter == b'\n':
+                j = _write_escape(out_buff, j, b'n')
             elif letter == b'\t':
-                out_buff[j] = b'\\'
-                j += 1
-                out_buff[j] = b't'
-            elif letter == b'\n':
-                out_buff[j] = b'\\'
-                j += 1
-                out_buff[j] = b'n'
+                j = _write_escape(out_buff, j, b't')
+            elif letter == b'\v':
+                j = _write_escape(out_buff, j, b'v')
+            elif letter == b'\b':
+                j = _write_escape(out_buff, j, b'b')
+            elif letter == b'\r':
+                j = _write_escape(out_buff, j, b'r')
+            elif letter == b'\f':
+                j = _write_escape(out_buff, j, b'f')
+            elif letter == b'\a':
+                j = _write_escape(out_buff, j, b'a')
+            elif letter == b'?':
+                j = _write_escape(out_buff, j, b'?')
+            elif letter == b'\\':
+                j = _write_escape(out_buff, j, b'\\')
+            elif letter == b'"':
+                j = _write_escape(out_buff, j, b'"')
+            elif letter == b"'":
+                j = _write_escape(out_buff, j, b"'")
             else:
                 out_buff[j] = letter
             j += 1
