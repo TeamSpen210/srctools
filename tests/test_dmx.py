@@ -687,7 +687,7 @@ def verify_sample(root: Element) -> None:
     assert scalars.uuid == UUID('e1db21c6-d046-46ca-9452-25c667b70ede')
     assert scalars.name == 'ScalarValues'
 
-    assert len(scalars) == 21
+    assert len(scalars) == 22
     assert scalars['neg_integer'].val_int == -1230552801
     assert scalars['pos_integer'].val_int == 296703200
 
@@ -702,6 +702,8 @@ def verify_sample(root: Element) -> None:
 
     assert scalars['truth'].val_bool is True
     assert scalars['falsity'].val_bool is False
+
+    assert scalars['string'].val_string == "string \n \t \v \b \r \f \a \\ ? \' \""
 
     assert scalars['red'].val_color == Color(240, 32, 32, 255)
     assert scalars['blue'].val_color == Color(32, 240, 32, 255)
@@ -729,7 +731,13 @@ def verify_sample(root: Element) -> None:
     assert arrays.type == 'TypeHolder'
     assert arrays.uuid == UUID('2b95889f-5041-436e-9350-813abcf504b0')
     assert arrays.name == 'ArrayValues'
-    assert len(arrays) == 12
+    assert len(arrays) == 13
+
+    arr_string = arrays['strings']
+    assert len(arr_string) == 3
+    assert arr_string[0].val_str == 'regular Value'
+    assert arr_string[1].val_str == '\n \t \v \b \r \f \a'
+    assert arr_string[2].val_str == '\\ ? \' "'
 
     arr_int = arrays['integers']
     assert len(arr_int) == 5
