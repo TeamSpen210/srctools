@@ -1314,8 +1314,11 @@ class EntityDef:
     inp: _EntityView[IODef] = attrs.field(init=False)
     out: _EntityView[IODef] = attrs.field(init=False)
 
-    #: A list of resources this entity may precache. Use :py:func:`get_resources()` to recursively
+    #: A list of resources this entity may require. Use :py:func:`get_resources()` to recursively
     #: fetch sub-entity resources.
+    # This is set to an empty tuple to represent an entity which has
+    #: no `@resources` definition, as opposed to an empty list for an explicit empty resources
+    #: definition. Use :py:func:`resources_defined()` to distinguish between these cases.
     resources: Sequence[Resource] = attrs.field(kw_only=True, default=())
     #: If set, the ``aliasof()`` helper was used. This entity should have 1 base, which this is
     #: simply an alternate classname for.
@@ -1564,8 +1567,7 @@ class EntityDef:
                         resources.append(Resource(filename, res_type, tags))
                     elif res_tok is Token.BRACK_CLOSE:
                         break
-                # Subtle: don't convert to tuple, then unify_fgd can check all ents have
-                # these defined.
+                # Subtle: don't convert to tuple, we use () to represent unset resources.
                 entity.resources = resources
             else:
                 # noinspection PyProtectedMember
@@ -1619,6 +1621,10 @@ class EntityDef:
             classnames |= dbase.get_classnames()
 
         return frozenset(classnames)
+
+    def resources_defined(self) -> bool:
+        """Check if any resources were defined for this entity, even if blank."""
+        return self.resources != ()
 
     def __repr__(self) -> str:
         if self.type is EntityTypes.BASE:
@@ -1904,7 +1910,7 @@ class EntityDef:
                 for tags, out in out_map.items():
                     out.export(file, 'output', tags if custom_syntax else ())
 
-        if custom_syntax and self.resources:
+        if custom_syntax and self.resources != ():
             file.write('\n\t@resources\n\t\t[\n')
             for res in self.resources:
                 file.write(f'\t\t{RESTYPE_TO_NAME[res.type]} "{escape_text(res.filename)}"')
