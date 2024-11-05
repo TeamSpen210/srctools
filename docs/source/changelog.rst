@@ -22,6 +22,7 @@ Version (dev)
 * :py:mod`srctools.logging` log files will now always be written as UTF-8.
 * Add a `custom_syntax` option to :py:meth:`FGD.export() <srctools.fgd.FGD.export>`, disabling
   export of custom syntax. Resources can now be exported.
+* Correctly produce an error if a FGD entity definition is missing its closing bracket.
 * Escape all characters `utilbuffer.cpp` does - `\\n`, `\\t`, `\\v`, `\\b`, `\\r`, `\\f`, `\\a`, `\\`, `?`, `'`, `"`.
 * Unconditionally enable support for escaping characters in DMX Keyvalues2, since Valve's parser can handle it. Binary formats never needed escaping.
 * Correctly look up types for conditional shader parameters (`ldr?$bumpmap`).

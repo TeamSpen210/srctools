@@ -27,7 +27,7 @@ import srctools
 
 
 __all__ = [
-    'ValueTypes', 'EntityTypes', 'HelperTypes', 'AutoVisgroup',
+    'ValueTypes', 'EntityTypes', 'HelperTypes', 'AutoVisgroup', 'FGDParseError',
     'FGD', 'EntityDef', 'KVDef', 'IODef', 'EntAttribute', 'Helper', 'UnknownHelper',
     'match_tags', 'validate_tags', 'Resource', 'ResourceCtx', 'Snippet',
 
@@ -1501,7 +1501,8 @@ class EntityDef:
                 visgroup.ents.add(entity.classname)
 
         # Now parse keyvalues, and input/outputs
-        for token, token_value in tok:
+        while True:
+            token, token_value = tok()
             if token is Token.BRACK_CLOSE:
                 break  # End of this entity.
 
@@ -1602,7 +1603,7 @@ class EntityDef:
         for dbase in databases:
             try:
                 return deepcopy(dbase.get_ent(classname))
-            except KeyError as err:
+            except KeyError:
                 pass
         
         raise KeyError(classname)
