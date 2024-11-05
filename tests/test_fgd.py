@@ -89,9 +89,11 @@ appliesto(tag1, tag2, !tag3)
     
     input Trigger(void): "Trigger the entity."
     output OnTrigger(void): "Handle triggering."
-    output OnTrigger[adv](float): "Handle triggering, with value."
+    output OnTrigger[adv](float): "Handle triggering, with value. " + 
+        "Second line."
     
-    choicelist(choices) : "A Choice" : 0 : "Blahdy blah" = 
+    choicelist(choices) : "A Choice" : 0 : "Blahdy blah. "
+    + "Another line." = 
         [
         0: "First"
         1: "Second" [new]
@@ -99,6 +101,10 @@ appliesto(tag1, tag2, !tag3)
         2: "Third"
         "four": "Fourth"
         ]
+    ]
+@SolidClass = multiline: "Another description "
+ + "with the plus at the start" 
+    [
     ]
 """})
     fgd = FGD()
@@ -157,7 +163,7 @@ appliesto(tag1, tag2, !tag3)
         ValueTypes.CHOICES,
         'A Choice',
         '0',
-        'Blahdy blah',
+        'Blahdy blah. Another line.',
         val_list=[
             ('0', 'First', frozenset()),
             ('1', 'Second', frozenset({'NEW'})),
@@ -180,8 +186,10 @@ appliesto(tag1, tag2, !tag3)
     assert ent.out['onTrigger', {'adv'}] == IODef(
         'OnTrigger',
         ValueTypes.FLOAT,
-        'Handle triggering, with value.'
+        'Handle triggering, with value. Second line.'
     )
+
+    assert fgd['multiline'].desc == 'Another description with the plus at the start'
 
 
 def test_entity_extend(py_c_token) -> None:

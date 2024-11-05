@@ -26,6 +26,7 @@ Version (dev)
 * Escape all characters `utilbuffer.cpp` does - `\\n`, `\\t`, `\\v`, `\\b`, `\\r`, `\\f`, `\\a`, `\\`, `?`, `'`, `"`.
 * Unconditionally enable support for escaping characters in DMX Keyvalues2, since Valve's parser can handle it. Binary formats never needed escaping.
 * Correctly look up types for conditional shader parameters (`ldr?$bumpmap`).
+* Parse FGDs correctly which have multiline strings with the plus on the second line.
 
 -------------
 Version 2.3.4

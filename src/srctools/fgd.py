@@ -375,8 +375,21 @@ def _read_colon_list(
                 raise tok.error('Too many strings (#snippet "{}")!', desc_key)
             strings.append(Snippet.lookup(tok.error, 'description', snippet_desc, desc_key))
             ready_for_string = False
-        elif ready_for_string and token is Token.NEWLINE:
-            continue  # skip over this in particular...
+        elif token is Token.NEWLINE:
+            if ready_for_string:
+                continue  # Last line ended with +, skip the newline.
+            else:
+                # Check if the next line's token is a +, if so allow a string.
+                line_tok, line_value = tok()
+                if line_tok is Token.PLUS:
+                    if not strings:
+                        raise tok.error('"+" without a string before it!')
+                    strings[-1] += tok.expect(Token.STRING)
+                    continue
+                # Put the tokens back.
+                tok.push_back(line_tok, line_value)
+                tok.push_back(token, tok_value)
+                return strings
         else:
             if ready_for_string:
                 raise tok.error(token)
