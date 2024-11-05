@@ -205,7 +205,7 @@ class BaseTokenizer(abc.ABC):
     """
 
     #: If set, this token will be returned next.
-    _pushback: Optional[Tuple[Token, str]] = None
+    _pushback: List[Tuple[Token, str]]
 
     def __init__(
         self,
@@ -229,7 +229,7 @@ class BaseTokenizer(abc.ABC):
                 raise TypeError(f'Invalid error instance "{type(error).__name__}"!')
             self.error_type = error
 
-        self._pushback = None
+        self._pushback = []
         self.line_num = 1
 
     @overload
@@ -297,10 +297,8 @@ class BaseTokenizer(abc.ABC):
 
     def __call__(self) -> Tuple[Token, str]:
         """Compute and fetch the next token."""
-        if self._pushback is not None:
-            next_val = self._pushback
-            self._pushback = None
-            return next_val
+        if self._pushback:
+            return self._pushback.pop()
         return self._get_token()
 
     def __iter__(self) -> Self:
@@ -317,12 +315,9 @@ class BaseTokenizer(abc.ABC):
     def push_back(self, tok: Token, value: Optional[str] = None) -> None:
         """Return a token, so it will be reproduced when called again.
 
-        Only one token can be pushed back at once.
         The value is required for :py:const:`Token.STRING`, :py:const:`~Token.PAREN_ARGS` and \
         :py:const:`~Token.PROP_FLAG`, but ignored for other token types.
         """
-        if self._pushback is not None:
-            raise ValueError('Token already pushed back!')
         if not isinstance(tok, Token):
             raise ValueError(repr(tok) + ' is not a Token!')
 
@@ -332,14 +327,12 @@ class BaseTokenizer(abc.ABC):
             if value is None:
                 raise ValueError(f'Value required for {tok.name!r}!') from None
 
-        self._pushback = (tok, value)
+        self._pushback.append((tok, value))
 
     def peek(self) -> Tuple[Token, str]:
         """Peek at the next token, without removing it from the stream."""
         tok_and_val = self()
-        # We know this is a valid pushback value, and any existing value was
-        # just removed. So unconditionally assign.
-        self._pushback = tok_and_val
+        self._pushback.append(tok_and_val)
         return tok_and_val
 
     def skipping_newlines(self) -> Iterator[Tuple[Token, str]]:

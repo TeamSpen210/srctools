@@ -243,7 +243,7 @@ def test_pushback(py_c_token: Type[Tokenizer]) -> None:
     tok = Tokenizer(prop_parse_test, '', string_bracket=True)
     tokens = []
     for i, (tok_type, tok_value) in enumerate(tok):
-        if i % 3 == 0:
+        if i % 5 in (0, 3, 4):
             tok.push_back(tok_type, tok_value)
         else:
             tokens.append((tok_type, tok_value))
@@ -252,7 +252,7 @@ def test_pushback(py_c_token: Type[Tokenizer]) -> None:
     tok = Tokenizer(noprop_parse_test, '')
     tokens = []
     for i, (tok_type, tok_value) in enumerate(tok):
-        if i % 3 == 0:
+        if i % 5 in (0, 3, 4):
             tok.push_back(tok_type, tok_value)
         else:
             tokens.append((tok_type, tok_value))
@@ -277,10 +277,9 @@ def test_pushback_opvalues(py_c_token: Type[Tokenizer], token: Token, val: str) 
     tok.push_back(token, val)
     assert tok() == (token, val)
 
-    # Can only push back one at a time.
     tok.push_back(Token.STRING, 'push')
-    with pytest.raises(ValueError, match='Token already pushed back!'):
-        tok.push_back(Token.STRING, 'two_at_once')
+    tok.push_back(Token.DIRECTIVE, 'second')
+    assert tok() == (Token.DIRECTIVE, 'second')
     assert tok() == (Token.STRING, 'push')
 
     # Value is ignored for these token types.
@@ -961,6 +960,9 @@ def test_subclass_base(Tok: Type[BaseTokenizer]) -> None:
     assert tok() == (Token.DIRECTIVE, '#test')
     assert tok() == (Token.NEWLINE, '\n')
     assert tok.peek() == (Token.BRACE_OPEN, '{')
+    tok.push_back(Token.STRING, "extra")
+    assert tok.peek() == (Token.STRING, "extra")
+    assert tok() == (Token.STRING, "extra")
     assert tok.peek() == (Token.BRACE_OPEN, '{')
     assert next(iter(tok)) == (Token.BRACE_OPEN, '{')
     skip = tok.skipping_newlines()

@@ -114,8 +114,7 @@ cdef class BaseTokenizer:
 
     cdef str filename
 
-    cdef object pushback_tok
-    cdef object pushback_val
+    cdef list pushback
 
     cdef public int line_num
     cdef TokFlags flags
@@ -142,7 +141,7 @@ cdef class BaseTokenizer:
                 raise TypeError(f'Invalid error instance "{type(error).__name__}"' '!')
             self.error_type = error
 
-        self.pushback_tok = self.pushback_val = None
+        self.pushback = []
         self.line_num = 1
         self.flags = {
             'string_brackets': 0,
@@ -271,10 +270,8 @@ cdef class BaseTokenizer:
         
         This also implements pushback.
         """
-        if self.pushback_tok is not None:
-            output = self.pushback_tok, self.pushback_val
-            self.pushback_tok = self.pushback_val = None
-            return output
+        if self.pushback:
+            return self.pushback.pop()
 
         return self._get_token()
 
@@ -296,12 +293,9 @@ cdef class BaseTokenizer:
     def push_back(self, object tok not None, str value=None):
         """Return a token, so it will be reproduced when called again.
 
-        Only one token can be pushed back at once.
         The value is required for STRING, PAREN_ARGS and PROP_FLAGS, but ignored
         for other token types.
         """
-        if self.pushback_tok is not None:
-            raise ValueError('Token already pushed back!')
         if not isinstance(tok, Token):
             raise ValueError(f'{tok!r} is not a Token!')
 
@@ -335,14 +329,12 @@ cdef class BaseTokenizer:
         else:
             raise ValueError(f'Unknown token {tok!r}')
 
-        self.pushback_tok = tok
-        self.pushback_val = value
+        self.pushback.append((tok, value))
 
     def peek(self):
         """Peek at the next token, without removing it from the stream."""
-        # We know this is a valid pushback value, and any existing value was
-        # just removed. So unconditionally assign.
-        self.pushback_tok, self.pushback_val = tok_and_val = <tuple>self.next_token()
+        tok_and_val = <tuple>self.next_token()
+        self.pushback.append(tok_and_val)
 
         return tok_and_val
 
@@ -660,10 +652,8 @@ cdef class Tokenizer(BaseTokenizer):
             bint save_comments
 
         # Implement pushback directly for efficiency.
-        if self.pushback_tok is not None:
-            output = self.pushback_tok, self.pushback_val
-            self.pushback_tok = self.pushback_val = None
-            return output
+        if self.pushback:
+            return self.pushback.pop()
 
         while True:
             next_char, is_eof = self._next_char()
@@ -972,10 +962,8 @@ cdef class IterTokenizer(BaseTokenizer):
 
     cdef next_token(self):
         """Implement pushback directly for efficiency."""
-        if self.pushback_tok is not None:
-            output = self.pushback_tok, self.pushback_val
-            self.pushback_tok = self.pushback_val = None
-            return output
+        if self.pushback:
+            return self.pushback.pop()
 
         try:
             return next(self.source)
