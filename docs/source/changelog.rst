@@ -6,7 +6,7 @@ Changelog
 	:backlinks: none
 
 -------------
-Version (dev)
+Version 2.4.1
 -------------
 * Add py:mod:`srctools.steam`, written by `Thenderek0 <https://github.com/TheEnderek0>`_.
   This allows locating Steam games based on their app ID. Support was also added for parsing Strata
@@ -29,7 +29,7 @@ Version (dev)
 * Parse FGDs correctly which have multiline strings with the plus on the second line.
 
 -------------
-Version 2.3.4
+Version 2.4.0
 -------------
 * Added :py:mod:`srctools.choreo`, for parsing choreographed scenes.
 * Allow passing :py:class:`~srctools.math.FrozenVec` to :py:meth:`VMF.make_prism() <srctools.vmf.VMF.make_prism>`/:py:meth:`~srctools.vmf.VMF.make_hollow`.
