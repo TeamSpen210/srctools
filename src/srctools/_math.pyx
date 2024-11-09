@@ -4,6 +4,7 @@ from cpython.conversion cimport PyOS_double_to_string
 from cpython.exc cimport PyErr_WarnEx
 from cpython.mem cimport PyMem_Free, PyMem_Malloc
 from cpython.object cimport Py_EQ, Py_GE, Py_GT, Py_LE, Py_LT, Py_NE, PyObject, PyTypeObject
+from cpython.unicode cimport PyUnicode_AsUTF8AndSize
 from cpython.ref cimport Py_INCREF
 from libc cimport math
 from libc.math cimport M_PI, NAN, cos, isnan, llround, sin, tan
@@ -16,9 +17,6 @@ cimport cython.operator
 
 from srctools cimport quickhull
 
-
-cdef extern from *:
-    const char* PyUnicode_AsUTF8AndSize(str string, Py_ssize_t *size) except NULL
 
 cdef inline Vec _vector_mut(double x, double y, double z):
     """Make a mutable Vector directly."""
