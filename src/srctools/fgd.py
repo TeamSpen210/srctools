@@ -398,7 +398,18 @@ def _read_colon_list(
     raise tok.error(token)
 
 
-def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
+def _fgd_escape(extended: bool, text: str) -> str:
+    """Escape text for FGD files. The original parser only supported parsing \\n,
+    but others support more escapes.
+
+    Swap double quotes for double single quotes, which at least look somewhat right.
+    """
+    if extended:
+        return escape_text(text)
+    return text.replace('\n', '\\n').replace('"', "''")
+
+
+def _write_longstring(file: IO[str], extended: bool, text: str, *, indent: str) -> None:
     """Write potentially long strings to the file, splitting with + if needed.
 
     The game parser has a max size of 8192 bytes for the text, but can only
@@ -406,7 +417,7 @@ def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
     """
     LIMIT = 1000  # Give a bit of extra room for the quotes, etc.
     sections = []
-    remaining = escape_text(text)
+    remaining = _fgd_escape(extended, text)
     while len(remaining) > LIMIT:
         # First, look for any \ns and split on those. This is a nice stopping
         # point, and also prevents separating the "\" from "n". Then add 2
@@ -1070,7 +1081,8 @@ class KVDef(EntAttribute):
 
         if self.type is not ValueTypes.SPAWNFLAGS:
             # Spawnflags never use names!
-            file.write(f': "{self.disp_name}"')
+            file.write(': ')
+            _write_longstring(file, custom_syntax, self.disp_name, indent='\t')
 
         default = self.default
         if not default and self.type is ValueTypes.BOOL:
@@ -1091,7 +1103,7 @@ class KVDef(EntAttribute):
                 file.write(' : : ')
 
         if self.desc:
-            _write_longstring(file, self.desc, indent='\t')
+            _write_longstring(file, custom_syntax, self.desc, indent='\t')
 
         if self.type.has_list:
             file.write(' =\n\t\t[\n')
@@ -1103,6 +1115,7 @@ class KVDef(EntAttribute):
                     name = name.replace('\n', ' ')
                     _write_longstring(
                         file,
+                        custom_syntax,
                         f'[{index}] {name}' if label_spawnflags else name,
                         indent='\t\t',
                     )
@@ -1117,11 +1130,11 @@ class KVDef(EntAttribute):
                     try:
                         float(value)
                     except ValueError:
-                        value = '"' + value + '"'
+                        value = f'"{value}"'
 
                     file.write(f'\t\t{value}: ')
                     # Newlines aren't functional here, just replace.
-                    _write_longstring(file, name.replace('\n', ' '), indent='\t\t')
+                    _write_longstring(file, False, name.replace('\n', ' '), indent='\t\t')
                     if tags and custom_syntax:
                         file.write(f' [{", ".join(sorted(tags))}]\n')
                     else:
@@ -1192,6 +1205,7 @@ class IODef(EntAttribute):
         file: TextIO,
         io_type: str,
         tags: Collection[str] = (),
+        custom_syntax: bool = True,
     ) -> None:
         """Write this back out to a FGD file.
 
@@ -1199,7 +1213,7 @@ class IODef(EntAttribute):
         """
         file.write(f'\t{io_type} {self.name}')
 
-        if tags:
+        if custom_syntax and tags:
             file.write(f'[{", ".join(sorted(tags))}]')
 
         # Special case, bool is "boolean" on values, "bool" on IO...
@@ -1210,7 +1224,7 @@ class IODef(EntAttribute):
 
         if self.desc:
             file.write(' : ')
-            _write_longstring(file, self.desc, indent='\t')
+            _write_longstring(file, custom_syntax, self.desc, indent='\t')
         file.write('\n')
 
 
@@ -1892,7 +1906,7 @@ class EntityDef:
 
         if self.desc:
             file.write(': ')
-            _write_longstring(file, self.desc, indent='\t\t')
+            _write_longstring(file, custom_syntax, self.desc, indent='\t\t')
 
         file.write('\n\t[\n')
 
@@ -1915,14 +1929,14 @@ class EntityDef:
 
             for inp_map in self.inputs.values():
                 for tags, inp in inp_map.items():
-                    inp.export(file, 'input', tags if custom_syntax else ())
+                    inp.export(file, 'input', tags, custom_syntax)
 
         if self.outputs:
             file.write('\n\t// Outputs\n')
 
             for out_map in self.outputs.values():
                 for tags, out in out_map.items():
-                    out.export(file, 'output', tags if custom_syntax else ())
+                    out.export(file, 'output', tags, custom_syntax)
 
         if custom_syntax and self.resources != ():
             file.write('\n\t@resources\n\t\t[\n')

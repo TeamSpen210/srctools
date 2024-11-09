@@ -583,6 +583,8 @@ def test_export_regressions(file_regression: FileRegressionFixture, custom_synta
         HelperSize(Vec(-16, -16, -16), Vec(16, 16, 16)),
     ]
     ent.desc = 'Entity description, extending beyond 1000 characters: ' + ', '.join(map(str, range(500))) + '. Done!'
+    # Only newlines can be escaped in the original parser.
+    ent.desc += '\n escapes: tab=\t, newline=\n, "quoted", bell=\a'
     ent.keyvalues['test_kv'] = {frozenset(): KVDef(
         'test_kv',
         ValueTypes.COLOR_255,

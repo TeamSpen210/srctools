@@ -6,6 +6,11 @@ Changelog
 	:backlinks: none
 
 -------------
+Version (dev)
+-------------
+* #35: Only use character escapes in FGD custom syntax mode. The original parser only allows `\\n`.
+
+-------------
 Version 2.4.1
 -------------
 * Add py:mod:`srctools.steam`, written by `Thenderek0 <https://github.com/TheEnderek0>`_.
