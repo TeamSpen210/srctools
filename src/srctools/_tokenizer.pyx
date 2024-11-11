@@ -1086,7 +1086,7 @@ def escape_text(str text not None: str) -> str:
     # First loop to compute the full string length, and check if we need to
     # escape at all.
     for i in range(size):
-        if in_buf[i] in b'\n\t\v\b\r\f\a\\?\'"':
+        if in_buf[i] in b'\n\t\v\b\r\f\a\\\'"':
             final_size += 1
 
     if size == final_size:  # Unchanged, return original
