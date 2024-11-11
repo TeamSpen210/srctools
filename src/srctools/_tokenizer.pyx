@@ -1071,7 +1071,8 @@ def escape_text(str text not None: str) -> str:
     r"""Escape special characters and backslashes, so tokenising reproduces them.
 
     This matches utilbuffer.cpp in the SDK.
-    The following characters are escaped: \n, \t, \v, \b, \r, \f, \a, \, /, ?, ', ".
+    The following characters are escaped: \n, \t, \v, \b, \r, \f, \a, \, ', ".
+    / and ? are accepted as escapes, but not produced since they're unambiguous.
     """
     # UTF8 = ASCII for the chars we care about, so we can just loop over the
     # UTF8 data.
@@ -1114,8 +1115,6 @@ def escape_text(str text not None: str) -> str:
                 j = _write_escape(out_buff, j, b'f')
             elif letter == b'\a':
                 j = _write_escape(out_buff, j, b'a')
-            elif letter == b'?':
-                j = _write_escape(out_buff, j, b'?')
             elif letter == b'\\':
                 j = _write_escape(out_buff, j, b'\\')
             elif letter == b'"':
