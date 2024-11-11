@@ -6,7 +6,9 @@ from cpython.unicode cimport PyUnicode_AsUTF8AndSize, PyUnicode_FromStringAndSiz
 from libc.stdint cimport uint16_t, uint_fast8_t
 cimport cython
 
-ctypedef unsigned char uchar "unsigned char"  # Using it a lot, this causes it to not be a typedef at all.
+cdef extern from *:
+    ctypedef unsigned char uchar "unsigned char"  # Using it a lot, this causes it to not be a typedef at all.
+
 cdef object os_fspath
 from os import fspath as os_fspath
 
@@ -1069,7 +1071,8 @@ def escape_text(str text not None: str) -> str:
     r"""Escape special characters and backslashes, so tokenising reproduces them.
 
     This matches utilbuffer.cpp in the SDK.
-    The following characters are escaped: \n, \t, \v, \b, \r, \f, \a, \, /, ?, ', ".
+    The following characters are escaped: \n, \t, \v, \b, \r, \f, \a, \, ', ".
+    / and ? are accepted as escapes, but not produced since they're unambiguous.
     """
     # UTF8 = ASCII for the chars we care about, so we can just loop over the
     # UTF8 data.
@@ -1083,7 +1086,7 @@ def escape_text(str text not None: str) -> str:
     # First loop to compute the full string length, and check if we need to
     # escape at all.
     for i in range(size):
-        if in_buf[i] in b'\n\t\v\b\r\f\a\\?\'"':
+        if in_buf[i] in b'\n\t\v\b\r\f\a\\\'"':
             final_size += 1
 
     if size == final_size:  # Unchanged, return original
@@ -1112,8 +1115,6 @@ def escape_text(str text not None: str) -> str:
                 j = _write_escape(out_buff, j, b'f')
             elif letter == b'\a':
                 j = _write_escape(out_buff, j, b'a')
-            elif letter == b'?':
-                j = _write_escape(out_buff, j, b'?')
             elif letter == b'\\':
                 j = _write_escape(out_buff, j, b'\\')
             elif letter == b'"':
