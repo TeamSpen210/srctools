@@ -6,7 +6,9 @@ from cpython.unicode cimport PyUnicode_AsUTF8AndSize, PyUnicode_FromStringAndSiz
 from libc.stdint cimport uint16_t, uint_fast8_t
 cimport cython
 
-ctypedef unsigned char uchar "unsigned char"  # Using it a lot, this causes it to not be a typedef at all.
+cdef extern from *:
+    ctypedef unsigned char uchar "unsigned char"  # Using it a lot, this causes it to not be a typedef at all.
+
 cdef object os_fspath
 from os import fspath as os_fspath
 
