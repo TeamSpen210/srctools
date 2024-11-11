@@ -2122,9 +2122,7 @@ class FGD:
             for ent in todo:
                 ready = True
                 for base in ent.bases:
-                    if isinstance(base, str):
-                        raise ValueError(f'Unevaluated base: {base} in {ent.classname}!')
-                    if base not in done:
+                    if isinstance(base, EntityDef) and base not in done:
                         # Base not done yet, we need to defer this.
                         deferred.add(ent)
                         # If the base isn't in any of our sets, it's one
