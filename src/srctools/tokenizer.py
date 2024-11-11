@@ -17,6 +17,7 @@ produce an exception listing the relevant line number and filename.
 Character escapes match matches `utilbuffer.cpp <https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/tier1/utlbuffer.cpp#L57-L69>`_ in the SDK.
 Specifically, the following characters are escaped:
 `\\\\n`, `\\\\t`, `\\\\v`, `\\\\b`, `\\\\r`, `\\\\f`, `\\\\a`, `\\`, `?`, `'` and `"`.
+`/` and `?` are accepted as escapes, but not produced since they're unambiguous.
 """
 import re
 from typing import (
@@ -177,7 +178,10 @@ ESCAPES = {
     '?': '?',
 }
 ESCAPES_INV = {char: f'\\{sym}' for sym, char in ESCAPES.items()}
-ESCAPE_RE = re.compile('|'.join(map(re.escape, ESCAPES_INV)))
+ESCAPE_RE = re.compile('|'.join(
+    re.escape(c) for c in ESCAPES_INV
+    if c not in '?/'
+))
 
 #: Characters not allowed for bare strings. These must be quoted.
 BARE_DISALLOWED: Final = frozenset('"\'{};,=[]()\r\n\t ')

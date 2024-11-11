@@ -19,8 +19,8 @@ T = Token
 IS_CPYTHON = platform.python_implementation() == 'CPython'
 
 # See https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/tier1/utlbuffer.cpp#L57-L69
-ESCAPE_CHARS = "\n \t \v \b \r \f \a \\ ? \' \""
-ESCAPE_ENCODED = r"\n \t \v \b \r \f \a \\ \? \' " + r'\"'
+ESCAPE_CHARS = "\n \t \v \b \r \f \a \\ \' \""
+ESCAPE_ENCODED = r"\n \t \v \b \r \f \a \\ \' " + r'\"'
 
 # The correct result of parsing prop_parse_test.
 # Either the token, or token + value (which must be correct).
@@ -535,6 +535,7 @@ def test_obj_config(py_c_token: Type[Tokenizer], parm: str, default: bool) -> No
     ("\\thello_world", r"\\thello_world"),
     ("\\ttest\nvalue\t\\r\t\n", r"\\ttest\nvalue\t\\r\t\n"),
     (ESCAPE_CHARS, ESCAPE_ENCODED),
+    ('Unchanged ?/', 'Unchanged ?/'),
     # BMP characters, and some multiplane chars.
     ('test: ╒══╕', r'test: ╒══╕'),
     ("♜♞🤐♝♛🥌 chess: ♚♝♞♜", "♜♞🤐♝♛🥌 chess: ♚♝♞♜"),
@@ -685,12 +686,13 @@ def test_allow_escapes(py_c_token: Type[Tokenizer]) -> None:
         Token.BRACE_CLOSE,
     ])
     check_tokens(py_c_token(
-        f'{{ "string\\n" "all escapes: {ESCAPE_ENCODED}" }}',
+        f'{{ "string\\n" "all escapes: {ESCAPE_ENCODED}" "also accepted /?" }}',
         allow_escapes=True,
     ), [
         Token.BRACE_OPEN,
         (Token.STRING, "string\n"),
         (Token.STRING, f'all escapes: {ESCAPE_CHARS}'),
+        (Token.STRING, 'also accepted /?'),
         Token.BRACE_CLOSE,
     ])
 

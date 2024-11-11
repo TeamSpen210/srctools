@@ -9,6 +9,7 @@ Changelog
 Version (dev)
 -------------
 * #35: Only use character escapes in FGD custom syntax mode. The original parser only allows `\\n`.
+* Avoid escaping `/` and `?`, these are unambiguous.
 
 -------------
 Version 2.4.1
