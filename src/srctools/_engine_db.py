@@ -117,6 +117,7 @@ VALUE_TYPE_ORDER = [
     ValueTypes.EXT_ANGLES_LOCAL,
     ValueTypes.EXT_VEC_DIRECTION,
     ValueTypes.EXT_VEC_LOCAL,
+    ValueTypes.EXT_SOUNDSCAPE,
 ]
 
 FILE_TYPE_ORDER = [

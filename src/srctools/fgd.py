@@ -124,6 +124,7 @@ class ValueTypes(Enum):
     EXT_VEC_LOCAL = 'vec_local'  # Vector, but do not rotate in instances.
     EXT_ANGLE_PITCH = 'angle_pitch'  # Overrides angles[2], but isn't inverted
     EXT_ANGLES_LOCAL = 'angle_local'  # Angles value, but do not rotate in instances.
+    EXT_SOUNDSCAPE = 'soundscape'  # Soundscape entry. Supported natively by Strata, but not by prior branches
 
     @property
     def has_list(self) -> bool:
