@@ -9,7 +9,7 @@
 	origin(origin) : "Origin" : "0 0 0"
 	]
 
-@NpcClass base(Origin, Angles) 
+@NpcClass base(Origin, Angles, MissingBase) 
 	sphere(radius, 255 128 64)
 	studio(models/editor/a_prop.mdl)
 	appliesto(-episodic)

@@ -555,7 +555,7 @@ def test_export_regressions(file_regression: FileRegressionFixture, custom_synta
     base_angles = EntityDef(EntityTypes.BASE, 'Angles')
 
     ent = EntityDef(EntityTypes.NPC, 'npc_test')
-    ent.bases = [base_origin, base_angles]
+    ent.bases = [base_origin, base_angles, 'MissingBase']
 
     fgd.entities = {
         # 'origin': base_origin,

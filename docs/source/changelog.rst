@@ -10,6 +10,8 @@ Version (dev)
 -------------
 * #35: Only use character escapes in FGD custom syntax mode. The original parser only allows `\\n`.
 * Avoid escaping `/` and `?`, these are unambiguous.
+* Add :py:attr:`ValueTypes.EXT_SOUNDSCAPE <srctools.fgd.ValueTypes.EXT_SOUNDSCAPE>`.
+* Support exporting FGDs with unevaulated string bases.
 
 -------------
 Version 2.4.1

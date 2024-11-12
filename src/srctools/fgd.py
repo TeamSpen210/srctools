@@ -85,13 +85,13 @@ class ValueTypes(Enum):
     TARG_DEST = 'target_destination'
     ENT_HANDLE = EHANDLE = TARG_DEST
 
-    TARG_DEST_CLASS = 'target_name_or_class'  # Above + classnames.
+    TARG_DEST_CLASS = 'target_name_or_class'  # A targetname for another ent, or a classname.
     TARG_SOURCE = 'target_source'  # The 'targetname' keyvalue.
-    TARG_NPC_CLASS = 'npcclass'  # targetnames filtered to NPC ents
-    TARG_POINT_CLASS = 'pointentityclass'  # targetnames filtered to point entities.
-    TARG_FILTER_NAME = 'filterclass'  # targetnames of filters.
-    TARG_NODE_DEST = 'node_dest'  # name of a node
-    TARG_NODE_SOURCE = 'node_id'  # name of us
+    TARG_NPC_CLASS = 'npcclass'  # Targetnames filtered to NPC entities.
+    TARG_POINT_CLASS = 'pointentityclass'  # Targetnames filtered to point entities.
+    TARG_FILTER_NAME = 'filterclass'  # Targetnames filtered to filter entities.
+    TARG_NODE_DEST = 'node_dest'  # Name of a node
+    TARG_NODE_SOURCE = 'node_id'  # name of us.
 
     # Strings, don't need fixups
     STR_SCENE = 'scene'  # VCD files
