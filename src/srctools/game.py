@@ -6,7 +6,7 @@ import os
 import sys
 
 from srctools.filesys import FileSystemChain, RawFileSystem, VPKFileSystem
-from srctools.keyvalues import Keyvalues
+from srctools.keyvalues import Keyvalues, LeafKeyvalueError
 from srctools.steam import find_app
 
 __all__ = ['GINFO', 'Game', 'find_gameinfo']
@@ -133,6 +133,10 @@ class Game:
             required = mount.bool("required", False)
             # Selects if we want to mount the "mod_folder" key as a folder or omit
             mountmoddir = mount.bool("mountmoddir", True)
+            enabled = mount.bool("enabled", True)
+
+            if not enabled: # Undocumented keyval
+                continue
             
             try:
                 app_info = find_app(appid)
@@ -145,11 +149,17 @@ class Game:
                 continue
 
             for child in mount:
-                if child.name in ("head", "required"):
+                if child.name in ("head", "required", "enabled", "mountmoddir"):
                     continue  # Ignore
 
                 # Else we're working with a mod folder
                 this_path = app_info.path / child.real_name
+
+                # If this is it cannot be iterated over, skip this keyvalue pair
+                try:
+                    child.iter_tree()
+                except LeafKeyvalueError:
+                    continue
 
                 for local_mount in child.iter_tree():
                     local_path = this_path / local_mount.value
