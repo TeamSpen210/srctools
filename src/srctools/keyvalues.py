@@ -371,21 +371,21 @@ class Keyvalues:
     ) -> "Keyvalues":
         """Returns a Keyvalues tree parsed from given text.
 
-        :param file_contents: should be an iterable of strings or a single string. Alternatively, \
-        file_contents may be an already created tokenizer. In this case ``allow_escapes`` is ignored.
-        :param filename: If set this should be the source of the text for debug purposes. If not \
-        supplied, ``file_contents.name`` will be used if present.
+        :param file_contents: should be an iterable of strings or a single string. Alternatively,
+          file_contents may be an already created tokenizer. In this case ``allow_escapes`` is ignored.
+        :param filename: If set this should be the source of the text for debug purposes. If not
+          supplied, ``file_contents.name`` will be used if present.
         :param single_block: If set, parse a single keyvalues block, instead of a file with multiple
-        roots. Importantly this will exit after hitting this brace, allowing it to be called in
-        the middle of parsing a larger document.
+          roots. Importantly this will exit after hitting this brace, allowing it to be called in
+          the middle of parsing a larger document.
         :param flags: This should be a mapping for additional ``[flag]`` suffixes to accept.
         :param allow_escapes: This allows choosing if ``\\t`` or similar escapes are parsed.
-        :param single_line: If this is set, allow multiple keyvalues to be on the same line. \
-        This means unterminated strings will be caught late (if at all), but it allows parsing \
-        some generated data blocks inside things like `.PHY` files.
-        :param newline_keys: This specifies if newline characters are allowed in keys. \
-        Keys are prohibited by default, since this is fairly useless, but if quote characters are \
-        mismatched it'll catch the mistake early.
+        :param single_line: If this is set, allow multiple keyvalues to be on the same line.
+          This means unterminated strings will be caught late (if at all), but it allows parsing
+          some generated data blocks inside things like `.PHY` files.
+        :param newline_keys: This specifies if newline characters are allowed in keys.
+          Keys are prohibited by default, since this is fairly useless, but if quote characters are
+          mismatched it'll catch the mistake early.
         :param newline_values: This specifies if newline characters are allowed in string values.
         """
         # The block we are currently adding to.

@@ -23,14 +23,14 @@ _STEAM_LOCS = [
 @attrs.frozen
 class AppInfo:
     """Information about a Steam app, parsed from the ACF file."""
-    id: int  #: Steam appid
-    name: str
+    id: int  #: Steam appid.
+    name: str  #: Display name for the app.
     path: Path  #: Install directory.
 
     @classmethod
     def parse(cls, folder: Path, filepath: Path) -> 'AppInfo':
         """Parse from an ACF file."""
-        with open(filepath) as acf_f:
+        with open(filepath, encoding="utf8") as acf_f:
             acf = Keyvalues.parse(acf_f)
         acf = acf.find_key("AppState")
 
@@ -84,7 +84,7 @@ def get_libraries(steam_installpath: Path) -> Collection[Path]:
     fpath = steam_installpath.joinpath("steamapps/libraryfolders.vdf")
 
     try:
-        with open(fpath) as libraryfolders:
+        with open(fpath, encoding="utf8") as libraryfolders:
             lf = Keyvalues.parse(libraryfolders)
     except FileNotFoundError:
         return ()

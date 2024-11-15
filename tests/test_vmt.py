@@ -16,6 +16,9 @@ def test_vartypes() -> None:
     assert get_parm_type('$detailblendmode') is VarType.INT
     assert get_parm_type('$bottommaterial') is VarType.MATERIAL
     assert get_parm_type('$bumptransform') is VarType.MATRIX
+    # ? flags are ignored.
+    assert get_parm_type('hdr?$ssbump') is VarType.INT
+    assert get_parm_type('!360?cheapwaterenddistance') is VarType.FLOAT
     # % must be specified
     assert get_parm_type('%compilenodraw') is VarType.FLAG
     assert get_parm_type('compilesky', 'missing') == 'missing'

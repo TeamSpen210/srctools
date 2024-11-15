@@ -3,16 +3,16 @@ from typing import Any, Callable, Generator
 import copy
 import io
 
-import pytest
 from pytest_regressions.file_regression import FileRegressionFixture
+import pytest
 
 from srctools import Vec, fgd as fgd_mod
-from srctools.fgd import (
-    FGD, AutoVisgroup, EntityDef, EntityTypes, HelperExtAppliesTo, HelperHalfGridSnap,
-    HelperLine, HelperModel, HelperSize, HelperSphere, IODef, KVDef, Resource, Snippet,
-    UnknownHelper, ValueTypes,
-)
 from srctools.const import FileType
+from srctools.fgd import (
+    FGD, AutoVisgroup, EntityDef, EntityTypes, FGDParseError, HelperExtAppliesTo,
+    HelperHalfGridSnap, HelperLine, HelperModel, HelperSize, HelperSphere, IODef, KVDef,
+    Resource, Snippet, UnknownHelper, ValueTypes,
+)
 from srctools.filesys import VirtualFileSystem
 # noinspection PyProtectedMember
 from srctools.tokenizer import Cy_Tokenizer, Py_Tokenizer
@@ -89,9 +89,11 @@ appliesto(tag1, tag2, !tag3)
     
     input Trigger(void): "Trigger the entity."
     output OnTrigger(void): "Handle triggering."
-    output OnTrigger[adv](float): "Handle triggering, with value."
+    output OnTrigger[adv](float): "Handle triggering, with value. " + 
+        "Second line."
     
-    choicelist(choices) : "A Choice" : 0 : "Blahdy blah" = 
+    choicelist(choices) : "A Choice" : 0 : "Blahdy blah. "
+    + "Another line." = 
         [
         0: "First"
         1: "Second" [new]
@@ -99,6 +101,11 @@ appliesto(tag1, tag2, !tag3)
         2: "Third"
         "four": "Fourth"
         ]
+    ]
+@SolidClass = multiline: "Another description "
+ + "with the plus at the start" 
+    [
+    ]
 """})
     fgd = FGD()
     fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False)
@@ -156,7 +163,7 @@ appliesto(tag1, tag2, !tag3)
         ValueTypes.CHOICES,
         'A Choice',
         '0',
-        'Blahdy blah',
+        'Blahdy blah. Another line.',
         val_list=[
             ('0', 'First', frozenset()),
             ('1', 'Second', frozenset({'NEW'})),
@@ -179,8 +186,10 @@ appliesto(tag1, tag2, !tag3)
     assert ent.out['onTrigger', {'adv'}] == IODef(
         'OnTrigger',
         ValueTypes.FLOAT,
-        'Handle triggering, with value.'
+        'Handle triggering, with value. Second line.'
     )
+
+    assert fgd['multiline'].desc == 'Another description with the plus at the start'
 
 
 def test_entity_extend(py_c_token) -> None:
@@ -500,6 +509,44 @@ def test_snippet_io(py_c_token) -> None:
     }
 
 
+PARSE_EOF = {
+    'entity.fgd': """\
+@PointClass = some_entity: "Some description" 
+[
+keyvalue1(string): "Name" : "default": "documentation"
+    """,
+    'entity_desc.fgd': """\
+@PointClass = some_entity: 
+    """,
+    'choices.fgd': """
+@PointClass = some_entity: "Some description" 
+[
+somechoices(choices): "Name" : 0 : "doc" = [
+"value1": "friendly"
+    """,
+    'spawnflags.fgd': """
+@PointClass = some_entity: "Some description" 
+[
+spawnflags(flags) = [
+1: "enable"
+2: "ignite"
+    """
+}
+
+
+@pytest.mark.parametrize('filename', PARSE_EOF)
+def test_parse_eof(py_c_token, filename: str) -> None:
+    """Test missing the ending bracket correctly causes errors."""
+    fgd = FGD()
+    fsys = VirtualFileSystem(PARSE_EOF)
+    with pytest.raises(FGDParseError) as err:
+        fgd.parse_file(fsys, fsys[filename])
+    assert 'ended unexpectedly' in err.value.mess
+    assert err.value.file == filename
+    # Don't particularly care where the line number is, just that it is set.
+    assert err.value.line_num is not None
+
+
 @pytest.mark.parametrize('custom_syntax', [False, True], ids=['vanilla', 'custom'])
 def test_export_regressions(file_regression: FileRegressionFixture, custom_syntax: bool) -> None:
     """Generate a FGD file to ensure code doesn't unintentionally alter output."""
@@ -508,7 +555,7 @@ def test_export_regressions(file_regression: FileRegressionFixture, custom_synta
     base_angles = EntityDef(EntityTypes.BASE, 'Angles')
 
     ent = EntityDef(EntityTypes.NPC, 'npc_test')
-    ent.bases = [base_origin, base_angles]
+    ent.bases = [base_origin, base_angles, 'MissingBase']
 
     fgd.entities = {
         # 'origin': base_origin,
@@ -536,6 +583,8 @@ def test_export_regressions(file_regression: FileRegressionFixture, custom_synta
         HelperSize(Vec(-16, -16, -16), Vec(16, 16, 16)),
     ]
     ent.desc = 'Entity description, extending beyond 1000 characters: ' + ', '.join(map(str, range(500))) + '. Done!'
+    # Only newlines can be escaped in the original parser.
+    ent.desc += '\n escapes: tab=\t, newline=\n, "quoted", bell=\a'
     ent.keyvalues['test_kv'] = {frozenset(): KVDef(
         'test_kv',
         ValueTypes.COLOR_255,

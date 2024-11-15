@@ -2,15 +2,12 @@
 # cython: binding=True
 """Cython version of the Tokenizer class."""
 from cpython.mem cimport PyMem_Free, PyMem_Malloc, PyMem_Realloc
+from cpython.unicode cimport PyUnicode_AsUTF8AndSize, PyUnicode_FromStringAndSize, PyUnicode_FromKindAndData
 from libc.stdint cimport uint16_t, uint_fast8_t
 cimport cython
 
-
 cdef extern from *:
     ctypedef unsigned char uchar "unsigned char"  # Using it a lot, this causes it to not be a typedef at all.
-    const char* PyUnicode_AsUTF8AndSize(str string, Py_ssize_t *size) except NULL
-    str PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
-    str PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
 
 cdef object os_fspath
 from os import fspath as os_fspath
@@ -114,8 +111,7 @@ cdef class BaseTokenizer:
 
     cdef str filename
 
-    cdef object pushback_tok
-    cdef object pushback_val
+    cdef list pushback
 
     cdef public int line_num
     cdef TokFlags flags
@@ -142,7 +138,7 @@ cdef class BaseTokenizer:
                 raise TypeError(f'Invalid error instance "{type(error).__name__}"' '!')
             self.error_type = error
 
-        self.pushback_tok = self.pushback_val = None
+        self.pushback = []
         self.line_num = 1
         self.flags = {
             'string_brackets': 0,
@@ -271,10 +267,8 @@ cdef class BaseTokenizer:
         
         This also implements pushback.
         """
-        if self.pushback_tok is not None:
-            output = self.pushback_tok, self.pushback_val
-            self.pushback_tok = self.pushback_val = None
-            return output
+        if self.pushback:
+            return self.pushback.pop()
 
         return self._get_token()
 
@@ -296,12 +290,9 @@ cdef class BaseTokenizer:
     def push_back(self, object tok not None, str value=None):
         """Return a token, so it will be reproduced when called again.
 
-        Only one token can be pushed back at once.
         The value is required for STRING, PAREN_ARGS and PROP_FLAGS, but ignored
         for other token types.
         """
-        if self.pushback_tok is not None:
-            raise ValueError('Token already pushed back!')
         if not isinstance(tok, Token):
             raise ValueError(f'{tok!r} is not a Token!')
 
@@ -335,14 +326,12 @@ cdef class BaseTokenizer:
         else:
             raise ValueError(f'Unknown token {tok!r}')
 
-        self.pushback_tok = tok
-        self.pushback_val = value
+        self.pushback.append((tok, value))
 
     def peek(self):
         """Peek at the next token, without removing it from the stream."""
-        # We know this is a valid pushback value, and any existing value was
-        # just removed. So unconditionally assign.
-        self.pushback_tok, self.pushback_val = tok_and_val = <tuple>self.next_token()
+        tok_and_val = <tuple>self.next_token()
+        self.pushback.append(tok_and_val)
 
         return tok_and_val
 
@@ -660,10 +649,8 @@ cdef class Tokenizer(BaseTokenizer):
             bint save_comments
 
         # Implement pushback directly for efficiency.
-        if self.pushback_tok is not None:
-            output = self.pushback_tok, self.pushback_val
-            self.pushback_tok = self.pushback_val = None
-            return output
+        if self.pushback:
+            return self.pushback.pop()
 
         while True:
             next_char, is_eof = self._next_char()
@@ -794,14 +781,26 @@ cdef class Tokenizer(BaseTokenizer):
                         if is_eof:
                             raise self._error('Unterminated string!')
 
-                        if escape_char == b'n':
-                            next_char = b'\n'
+                        # See this code:
+                        # https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/tier1/utlbuffer.cpp#L57-L69
+                        if escape_char == b'a':
+                            next_char = b'\a'
+                        elif escape_char == b'b':
+                            next_char = b'\b'
                         elif escape_char == b't':
                             next_char = b'\t'
+                        elif escape_char == b'n':
+                            next_char = b'\n'
+                        elif escape_char == b'v':
+                            next_char = b'\v'
+                        elif escape_char == b'f':
+                            next_char = b'\f'
+                        elif escape_char == b'r':
+                            next_char = b'\r'
                         elif escape_char == b'\n':
                             # \ at end of line ignores the newline.
                             continue
-                        elif escape_char in (b'"', b'\\', b'/'):
+                        elif escape_char in (b'"', b'\\', b'/', b"'", b'?'):
                             # For these, we escape to give the literal value.
                             next_char = escape_char
                         else:
@@ -960,10 +959,8 @@ cdef class IterTokenizer(BaseTokenizer):
 
     cdef next_token(self):
         """Implement pushback directly for efficiency."""
-        if self.pushback_tok is not None:
-            output = self.pushback_tok, self.pushback_val
-            self.pushback_tok = self.pushback_val = None
-            return output
+        if self.pushback:
+            return self.pushback.pop()
 
         try:
             return next(self.source)
@@ -1057,17 +1054,31 @@ cdef class BlockIter:
         raise NotImplementedError('Cannot pickle BlockIter!')
 
 
+cdef inline Py_ssize_t _write_escape(
+    uchar *out_buff,
+    Py_ssize_t off,
+    uchar symbol,
+) noexcept:
+    # Escape a single letter.
+    out_buff[off] = b'\\'
+    off += 1
+    out_buff[off] = symbol
+    return off
+
+
 @cython.nonecheck(False)
 def escape_text(str text not None: str) -> str:
     r"""Escape special characters and backslashes, so tokenising reproduces them.
 
-    Specifically, \, ", tab, and newline.
+    This matches utilbuffer.cpp in the SDK.
+    The following characters are escaped: \n, \t, \v, \b, \r, \f, \a, \, ', ".
+    / and ? are accepted as escapes, but not produced since they're unambiguous.
     """
     # UTF8 = ASCII for the chars we care about, so we can just loop over the
     # UTF8 data.
     cdef Py_ssize_t size = 0
     cdef Py_ssize_t final_size = 0
-    cdef int i, j
+    cdef Py_ssize_t i, j
     cdef uchar letter
     cdef const uchar *in_buf = <const uchar *>PyUnicode_AsUTF8AndSize(text, &size)
     final_size = size
@@ -1075,7 +1086,7 @@ def escape_text(str text not None: str) -> str:
     # First loop to compute the full string length, and check if we need to
     # escape at all.
     for i in range(size):
-        if in_buf[i] in b'\\"\t\n':
+        if in_buf[i] in b'\n\t\v\b\r\f\a\\\'"':
             final_size += 1
 
     if size == final_size:  # Unchanged, return original
@@ -1089,22 +1100,27 @@ def escape_text(str text not None: str) -> str:
             raise MemoryError
         for i in range(size):
             letter = in_buf[i]
-            if letter == b'\\':
-                out_buff[j] = b'\\'
-                j += 1
-                out_buff[j] = b'\\'
-            elif letter == b'"':
-                out_buff[j] = b'\\'
-                j += 1
-                out_buff[j] = b'"'
+            # b'ntvbrfa?\'"'
+            if letter == b'\n':
+                j = _write_escape(out_buff, j, b'n')
             elif letter == b'\t':
-                out_buff[j] = b'\\'
-                j += 1
-                out_buff[j] = b't'
-            elif letter == b'\n':
-                out_buff[j] = b'\\'
-                j += 1
-                out_buff[j] = b'n'
+                j = _write_escape(out_buff, j, b't')
+            elif letter == b'\v':
+                j = _write_escape(out_buff, j, b'v')
+            elif letter == b'\b':
+                j = _write_escape(out_buff, j, b'b')
+            elif letter == b'\r':
+                j = _write_escape(out_buff, j, b'r')
+            elif letter == b'\f':
+                j = _write_escape(out_buff, j, b'f')
+            elif letter == b'\a':
+                j = _write_escape(out_buff, j, b'a')
+            elif letter == b'\\':
+                j = _write_escape(out_buff, j, b'\\')
+            elif letter == b'"':
+                j = _write_escape(out_buff, j, b'"')
+            elif letter == b"'":
+                j = _write_escape(out_buff, j, b"'")
             else:
                 out_buff[j] = letter
             j += 1

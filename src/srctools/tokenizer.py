@@ -13,7 +13,13 @@ token/value pair. One token of lookahead is supported, accessed by the
 :py:func:`BaseTokenizer.peek()` and  :py:func:`BaseTokenizer.push_back()` methods. They also track
 the current line number as data is read, letting you ``raise BaseTokenizer.error(...)`` to easily
 produce an exception listing the relevant line number and filename.
+
+Character escapes match matches `utilbuffer.cpp <https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/tier1/utlbuffer.cpp#L57-L69>`_ in the SDK.
+Specifically, the following characters are escaped:
+`\\\\n`, `\\\\t`, `\\\\v`, `\\\\b`, `\\\\r`, `\\\\f`, `\\\\a`, `\\`, `?`, `'` and `"`.
+`/` and `?` are accepted as escapes, but not produced since they're unambiguous.
 """
+import re
 from typing import (
     TYPE_CHECKING, Final, Iterable, Iterator, List, NoReturn, Optional, Tuple, Type,
     Union,
@@ -154,17 +160,28 @@ _OPERATORS = {
 }
 
 
+# See https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/tier1/utlbuffer.cpp#L57-L69
 ESCAPES = {
     'n': '\n',
     't': '\t',
-    # Escape function of the following
+    'v': '\v',
+    'b': '\b',
+    'r': '\r',
+    'f': '\f',
+    'a': '\a',
+
+    # If present, disables special parsing.
     '"': '"',
+    "'": "'",
     '/': '/',
     '\\': '\\',
-
-    # \ at end of line to ignore the newline.
-    '\n': '',
+    '?': '?',
 }
+ESCAPES_INV = {char: f'\\{sym}' for sym, char in ESCAPES.items()}
+ESCAPE_RE = re.compile('|'.join(
+    re.escape(c) for c in ESCAPES_INV
+    if c not in '?/'
+))
 
 #: Characters not allowed for bare strings. These must be quoted.
 BARE_DISALLOWED: Final = frozenset('"\'{};,=[]()\r\n\t ')
@@ -192,7 +209,7 @@ class BaseTokenizer(abc.ABC):
     """
 
     #: If set, this token will be returned next.
-    _pushback: Optional[Tuple[Token, str]] = None
+    _pushback: List[Tuple[Token, str]]
 
     def __init__(
         self,
@@ -216,7 +233,7 @@ class BaseTokenizer(abc.ABC):
                 raise TypeError(f'Invalid error instance "{type(error).__name__}"!')
             self.error_type = error
 
-        self._pushback = None
+        self._pushback = []
         self.line_num = 1
 
     @overload
@@ -284,10 +301,8 @@ class BaseTokenizer(abc.ABC):
 
     def __call__(self) -> Tuple[Token, str]:
         """Compute and fetch the next token."""
-        if self._pushback is not None:
-            next_val = self._pushback
-            self._pushback = None
-            return next_val
+        if self._pushback:
+            return self._pushback.pop()
         return self._get_token()
 
     def __iter__(self) -> Self:
@@ -304,12 +319,9 @@ class BaseTokenizer(abc.ABC):
     def push_back(self, tok: Token, value: Optional[str] = None) -> None:
         """Return a token, so it will be reproduced when called again.
 
-        Only one token can be pushed back at once.
         The value is required for :py:const:`Token.STRING`, :py:const:`~Token.PAREN_ARGS` and \
         :py:const:`~Token.PROP_FLAG`, but ignored for other token types.
         """
-        if self._pushback is not None:
-            raise ValueError('Token already pushed back!')
         if not isinstance(tok, Token):
             raise ValueError(repr(tok) + ' is not a Token!')
 
@@ -319,14 +331,12 @@ class BaseTokenizer(abc.ABC):
             if value is None:
                 raise ValueError(f'Value required for {tok.name!r}!') from None
 
-        self._pushback = (tok, value)
+        self._pushback.append((tok, value))
 
     def peek(self) -> Tuple[Token, str]:
         """Peek at the next token, without removing it from the stream."""
         tok_and_val = self()
-        # We know this is a valid pushback value, and any existing value was
-        # just removed. So unconditionally assign.
-        self._pushback = tok_and_val
+        self._pushback.append(tok_and_val)
         return tok_and_val
 
     def skipping_newlines(self) -> Iterator[Tuple[Token, str]]:
@@ -720,6 +730,8 @@ class Tokenizer(BaseTokenizer):
                 escape = self._next_char()
                 if escape is None:
                     raise self.error('No character to escape!')
+                elif escape == '\n':
+                    continue  # Allow \ at the end of a line to skip.
                 try:
                     next_char = ESCAPES[escape]
                 except KeyError:
@@ -767,17 +779,8 @@ class IterTokenizer(BaseTokenizer):
 
 
 def escape_text(text: str) -> str:
-    r"""Escape special characters and backslashes, so tokenising reproduces them.
-
-    Specifically: ``\\``, ``"``, tab, and newline.
-    """
-    return (
-        text.
-        replace('\\', '\\\\').
-        replace('"', '\\"').
-        replace('\t', '\\t').
-        replace('\n', '\\n')
-    )
+    r"""Escape special characters and backslashes, so tokenising reproduces them."""
+    return ESCAPE_RE.sub(lambda match: ESCAPES_INV[match.group()], text)
 
 
 # This is available as both C and Python versions, plus the unprefixed

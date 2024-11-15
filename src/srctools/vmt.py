@@ -91,6 +91,8 @@ def get_parm_type(name: str, default: Optional[ArgT] = None) -> Union[VarType, A
 
 def _get_parm_type_real(name: str, default: Optional[ArgT] = None) -> Union[VarType, ArgT, None]:
     """Retrieve the type a parameter has, or return the default."""
+    if '?' in name:
+        flag, name = name.split('?', 1)
     try:
         return _SHADER_PARAM_TYPES[name.lstrip('$').casefold()]
     except KeyError:

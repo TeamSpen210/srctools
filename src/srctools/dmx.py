@@ -34,7 +34,7 @@ import attrs
 from srctools import BOOL_LOOKUP, EmptyMapping, binformat, bool_as_int
 from srctools.keyvalues import Keyvalues
 from srctools.math import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Matrix, Vec
-from srctools.tokenizer import Token, Tokenizer
+from srctools.tokenizer import Token, Tokenizer, escape_text
 
 
 __all__ = [
@@ -1153,18 +1153,15 @@ class Attribute(Generic[ValueT], _ValProps):
         If not already an array, it is converted to one
         holding the existing value.
         """
-        if not isinstance(self._value, list):
-            self._value = [self._value]
         [val_type, result] = deduce_type_single(value)
-        if val_type is not self._typ:
-            # Try converting.
-            try:
-                func = cast('Callable[[Value], ValueT]', TYPE_CONVERT[val_type, self._typ])
-            except KeyError:
-                raise ValueError(f'Cannot convert {val_type} to {self._typ} type!') from None
+        try:
+            func = cast('Callable[[Value], ValueT]', TYPE_CONVERT[val_type, self._typ])
+        except KeyError:
+            raise ValueError(f'Cannot convert {val_type} to {self._typ} type!') from None
+        if isinstance(self._value, list):
             self._value.append(func(result))
         else:
-            self._value.append(result)  # type: ignore # (we know it's right)
+            self._value = [self._value, func(result)]
 
     def extend(self, values: Iterable[ConvValue]) -> None:
         """Append multiple values to the array.
@@ -1172,19 +1169,8 @@ class Attribute(Generic[ValueT], _ValProps):
         If not already an array, it is converted to one
         holding the existing value.
         """
-        if not isinstance(self._value, list):
-            self._value = [self._value]
         for value in values:
-            [val_type, result] = deduce_type_single(value)
-            if val_type is not self._typ:
-                # Try converting.
-                try:
-                    func = cast('Callable[[Value], ValueT]', TYPE_CONVERT[val_type, self._typ])
-                except KeyError:
-                    raise ValueError(f'Cannot convert {val_type} to {self._typ} type!') from None
-                self._value.append(func(result))
-            else:
-                self._value.append(result)  # type: ignore # (we know it's right)
+            self.append(value)
 
     def clear_array(self) -> None:
         """Remove all items in this, if it is an array."""
@@ -1498,7 +1484,7 @@ class Element(Mapping[str, Attribute]):
 
         elements = []
 
-        tok = Tokenizer(file)
+        tok = Tokenizer(file, allow_escapes=True)
         for token, tok_value in tok:
             if token is Token.STRING:
                 elem_name = tok_value
@@ -1885,10 +1871,10 @@ class Element(Mapping[str, Attribute]):
             needs to be referenced by UUID instead of inline.
         """
         indent_child = indent + b'\t'
-        file.write(b'"%b"\r\n%b{\r\n' % (self.type.encode('ascii'), indent))
+        file.write(b'"%b"\r\n%b{\r\n' % (escape_text(self.type).encode('ascii'), indent))
         if not cull_uuid or self.uuid in roots:
             file.write(b'%b"id" "elementid" "%b"\r\n' % (indent_child, str(self.uuid).encode('ascii')))
-        file.write(b'%b"name" "string" "%b"\r\n' % (indent_child, self.name.encode(encoding)))
+        file.write(b'%b"name" "string" "%b"\r\n' % (indent_child, escape_text(self.name).encode(encoding)))
         for attr in self.values():
             if attr.name == 'name':
                 continue
@@ -1910,7 +1896,7 @@ class Element(Mapping[str, Attribute]):
                             child._export_kv2(file, indent_arr, roots, encoding, cull_uuid)
                     else:
                         str_value = cast(str, TYPE_CONVERT[attr.type, ValueType.STRING](child))
-                        file.write(b'"%b"' % (str_value.encode(encoding), ))
+                        file.write(b'"%b"' % (escape_text(str_value).encode(encoding), ))
                     if i == len(attr) - 1:
                         file.write(b'\r\n')
                     else:
@@ -1928,7 +1914,7 @@ class Element(Mapping[str, Attribute]):
             else:
                 file.write(b'"%b" "%b"\r\n' % (
                     attr.type.value.encode(encoding),
-                    attr.val_str.encode(encoding),
+                    escape_text(attr.val_str).encode(encoding),
                 ))
         file.write(indent + b'}')
 

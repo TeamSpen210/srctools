@@ -8,6 +8,17 @@ Changelog
 -------------
 Version (dev)
 -------------
+* #35: Only use character escapes in FGD custom syntax mode. The original parser only allows `\\n`.
+* Avoid escaping `/` and `?`, these are unambiguous.
+* Add :py:attr:`ValueTypes.EXT_SOUNDSCAPE <srctools.fgd.ValueTypes.EXT_SOUNDSCAPE>`.
+* Support exporting FGDs with unevaulated string bases.
+
+-------------
+Version 2.4.1
+-------------
+* Add py:mod:`srctools.steam`, written by `Thenderek0 <https://github.com/TheEnderek0>`_.
+  This allows locating Steam games based on their app ID. Support was also added for parsing Strata
+  mount definitions in gameinfo.txt.
 * Add `header_only` option for :py:meth:`VTF.read() <srctools.vtf.VTF.read>`, allowing reading only metadata if the image is not required.
 * Fix casing not being preserved for names of FGD keyvalues during parsing.
 * Fix :py:meth:`PackList.write_soundscript_manifest() <srctools.packlist.PackList.write_soundscript_manifest>`,
@@ -16,11 +27,17 @@ Version (dev)
 * Add `single_block` argument to :py:meth:`Keyvalues.parse() <srctools.keyvalues.Keyvalues.parse>`,
   allowing parsing blocks in the middle of a document.
 * Allow disabling the 'spawnflag labelling' FGD feature.
+* :py:mod`srctools.logging` log files will now always be written as UTF-8.
 * Add a `custom_syntax` option to :py:meth:`FGD.export() <srctools.fgd.FGD.export>`, disabling
   export of custom syntax. Resources can now be exported.
+* Correctly produce an error if a FGD entity definition is missing its closing bracket.
+* Escape all characters `utilbuffer.cpp` does - `\\n`, `\\t`, `\\v`, `\\b`, `\\r`, `\\f`, `\\a`, `\\`, `?`, `'`, `"`.
+* Unconditionally enable support for escaping characters in DMX Keyvalues2, since Valve's parser can handle it. Binary formats never needed escaping.
+* Correctly look up types for conditional shader parameters (`ldr?$bumpmap`).
+* Parse FGDs correctly which have multiline strings with the plus on the second line.
 
 -------------
-Version 2.3.4
+Version 2.4.0
 -------------
 * Added :py:mod:`srctools.choreo`, for parsing choreographed scenes.
 * Allow passing :py:class:`~srctools.math.FrozenVec` to :py:meth:`VMF.make_prism() <srctools.vmf.VMF.make_prism>`/:py:meth:`~srctools.vmf.VMF.make_hollow`.

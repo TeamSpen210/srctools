@@ -27,7 +27,7 @@ import srctools
 
 
 __all__ = [
-    'ValueTypes', 'EntityTypes', 'HelperTypes', 'AutoVisgroup',
+    'ValueTypes', 'EntityTypes', 'HelperTypes', 'AutoVisgroup', 'FGDParseError',
     'FGD', 'EntityDef', 'KVDef', 'IODef', 'EntAttribute', 'Helper', 'UnknownHelper',
     'match_tags', 'validate_tags', 'Resource', 'ResourceCtx', 'Snippet',
 
@@ -85,13 +85,13 @@ class ValueTypes(Enum):
     TARG_DEST = 'target_destination'
     ENT_HANDLE = EHANDLE = TARG_DEST
 
-    TARG_DEST_CLASS = 'target_name_or_class'  # Above + classnames.
+    TARG_DEST_CLASS = 'target_name_or_class'  # A targetname for another ent, or a classname.
     TARG_SOURCE = 'target_source'  # The 'targetname' keyvalue.
-    TARG_NPC_CLASS = 'npcclass'  # targetnames filtered to NPC ents
-    TARG_POINT_CLASS = 'pointentityclass'  # targetnames filtered to point entities.
-    TARG_FILTER_NAME = 'filterclass'  # targetnames of filters.
-    TARG_NODE_DEST = 'node_dest'  # name of a node
-    TARG_NODE_SOURCE = 'node_id'  # name of us
+    TARG_NPC_CLASS = 'npcclass'  # Targetnames filtered to NPC entities.
+    TARG_POINT_CLASS = 'pointentityclass'  # Targetnames filtered to point entities.
+    TARG_FILTER_NAME = 'filterclass'  # Targetnames filtered to filter entities.
+    TARG_NODE_DEST = 'node_dest'  # Name of a node
+    TARG_NODE_SOURCE = 'node_id'  # name of us.
 
     # Strings, don't need fixups
     STR_SCENE = 'scene'  # VCD files
@@ -124,6 +124,7 @@ class ValueTypes(Enum):
     EXT_VEC_LOCAL = 'vec_local'  # Vector, but do not rotate in instances.
     EXT_ANGLE_PITCH = 'angle_pitch'  # Overrides angles[2], but isn't inverted
     EXT_ANGLES_LOCAL = 'angle_local'  # Angles value, but do not rotate in instances.
+    EXT_SOUNDSCAPE = 'soundscape'  # Soundscape entry. Supported natively by Strata, but not by prior branches
 
     @property
     def has_list(self) -> bool:
@@ -375,8 +376,21 @@ def _read_colon_list(
                 raise tok.error('Too many strings (#snippet "{}")!', desc_key)
             strings.append(Snippet.lookup(tok.error, 'description', snippet_desc, desc_key))
             ready_for_string = False
-        elif ready_for_string and token is Token.NEWLINE:
-            continue  # skip over this in particular...
+        elif token is Token.NEWLINE:
+            if ready_for_string:
+                continue  # Last line ended with +, skip the newline.
+            else:
+                # Check if the next line's token is a +, if so allow a string.
+                line_tok, line_value = tok()
+                if line_tok is Token.PLUS:
+                    if not strings:
+                        raise tok.error('"+" without a string before it!')
+                    strings[-1] += tok.expect(Token.STRING)
+                    continue
+                # Put the tokens back.
+                tok.push_back(line_tok, line_value)
+                tok.push_back(token, tok_value)
+                return strings
         else:
             if ready_for_string:
                 raise tok.error(token)
@@ -385,7 +399,18 @@ def _read_colon_list(
     raise tok.error(token)
 
 
-def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
+def _fgd_escape(extended: bool, text: str) -> str:
+    """Escape text for FGD files. The original parser only supported parsing \\n,
+    but others support more escapes.
+
+    Swap double quotes for double single quotes, which at least look somewhat right.
+    """
+    if extended:
+        return escape_text(text)
+    return text.replace('\n', '\\n').replace('"', "''")
+
+
+def _write_longstring(file: IO[str], extended: bool, text: str, *, indent: str) -> None:
     """Write potentially long strings to the file, splitting with + if needed.
 
     The game parser has a max size of 8192 bytes for the text, but can only
@@ -393,7 +418,7 @@ def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
     """
     LIMIT = 1000  # Give a bit of extra room for the quotes, etc.
     sections = []
-    remaining = escape_text(text)
+    remaining = _fgd_escape(extended, text)
     while len(remaining) > LIMIT:
         # First, look for any \ns and split on those. This is a nice stopping
         # point, and also prevents separating the "\" from "n". Then add 2
@@ -1057,7 +1082,8 @@ class KVDef(EntAttribute):
 
         if self.type is not ValueTypes.SPAWNFLAGS:
             # Spawnflags never use names!
-            file.write(f': "{self.disp_name}"')
+            file.write(': ')
+            _write_longstring(file, custom_syntax, self.disp_name, indent='\t')
 
         default = self.default
         if not default and self.type is ValueTypes.BOOL:
@@ -1078,7 +1104,7 @@ class KVDef(EntAttribute):
                 file.write(' : : ')
 
         if self.desc:
-            _write_longstring(file, self.desc, indent='\t')
+            _write_longstring(file, custom_syntax, self.desc, indent='\t')
 
         if self.type.has_list:
             file.write(' =\n\t\t[\n')
@@ -1090,6 +1116,7 @@ class KVDef(EntAttribute):
                     name = name.replace('\n', ' ')
                     _write_longstring(
                         file,
+                        custom_syntax,
                         f'[{index}] {name}' if label_spawnflags else name,
                         indent='\t\t',
                     )
@@ -1104,11 +1131,11 @@ class KVDef(EntAttribute):
                     try:
                         float(value)
                     except ValueError:
-                        value = '"' + value + '"'
+                        value = f'"{value}"'
 
                     file.write(f'\t\t{value}: ')
                     # Newlines aren't functional here, just replace.
-                    _write_longstring(file, name.replace('\n', ' '), indent='\t\t')
+                    _write_longstring(file, False, name.replace('\n', ' '), indent='\t\t')
                     if tags and custom_syntax:
                         file.write(f' [{", ".join(sorted(tags))}]\n')
                     else:
@@ -1179,6 +1206,7 @@ class IODef(EntAttribute):
         file: TextIO,
         io_type: str,
         tags: Collection[str] = (),
+        custom_syntax: bool = True,
     ) -> None:
         """Write this back out to a FGD file.
 
@@ -1186,7 +1214,7 @@ class IODef(EntAttribute):
         """
         file.write(f'\t{io_type} {self.name}')
 
-        if tags:
+        if custom_syntax and tags:
             file.write(f'[{", ".join(sorted(tags))}]')
 
         # Special case, bool is "boolean" on values, "bool" on IO...
@@ -1197,7 +1225,7 @@ class IODef(EntAttribute):
 
         if self.desc:
             file.write(' : ')
-            _write_longstring(file, self.desc, indent='\t')
+            _write_longstring(file, custom_syntax, self.desc, indent='\t')
         file.write('\n')
 
 
@@ -1314,8 +1342,11 @@ class EntityDef:
     inp: _EntityView[IODef] = attrs.field(init=False)
     out: _EntityView[IODef] = attrs.field(init=False)
 
-    #: A list of resources this entity may precache. Use :py:func:`get_resources()` to recursively
+    #: A list of resources this entity may require. Use :py:func:`get_resources()` to recursively
     #: fetch sub-entity resources.
+    # This is set to an empty tuple to represent an entity which has
+    #: no `@resources` definition, as opposed to an empty list for an explicit empty resources
+    #: definition. Use :py:func:`resources_defined()` to distinguish between these cases.
     resources: Sequence[Resource] = attrs.field(kw_only=True, default=())
     #: If set, the ``aliasof()`` helper was used. This entity should have 1 base, which this is
     #: simply an alternate classname for.
@@ -1498,7 +1529,8 @@ class EntityDef:
                 visgroup.ents.add(entity.classname)
 
         # Now parse keyvalues, and input/outputs
-        for token, token_value in tok:
+        while True:
+            token, token_value = tok()
             if token is Token.BRACK_CLOSE:
                 break  # End of this entity.
 
@@ -1564,8 +1596,7 @@ class EntityDef:
                         resources.append(Resource(filename, res_type, tags))
                     elif res_tok is Token.BRACK_CLOSE:
                         break
-                # Subtle: don't convert to tuple, then unify_fgd can check all ents have
-                # these defined.
+                # Subtle: don't convert to tuple, we use () to represent unset resources.
                 entity.resources = resources
             else:
                 # noinspection PyProtectedMember
@@ -1600,7 +1631,7 @@ class EntityDef:
         for dbase in databases:
             try:
                 return deepcopy(dbase.get_ent(classname))
-            except KeyError as err:
+            except KeyError:
                 pass
         
         raise KeyError(classname)
@@ -1619,6 +1650,10 @@ class EntityDef:
             classnames |= dbase.get_classnames()
 
         return frozenset(classnames)
+
+    def resources_defined(self) -> bool:
+        """Check if any resources were defined for this entity, even if blank."""
+        return self.resources != ()
 
     def __repr__(self) -> str:
         if self.type is EntityTypes.BASE:
@@ -1872,7 +1907,7 @@ class EntityDef:
 
         if self.desc:
             file.write(': ')
-            _write_longstring(file, self.desc, indent='\t\t')
+            _write_longstring(file, custom_syntax, self.desc, indent='\t\t')
 
         file.write('\n\t[\n')
 
@@ -1895,16 +1930,16 @@ class EntityDef:
 
             for inp_map in self.inputs.values():
                 for tags, inp in inp_map.items():
-                    inp.export(file, 'input', tags if custom_syntax else ())
+                    inp.export(file, 'input', tags, custom_syntax)
 
         if self.outputs:
             file.write('\n\t// Outputs\n')
 
             for out_map in self.outputs.values():
                 for tags, out in out_map.items():
-                    out.export(file, 'output', tags if custom_syntax else ())
+                    out.export(file, 'output', tags, custom_syntax)
 
-        if custom_syntax and self.resources:
+        if custom_syntax and self.resources != ():
             file.write('\n\t@resources\n\t\t[\n')
             for res in self.resources:
                 file.write(f'\t\t{RESTYPE_TO_NAME[res.type]} "{escape_text(res.filename)}"')
@@ -2088,9 +2123,7 @@ class FGD:
             for ent in todo:
                 ready = True
                 for base in ent.bases:
-                    if isinstance(base, str):
-                        raise ValueError(f'Unevaluated base: {base} in {ent.classname}!')
-                    if base not in done:
+                    if isinstance(base, EntityDef) and base not in done:
                         # Base not done yet, we need to defer this.
                         deferred.add(ent)
                         # If the base isn't in any of our sets, it's one

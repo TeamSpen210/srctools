@@ -994,10 +994,10 @@ def test_order(py_c_vec) -> None:
             ]:
                 # Assert rewriting doesn't work in this nested function?
                 if (res := op_func(vec1, vec2)) is not corr_result:
-                    pytest.fail((
+                    pytest.fail(
                         f'Incorrect {float_func.__name__} comparison for '
                         f'{type(left)}({x1} {y1} {z1}) {op_func.__name__} {type(right)}({x2} {y2} {z2}) = {res}'
-                    ))
+                    )
 
     for num in VALID_ZERONUMS:
         for num2 in VALID_ZERONUMS:

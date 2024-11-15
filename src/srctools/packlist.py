@@ -458,7 +458,8 @@ class PackList:
             if not filename.startswith('materials/'):
                 filename = 'materials/' + filename
             # This will replace .spr materials, which don't exist any more.
-            filename = strip_extension(filename) + '.vmt'
+            if not filename.endswith(('.vmt', '.zmat')):
+                filename = strip_extension(filename) + '.vmt'
         elif data_type is FileType.TEXTURE:
             if not filename.startswith('materials/'):
                 filename = 'materials/' + filename
@@ -488,7 +489,8 @@ class PackList:
                             'Invalid skinset for "{}.mdl": {} should be comma-separated skins!',
                             filename, skinset_int,
                         )
-                filename = strip_extension(filename) + '.mdl'
+                if not filename.endswith(('.mdl', '.glb', '.gltf')):
+                    filename = strip_extension(filename) + '.mdl'
                 if skinset is None:
                     # It's dynamic, this overrides any previous specific skins.
                     self.skinsets[filename] = None
@@ -1160,6 +1162,9 @@ class PackList:
     def _get_model_files(self, file: PackFile) -> None:
         """Find any needed files for a model."""
         filename, ext = os.path.splitext(file.filename)
+
+        if ext in ('glb', 'gltf'):
+            return
 
         # Some of these are optional, so just skip. Do not re-pack the MDL itself, that's
         # pointless and will also erase the skinset!

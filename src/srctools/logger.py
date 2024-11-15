@@ -208,7 +208,7 @@ def get_handler(filename: 'str | os.PathLike[str]') -> logging.FileHandler:
                 pass
 
         try:
-            return logging.FileHandler(path, mode='x')
+            return logging.FileHandler(path, mode='x', encoding='utf8')
         except FileExistsError:
             pass
     except PermissionError:
@@ -220,7 +220,7 @@ def get_handler(filename: 'str | os.PathLike[str]') -> logging.FileHandler:
     ind = 1
     while True:
         try:
-            return logging.FileHandler(path.with_suffix(f'.{ind}{ext}'), mode='x')
+            return logging.FileHandler(path.with_suffix(f'.{ind}{ext}'), mode='x', encoding='utf8')
         except (FileExistsError, PermissionError):
             pass
         ind += 1
