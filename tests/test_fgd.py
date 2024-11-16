@@ -2,6 +2,7 @@
 from typing import Any, Callable, Generator
 import copy
 import io
+import warnings
 
 from pytest_regressions.file_regression import FileRegressionFixture
 import pytest
@@ -15,7 +16,7 @@ from srctools.fgd import (
 )
 from srctools.filesys import VirtualFileSystem
 # noinspection PyProtectedMember
-from srctools.tokenizer import Cy_Tokenizer, Py_Tokenizer
+from srctools.tokenizer import Cy_Tokenizer, Py_Tokenizer, TokenSyntaxError
 
 
 if Cy_Tokenizer is not None:
@@ -274,6 +275,54 @@ unknown(a, b, c)
         'Handle triggering.'
     )
 
+
+def test_entity_ignore_unknown_valuetype(py_c_token) -> None:
+    """Verify handling unknown ValueTypes."""
+    fsys = VirtualFileSystem({'test.fgd': """
+
+@PointClass
+= some_entity
+    [
+    keyvalue1(super_string): "Name" : "default": "documentation"
+    input Trigger(ultra_void): "Trigger the entity."
+    output OnTrigger(int1024): "Handle triggering."
+    ]
+"""})
+
+    # Make sure this still counts as an error normally
+    threw_error = False
+    try:
+        fgd2 = FGD()
+        fgd2.parse_file(fsys, fsys['test.fgd'], eval_bases=False, eval_extensions=True, ignore_unknown_valuetype=False)
+    except TokenSyntaxError as e:
+        threw_error = True
+    assert threw_error == True
+
+    # Parse it ignoring any unknowns
+    fgd = FGD()
+    with pytest.warns(SyntaxWarning):
+        fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False, eval_extensions=True, ignore_unknown_valuetype=True)
+
+    ent = fgd['some_entity']
+    assert ent.type is EntityTypes.POINT
+    assert ent.classname == 'some_entity'
+    assert ent.kv['keyvalue1'] == KVDef(
+        'keyvalue1',
+        'super_string',
+        'Name',
+        'default',
+        'documentation',
+    )
+    assert ent.inp['Trigger'] == IODef(
+        'Trigger',
+        'ultra_void',
+        'Trigger the entity.'
+    )
+    assert ent.out['OnTrigger'] == IODef(
+        'OnTrigger',
+        'int1024',
+        'Handle triggering.'
+    )
 
 @pytest.mark.parametrize('code, is_readonly, is_report', [
     ('(int): "None"', False, False),
