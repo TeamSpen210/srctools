@@ -133,6 +133,8 @@ class Game:
             required = mount.bool("required", False)
             # Selects if we want to mount the "mod_folder" key as a folder or omit
             mountmoddir = mount.bool("mountmoddir", True)
+            if not mount.bool("enabled", True):  # Undocumented keyval
+                continue
             
             try:
                 app_info = find_app(appid)
@@ -145,8 +147,12 @@ class Game:
                 continue
 
             for child in mount:
-                if child.name in ("head", "required", "mountmoddir"):
-                    continue  # Ignore
+                # Ignore specified keys above
+                if child.name in ("head", "required", "enabled", "mountmoddir"):
+                    continue
+                # Ignore any other leaf KVs.
+                if not child.has_children():
+                    continue
 
                 # Else we're working with a mod folder
                 this_path = app_info.path / child.real_name
