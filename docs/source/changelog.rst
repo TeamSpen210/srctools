@@ -13,6 +13,7 @@ Version (dev)
 * Add :py:attr:`ValueTypes.EXT_SOUNDSCAPE <srctools.fgd.ValueTypes.EXT_SOUNDSCAPE>`.
 * Support exporting FGDs with unevaulated string bases.
 * Fix some options being incorrectly handled in Strata game mounts definitions.
+* Allow entities to delete multiple keyvalues at once.
 
 -------------
 Version 2.4.1

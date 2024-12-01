@@ -164,6 +164,13 @@ def test_entkey_basic() -> None:
     # Keys/values/items should have the same order.
     assert list(ent.fixup.items()) == list(zip(ent.fixup.keys(), ent.fixup.values()))
 
+    with pytest.raises(KeyError):
+        del ent['classname']
+
+    del ent['target', 'health', 'notpresent']
+    assert ent['target'] == ''
+    assert 'health' not in ent
+
 
 def test_parse_entity() -> None:
     """Test parsing entities from keyvalues."""

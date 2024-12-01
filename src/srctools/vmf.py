@@ -3002,7 +3002,16 @@ class Entity(MutableMapping[str, str]):
             else:
                 self._keys[key] = str(self.map.node_id.get_id(node_id))
 
-    def __delitem__(self, key: str) -> None:
+    def __delitem__(self, key: Union[str, Tuple[str, ...]]) -> None:
+        """Delete the specified keyvalue. Does nothing if not present.
+
+        The ``classname`` keyvalue cannot be deleted.
+        A tuple of keys can be passed instead, which will cause each to be deleted individually.
+        """
+        if isinstance(key, tuple):
+            for k in key:
+                del self[k]
+            return
         key = key.casefold()
         if key == 'targetname':
             _remove_copyset(self.map.by_target, self._keys.get('targetname', None), self)
@@ -3032,12 +3041,9 @@ class Entity(MutableMapping[str, str]):
     def get(self, key: str, /, default: Union[str, T] = '') -> Union[str, T]:
         """Allow using [] syntax to search for keyvalues.
 
-        - This will return '' if the value is not present.
+        - By default this will return '' if the value is not present.
         - It ignores case-matching, but will use the first given version
           of a key.
-        - If used via Entity.get() the default argument is available.
-        - A tuple can be passed for the default to be set, inside the
-          [] syntax.
         """
         key = key.casefold()
         for k in self._keys:
@@ -3046,7 +3052,10 @@ class Entity(MutableMapping[str, str]):
         return default
 
     def clear(self) -> None:
-        """Remove all keyvalues from an item."""
+        """Remove all keyvalues from an item.
+
+        The since classnames cannot be removed, it will be reset to ``info_null``.
+        """
         # Delete these so the .by_class/name values are cleared.
         self['classname'] = 'info_null'
         del self['targetname']
