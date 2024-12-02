@@ -108,7 +108,7 @@ class LoggerAdapter(_AdapterBase):
         level: int,
         msg: Any,
         *args: Any,
-        exc_info: Union[None, bool, _SysExcInfoType, BaseException] = None,
+        exc_info: Union[bool, _SysExcInfoType, BaseException, None] = None,
         stack_info: bool = False,
         extra: Optional[Mapping[str, object]] = None,
         stacklevel: int = 0,
@@ -413,7 +413,7 @@ def init_logging(
         stdout_loghandler = logging.StreamHandler(sys.stdout)
         stdout_loghandler.setLevel(
             logging.DEBUG
-            if os.environ.get('SRCTOOLS_DEBUG', 0) == '1' else
+            if os.environ.get('SRCTOOLS_DEBUG', '0') == '1' else
             logging.INFO
         )
         stdout_loghandler.setFormatter(short_log_format)

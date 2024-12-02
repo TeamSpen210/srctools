@@ -150,7 +150,7 @@ class CurveType:
     @classmethod
     def parse_text(cls, text: str) -> CurveType:
         """Parse text in the form 'curve_AAA_to_curve_BBB'."""
-        match = re.match('curve_([a-z_]+)_to_curve_([a-z_]+)', text.casefold())
+        match = re.match(r'curve_([a-z_]+)_to_curve_([a-z_]+)', text.casefold())
         if match is None:
             raise ValueError('Invalid curve type text.')
         left, right = match.groups()

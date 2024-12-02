@@ -1500,7 +1500,7 @@ def test_bbox(frozen_thawed_vec: VecClass) -> None:
         Vec.bbox(Vec(), None)
 
     # Empty iterable.
-    with pytest.raises(ValueError, match=re.compile('empty', re.IGNORECASE)):
+    with pytest.raises(ValueError, match=re.compile(r'empty', re.IGNORECASE)):
         Vec.bbox([])
 
     # Iterable starting with non-vector.
