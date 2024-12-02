@@ -14,6 +14,7 @@ Version (dev)
 * Support exporting FGDs with unevaulated string bases.
 * Fix some options being incorrectly handled in Strata game mounts definitions.
 * Allow entities to delete multiple keyvalues at once.
+* Fix silent buttons trying to pack invalid `Buttons.snd0` soundscripts.
 
 -------------
 Version 2.4.1

@@ -31,12 +31,12 @@ def cls_func(func: ClassFuncT) -> ClassFuncT:
     return func
 
 
-def button_sound(index: Union[int, str]) -> Resource:
+def button_sound(index: Union[int, str]) -> Iterator[Resource]:
     """Return the resource matching the hardcoded set of sounds in button ents."""
+    index = conv_int(index)
     if index:
-        return Resource.snd(f'Buttons.snd{conv_int(index):d}')
-    else:  # Not set, skip
-        return Resource.snd('')
+        yield Resource.snd(f'Buttons.snd{index:d}')
+    # Otherwise not set, skip
 
 
 # Entropy Zero 2 variant constants.
@@ -120,9 +120,9 @@ def asw_spawner(ctx: ResourceCtx, ent: Entity) -> ResGen:
 @cls_func
 def func_button_sounds(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Pack the legacy sound indexes."""
-    yield button_sound(ent['sounds'])
-    yield button_sound(ent['locked_sound'])
-    yield button_sound(ent['unlocked_sound'])
+    yield from button_sound(ent['sounds'])
+    yield from button_sound(ent['locked_sound'])
+    yield from button_sound(ent['unlocked_sound'])
     # TODO locked and unlocked sentences in HL1.
     # locked_sentence -> ["NA", "ND", "NF", "NFIRE", "NCHEM", "NRAD", "NCON", "NH", "NG"]
     # unlocked_sentence -> ["EA", "ED", "EF", "EFIRE", "ECHEM", "ERAD", "ECON", "EH"]
@@ -131,16 +131,16 @@ def func_button_sounds(ctx: ResourceCtx, ent: Entity) -> ResGen:
 @cls_func
 def func_button_timed(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """This only has one sound?"""
-    yield button_sound(ent['locked_sound'])
+    yield from button_sound(ent['locked_sound'])
 
 
 @cls_func
 def momentary_rot_button(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Inherits from func_button, but doesn't always use 'sounds'."""
     if conv_int(ent['spawnflags']) & 1024:  # USE_ACTIVATES
-        yield button_sound(ent['sounds'])
-    yield button_sound(ent['locked_sound'])
-    yield button_sound(ent['unlocked_sound'])
+        yield from button_sound(ent['sounds'])
+    yield from button_sound(ent['locked_sound'])
+    yield from button_sound(ent['unlocked_sound'])
 
 
 @cls_func
