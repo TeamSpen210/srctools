@@ -15,6 +15,7 @@ Version (dev)
 * Fix some options being incorrectly handled in Strata game mounts definitions.
 * Allow entities to delete multiple keyvalues at once.
 * Fix silent buttons trying to pack invalid `Buttons.snd0` soundscripts.
+* Handle entities being added/removed during iteration of :py:meth:`VMF.search() <srctools.vmf.VMF.search>`.
 
 -------------
 Version 2.4.1

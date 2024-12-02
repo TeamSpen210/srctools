@@ -1034,6 +1034,8 @@ class VMF:
 
         This can be the exact targetname, end-* matching,
         or the exact classname.
+
+        Entities added or renamed after iteration begins will not be detected.
         """
         name = name.casefold()
         if not name:
@@ -1041,15 +1043,15 @@ class VMF:
 
         if name[-1] == '*':
             name = name[:-1]
-            for ent_name, ents in self.by_target.items():
+            for ent_name, ents in list(self.by_target.items()):
                 if ent_name is not None and ent_name.casefold().startswith(name):
                     yield from ents
         else:
-            for ent_name, ents in self.by_target.items():
+            for ent_name, ents in list(self.by_target.items()):
                 if ent_name is not None and ent_name.casefold() == name:
                     yield from ents
 
-            if name in self.by_class:
+            if name in list(self.by_class):
                 yield from self.by_class[name]
 
     def make_prism(
