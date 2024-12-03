@@ -16,10 +16,11 @@ import itertools
 import lzma
 import math
 import operator
+import warnings
 
 from .binformat import DeferredWrites
 from .const import FileType
-from .fgd import FGD, EntityDef, EntityTypes, IODef, KVDef, Resource, ValueTypes
+from .fgd import EntAttribute, FGD, EntityDef, EntityTypes, IODef, KVDef, Resource, ValueTypes
 
 
 from .fgd import _EngineDBProto, _EntityView  # isort: split # noqa
@@ -329,9 +330,6 @@ class EngineDB(_EngineDBProto):
 
 def kv_serialise(kvdef: KVDef, file: IO[bytes], str_dict: BinStrSerialise) -> None:
     """Write keyvalues to the binary file."""
-    if kvdef.custom_type is not None:
-        raise ValueError(f'Cannot binary serialise custom value type for KV {kvdef!r}!')
-
     file.write(str_dict(kvdef.name))
     file.write(str_dict(kvdef.disp_name))
     value_type = VALUE_TYPE_INDEX[kvdef.type]
@@ -409,9 +407,6 @@ def kv_unserialise(
 
 def iodef_serialise(iodef: IODef, file: IO[bytes], dic: BinStrSerialise) -> None:
     """Write an IO def the binary file."""
-    if iodef.custom_type is not None:
-        raise ValueError(f'Cannot binary serialise custom value type for IO {iodef!r}!')
-
     file.write(dic(iodef.name))
     file.write(_fmt_8bit.pack(VALUE_TYPE_INDEX[iodef.type]))
 
@@ -461,8 +456,16 @@ def ent_serialise(ent: EntityDef, file: IO[bytes], str_dict: BinStrSerialise, ha
 
             # We only support untagged things.
             if len(tag_map) == 1:
+                tags: frozenset[str]
+                value: EntAttribute
                 [(tags, value)] = tag_map.items()
                 if not tags:
+                    if value.custom_type is not None:
+                        warnings.warn(
+                            'Custom value type used for '
+                            f'{ent.classname}.{name} = {value!r}!',
+                            UserWarning
+                        )
                     if isinstance(value, KVDef):
                         kv_serialise(value, file, str_dict)
                     elif isinstance(value, IODef):
@@ -568,13 +571,15 @@ def compute_ent_strings(ents: Iterable[EntityDef]) -> Tuple[Mapping[EntityDef, A
         ent_strings.add(string)
         return b'\x00\x00'
 
-    for ent in ents:
-        # We don't care about the contents, so just let it overwrite itself to save reallocating
-        # a new one each time.
-        dummy_file.seek(0)
-        ent_to_string[ent] = ent_strings = set()
-        ent_serialise(ent, dummy_file, record_strings, True)
-        ent_to_size[ent] = dummy_file.tell()
+    # Disable warnings, we don't want a warning both here and when it is actually serialised.
+    with warnings.catch_warnings():
+        for ent in ents:
+            # We don't care about the contents, so just let it overwrite itself to save reallocating
+            # a new one each time.
+            dummy_file.seek(0)
+            ent_to_string[ent] = ent_strings = set()
+            ent_serialise(ent, dummy_file, record_strings, True)
+            ent_to_size[ent] = dummy_file.tell()
     return ent_to_string, ent_to_size
 
 
