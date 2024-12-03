@@ -16,10 +16,11 @@ import itertools
 import lzma
 import math
 import operator
+import warnings
 
 from .binformat import DeferredWrites
 from .const import FileType
-from .fgd import FGD, EntityDef, EntityTypes, IODef, KVDef, Resource, ValueTypes
+from .fgd import EntAttribute, FGD, EntityDef, EntityTypes, IODef, KVDef, Resource, ValueTypes
 
 
 from .fgd import _EngineDBProto, _EntityView  # isort: split # noqa
@@ -327,22 +328,22 @@ class EngineDB(_EngineDBProto):
         return copy.deepcopy(self.fgd)
 
 
-def kv_serialise(self: KVDef, file: IO[bytes], str_dict: BinStrSerialise) -> None:
+def kv_serialise(kvdef: KVDef, file: IO[bytes], str_dict: BinStrSerialise) -> None:
     """Write keyvalues to the binary file."""
-    file.write(str_dict(self.name))
-    file.write(str_dict(self.disp_name))
-    value_type = VALUE_TYPE_INDEX[self.type]
+    file.write(str_dict(kvdef.name))
+    file.write(str_dict(kvdef.disp_name))
+    value_type = VALUE_TYPE_INDEX[kvdef.type]
     # Use the high bit to store this inside here as well.
-    if self.readonly:
+    if kvdef.readonly:
         value_type |= 128
     file.write(_fmt_8bit.pack(value_type))
 
     # Spawnflags have integer names and defaults,
     # choices has string values and no default.
-    if self.type is ValueTypes.SPAWNFLAGS:
-        file.write(_fmt_8bit.pack(len(self.flags_list)))
+    if kvdef.type is ValueTypes.SPAWNFLAGS:
+        file.write(_fmt_8bit.pack(len(kvdef.flags_list)))
         # spawnflags go up to at least 1<<23.
-        for mask, name, default, tags in self.flags_list:
+        for mask, name, default, tags in kvdef.flags_list:
             if tags:
                 raise ValueError('Cannot use tags!')
             # We can write 2^n instead of the full number,
@@ -355,9 +356,9 @@ def kv_serialise(self: KVDef, file: IO[bytes], str_dict: BinStrSerialise) -> Non
             file.write(str_dict(name))
         return  # Spawnflags doesn't need to write a default.
 
-    file.write(str_dict(self.default or ''))
+    file.write(str_dict(kvdef.default or ''))
 
-    if self.type is ValueTypes.CHOICES:
+    if kvdef.type is ValueTypes.CHOICES:
         raise ValueError('CHOICES may not be used for keyvalues!')
 
 
@@ -424,27 +425,27 @@ def iodef_unserialise(
     return iodef
 
 
-def ent_serialise(self: EntityDef, file: IO[bytes], str_dict: BinStrSerialise, has_cbase: bool) -> None:
+def ent_serialise(ent: EntityDef, file: IO[bytes], str_dict: BinStrSerialise, has_cbase: bool) -> None:
     """Write an entity to the binary file."""
-    flags = ENTITY_TYPE_2_FLAG[self.type]
-    if self.is_alias:
+    flags = ENTITY_TYPE_2_FLAG[ent.type]
+    if ent.is_alias:
         flags |= EntFlags.IS_ALIAS
 
     file.write(_fmt_ent_header.pack(
         flags.value,
-        len(self.bases),
-        len(self.keyvalues),
-        len(self.inputs),
-        len(self.outputs),
-        len(self.resources),
+        len(ent.bases),
+        len(ent.keyvalues),
+        len(ent.inputs),
+        len(ent.outputs),
+        len(ent.resources),
     ))
-    for base_ent in self.bases:
+    for base_ent in ent.bases:
         if isinstance(base_ent, str):
             file.write(str_dict(base_ent))
         else:
             file.write(str_dict(base_ent.classname))
 
-    for obj_type in self._iter_attrs():
+    for obj_type in ent._iter_attrs():
         for name, tag_map in obj_type.items():
             # We don't need to write the name, since that's stored
             # also in the kv/io object itself.
@@ -455,8 +456,16 @@ def ent_serialise(self: EntityDef, file: IO[bytes], str_dict: BinStrSerialise, h
 
             # We only support untagged things.
             if len(tag_map) == 1:
+                tags: frozenset[str]
+                value: EntAttribute
                 [(tags, value)] = tag_map.items()
                 if not tags:
+                    if value.custom_type is not None:
+                        warnings.warn(
+                            'Custom value type used for '
+                            f'{ent.classname}.{name} = {value!r}!',
+                            UserWarning
+                        )
                     if isinstance(value, KVDef):
                         kv_serialise(value, file, str_dict)
                     elif isinstance(value, IODef):
@@ -464,11 +473,11 @@ def ent_serialise(self: EntityDef, file: IO[bytes], str_dict: BinStrSerialise, h
                     else:
                         raise AssertionError(f'Unknown ent attribute: {value}')
                     continue
-            raise ValueError(f'{self.classname}.{name} has tags: {list(tag_map)}')
+            raise ValueError(f'{ent.classname}.{name} has tags: {list(tag_map)}')
 
     # Helpers are not added.
 
-    for res in self.resources:
+    for res in ent.resources:
         if res.tags:  # Tags are fairly rare.
             file.write(_fmt_8bit.pack(FILE_TYPE_INDEX[res.type] | 128))
             BinStrDict.write_tags(file, str_dict, res.tags)
@@ -562,13 +571,15 @@ def compute_ent_strings(ents: Iterable[EntityDef]) -> Tuple[Mapping[EntityDef, A
         ent_strings.add(string)
         return b'\x00\x00'
 
-    for ent in ents:
-        # We don't care about the contents, so just let it overwrite itself to save reallocating
-        # a new one each time.
-        dummy_file.seek(0)
-        ent_to_string[ent] = ent_strings = set()
-        ent_serialise(ent, dummy_file, record_strings, True)
-        ent_to_size[ent] = dummy_file.tell()
+    # Disable warnings, we don't want a warning both here and when it is actually serialised.
+    with warnings.catch_warnings():
+        for ent in ents:
+            # We don't care about the contents, so just let it overwrite itself to save reallocating
+            # a new one each time.
+            dummy_file.seek(0)
+            ent_to_string[ent] = ent_strings = set()
+            ent_serialise(ent, dummy_file, record_strings, True)
+            ent_to_size[ent] = dummy_file.tell()
     return ent_to_string, ent_to_size
 
 

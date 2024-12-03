@@ -16,6 +16,7 @@ import itertools
 import math
 import operator
 import sys
+import warnings
 
 import attrs
 
@@ -870,11 +871,35 @@ class AutoVisgroup:
 class EntAttribute:
     """Common base class for IODef and KVDef."""
     name: str
-    type: ValueTypes
+    _type: Union[ValueTypes, str] = attrs.field(alias='type')
     desc: str
 
     def __init__(self) -> None:
         raise TypeError('EntAttribute is abstract, it cannot be instantiated!')
+
+    @property
+    def type(self) -> ValueTypes:
+        """The type of this field.
+
+        Custom types can be set as a string, but will appear as :py:attr:`ValueTypes.STRING`.
+        To retrieve the custom name, access :py:attr:`custom_type`.
+        """
+        if isinstance(self._type, str):
+            return ValueTypes.STRING
+        else:
+            return self._type
+
+    @type.setter
+    def type(self, value: Union[ValueTypes, str]) -> None:
+        self._type = value
+
+    @property
+    def custom_type(self) -> Optional[str]:
+        """If a custom type is specified, return the type name."""
+        if isinstance(self._type, str):
+            return self._type
+        else:
+            return None
 
 
 @attrs.define
@@ -886,7 +911,7 @@ class KVDef(EntAttribute):
     * For spawnflags it's a list of (bitflag, name, default, tags) tuples.
     """
     name: str
-    type: ValueTypes
+    _type: Union[ValueTypes, str] = attrs.field(alias='type')
     disp_name: str
     default: str = ''
     desc: str = ''
@@ -900,7 +925,7 @@ class KVDef(EntAttribute):
 
         This isolates the type ambiguity of the attr.
         """
-        if self.type is not ValueTypes.CHOICES:
+        if self._type is not ValueTypes.CHOICES:
             raise TypeError
         if self.val_list is None:
             lst: List[Tuple[str, str, TagsSet]] = []
@@ -913,7 +938,7 @@ class KVDef(EntAttribute):
 
         This isolates the type ambiguity of the attr.
         """
-        if self.type is not ValueTypes.SPAWNFLAGS:
+        if self._type is not ValueTypes.SPAWNFLAGS:
             raise TypeError
         if self.val_list is None:
             lst: List[SpawnFlags] = []
@@ -924,7 +949,7 @@ class KVDef(EntAttribute):
         """Create a duplicate of this keyvalue."""
         return KVDef(
             self.name,
-            self.type,
+            self._type,
             self.disp_name,
             self.default,
             self.desc,
@@ -939,7 +964,7 @@ class KVDef(EntAttribute):
     def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> KVDef:
         return KVDef(
             self.name,
-            self.type,
+            self._type,
             self.disp_name,
             self.default,
             self.desc,
@@ -950,18 +975,23 @@ class KVDef(EntAttribute):
 
     def known_options(self) -> Iterator[str]:
         """Use the default value and value list to determine values this can be set to."""
-        if self.type is ValueTypes.CHOICES:
+        if self._type is ValueTypes.CHOICES:
             options = {val_list[0] for val_list in self.choices_list}
             options.add(self.default)
             yield from options
-        elif self.type is ValueTypes.SPAWNFLAGS:
+        elif self._type is ValueTypes.SPAWNFLAGS:
             for bitflag, name, default, tags in self.flags_list:
                 yield str(bitflag)
         else:
             yield self.default
 
     @classmethod
-    def _parse(cls, fgd: FGD, name: str, tok: BaseTokenizer, error_desc: str) -> Tuple[TagsSet, KVDef]:
+    def _parse(
+        cls,
+        fgd: FGD, name: str, tok: BaseTokenizer,
+        error_desc: str,
+        ignore_unknown_valuetype: bool = False,
+    ) -> Tuple[TagsSet, KVDef]:
         """Parse a keyvalue definition."""
         is_readonly = show_in_report = had_colon = False
         # Next is either the value type parens, or a tags brackets.
@@ -978,10 +1008,18 @@ class KVDef(EntAttribute):
             # Old format for specifying 'reportable' flag.
             show_in_report = True
             raw_value_type = raw_value_type[1:]
+
+        val_typ: Union[ValueTypes, str]
         try:
             val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
         except KeyError:
-            raise tok.error('Unknown keyvalue type "{}"!', raw_value_type) from None
+            msg = f'Unknown keyvalue type "{raw_value_type}"!'
+            if ignore_unknown_valuetype:
+                warnings.warn(msg, SyntaxWarning, stacklevel=2)
+                val_typ = raw_value_type
+            else:
+                raise tok.error(msg) from None
+
         # Look for the 'readonly' and 'report' flags, in that order.
         next_token, key_flag = tok()
         if next_token is Token.STRING and key_flag.casefold() == 'readonly':
@@ -1030,7 +1068,7 @@ class KVDef(EntAttribute):
                 default = '0'
         # Read the choices in the [].
         val_list: Union[List[Choices], List[SpawnFlags], None]
-        if val_typ.has_list:
+        if isinstance(val_typ, ValueTypes) and val_typ.has_list:
             if has_equal is not Token.EQUALS:
                 raise tok.error('No list provided for "{}" value type!', val_typ.name)
             if val_typ is ValueTypes.CHOICES:
@@ -1048,7 +1086,10 @@ class KVDef(EntAttribute):
         else:
             val_list = None
             if has_equal is Token.EQUALS:
-                raise tok.error('"{}" value types can\'t have lists!', val_typ.name)
+                raise tok.error(
+                    '"{}" value types can\'t have lists!',
+                    getattr(val_typ, "name", val_typ),
+                )
 
         return tags, KVDef(
             name=name,
@@ -1072,7 +1113,10 @@ class KVDef(EntAttribute):
         file.write('\t' + self.name)
         if tags and custom_syntax:
             file.write(f'[{", ".join(sorted(tags))}]')
-        file.write(f'({self.type.value}) ')
+        if isinstance(self._type, ValueTypes):
+            file.write(f'({self._type.value}) ')
+        else:
+            file.write(f'({self._type}) ')
 
         if self.readonly:
             file.write('readonly ')
@@ -1080,7 +1124,7 @@ class KVDef(EntAttribute):
         if self.reportable:
             file.write('report ')
 
-        if self.type is not ValueTypes.SPAWNFLAGS:
+        if self._type is not ValueTypes.SPAWNFLAGS:
             # Spawnflags never use names!
             file.write(': ')
             _write_longstring(file, custom_syntax, self.disp_name, indent='\t')
@@ -1106,9 +1150,9 @@ class KVDef(EntAttribute):
         if self.desc:
             _write_longstring(file, custom_syntax, self.desc, indent='\t')
 
-        if self.type.has_list:
+        if isinstance(self._type, ValueTypes) and self._type.has_list:
             file.write(' =\n\t\t[\n')
-            if self.type is ValueTypes.SPAWNFLAGS:
+            if self._type is ValueTypes.SPAWNFLAGS:
                 # Empty tuple handles a None value.
                 for index, name, flag_default, tags in self.flags_list:
                     file.write(f'\t\t{index}: ')
@@ -1125,7 +1169,7 @@ class KVDef(EntAttribute):
                         file.write(f' [{", ".join(sorted(tags))}]\n')
                     else:
                         file.write('\n')
-            elif self.type is ValueTypes.CHOICES:
+            elif self._type is ValueTypes.CHOICES:
                 for value, name, tags in self.choices_list:
                     # Numbers can be unquoted, everything else cannot.
                     try:
@@ -1141,7 +1185,7 @@ class KVDef(EntAttribute):
                     else:
                         file.write('\n')
             else:
-                raise AssertionError('No other types possible!')
+                raise AssertionError('No other has-list types possible!')
             file.write('\t\t]')  # No newline, done unconditionally below.
 
         file.write('\n')
@@ -1151,20 +1195,25 @@ class KVDef(EntAttribute):
 class IODef(EntAttribute):
     """Represents an input or output for an entity."""
     name: str
-    type: ValueTypes = ValueTypes.VOID  # Most IO has no parameter.
+    _type: Union[ValueTypes, str] = attrs.field(alias='type', default=ValueTypes.VOID)  # Most IO has no parameter.
     desc: str = ''
 
     def copy(self) -> IODef:
         """Create a duplicate of this IODef."""
-        return IODef(self.name, self.type, self.desc)
+        return IODef(self.name, self._type, self.desc)
 
     __copy__ = copy
 
     def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> IODef:
-        return IODef(self.name, self.type, self.desc)
+        return IODef(self.name, self._type, self.desc)
 
     @classmethod
-    def _parse(cls, fgd: FGD, tok: BaseTokenizer) -> Tuple[TagsSet, IODef]:
+    def _parse(
+        cls,
+        fgd: FGD,
+        tok: BaseTokenizer,
+        ignore_unknown_valuetype: bool = False,
+    ) -> Tuple[TagsSet, IODef]:
         """Parse I/O definitions in an entity."""
         name = tok.expect(Token.STRING)
 
@@ -1176,6 +1225,7 @@ class IODef(EntAttribute):
         else:
             tags = frozenset()
 
+        val_typ: Union[ValueTypes, str]
         raw_value_type = raw_value_type.strip()
         if raw_value_type == 'ehandle':
             # This is a duplicate (deprecated) name, but only for I/O.
@@ -1184,7 +1234,12 @@ class IODef(EntAttribute):
             try:
                 val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
             except KeyError:
-                raise tok.error('Unknown keyvalue type "{}"!', raw_value_type) from None
+                msg = f'Unknown keyvalue type "{raw_value_type}"!'
+                if ignore_unknown_valuetype:
+                    warnings.warn(msg, SyntaxWarning, stacklevel=2)
+                    val_typ = raw_value_type
+                else:
+                    raise tok.error(msg) from None
 
         # Read desc
         io_vals = _read_colon_list(tok, False, 0, fgd.snippet_desc)
@@ -1218,10 +1273,12 @@ class IODef(EntAttribute):
             file.write(f'[{", ".join(sorted(tags))}]')
 
         # Special case, bool is "boolean" on values, "bool" on IO...
-        if self.type is ValueTypes.BOOL:
+        if self._type is ValueTypes.BOOL:
             file.write('(bool)')
+        elif isinstance(self._type, ValueTypes):
+            file.write(f'({VALUE_TO_IO_DECAY[self._type].value})')
         else:
-            file.write(f'({VALUE_TO_IO_DECAY[self.type].value})')
+            file.write(f'({self._type})')
 
         if self.desc:
             file.write(' : ')
@@ -1365,7 +1422,8 @@ class EntityDef:
         tok: BaseTokenizer,
         ent_type: EntityTypes,
         eval_bases: bool = True,
-        eval_extensions: bool = True
+        eval_extensions: bool = True,
+        ignore_unknown_valuetype: bool = False
     ) -> None:
         """Parse an entity definition from an FGD file.
 
@@ -1570,12 +1628,12 @@ class EntityDef:
             io_type = token_value.casefold()
             if io_type == 'input':
                 # noinspection PyProtectedMember
-                tags, io_def = IODef._parse(fgd, tok)
+                tags, io_def = IODef._parse(fgd, tok, ignore_unknown_valuetype)
                 io_tags_map = entity.inputs.setdefault(io_def.name.casefold(), {})
                 io_tags_map[tags] = io_def
             elif io_type == 'output':
                 # noinspection PyProtectedMember
-                tags, io_def = IODef._parse(fgd, tok)
+                tags, io_def = IODef._parse(fgd, tok, ignore_unknown_valuetype)
                 io_tags_map = entity.outputs.setdefault(io_def.name.casefold(), {})
                 io_tags_map[tags] = io_def
             elif io_type == '@resources':  # @resource block, format extension
@@ -1600,7 +1658,7 @@ class EntityDef:
                 entity.resources = resources
             else:
                 # noinspection PyProtectedMember
-                tags, kv_def = KVDef._parse(fgd, token_value, tok, entity.classname)
+                tags, kv_def = KVDef._parse(fgd, token_value, tok, entity.classname, ignore_unknown_valuetype)
                 kv_tags_map = entity.keyvalues.setdefault(kv_def.name.casefold(), {})
                 if not kv_tags_map:
                     # New, add to the ordering.
@@ -2315,6 +2373,7 @@ class FGD:
         *,
         eval_bases: bool = True,
         eval_extensions: bool = True,
+        ignore_unknown_valuetype: bool = False,
         encoding: str = 'cp1252',
     ) -> None:
         """Parse one file (recursively if needed).
@@ -2360,6 +2419,7 @@ class FGD:
                         include,
                         eval_bases=eval_bases,
                         eval_extensions=eval_extensions,
+                        ignore_unknown_valuetype=ignore_unknown_valuetype,
                         encoding=encoding,
                     )
 
@@ -2443,7 +2503,7 @@ class FGD:
                             'Invalid Entity type "{}"!',
                             token_value[1:],
                         ) from None
-                    EntityDef.parse(self, tokeniser, ent_type, eval_bases, eval_extensions)
+                    EntityDef.parse(self, tokeniser, ent_type, eval_bases, eval_extensions, ignore_unknown_valuetype)
                 else:
                     raise tokeniser.error('Bad keyword {!r}', token_value)
 
@@ -2642,7 +2702,6 @@ else:
     def __getattr__(name: str) -> type:
         """Deprecate this lookup."""
         if name == 'KeyValues':
-            import warnings
             warnings.warn(
                 'srctools.fgd.KeyValues is renamed to srctools.fgd.KVDef',
                 DeprecationWarning,

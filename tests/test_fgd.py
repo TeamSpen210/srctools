@@ -15,7 +15,7 @@ from srctools.fgd import (
 )
 from srctools.filesys import VirtualFileSystem
 # noinspection PyProtectedMember
-from srctools.tokenizer import Cy_Tokenizer, Py_Tokenizer
+from srctools.tokenizer import Cy_Tokenizer, Py_Tokenizer, TokenSyntaxError
 
 
 if Cy_Tokenizer is not None:
@@ -273,6 +273,64 @@ unknown(a, b, c)
         ValueTypes.VOID,
         'Handle triggering.'
     )
+
+
+def test_entity_ignore_unknown_valuetype(py_c_token) -> None:
+    """Verify handling unknown ValueTypes."""
+    fsys = VirtualFileSystem({'test.fgd': """
+
+@PointClass
+= some_entity
+    [
+    keyvalue1(super_string): "Name" : "default": "documentation"
+    input Trigger(ultra_void): "Trigger the entity."
+    output OnTrigger(int1024): "Handle triggering."
+    ]
+"""})
+
+    # Make sure this still counts as an error normally
+    fgd = FGD()
+    with pytest.raises(TokenSyntaxError):
+        fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False, eval_extensions=True, ignore_unknown_valuetype=False)
+
+    # Parse it ignoring any unknowns
+    fgd = FGD()
+    with pytest.warns(SyntaxWarning):
+        fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False, eval_extensions=True, ignore_unknown_valuetype=True)
+
+    ent = fgd['some_entity']
+    assert ent.type is EntityTypes.POINT
+    assert ent.classname == 'some_entity'
+
+    kv = ent.kv['keyvalue1']
+    inp = ent.inp['Trigger']
+    out = ent.out['OnTrigger']
+
+    assert kv == KVDef(
+        'keyvalue1',
+        'super_string',
+        'Name',
+        'default',
+        'documentation',
+    )
+    assert kv.type is ValueTypes.STRING
+    assert kv.custom_type == 'super_string'
+
+    assert inp == IODef(
+        'Trigger',
+        'ultra_void',
+        'Trigger the entity.'
+    )
+    assert inp.type is ValueTypes.STRING
+    assert inp.custom_type == 'ultra_void'
+
+    assert out == IODef(
+        'OnTrigger',
+        'int1024',
+        'Handle triggering.'
+    )
+    assert out.type is ValueTypes.STRING
+    assert out.custom_type == 'int1024'
 
 
 @pytest.mark.parametrize('code, is_readonly, is_report', [
@@ -592,6 +650,13 @@ def test_export_regressions(file_regression: FileRegressionFixture, custom_synta
         '255 255 128',
         'Help text for a keyvalue',
     )}
+    ent.keyvalues['custom_kv'] = {frozenset(): KVDef(
+        'custom_Kv',
+        'super_string',
+        'Custom Key Value',
+        'super duper',
+        'A keyvalue with a custom valuetype',
+    )}
 
     # The two special types with value lists.
     ent.keyvalues['spawnflags'] = {frozenset(): KVDef(
@@ -659,9 +724,11 @@ def test_export_regressions(file_regression: FileRegressionFixture, custom_synta
 
     ent.inputs['Enable'] = {frozenset(): IODef('Enable')}
     ent.inputs['SetSkin'] = {frozenset({'since_L4D'}): IODef('SetSkin', ValueTypes.INT, 'Set the skin.')}
+    ent.outputs['SetLocale'] = {frozenset(): IODef('SetLocale', 'locale', 'Set with a custom value type.')}
 
     ent.outputs['OnNoDesc'] = {frozenset(): IODef('OnNoDesc', ValueTypes.VOID)}
     ent.outputs['OnSomething'] = {frozenset({'alpha'}): IODef('OnSomething', ValueTypes.VOID)}
+    ent.outputs['OnCustom'] = {frozenset(): IODef('OnCustom', 'bitfield', 'Uses custom value type.')}
 
     # IO special case, boolean value type is named differently.
     ent.outputs['OnGetValue'] = {frozenset(): IODef(
@@ -756,6 +823,15 @@ def test_kv_copy(func: Callable[[KVDef], KVDef]) -> None:
     assert duplicate.readonly
     assert not duplicate.reportable
 
+    test_kv = KVDef(
+        name='custom_key',
+        type='special_str',
+        disp_name='Custom Keyvalue',
+    )
+    duplicate = func(test_kv)
+    assert duplicate.type is ValueTypes.STRING
+    assert duplicate.custom_type == 'special_str'
+
 
 @pytest.mark.parametrize('func', [
     IODef.copy, copy.copy, copy.deepcopy,
@@ -771,3 +847,14 @@ def test_io_copy(func: Callable[[IODef], IODef]) -> None:
     assert duplicate.name == 'OnWhatever'
     assert duplicate.type is ValueTypes.VOID
     assert duplicate.desc == 'Does something'
+
+    test_kv = IODef(
+        name='OnCustomType',
+        type='special_str',
+        desc='Outputs a special value',
+    )
+    duplicate = func(test_kv)
+    assert duplicate.name == 'OnCustomType'
+    assert duplicate.type is ValueTypes.STRING
+    assert duplicate.custom_type == 'special_str'
+    assert duplicate.desc == 'Outputs a special value'
