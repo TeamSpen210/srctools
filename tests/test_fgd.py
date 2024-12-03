@@ -641,6 +641,13 @@ def test_export_regressions(file_regression: FileRegressionFixture, custom_synta
         '255 255 128',
         'Help text for a keyvalue',
     )}
+    ent.keyvalues['custom_kv'] = {frozenset(): KVDef(
+        'custom_Kv',
+        'super_string',
+        'Custom Key Value',
+        'super duper',
+        'A keyvalue with a custom valuetype',
+    )}
 
     # The two special types with value lists.
     ent.keyvalues['spawnflags'] = {frozenset(): KVDef(
@@ -708,9 +715,11 @@ def test_export_regressions(file_regression: FileRegressionFixture, custom_synta
 
     ent.inputs['Enable'] = {frozenset(): IODef('Enable')}
     ent.inputs['SetSkin'] = {frozenset({'since_L4D'}): IODef('SetSkin', ValueTypes.INT, 'Set the skin.')}
+    ent.outputs['SetLocale'] = {frozenset(): IODef('SetLocale', 'locale', 'Set with a custom value type.')}
 
     ent.outputs['OnNoDesc'] = {frozenset(): IODef('OnNoDesc', ValueTypes.VOID)}
     ent.outputs['OnSomething'] = {frozenset({'alpha'}): IODef('OnSomething', ValueTypes.VOID)}
+    ent.outputs['OnCustom'] = {frozenset(): IODef('OnCustom', 'bitfield', 'Uses custom value type.')}
 
     # IO special case, boolean value type is named differently.
     ent.outputs['OnGetValue'] = {frozenset(): IODef(
