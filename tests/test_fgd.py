@@ -2,7 +2,6 @@
 from typing import Any, Callable, Generator
 import copy
 import io
-import warnings
 
 from pytest_regressions.file_regression import FileRegressionFixture
 import pytest
@@ -290,13 +289,9 @@ def test_entity_ignore_unknown_valuetype(py_c_token) -> None:
 """})
 
     # Make sure this still counts as an error normally
-    threw_error = False
-    try:
-        fgd2 = FGD()
-        fgd2.parse_file(fsys, fsys['test.fgd'], eval_bases=False, eval_extensions=True, ignore_unknown_valuetype=False)
-    except TokenSyntaxError as e:
-        threw_error = True
-    assert threw_error == True
+    fgd = FGD()
+    with pytest.raises(TokenSyntaxError):
+        fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False, eval_extensions=True, ignore_unknown_valuetype=False)
 
     # Parse it ignoring any unknowns
     fgd = FGD()
@@ -306,23 +301,37 @@ def test_entity_ignore_unknown_valuetype(py_c_token) -> None:
     ent = fgd['some_entity']
     assert ent.type is EntityTypes.POINT
     assert ent.classname == 'some_entity'
-    assert ent.kv['keyvalue1'] == KVDef(
+
+    kv = ent.kv['keyvalue1']
+    inp = ent.inp['Trigger']
+    out = ent.out['OnTrigger']
+
+    assert kv == KVDef(
         'keyvalue1',
         'super_string',
         'Name',
         'default',
         'documentation',
     )
-    assert ent.inp['Trigger'] == IODef(
+    assert kv.type is ValueTypes.STRING
+    assert kv.custom_type == 'super_string'
+
+    assert inp == IODef(
         'Trigger',
         'ultra_void',
         'Trigger the entity.'
     )
-    assert ent.out['OnTrigger'] == IODef(
+    assert inp.type is ValueTypes.STRING
+    assert inp.custom_type == 'ultra_void'
+
+    assert out == IODef(
         'OnTrigger',
         'int1024',
         'Handle triggering.'
     )
+    assert out.type is ValueTypes.STRING
+    assert out.custom_type == 'int1024'
+
 
 @pytest.mark.parametrize('code, is_readonly, is_report', [
     ('(int): "None"', False, False),
@@ -814,6 +823,15 @@ def test_kv_copy(func: Callable[[KVDef], KVDef]) -> None:
     assert duplicate.readonly
     assert not duplicate.reportable
 
+    test_kv = KVDef(
+        name='custom_key',
+        type='special_str',
+        disp_name='Custom Keyvalue',
+    )
+    duplicate = func(test_kv)
+    assert duplicate.type is ValueTypes.STRING
+    assert duplicate.custom_type == 'special_str'
+
 
 @pytest.mark.parametrize('func', [
     IODef.copy, copy.copy, copy.deepcopy,
@@ -829,3 +847,14 @@ def test_io_copy(func: Callable[[IODef], IODef]) -> None:
     assert duplicate.name == 'OnWhatever'
     assert duplicate.type is ValueTypes.VOID
     assert duplicate.desc == 'Does something'
+
+    test_kv = IODef(
+        name='OnCustomType',
+        type='special_str',
+        desc='Outputs a special value',
+    )
+    duplicate = func(test_kv)
+    assert duplicate.name == 'OnCustomType'
+    assert duplicate.type is ValueTypes.STRING
+    assert duplicate.custom_type == 'special_str'
+    assert duplicate.desc == 'Outputs a special value'
