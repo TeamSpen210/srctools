@@ -425,7 +425,7 @@ def iodef_unserialise(
     return iodef
 
 
-def ent_serialise(ent: EntityDef, file: IO[bytes], str_dict: BinStrSerialise, has_cbase: bool) -> None:
+def ent_serialise(ent: EntityDef, file: IO[bytes], str_dict: BinStrSerialise) -> None:
     """Write an entity to the binary file."""
     flags = ENTITY_TYPE_2_FLAG[ent.type]
     if ent.is_alias:
@@ -578,7 +578,7 @@ def compute_ent_strings(ents: Iterable[EntityDef]) -> Tuple[Mapping[EntityDef, A
             # a new one each time.
             dummy_file.seek(0)
             ent_to_string[ent] = ent_strings = set()
-            ent_serialise(ent, dummy_file, record_strings, True)
+            ent_serialise(ent, dummy_file, record_strings)
             ent_to_size[ent] = dummy_file.tell()
     return ent_to_string, ent_to_size
 
@@ -672,13 +672,6 @@ def serialise(fgd: FGD, file: IO[bytes]) -> None:
     """
     CBaseEntity = fgd.entities.pop('_cbaseentity_')
     all_ents: List[EntityDef] = list(fgd)
-    no_base_ent: Set[EntityDef] = set()
-
-    for ent in all_ents:
-        try:
-            ent.bases.remove(CBaseEntity)
-        except ValueError:
-            no_base_ent.add(ent)
 
     print('Computing string sizes...')
     # We need the database for CBaseEntity, but not to include it with anything else.
@@ -690,9 +683,10 @@ def serialise(fgd: FGD, file: IO[bytes]) -> None:
     overlaps = [
         (ent1, ent2, len(ent_to_string[ent1] & ent_to_string[ent2]))
         for ent1, ent2 in itertools.combinations(all_ents, 2)
+        if ent1.classname <= ent2.classname
     ]
 
-    print('Reordering...')
+    print(f'Reordering {len(overlaps)} overlaps...')
     overlaps.sort(key=operator.itemgetter(2), reverse=True)
 
     print('Building blocks...')
@@ -722,7 +716,7 @@ def serialise(fgd: FGD, file: IO[bytes]) -> None:
     # First, write CBaseEntity specially.
     dictionary = BinStrDict(CBaseEntity_strings)
     dictionary.serialise(file)
-    ent_serialise(CBaseEntity, file, dictionary, False)
+    ent_serialise(CBaseEntity, file, dictionary)
 
     # Then write each block and then each entity.
     for block_ents, block_stringdb in blocks:
@@ -730,7 +724,7 @@ def serialise(fgd: FGD, file: IO[bytes]) -> None:
         dictionary = BinStrDict(block_stringdb)
         dictionary.serialise(file)
         for ent in block_ents:
-            ent_serialise(ent, file, dictionary, ent not in no_base_ent)
+            ent_serialise(ent, file, dictionary)
         block_len = file.tell() - block_off
         deferred.set_data(('block', id(block_ents)), block_off, block_len)
     deferred.write()
