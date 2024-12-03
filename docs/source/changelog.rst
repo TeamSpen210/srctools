@@ -17,6 +17,7 @@ Version (dev)
 * Allow entities to delete multiple keyvalues at once.
 * Fix silent buttons trying to pack invalid `Buttons.snd0` soundscripts.
 * Handle entities being added/removed during iteration of :py:meth:`VMF.search() <srctools.vmf.VMF.search>`.
+* Share common strings in the engine database to save some space.
 
 -------------
 Version 2.4.1
