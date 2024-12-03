@@ -602,7 +602,8 @@ def compute_ent_strings(ents: Iterable[EntityDef]) -> Tuple[Mapping[EntityDef, A
             ent_serialise(ent, dummy_file, record_strings)
             ent_to_size[ent] = dummy_file.tell()
 
-    assert ent is not None and ent.classname.casefold() == '_cbaseentity_', ent
+    assert ent is not None
+    assert ent.classname.casefold() == '_cbaseentity_', ent
     base_strings = ent_to_string[ent]
     print(f'{SHARED_STRINGS-len(base_strings)}/{SHARED_STRINGS} shared strings used.')
 
