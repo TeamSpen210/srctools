@@ -198,6 +198,7 @@ class EventType(enum.Enum):
 
 class EventFlags(enum.Flag):
     """Flags for an event."""
+    NoFlags = 0
     ResumeCondition = 1 << 0
     LockBodyFacing = 1 << 1
     FixedLength = 1<<2
@@ -592,7 +593,7 @@ class Event:
     """An event is an action that occurs in a choreo scene's timeline."""
     name: str
     type: Final[EventType] = attrs.field(converter=_validate_base_event_type)
-    flags: EventFlags = EventFlags(0)
+    flags: EventFlags = EventFlags.NoFlags
     parameters: tuple[str, str, str]
     start_time: float
     end_time: float = -1.0

@@ -171,7 +171,7 @@ def make_lookup(file: IO[bytes], inv_list: List[str]) -> Callable[[], str]:
         try:
             return inv_list[index]
         except IndexError:
-            raise IndexError(f'Lookup {index} in {inv_list}')
+            raise IndexError(f'Lookup {index} in {inv_list}') from None
     return lookup
 
 
