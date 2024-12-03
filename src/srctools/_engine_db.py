@@ -329,6 +329,9 @@ class EngineDB(_EngineDBProto):
 
 def kv_serialise(kvdef: KVDef, file: IO[bytes], str_dict: BinStrSerialise) -> None:
     """Write keyvalues to the binary file."""
+    if kvdef.custom_type is not None:
+        raise ValueError(f'Cannot binary serialise custom value type for KV {kvdef!r}!')
+
     file.write(str_dict(kvdef.name))
     file.write(str_dict(kvdef.disp_name))
     value_type = VALUE_TYPE_INDEX[kvdef.type]
@@ -406,6 +409,9 @@ def kv_unserialise(
 
 def iodef_serialise(iodef: IODef, file: IO[bytes], dic: BinStrSerialise) -> None:
     """Write an IO def the binary file."""
+    if iodef.custom_type is not None:
+        raise ValueError(f'Cannot binary serialise custom value type for IO {iodef!r}!')
+
     file.write(dic(iodef.name))
     file.write(_fmt_8bit.pack(VALUE_TYPE_INDEX[iodef.type]))
 
