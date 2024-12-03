@@ -1209,7 +1209,7 @@ cdef class _EngineStringTable:
         cdef bytes byt = self.read_func(2)
         cdef uchar *buf = byt
         # Unpack an unsigned 16-bit integer.
-        cdef uint16_t offset = (buf[0] << 8) | buf[1]
+        cdef uint16_t offset = (buf[1] << 8) | buf[0]
         return self.inv_list[offset]
 
 

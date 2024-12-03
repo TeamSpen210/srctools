@@ -168,7 +168,10 @@ def make_lookup(file: IO[bytes], inv_list: List[str]) -> Callable[[], str]:
         """Perform the lookup."""
         index: int
         [index] = _fmt_16bit.unpack(file.read(2))
-        return inv_list[index]
+        try:
+            return inv_list[index]
+        except IndexError:
+            raise IndexError(f'Lookup {index} in {inv_list}')
     return lookup
 
 
@@ -195,7 +198,7 @@ class BinStrDict:
     def __init__(self, database: Iterable[str], base: Optional['BinStrDict']) -> None:
         self._dict: Dict[str, int] = {
             name: ind for ind, name
-            in enumerate(database)
+            in enumerate(sorted(database))
         }
         # If no base dict, this is for CBaseEntity, so set it to the real dict,
         # so __call__() won't add SHARED_STRINGS to the index.
@@ -473,7 +476,7 @@ def ent_serialise(ent: EntityDef, file: IO[bytes], str_dict: BinStrSerialise) ->
 
             # We only support untagged things.
             if len(tag_map) == 1:
-                tags: frozenset[str]
+                tags: FrozenSet[str]
                 value: EntAttribute
                 [(tags, value)] = tag_map.items()
                 if not tags:
@@ -589,6 +592,7 @@ def compute_ent_strings(ents: Iterable[EntityDef]) -> Tuple[Mapping[EntityDef, A
         return b'\x00\x00'
 
     # Disable warnings, we don't want a warning both here and when it is actually serialised.
+    ent: Optional[EntityDef] = None
     with warnings.catch_warnings():
         for ent in ents:
             # We don't care about the contents, so just let it overwrite itself to save reallocating
@@ -598,7 +602,7 @@ def compute_ent_strings(ents: Iterable[EntityDef]) -> Tuple[Mapping[EntityDef, A
             ent_serialise(ent, dummy_file, record_strings)
             ent_to_size[ent] = dummy_file.tell()
 
-    assert ent.classname.casefold() == '_cbaseentity_'
+    assert ent is not None and ent.classname.casefold() == '_cbaseentity_', ent
     base_strings = ent_to_string[ent]
     print(f'{SHARED_STRINGS-len(base_strings)}/{SHARED_STRINGS} shared strings used.')
 
