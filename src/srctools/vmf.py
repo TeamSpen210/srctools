@@ -3041,7 +3041,7 @@ class Entity(MutableMapping[str, str]):
     def get(self, key: str, /, default: Union[str, T]) -> Union[str, T]: ...
 
     def get(self, key: str, /, default: Union[str, T] = '') -> Union[str, T]:
-        """Allow using [] syntax to search for keyvalues.
+        """Find a keyvalue, returning a default if not found.
 
         - By default this will return '' if the value is not present.
         - It ignores case-matching, but will use the first given version
@@ -3051,6 +3051,24 @@ class Entity(MutableMapping[str, str]):
         for k in self._keys:
             if k.casefold() == key:
                 return self._keys[k]
+        return default
+
+    @overload
+    def pop(self, key: str, /, default: str = '') -> str: ...
+    @overload
+    def pop(self, key: str, /, default: T) -> Union[str, T]: ...
+
+    def pop(self, key: str, /, default: Union[str, T] = '') -> Union[str, T]:
+        """Find a keyvalue, removing it if found.
+
+        - By default this will return '' if the value is not present.
+        - It ignores case-matching, but will use the first given version
+          of a key.
+        """
+        key = key.casefold()
+        for k in self._keys:
+            if k.casefold() == key:
+                return self._keys.pop(k)
         return default
 
     def clear(self) -> None:

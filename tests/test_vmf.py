@@ -167,6 +167,11 @@ def test_entkey_basic() -> None:
     with pytest.raises(KeyError):
         del ent['classname']
 
+    assert ent.pop('rAnge') == '45.75'
+    assert 'range' not in ent
+    assert ent.pop('slide') == ''  # Not found = blank
+    assert ent.pop('defaulted', 'hi') == 'hi'
+
     del ent['target', 'health', 'notpresent']
     assert ent['target'] == ''
     assert 'health' not in ent
