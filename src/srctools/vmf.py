@@ -3054,7 +3054,9 @@ class Entity(MutableMapping[str, str]):
         return default
 
     @overload
-    def pop(self, key: str, /, default: str = '') -> str: ...
+    def pop(self, key: str, /) -> str: ...
+    @overload
+    def pop(self, key: str, /, default: str) -> str: ...
     @overload
     def pop(self, key: str, /, default: T) -> Union[str, T]: ...
 
@@ -3068,6 +3070,7 @@ class Entity(MutableMapping[str, str]):
         key = key.casefold()
         for k in self._keys:
             if k.casefold() == key:
+                # TODO: B909 bug?
                 return self._keys.pop(k)
         return default
 
