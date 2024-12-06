@@ -2667,7 +2667,7 @@ class BSP:
                 add_faces(model.faces), len(model.faces),
             )
             if model.phys_keyvalues is not None:
-                kvs = '\n'.join(model.phys_keyvalues.serialise()).encode('ascii') + b'\x00'
+                kvs = model.phys_keyvalues.serialise().encode('ascii') + b'\x00'
             else:
                 kvs = b'\x00'
                 if not model._phys_solids:
