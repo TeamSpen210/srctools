@@ -2414,7 +2414,7 @@ _struct_time = Struct('<i')
 
 def _conv_time_to_binary(tim: Time) -> bytes:
     """Time is written as a fixed point integer."""
-    return _struct_time.pack(int(round(tim.value * 10000.0)))
+    return _struct_time.pack(round(tim.value * 10000.0))
 
 
 def _conv_binary_to_time(byt: bytes) -> Time:

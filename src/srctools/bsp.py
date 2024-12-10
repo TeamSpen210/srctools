@@ -2724,9 +2724,9 @@ class BSP:
         for cube in cubemaps:
             yield struct.pack(
                 '<iiii',
-                int(round(cube.origin.x)),
-                int(round(cube.origin.y)),
-                int(round(cube.origin.z)),
+                round(cube.origin.x),
+                round(cube.origin.y),
+                round(cube.origin.z),
                 cube.size,
             )
 
