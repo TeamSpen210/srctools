@@ -544,23 +544,23 @@ def ent_unserialise(
     ent.keyvalues = {}
     while kv_count:
         kv = kv_unserialise(file, from_dict)
-        ent.keyvalues[kv.name] = {TAG_EMPTY: kv}
+        ent.keyvalues[kv.name.casefold()] = {TAG_EMPTY: kv}
         kv_count -= 1
 
     ent.inputs = {}
     while inp_count:
         iodef = iodef_unserialise(file, from_dict)
-        ent.inputs[iodef.name] = {TAG_EMPTY: iodef}
+        ent.inputs[iodef.name.casefold()] = {TAG_EMPTY: iodef}
         inp_count -= 1
 
     ent.outputs = {}
     while out_count:
         iodef = iodef_unserialise(file, from_dict)
-        ent.outputs[iodef.name] = {TAG_EMPTY: iodef}
+        ent.outputs[iodef.name.casefold()] = {TAG_EMPTY: iodef}
         out_count -= 1
 
     if res_count:
-        ent.resources = []
+        resources: list[Resource] = []
         while res_count:
             [file_ind] = file.read(1)
             file_type = FILE_TYPE_ORDER[file_ind & 127]
@@ -568,8 +568,9 @@ def ent_unserialise(
                 tag = BinStrDict.read_tags(file, from_dict)
             else:
                 tag = frozenset()
-            ent.resources.append(Resource(from_dict(), file_type, tag))
+            resources.append(Resource(from_dict(), file_type, tag))
             res_count -= 1
+        ent.resources = resources
     else:  # If empty, store a tuple that can be shared.
         ent.resources = ()
 
