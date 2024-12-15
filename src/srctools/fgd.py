@@ -2009,20 +2009,21 @@ class EntityDef:
 
         file.write('\t]\n')
 
-    def iter_bases(self, _done: Optional[Set[EntityDef]] = None) -> Iterator[EntityDef]:
+    def iter_bases(self) -> Iterator[EntityDef]:
         """Yield all base entities for this one.
 
         If an entity is repeated, it will only be yielded once.
         """
-        if not _done:
-            _done = {self}
+        return self._iter_bases({self})
+
+    def _iter_bases(self, done: Set[EntityDef]) -> Iterator[EntityDef]:
         for ent in self.bases:
-            if ent in _done or isinstance(ent, str):
+            if ent in done or isinstance(ent, str):
                 continue
 
-            _done.add(ent)
+            done.add(ent)
             yield ent
-            yield from ent.iter_bases(_done)
+            yield from ent._iter_bases(done)
 
     def extend(self, other: EntityDef) -> bool:
         """Take another entity definition and extend this definition with its data.
