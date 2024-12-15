@@ -892,6 +892,7 @@ class PackList:
             value: str
             key: str
             for key in set(ent) | set(ent_class.kv):
+                key = key.casefold()
                 # These are always present on entities, and we don't have to do
                 # any packing for them.
                 # Origin/angles might be set (brushes, instances) even for ents
@@ -926,12 +927,12 @@ class PackList:
                     val_type = kv.type
                     default = kv.default
                 except KeyError:
-                    # Suppress this error for unknown classes, we already
-                    # showed a warning above.
+                    # If ent_class is base_entity, this is an unknown class.
+                    # Suppress the error, we already showed a warning above.
                     if ent_class is not base_entity and (classname, key) not in unknown_keys:
-                        unknown_keys.add((ent_class.classname, key))
+                        unknown_keys.add((classname, key))
                         LOGGER.warning('Unknown keyvalue "{}" for ent of type "{}"!',
-                                       key, ent['classname'])
+                                       key, classname)
                     continue
 
                 value = ent[key, default]
@@ -1163,7 +1164,7 @@ class PackList:
         """Find any needed files for a model."""
         filename, ext = os.path.splitext(file.filename)
 
-        if ext in ('glb', 'gltf'):
+        if ext in ('.glb', '.gltf'):
             return
 
         # Some of these are optional, so just skip. Do not re-pack the MDL itself, that's
