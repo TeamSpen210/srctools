@@ -1,17 +1,15 @@
 """Parses caption/subtitle files."""
 from enum import Enum
 from typing import List, Optional, Self, Union
-import abc
 import io
 import re
 
 import attrs
-from pyanalyze.value import concrete_values_from_iterable
 
 from srctools.math import format_float
 
 
-TAG_REGEX = re.compile(r'<([a-zA-Z]+)(?::([0-9,:\s]*))?>')
+TAG_REGEX = re.compile(r'<([a-zA-Z]+)(?::([^>]*))?>')
 
 
 def parse_single_float(tag_name: str, args: str) -> float:
@@ -29,11 +27,11 @@ def parse_int_byte(value: str) -> int:
     try:
         colour = int(value)
     except (ValueError, TypeError):
-        raise ValueError(f'Invalid color value "{value}", must be a number in 0-255!')
+        raise ValueError(f'Invalid color value "{value}", must be a number within the range 0-255!')
     if 0 <= colour <= 255:
         return colour
     else:
-        raise ValueError(f'Invalid color value "{value}", must be a number in 0-255!')
+        raise ValueError(f'Invalid color value "{value}", must be within the range 0-255!')
 
 
 class Tag:
@@ -74,7 +72,7 @@ class ColourTag(Tag):
         try:
             r, g, b = args.split(',')
         except ValueError:
-            raise ValueError(f'<clr> tag expected R,G,B args, got {args.count(",")} args') from None
+            raise ValueError(f'<clr> tag expected 3 args, got {args.count(",")+1} args') from None
         else:
             return cls(parse_int_byte(r), parse_int_byte(g), parse_int_byte(b))
 
@@ -93,9 +91,11 @@ class PlayerColourTag(ColourTag):
     def parse(cls, args: str) -> Self:
         """Parse a player colour tag."""
         try:
-            player_r, player_g, player_b, other_r, other_g, other_b = args.split(',')
+            player, other = args.split(':')
+            player_r, player_g, player_b = player.split(',')
+            other_r, other_g, other_b = other.split(',')
         except ValueError:
-            raise ValueError(f'<clr> tag expected R,G,B args, got {args.count(",")} args') from None
+            raise ValueError(f'<playerclr> tag expected "R,G,B:R,G,B" colour pairs, got "{args}"') from None
         else:
             return cls(
                 parse_int_byte(other_r), parse_int_byte(other_g), parse_int_byte(other_b),
@@ -160,11 +160,11 @@ class Message:
             else:
                 if args is not None:
                     raise ValueError(
-                        f'Tag "{tag_name}" got parameter "{args}", but accpets none!'
+                        f'Tag <{tag_name}> got parameter "{args}", but accepts none!'
                     ) from None
                 message.append(tag)
                 continue
-            # Complex tags
+            # Tags with parameters.
             if tag_name == 'sfx':
                 is_sfx = True
             elif tag_name == 'norepeat':
