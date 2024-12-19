@@ -1,14 +1,23 @@
 """Parses caption/subtitle files."""
+import types
 from enum import Enum
-from typing import List, Optional, Self, Union
+from typing_extensions import Self
+from typing import ClassVar, Dict, IO, List, Optional, Type, Union, final
 import io
 import re
 
 import attrs
 
+from srctools import Keyvalues
+from srctools._crc_map import ChecksumMap
+from srctools.binformat import struct_read
 from srctools.math import format_float
 
-
+__all__ = [
+    'Tag', 'SimpleTag', 'ColourTag', 'PlayerColourTag', 'DelayTag',
+    'TAG_BOLD', 'TAG_ITALIC', 'TAG_NEWLINE',
+    'Message', 'CaptionsMap',
+]
 TAG_REGEX = re.compile(r'<([a-zA-Z]+)(?::([^>]*))?>')
 
 
@@ -57,6 +66,15 @@ class SimpleTag(Tag, Enum):
 TAG_BOLD = SimpleTag.BOLD
 TAG_ITALIC = SimpleTag.ITALIC
 TAG_NEWLINE = SimpleTag.NEWLINE
+
+
+@attrs.frozen
+class BlockRef:
+    """Location of a caption in the binary file"""
+    checksum: int
+    block: int
+    offset: int
+    size: int
 
 
 @attrs.frozen
@@ -118,6 +136,7 @@ class DelayTag(Tag):
         return f'<delay:{format_float(self.duration)}>'
 
 
+@final
 @attrs.frozen
 class Message:
     """A caption or subtitle, along with parameters that affect the whole caption."""
@@ -197,3 +216,133 @@ class Message:
             else:
                 buf.write(segment.export())
         return buf.getvalue()
+
+
+@final
+class CaptionsMap(ChecksumMap[Message]):
+    """A mapping of caption keys to the associated messages.
+
+    If parsed from text keyvalues or when messages are stored programmatically, this behaves
+    like any mapping. If parsed from a binary file, this has some special behaviour.
+
+    Binary files use a checksum of the token to identify messages, so it is not possible to initially
+    iterate over tokens when first parsed. This mapping will store the associated key during
+    lookup, allowing iteration.
+
+    The binary format also allows lazy parsing. This will keep the file open, parsing blocks
+    only when required.
+    """
+    # Checksum -> block number. We always parse the whole block each time.
+    _unparsed: Dict[int, int]
+    # For each block, the data and a list of captions present there.
+    _blocks: Dict[int, List[BlockRef]]
+    _block_size: int  # Size of each block.
+    _data_offset: int  # Offset to data blocks.
+    # If blocks are present, the open file.
+    file: Optional[IO[bytes]]
+
+    def __init__(self) -> None:
+        super().__init__()
+        self._blocks = {}
+        self._unparsed = {}
+        self._block_size = 512
+        self._data_offset = 0
+        self.file = None
+
+    def __enter__(self) -> Self:
+        return self
+
+    def __exit__(
+        self,
+        exc_type: Optional[Type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[types.TracebackType],
+    ) -> None:
+        if self.file is not None:
+            self.file.close()
+
+    @classmethod
+    def parse_binary(cls, file: IO[bytes]) -> Self:
+        """Parse a binary captions file.
+
+        This is lazy - only the directory of checksums is parsed, each block is parsed individually.
+        """
+        (magic, version) = struct_read('<4sI', file)
+        if magic != b'VCCD':
+            raise ValueError(f'File is not a captions file, got magic={magic!r}.')
+        if version != 1:
+            raise ValueError(f'Invalid captions version, got {version}, only v1 is valid.')
+        mapping = cls()
+        (
+            block_count,
+            mapping._block_size,
+            dir_size,
+            mapping._data_offset,
+        ) = struct_read('4i', file)
+        for _ in range(dir_size):
+            (check, block_num, offset, size) = struct_read('<IiHH', file)
+            ref = BlockRef(check, block_num, offset, size)
+            mapping._unparsed[check] = block_num
+            try:
+                mapping._blocks[block_num].append(ref)
+            except KeyError:
+                mapping._blocks[block_num] = [ref]
+
+        mapping.file = file
+        return mapping
+
+    def clear(self) -> None:
+        """Clear all values."""
+        super().clear()
+        self._unparsed.clear()
+        if self.file is not None:
+            self.file.close()
+            self.file = None
+
+    def parse_all_blocks(self) -> None:
+        """Immediately parse all of the binary captions file, then close the file."""
+        for index in list(self._blocks):
+            self._parse_block(index)
+        self.file.close()
+        self.file = None
+
+    def _try_parse(self, key: str, check: int) -> Message:
+        """Hook to allow lazily parsing values.
+
+        This should parse this value, store it then return, or raise KeyError if not found.
+        """
+        try:
+            block = self._unparsed[check]
+        except KeyError:
+            raise KeyError(key) from None
+        if self._parse_block(block):
+            # These were parsed with no key known, store the key
+            # we do know.
+            blank_key, value = self._values[check]
+            if blank_key is None:
+                self._values[check] = key, value
+            return value
+        else:
+            # Block already parsed.
+            raise KeyError(key)
+
+    def _clear_unparsed(self, check: int) -> bool:
+        """If a lazily parsed value with this checksum is present, clear it."""
+        return False
+
+    def _parse_block(self, block: int) -> bool:
+        """Parse this block, storing values, or return False if not present."""
+        if self.file is None:
+            raise ValueError(f'Trying to parse block {block}, but no open file!')
+        try:
+            refs = self._blocks.pop(block)
+        except KeyError:
+            return False
+        self.file.seek(self._data_offset + block * self._block_size)
+        data = self.file.read(self._block_size)
+        for ref in refs:
+            line = data[ref.offset:ref.offset+ref.size].decode(self.encoding)
+            # If already present, keep existing values.
+            self._values.setdefault(ref.checksum, (None, Message.parse_text(line)))
+            self._unparsed.pop(ref.checksum, None)
+        return True
