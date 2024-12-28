@@ -1332,7 +1332,7 @@ class _EntityView(Generic[T]):
             else:
                 search_tags = frozenset({t.upper() for t in tags_iter})
         else:
-            raise TypeError(f'Expected str or (str, Iterable[str]), got "{name}"')
+            raise TypeError(f'Expected str or (str, Collection[str]), got {name!r}')
         name = name.casefold()
         for ent_map in self._maps():
             try:
@@ -1359,12 +1359,14 @@ class _EntityView(Generic[T]):
         This only overwrites values with the exact same tag."""
         if isinstance(name, str):
             tags: TagsSet = frozenset()
-        else:
+        elif isinstance(name, tuple):
             name, tags_iter = name
             if isinstance(tags_iter, str):
                 tags = frozenset([tags_iter.upper()])
             else:
                 tags = frozenset({t.upper() for t in tags_iter})
+        else:
+            raise TypeError(f'Expected str or (str, Collection[str]), got {name!r}')
         ent_map: Dict[str, Dict[TagsSet, T]] = getattr(self._ent, self._attr)
         name = name.casefold()
         try:
@@ -1382,6 +1384,8 @@ class _EntityView(Generic[T]):
         if isinstance(name, str):
             del ent_map[name.casefold()]  # Or keyError
             return
+        elif not isinstance(name, tuple):
+            raise TypeError(f'Expected str or (str, Collection[str]), got {name!r}')
 
         name, tags_iter = name
         if isinstance(tags_iter, str):
