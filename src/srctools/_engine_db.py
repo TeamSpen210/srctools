@@ -560,7 +560,7 @@ def ent_unserialise(
         out_count -= 1
 
     if res_count:
-        resources: list[Resource] = []
+        resources: List[Resource] = []
         while res_count:
             [file_ind] = file.read(1)
             file_type = FILE_TYPE_ORDER[file_ind & 127]
