@@ -25,6 +25,7 @@ pure_python = files(
     'run.py',
     'smd.py',
     'sndscript.py',
+    'steam.py',
     'surfaceprop.py',
     'tokenizer.py',
     'vec.py',
