@@ -1349,7 +1349,7 @@ class _EntityView(Generic[T]):
                 key=lambda t: len(t[0]),
                 reverse=True,
             ):
-                if search_tags is None or match_tags(search_tags, tags):
+                if match_tags(search_tags, tags):
                     return value
         raise KeyError((name, search_tags))
 
