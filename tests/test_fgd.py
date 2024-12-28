@@ -59,6 +59,86 @@ def test_deprecated_kvdef() -> None:
         from srctools.fgd import KeyValues  # noqa
 
 
+def test_entity_lookup_keyvalues() -> None:
+    """Test the shorthand KV lookup functionality."""
+    kv_a = KVDef('keyvalue1', ValueTypes.STRING, 'Name')
+    kv_b = KVDef('keyvalue1', ValueTypes.STRING, 'Tag 1A')
+    kv_c = KVDef('keyvalue1', ValueTypes.STRING, 'Tag 2A')
+    kv_a2 = KVDef('keyvalue1', ValueTypes.STRING, 'Name 2')
+    kv_b2 = KVDef('keyvalue1', ValueTypes.STRING, 'Tag 1B')
+    kv_c2 = KVDef('keyvalue1', ValueTypes.STRING, 'Tag 2B')
+
+    ent = EntityDef(EntityTypes.POINT)
+    ent.keyvalues['keyvalue1'] = {
+        frozenset(): kv_a,
+        frozenset({'TAG1'}): kv_b,
+        frozenset({'TAG1', '-TAG2'}): kv_c,
+    }
+    assert ent.kv['keyvalue1'] is kv_a
+    assert ent.kv['keyvALUe1', ()] is kv_a
+    assert ent.kv['keyvalue1', []] is kv_a
+    assert ent.kv['kEYvalue1', ['tag1']] is kv_c  # Longer, takes precedence.
+    assert ent.kv['kEYvalue1', 'tag1'] is kv_c  # Edge case, don't iter direct strings.
+    assert ent.kv['keyvalue1', ['tag1', 'tag2']] is kv_b
+
+    with pytest.raises(KeyError):
+        # noinspection PyStatementEffect
+        ent.kv['missing']
+
+    # Test setting values.
+    ent.kv['keyvalue1'] = kv_a2
+    assert len(ent.keyvalues['keyvalue1']) == 3
+    assert ent.keyvalues['keyvalue1'][frozenset()] is kv_a2
+    ent.kv['keyvalue1', 'tag80'] = kv_b2
+    assert ent.keyvalues['keyvalue1'][frozenset({'TAG80'})] is kv_b2
+    ent.kv['keyvalue1', ('-tag2', 'tag1')] = kv_c2
+    assert ent.keyvalues['keyvalue1'][frozenset({'TAG1', '-TAG2'})] is kv_c2
+
+    ent.kv['keyvalue1'] = kv_a
+    ent.kv['keyvalue1', ('-exclude', )] = kv_a2
+    del ent.kv['keyvalue1', ()]  # Removes only base
+    with pytest.raises(KeyError):
+        # Untagged ignores the tags.
+        # noinspection PyStatementEffect
+        ent.kv['keyvalue1']
+    with pytest.raises(KeyError):
+        # noinspection PyStatementEffect
+        ent.kv['keyvalue1', ('exclude', )]
+    print(ent.keyvalues)
+
+    assert ent.kv['keyvalue1', 'tag1'] is kv_c2  # Still present.
+    # Empty tag means something else could match.
+    assert ent.kv['keyvalue1', ()] is kv_a2
+    del ent.kv['keyvalue1', 'tag1']
+    with pytest.raises(KeyError):
+        # noinspection PyStatementEffect
+        ent.kv['keyvalue1', ('tag1', 'tag2', 'exclude')]
+    # Doesn't remove non-equal but matching
+    assert ent.keyvalues['keyvalue1'][frozenset({'TAG1', '-TAG2'})] is kv_c2
+    del ent.kv['keyvalue1']  # Removes the whole thing.
+    assert 'keyvalue1' not in ent.keyvalues
+
+
+def test_entity_lookup_io() -> None:
+    """Test the shorthand IO lookup functionality.
+
+    Implementation is shared with KVs, so we just need a smoke test for IO.
+    """
+    ent = EntityDef(EntityTypes.POINT)
+    ent.inputs['trigger'] = {
+        frozenset(): IODef('Trigger', ValueTypes.VOID),
+        frozenset({'pass'}): IODef('Trigger', ValueTypes.STRING),
+    }
+    assert ent.inp['TrIgger'].type is ValueTypes.VOID
+    assert ent.inp['TriGGer', 'pass'].type is ValueTypes.STRING
+    ent.outputs['ontrigger'] = {
+        frozenset(): IODef('OnTrigger', ValueTypes.VOID),
+        frozenset({'pass'}): IODef('OnTrigger', ValueTypes.STRING),
+    }
+    assert ent.out['onTrIgger'].type is ValueTypes.VOID
+    assert ent.out['onTrIgger', ('pass', )].type is ValueTypes.STRING
+
+
 def test_entity_parse(py_c_token) -> None:
     """Verify parsing an entity produces the correct results."""
     fsys = VirtualFileSystem({'test.fgd': """

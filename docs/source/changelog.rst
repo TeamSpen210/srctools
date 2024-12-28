@@ -19,6 +19,8 @@ Version (dev)
 * Handle entities being added/removed during iteration of :py:meth:`VMF.search() <srctools.vmf.VMF.search>`.
 * Share common strings in the engine database to save some space.
 * Fix saving the `PHYSCOLLIDE` BSP lump.
+* Make :py:attr:`EntityDef.kv <srctools.fgd.EntityDef.kv>`, :py:attr:`.inp <srctools.fgd.EntityDef.inp>`
+  and :py:attr:`.out <srctools.fgd.EntityDef.out>` views settable, improve behaviour.
 
 -------------
 Version 2.4.1

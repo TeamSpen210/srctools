@@ -1326,8 +1326,11 @@ class _EntityView(Generic[T]):
         if isinstance(name, str):
             search_tags = None
         elif isinstance(name, tuple):
-            name, search_tags = name
-            search_tags = frozenset({t.upper() for t in search_tags})
+            name, tags_iter = name
+            if isinstance(tags_iter, str):
+                search_tags = frozenset([tags_iter.upper()])
+            else:
+                search_tags = frozenset({t.upper() for t in tags_iter})
         else:
             raise TypeError(f'Expected str or (str, Iterable[str]), got "{name}"')
         name = name.casefold()
@@ -1336,6 +1339,9 @@ class _EntityView(Generic[T]):
                 tag_map = ent_map[name]
             except KeyError:
                 continue
+            # Ignore tags if not provided.
+            if search_tags is None:
+                return tag_map[frozenset()]
 
             # Force longer more-specific tags to match first.
             for tags, value in sorted(
@@ -1346,6 +1352,46 @@ class _EntityView(Generic[T]):
                 if search_tags is None or match_tags(search_tags, tags):
                     return value
         raise KeyError((name, search_tags))
+
+    def __setitem__(self, name: Union[str, Tuple[str, Collection[str]]], value: T) -> None:
+        """Set the value in the entity. This never affects bases.
+
+        This only overwrites values with the exact same tag."""
+        if isinstance(name, str):
+            tags: TagsSet = frozenset()
+        else:
+            name, tags_iter = name
+            if isinstance(tags_iter, str):
+                tags = frozenset([tags_iter.upper()])
+            else:
+                tags = frozenset({t.upper() for t in tags_iter})
+        ent_map: Dict[str, Dict[TagsSet, T]] = getattr(self._ent, self._attr)
+        name = name.casefold()
+        try:
+            tag_map = ent_map[name]
+        except KeyError:
+            ent_map[name] = {tags: value}
+        else:
+            ent_map[name][tags] = value
+
+    def __delitem__(self, name: Union[str, Tuple[str, Collection[str]]]) -> None:
+        """Remove the value from the entity. This never affects bases.
+
+        If a single string is provided, all tag versions are removed."""
+        ent_map: Dict[str, Dict[TagsSet, T]] = getattr(self._ent, self._attr)
+        if isinstance(name, str):
+            del ent_map[name.casefold()]  # Or keyError
+            return
+
+        name, tags_iter = name
+        if isinstance(tags_iter, str):
+            tags = frozenset([tags_iter.upper()])
+        else:
+            tags = frozenset({t.upper() for t in tags_iter})
+        try:
+            del ent_map[name.casefold()][tags]
+        except KeyError:
+            raise KeyError((name, tags)) from None
 
     def __iter__(self) -> Iterator[str]:
         """Yields all keys this object has."""
@@ -1664,7 +1710,7 @@ class EntityDef:
                     # New, add to the ordering.
                     entity.kv_order.append(kv_def.name.casefold())
                 kv_tags_map[tags] = kv_def
-        
+
         if eval_extensions and ent_type == EntityTypes.EXTEND:
             # Check for if the entry already exists. If it does, extend it.
             # Otherwise, we'll just store it in there...
