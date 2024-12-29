@@ -9,7 +9,7 @@ build-backend = "mesonpy"
 
 [project]
 name = "srctools"
-requires-python = ">=3.8"
+requires-python = ">=3.9"
 dynamic = ["version"]
 urls = {source="https://github.com/TeamSpen210/srctools"}
 description = "Modules for working with Valve's Source Engine file formats."
@@ -25,11 +25,11 @@ classifiers = [
 	"Framework :: tox",
 	"License :: OSI Approved :: MIT License",
 	"Programming Language :: Cython",
-	"Programming Language :: Python :: 3.8",
 	"Programming Language :: Python :: 3.9",
 	"Programming Language :: Python :: 3.10",
 	"Programming Language :: Python :: 3.11",
 	"Programming Language :: Python :: 3.12",
+	"Programming Language :: Python :: 3.13",
 	"Programming Language :: Python :: 3 :: Only",
 	"Programming Language :: Python :: Implementation :: CPython",
 	"Programming Language :: Python :: Implementation :: PyPy",
@@ -83,16 +83,6 @@ distance-dirty = "{base_version}.dev{distance}+{rev}.dirty.{build_date:%Y.%m.%d}
 [tool.versioningit.write]
 method = "basic"
 file = "src/srctools/_version.py"
-
-[tool.cibuildwheel]
-# Ensure both 32-bit and 64-bit are built
-archs = "auto"
-# Skip building:
-skip = [
-	"{cp,pp}{36,37}-*", # < Python 3.8
-	"*linux_i686",  # 32-bit linux (all)
-	"{cp,pp}{39,310,311,312,313,314,315,316}-win32",  # 32-bit on 3.9+
-]
 
 # After building, run tests to check it works.
 # Disable assertion rewriting since that sometimes has issues on PyPy.

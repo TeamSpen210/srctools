@@ -8,6 +8,7 @@ Changelog
 -------------
 Version (dev)
 -------------
+* Drop support for Python 3.8.
 * Switch to Meson for building the package.
 * #35: Only use character escapes in FGD custom syntax mode. The original parser only allows `\\n`.
 * Avoid escaping `/` and `?`, these are unambiguous.
