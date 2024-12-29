@@ -1,5 +1,5 @@
 """Collapses the submaps of a manifest map into a single VMF."""
-from typing import Dict, List, Optional, Union
+from typing import Optional, Union
 from pathlib import Path
 import argparse
 
@@ -10,7 +10,7 @@ from srctools.keyvalues import Keyvalues
 from srctools.vmf import VMF, VisGroup
 
 
-def main(args: Optional[List[str]] = None) -> None:
+def main(args: Optional[list[str]] = None) -> None:
     """Main script."""
     parser = argparse.ArgumentParser(description=__doc__)
 
@@ -37,7 +37,7 @@ def main(args: Optional[List[str]] = None) -> None:
     fsys = RawFileSystem(source.with_suffix(''))
 
     vmf = VMF()
-    engine_cache: Dict[str, EntityDef] = {}
+    engine_cache: dict[str, EntityDef] = {}
 
     for submap in submaps:
         print(f'Collapsing "{submap.name}"...')

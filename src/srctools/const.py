@@ -1,5 +1,6 @@
 """Various useful constants and enums."""
-from typing import Any, MutableMapping
+from typing import Any
+from collections.abc import MutableMapping
 from enum import Enum, Flag
 import sys
 

@@ -1,16 +1,16 @@
 """Parse FGD files, used to describe Hammer entities."""
 from __future__ import annotations
-from typing import (
-    IO, TYPE_CHECKING, AbstractSet, Any, Callable, ClassVar, Collection, Container, Dict,
-    FrozenSet, Generic, Iterable, Iterator, List, Mapping, Optional, Sequence, Set,
-    TextIO, Tuple, Type, TypeVar, Union, cast,
-)
+from typing import IO, TYPE_CHECKING, Any, ClassVar, Generic, Optional, TextIO, TypeVar, Union, cast
 from typing_extensions import Protocol, TypeAlias, overload
 from collections import ChainMap, defaultdict
+from collections.abc import (
+    Callable, Collection, Container, Iterable, Iterator, Mapping, Sequence, Set,
+)
 from copy import deepcopy
 from enum import Enum
 from importlib_resources import files
 from pathlib import Path, PurePosixPath
+import builtins  # type shadowed.
 import io
 import itertools
 import math
@@ -52,10 +52,10 @@ ValueT_co = TypeVar('ValueT_co', covariant=True)
 FileSysT = TypeVar('FileSysT', bound=FileSystem)
 _fake_vmf = VMF(preserve_ids=False)
 # Collections of tags.
-TagsSet: TypeAlias = FrozenSet[str]
-SnippetDict: TypeAlias = 'Dict[str, Snippet[T]]'
-SpawnFlags: TypeAlias = Tuple[int, str, bool, TagsSet]
-Choices: TypeAlias = Tuple[str, str, TagsSet]
+TagsSet: TypeAlias = frozenset[str]
+SnippetDict: TypeAlias = 'dict[str, Snippet[T]]'
+SpawnFlags: TypeAlias = tuple[int, str, bool, TagsSet]
+Choices: TypeAlias = tuple[str, str, TagsSet]
 
 # Cached engine DB parsing functions.
 _ENGINE_DB: Optional[list[_EngineDBProto]] = None
@@ -155,7 +155,7 @@ class ValueTypes(Enum):
         }
 
 
-VALUE_TYPE_LOOKUP: Dict[str, ValueTypes] = {
+VALUE_TYPE_LOOKUP: dict[str, ValueTypes] = {
     typ.value: typ
     for typ in ValueTypes
 }
@@ -166,7 +166,7 @@ VALUE_TYPE_LOOKUP['int'] = ValueTypes.INT
 # In I/O definitions, types are constrained.
 # So this is the most appropriate type to use instead for all types.
 # First, string can reproduce everything if not allowed.
-VALUE_TO_IO_DECAY: Dict[ValueTypes, ValueTypes] = {
+VALUE_TO_IO_DECAY: dict[ValueTypes, ValueTypes] = {
     typ: typ if typ.valid_for_io else ValueTypes.STRING
     for typ in ValueTypes
 }
@@ -344,7 +344,7 @@ def _read_colon_list(
     had_colon: bool = False,
     desc_offset: int = -1,
     snippet_desc: Mapping[str, Snippet[str]] = srctools.EmptyMapping,
-) -> List[str]:
+) -> list[str]:
     """Read strings seperated by colons, up to the end of the line.
 
     If desc_offset is provided, this position in the list can be a @snippet reference.
@@ -448,8 +448,8 @@ def _write_longstring(file: IO[str], extended: bool, text: str, *, indent: str) 
 def _parse_colon_array(
     tok: BaseTokenizer, error_desc: str, kind: str,
     snippet_mapping: Mapping[str, Snippet[Sequence[T]]],
-    parse: Callable[[BaseTokenizer, str, str, List[str], TagsSet], T],
-) -> List[T]:
+    parse: Callable[[BaseTokenizer, str, str, list[str], TagsSet], T],
+) -> list[T]:
     """Parse through an array of colon-separated values, like in choices/flags keyvalues.
 
     The function provided is used to parse each line into the desired object.
@@ -461,7 +461,7 @@ def _parse_colon_array(
     else:
         tok.push_back(tok_typ, tok_value)
 
-    val_list: List[T] = []
+    val_list: list[T] = []
     tok.expect(Token.BRACK_OPEN)
     for token, first_value in tok.skipping_newlines():
         if token is Token.BRACK_CLOSE:
@@ -488,7 +488,7 @@ def _parse_colon_array(
 
 def _parse_flags(
     tok: BaseTokenizer, error_desc: str,
-    first_value: str, vals: List[str], tags: TagsSet,
+    first_value: str, vals: list[str], tags: TagsSet,
 ) -> SpawnFlags:
     """Parse a line into a flags array member."""
     try:
@@ -532,7 +532,7 @@ def _parse_flags(
 
 def _parse_choices(
     tok: BaseTokenizer, error_desc: str,
-    first_value: str, vals: List[str], tags: TagsSet,
+    first_value: str, vals: list[str], tags: TagsSet,
 ) -> Choices:
     """Parse a line into a choices array member."""
     if len(vals) == 1:
@@ -793,7 +793,7 @@ class Helper:
     IS_EXTENSION: ClassVar[bool] = False  # true for our extensions to the format.
 
     @classmethod
-    def parse(cls: Type[HelperT], args: List[str]) -> HelperT:
+    def parse(cls: type[HelperT], args: list[str]) -> HelperT:
         """Parse this helper from the given arguments.
 
         The default implementation expects no arguments.
@@ -803,7 +803,7 @@ class Helper:
             raise ValueError(f'No arguments accepted by {name}()!')
         return cls()
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Produce the argument text to recreate this helper type."""
         return []
 
@@ -839,12 +839,12 @@ class UnknownHelper(Helper):
     """Represents an unknown helper."""
     TYPE: ClassVar[Optional[HelperTypes]] = None
 
-    def __init__(self, name: str, args: List[str]) -> None:
+    def __init__(self, name: str, args: list[str]) -> None:
         """Unknown helpers have a name attribute."""
         self.name = name
         self.args = args
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Produce the argument text to recreate this helper type."""
         return self.args[:]
 
@@ -862,7 +862,7 @@ class AutoVisgroup:
     """
     name: str
     parent: str = attrs.field(hash=False, eq=False, order=False)
-    ents: Set[str] = attrs.field(factory=set, hash=False, eq=False, order=False)
+    ents: set[str] = attrs.field(factory=set, hash=False, eq=False, order=False)
 
     def __repr__(self) -> str:
         return f'<AutoVisgroup "{self.name}">'
@@ -915,12 +915,12 @@ class KVDef(EntAttribute):
     disp_name: str
     default: str = ''
     desc: str = ''
-    val_list: Union[List[SpawnFlags], List[Choices], None] = None
+    val_list: Union[list[SpawnFlags], list[Choices], None] = None
     readonly: bool = False
     reportable: bool = False
 
     @property
-    def choices_list(self) -> List[Choices]:
+    def choices_list(self) -> list[Choices]:
         """Check that the keyvalues are CHOICES type, and then return val_list.
 
         This isolates the type ambiguity of the attr.
@@ -928,12 +928,12 @@ class KVDef(EntAttribute):
         if self._type is not ValueTypes.CHOICES:
             raise TypeError
         if self.val_list is None:
-            lst: List[Tuple[str, str, TagsSet]] = []
+            lst: list[tuple[str, str, TagsSet]] = []
             self.val_list = lst
-        return cast('List[Choices]', self.val_list)
+        return cast('list[Choices]', self.val_list)
 
     @property
-    def flags_list(self) -> List[SpawnFlags]:
+    def flags_list(self) -> list[SpawnFlags]:
         """Check that the keyvalues are SPAWNFLAGS type, and then return val_list.
 
         This isolates the type ambiguity of the attr.
@@ -941,9 +941,9 @@ class KVDef(EntAttribute):
         if self._type is not ValueTypes.SPAWNFLAGS:
             raise TypeError
         if self.val_list is None:
-            lst: List[SpawnFlags] = []
+            lst: list[SpawnFlags] = []
             self.val_list = lst
-        return cast('List[SpawnFlags]', self.val_list)
+        return cast('list[SpawnFlags]', self.val_list)
 
     def copy(self) -> KVDef:
         """Create a duplicate of this keyvalue."""
@@ -961,7 +961,7 @@ class KVDef(EntAttribute):
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> KVDef:
+    def __deepcopy__(self, memodict: Optional[dict[int, Any]] = None) -> KVDef:
         return KVDef(
             self.name,
             self._type,
@@ -991,7 +991,7 @@ class KVDef(EntAttribute):
         fgd: FGD, name: str, tok: BaseTokenizer,
         error_desc: str,
         ignore_unknown_valuetype: bool = False,
-    ) -> Tuple[TagsSet, KVDef]:
+    ) -> tuple[TagsSet, KVDef]:
         """Parse a keyvalue definition."""
         is_readonly = show_in_report = had_colon = False
         # Next is either the value type parens, or a tags brackets.
@@ -1031,7 +1031,7 @@ class KVDef(EntAttribute):
             # Fetch for the rest of the checks.
             next_token, key_flag = tok()
         has_equal: Optional[Token] = None
-        kv_vals: Optional[List[str]] = None
+        kv_vals: Optional[list[str]] = None
         if next_token is Token.COLON:
             had_colon = True
         elif next_token is Token.EQUALS:
@@ -1067,7 +1067,7 @@ class KVDef(EntAttribute):
             elif default.casefold() == 'no':
                 default = '0'
         # Read the choices in the [].
-        val_list: Union[List[Choices], List[SpawnFlags], None]
+        val_list: Union[list[Choices], list[SpawnFlags], None]
         if isinstance(val_typ, ValueTypes) and val_typ.has_list:
             if has_equal is not Token.EQUALS:
                 raise tok.error('No list provided for "{}" value type!', val_typ.name)
@@ -1204,7 +1204,7 @@ class IODef(EntAttribute):
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> IODef:
+    def __deepcopy__(self, memodict: Optional[dict[int, Any]] = None) -> IODef:
         return IODef(self.name, self._type, self.desc)
 
     @classmethod
@@ -1213,7 +1213,7 @@ class IODef(EntAttribute):
         fgd: FGD,
         tok: BaseTokenizer,
         ignore_unknown_valuetype: bool = False,
-    ) -> Tuple[TagsSet, IODef]:
+    ) -> tuple[TagsSet, IODef]:
         """Parse I/O definitions in an entity."""
         name = tok.expect(Token.STRING)
 
@@ -1318,7 +1318,7 @@ class _EntityView(Generic[T]):
             if isinstance(base, EntityDef):
                 yield from self._maps(base)
 
-    def __getitem__(self, name: Union[str, Tuple[str, Collection[str]]]) -> T:
+    def __getitem__(self, name: Union[str, tuple[str, Collection[str]]]) -> T:
         """Lookup the value in the entity.
 
         Either obj['name'], or obj['name', {tags}] is accepted.
@@ -1353,7 +1353,7 @@ class _EntityView(Generic[T]):
                     return value
         raise KeyError((name, search_tags))
 
-    def __setitem__(self, name: Union[str, Tuple[str, Collection[str]]], value: T) -> None:
+    def __setitem__(self, name: Union[str, tuple[str, Collection[str]]], value: T) -> None:
         """Set the value in the entity. This never affects bases.
 
         This only overwrites values with the exact same tag."""
@@ -1367,7 +1367,7 @@ class _EntityView(Generic[T]):
                 tags = frozenset({t.upper() for t in tags_iter})
         else:
             raise TypeError(f'Expected str or (str, Collection[str]), got {name!r}')
-        ent_map: Dict[str, Dict[TagsSet, T]] = getattr(self._ent, self._attr)
+        ent_map: dict[str, dict[TagsSet, T]] = getattr(self._ent, self._attr)
         name = name.casefold()
         try:
             tag_map = ent_map[name]
@@ -1376,11 +1376,11 @@ class _EntityView(Generic[T]):
         else:
             ent_map[name][tags] = value
 
-    def __delitem__(self, name: Union[str, Tuple[str, Collection[str]]]) -> None:
+    def __delitem__(self, name: Union[str, tuple[str, Collection[str]]]) -> None:
         """Remove the value from the entity. This never affects bases.
 
         If a single string is provided, all tag versions are removed."""
-        ent_map: Dict[str, Dict[TagsSet, T]] = getattr(self._ent, self._attr)
+        ent_map: dict[str, dict[TagsSet, T]] = getattr(self._ent, self._attr)
         if isinstance(name, str):
             del ent_map[name.casefold()]  # Or keyError
             return
@@ -1399,7 +1399,7 @@ class _EntityView(Generic[T]):
 
     def __iter__(self) -> Iterator[str]:
         """Yields all keys this object has."""
-        seen: Set[str] = set()
+        seen: set[str] = set()
         for ent_map in self._maps():
             for name in ent_map:
                 if name in seen:
@@ -1414,7 +1414,7 @@ class _EntityView(Generic[T]):
         return False
 
     def __len__(self) -> int:
-        seen: Set[str] = set()
+        seen: set[str] = set()
         for ent_map in self._maps():
             seen.update(ent_map)
         return len(seen)
@@ -1431,17 +1431,17 @@ class EntityDef:
     classname: str = ''  #: The classname of this entity, as originally typed.
 
     # These are (name) -> {tags: value} dicts.
-    keyvalues: Dict[str, Dict[TagsSet, KVDef]] = attrs.field(kw_only=True, factory=dict)
-    inputs: Dict[str, Dict[TagsSet, IODef]] = attrs.field(kw_only=True, factory=dict)
-    outputs: Dict[str, Dict[TagsSet, IODef]] = attrs.field(kw_only=True, factory=dict)
+    keyvalues: dict[str, dict[TagsSet, KVDef]] = attrs.field(kw_only=True, factory=dict)
+    inputs: dict[str, dict[TagsSet, IODef]] = attrs.field(kw_only=True, factory=dict)
+    outputs: dict[str, dict[TagsSet, IODef]] = attrs.field(kw_only=True, factory=dict)
 
     #: Keyvalues have an order. If not present in here, they appear at the end.
-    kv_order: List[str] = attrs.field(kw_only=True, factory=list)
+    kv_order: list[str] = attrs.field(kw_only=True, factory=list)
 
     #: The parent entity classes defined using ``base()`` helpers.
-    bases: List[Union[EntityDef, str]] = attrs.field(kw_only=True, factory=list)
+    bases: list[Union[EntityDef, str]] = attrs.field(kw_only=True, factory=list)
     #: All other helpers defined on the entity.
-    helpers: List[Helper] = attrs.field(kw_only=True, factory=list)
+    helpers: list[Helper] = attrs.field(kw_only=True, factory=list)
     desc: str = attrs.field(default='', kw_only=True)
 
     # Views for accessing data among all the entities.
@@ -1483,7 +1483,7 @@ class EntityDef:
         entity = cls(ent_type)
 
         # First parse the bases part - lots of name(args) sections until an '='.
-        ext_autovisgroups: List[List[str]] = []
+        ext_autovisgroups: list[list[str]] = []
         help_type: Optional[HelperTypes] = None
         help_type_cust: Optional[str] = None
         for token, token_value in tok:
@@ -1581,7 +1581,7 @@ class EntityDef:
 
         # We next might have a ':' then docstring before the [,
         # or directly to [.
-        desc: Optional[List[str]] = None
+        desc: Optional[list[str]] = None
         for doc_token, token_value in tok:
             if doc_token is Token.NEWLINE:
                 continue
@@ -1689,7 +1689,7 @@ class EntityDef:
             elif io_type == '@resources':  # @resource block, format extension
                 tok.expect(Token.BRACK_OPEN, skip_newline=True)
                 # Append to existing, in case there's multiple blocks.
-                resources: List[Resource] = list(entity.resources)
+                resources: list[Resource] = list(entity.resources)
                 for res_tok, res_tok_val in tok:
                     if res_tok is Token.STRING:
                         try:
@@ -1745,7 +1745,7 @@ class EntityDef:
         raise KeyError(classname)
 
     @classmethod
-    def engine_classes(cls) -> AbstractSet[str]:
+    def engine_classes(cls) -> Set[str]:
         """Return a set of known entity classnames, from the Hammer Addons database."""
         databases = _load_engine_db()
 
@@ -1753,7 +1753,7 @@ class EntityDef:
         if len(databases) == 1:
             return databases[0].get_classnames()
 
-        classnames: Set[str] = set()
+        classnames: set[str] = set()
         for dbase in databases:
             classnames |= dbase.get_classnames()
 
@@ -1769,7 +1769,7 @@ class EntityDef:
         else:
             return f'<Entity {self.classname}>'
 
-    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> EntityDef:
+    def __deepcopy__(self, memodict: Optional[dict[int, Any]] = None) -> EntityDef:
         """Handle copying ourselves, to eliminate lookups when not required."""
         copy = EntityDef.__new__(EntityDef)
         copy.type = self.type
@@ -1783,9 +1783,9 @@ class EntityDef:
 
         # Avoid copy for these, we know the tags-map is immutable.
         for val_key in ['keyvalues', 'inputs', 'outputs']:
-            coll: Dict[str, Dict[TagsSet, Union[KVDef, IODef]]] = {}
+            coll: dict[str, dict[TagsSet, Union[KVDef, IODef]]] = {}
             setattr(copy, val_key, coll)
-            tags_map: Dict[TagsSet, Union[KVDef, IODef]]
+            tags_map: dict[TagsSet, Union[KVDef, IODef]]
             for key, tags_map in getattr(self, val_key).items():
                 coll[key] = {
                     key: value.copy()
@@ -1796,7 +1796,7 @@ class EntityDef:
         copy.out = _EntityView(copy, 'outputs', 'out')
         return copy
 
-    def __getstate__(self) -> Tuple[object, ...]:
+    def __getstate__(self) -> tuple[object, ...]:
         """Don't include EntityView while pickling."""
         return (
             self.type,
@@ -1812,7 +1812,7 @@ class EntityDef:
             self.is_alias,
         )
 
-    def __setstate__(self, state: Tuple[Any, ...]) -> None:
+    def __setstate__(self, state: tuple[Any, ...]) -> None:
         """We can regenerate EntityView from scratch."""
         (
             self.type,
@@ -1833,11 +1833,11 @@ class EntityDef:
             [self.resources, self.is_alias] = resources
 
     @overload
-    def get_helpers(self, typ: Type[HelperT]) -> Iterator[HelperT]: ...
+    def get_helpers(self, typ: builtins.type[HelperT]) -> Iterator[HelperT]: ...
     @overload
     def get_helpers(self, typ: str) -> Iterator[UnknownHelper]: ...
 
-    def get_helpers(self, typ: Union[Type[HelperT], str]) -> Iterator[Helper]:
+    def get_helpers(self, typ: Union[builtins.type[HelperT], str]) -> Iterator[Helper]:
         """Find all helpers with this specific type."""
         if isinstance(typ, str):
             for helper in self.helpers:
@@ -1854,7 +1854,7 @@ class EntityDef:
         *,
         ent: Optional[Entity],
         on_error: Callable[[str], object] = lambda err: None,
-    ) -> Iterator[Tuple[FileType, str]]:
+    ) -> Iterator[tuple[FileType, str]]:
         """Recursively fetch all the resources this entity may use, simulating ``Precache()``.
 
         :param ent: A specific entity to evaluate against. If not provided, functions will
@@ -1873,9 +1873,9 @@ class EntityDef:
         # We can recurse, use two lists to avoid actual recursive calls.
         # Also track the checked classes, so we don't repeat ourselves.
         classes_checked = {self.classname}
-        entities_checked: Set[FrozenSet[Tuple[str, str]]] = set()
-        todo_ents: List[Tuple[EntityDef, Optional[Entity]]] = [(self, ent)]
-        todo_res: List[Resource] = []
+        entities_checked: set[frozenset[tuple[str, str]]] = set()
+        todo_ents: list[tuple[EntityDef, Optional[Entity]]] = [(self, ent)]
+        todo_res: list[Resource] = []
         while todo_ents:
             (ent_def, ent) = todo_ents.pop()
             todo_res.extend(ent_def.resources)
@@ -1937,7 +1937,7 @@ class EntityDef:
                 else:
                     yield (res.type, res.filename)
 
-    def _iter_attrs(self) -> Iterator[Dict[str, Dict[TagsSet, EntAttribute]]]:
+    def _iter_attrs(self) -> Iterator[dict[str, dict[TagsSet, EntAttribute]]]:
         """Iterate over both the keyvalues and I/O dicts.
 
         This is used when we want to deal with both in the same way.
@@ -1990,7 +1990,7 @@ class EntityDef:
             ]))
             file.write(') ')
 
-        kv_order_list: List[str] = []
+        kv_order_list: list[str] = []
 
         for helper in self.helpers:
             args = helper.export()
@@ -2066,7 +2066,7 @@ class EntityDef:
         """
         return self._iter_bases({self})
 
-    def _iter_bases(self, done: Set[EntityDef]) -> Iterator[EntityDef]:
+    def _iter_bases(self, done: set[EntityDef]) -> Iterator[EntityDef]:
         for ent in self.bases:
             if ent in done or isinstance(ent, str):
                 continue
@@ -2121,33 +2121,33 @@ class FGD:
     """A FGD set for a game. May be composed of several files."""
     # List of names we have already parsed.
     # We don't parse them again, to prevent infinite loops.
-    _parse_list: Set[File]
+    _parse_list: set[File]
     # Entity definitions
-    entities: Dict[str, EntityDef]
+    entities: dict[str, EntityDef]
     # Maximum bounding box of map
     map_size_min: int
     map_size_max: int
 
     # Directories we have excluded.
-    mat_exclusions: Set[PurePosixPath]
+    mat_exclusions: set[PurePosixPath]
     # Additional dirs restricted to specific engines with tags.
-    tagged_mat_exclusions: Dict[TagsSet, Set[PurePosixPath]]
+    tagged_mat_exclusions: dict[TagsSet, set[PurePosixPath]]
 
     # Automatic visgroups.
     # The way Valve implemented this is rather strange, so we need to match
     # their data structure really to get good results. Despite it appearing
     # hierarchical in editor, we and Hammer store it flattened. Each visgroup
     # has a parent (or None for auto), and then a list of the ents it contains.
-    auto_visgroups: Dict[str, AutoVisgroup]
+    auto_visgroups: dict[str, AutoVisgroup]
 
     # Snippets are named sections of syntax that can be reused.
     # Each is identified by a source filename, and a lookup key.
     snippet_desc: SnippetDict[str]
     snippet_choices: SnippetDict[Sequence[Choices]]
     snippet_flags: SnippetDict[Sequence[SpawnFlags]]
-    snippet_input: SnippetDict[Tuple[TagsSet, IODef]]
-    snippet_output: SnippetDict[Tuple[TagsSet, IODef]]
-    snippet_keyvalue: SnippetDict[Tuple[TagsSet, KVDef]]
+    snippet_input: SnippetDict[tuple[TagsSet, IODef]]
+    snippet_output: SnippetDict[tuple[TagsSet, IODef]]
+    snippet_keyvalue: SnippetDict[tuple[TagsSet, KVDef]]
 
     def __init__(self) -> None:
         """Create a FGD."""
@@ -2223,11 +2223,11 @@ class FGD:
         Otherwise, entities are ordered in alphabetical order.
         """
         # We need to do a topological sort.
-        todo: Set[EntityDef] = set(self)
-        done: Set[EntityDef] = set()
+        todo: set[EntityDef] = set(self)
+        done: set[EntityDef] = set()
         cls_getter = operator.attrgetter('classname')
         while todo:
-            deferred: Set[EntityDef] = set()
+            deferred: set[EntityDef] = set()
             batch = []
             for ent in todo:
                 ready = True
@@ -2268,9 +2268,9 @@ class FGD:
         # We need to do a topological sort effectively, to ensure we do
         # parents before children.
         for ent in self.sorted_ents():
-            base_kv: List[str] = []
-            keyvalue_names: Set[str] = set(ent.kv_order)
-            parent_resources: List[Resource] = []
+            base_kv: list[str] = []
+            keyvalue_names: set[str] = set(ent.kv_order)
+            parent_resources: list[Resource] = []
 
             for base in ent.bases:
                 if isinstance(base, str):
@@ -2359,7 +2359,7 @@ class FGD:
                 file.write(f'\t"{folder!s}"\n')
             file.write('\t]\n\n')
 
-        vis_by_parent: Dict[str, Set[AutoVisgroup]] = defaultdict(set)
+        vis_by_parent: dict[str, set[AutoVisgroup]] = defaultdict(set)
         # Record the proper casing as well.
         name_casing = {'auto': 'Auto'}
         for visgroup in list(self.auto_visgroups.values()):
@@ -2712,7 +2712,7 @@ def _init_helper_impl() -> None:
 
 class _EngineDBProto(Protocol):
     """Unserialised database, which will be parsed progressively as required."""
-    def get_classnames(self) -> AbstractSet[str]:
+    def get_classnames(self) -> Set[str]:
         """Get the classnames in the database."""
         raise NotImplementedError
 
@@ -2730,7 +2730,7 @@ class _EngineDBProto(Protocol):
 
 
 # Each helper type -> the class implementing them.
-HELPER_IMPL: Dict[HelperTypes, Type[Helper]] = {}
+HELPER_IMPL: dict[HelperTypes, type[Helper]] = {}
 
 # If we're importing, make sure _fgd_helpers is imported fresh. Otherwise, if the module is
 # reloaded it'll be using the old classes, breaking our registration.

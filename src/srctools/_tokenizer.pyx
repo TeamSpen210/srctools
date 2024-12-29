@@ -2,9 +2,12 @@
 # cython: binding=True
 """Cython version of the Tokenizer class."""
 from cpython.mem cimport PyMem_Free, PyMem_Malloc, PyMem_Realloc
-from cpython.unicode cimport PyUnicode_AsUTF8AndSize, PyUnicode_FromStringAndSize, PyUnicode_FromKindAndData
+from cpython.unicode cimport (
+    PyUnicode_AsUTF8AndSize, PyUnicode_FromKindAndData, PyUnicode_FromStringAndSize,
+)
 from libc.stdint cimport uint16_t, uint_fast8_t
 cimport cython
+
 
 cdef extern from *:
     ctypedef unsigned char uchar "unsigned char"  # Using it a lot, this causes it to not be a typedef at all.

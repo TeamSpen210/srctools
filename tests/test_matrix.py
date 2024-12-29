@@ -1,5 +1,4 @@
 """Tests the Matrix/FrozenMatrix class in srctools.math."""
-from typing import Tuple
 import copy
 import fractions
 import itertools
@@ -305,7 +304,7 @@ def test_from_basis_x(
     py_c_vec: PyCVec,
     frozen_thawed_matrix: MatrixClass,
     frozen_thawed_angle: AngleClass,
-    direction: Tuple[int, int, int],
+    direction: tuple[int, int, int],
 ) -> None:
     """Test Matrix.from_basis(), with a single axis."""
     Matrix = frozen_thawed_matrix
@@ -327,7 +326,7 @@ def test_from_basis_y(
     py_c_vec: PyCVec,
     frozen_thawed_matrix: MatrixClass,
     frozen_thawed_angle: AngleClass,
-    direction: Tuple[int, int, int],
+    direction: tuple[int, int, int],
 ) -> None:
     """Test Matrix.from_basis(), with just the y axis."""
     Matrix = frozen_thawed_matrix
@@ -349,7 +348,7 @@ def test_from_basis_z(
     py_c_vec: PyCVec,
     frozen_thawed_matrix: MatrixClass,
     frozen_thawed_angle: AngleClass,
-    direction: Tuple[int, int, int],
+    direction: tuple[int, int, int],
 ) -> None:
     Matrix = frozen_thawed_matrix
     Angle = frozen_thawed_angle

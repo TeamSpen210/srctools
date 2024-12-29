@@ -1,6 +1,6 @@
 """Parse surfaceproperties files, to determine surface physics.
 """
-from typing import TYPE_CHECKING, Dict, Optional, TypeVar
+from typing import TYPE_CHECKING, Optional, TypeVar
 from enum import Enum
 
 import attrs
@@ -178,8 +178,8 @@ class SurfaceProp:
     @staticmethod
     def parse_file(
         props: Keyvalues,
-        prev: Optional[Dict[str, 'SurfaceProp']] = None,
-    ) -> Dict[str, 'SurfaceProp']:
+        prev: Optional[dict[str, 'SurfaceProp']] = None,
+    ) -> dict[str, 'SurfaceProp']:
         """Parse surfaceproperties from a file.
 
         :param props: The keyvalues block to parse.
@@ -243,7 +243,7 @@ class SurfaceProp:
         return prev
 
     @staticmethod
-    def parse_manifest(fsys: FileSystem[T], file: Optional[File[FileSystem[T]]] = None) -> Dict[str, 'SurfaceProp']:
+    def parse_manifest(fsys: FileSystem[T], file: Optional[File[FileSystem[T]]] = None) -> dict[str, 'SurfaceProp']:
         """Load surfaceproperties from a manifest.
 
         :file:`scripts/surfaceproperties_manifest.txt` will be used if a file is
@@ -255,7 +255,7 @@ class SurfaceProp:
         with file.open_str() as f:
             manifest = Keyvalues.parse(f, file.path)
 
-        surf: Dict[str, SurfaceProp] = {}
+        surf: dict[str, SurfaceProp] = {}
 
         for prop in manifest.find_all('surfaceproperties_manifest', 'file'):
             surf = SurfaceProp.parse_file(fsys.read_kv1(prop.value), surf)

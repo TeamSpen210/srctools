@@ -1,4 +1,4 @@
-from typing import Any, Callable, Iterable, Iterator, Tuple, Type, Union
+from typing import Any, Callable, Iterable, Iterator, Type, Union
 from itertools import tee, zip_longest
 import codecs
 import platform
@@ -142,7 +142,7 @@ else:
 
 
 @pytest.fixture(params=parms, ids=ids)
-def py_c_token(request: Any) -> Type[Tokenizer]:
+def py_c_token(request: Any) -> type[Tokenizer]:
     """Run the test twice, for the Python and C versions."""
     return request.param
 
@@ -150,8 +150,8 @@ del parms, ids
 
 
 def check_tokens(
-    tokenizer: Iterable[Tuple[Token, str]],  # Iterable so a list can be passed to check.
-    tokens: Iterable[Union[Token, Tuple[Token, str]]],
+    tokenizer: Iterable[tuple[Token, str]],  # Iterable so a list can be passed to check.
+    tokens: Iterable[Union[Token, tuple[Token, str]]],
 ) -> None:
     """Check the tokenizer produces the given tokens.
 
@@ -189,7 +189,7 @@ def check_tokens(
             )
 
 
-def test_prop_tokens(py_c_token: Type[Tokenizer]) -> None:
+def test_prop_tokens(py_c_token: type[Tokenizer]) -> None:
     """Test the tokenizer returns the correct sequence of tokens for this test string."""
     Tokenizer = py_c_token
 
@@ -941,7 +941,7 @@ def test_subclass_base(Tok: Type[BaseTokenizer]) -> None:
             super().__init__('filename', TokenSyntaxError)
             self.__tokens = iter(tok)
 
-        def _get_token(self) -> Tuple[Token, str]:
+        def _get_token(self) -> tuple[Token, str]:
             try:
                 tok = next(self.__tokens)
             except StopIteration:

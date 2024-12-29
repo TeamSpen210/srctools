@@ -3,11 +3,10 @@
 This lists keyvalue/io types and names available for every entity classname.
 The dump does not contain help descriptions to keep the data small.
 """
-from typing import (
-    IO, TYPE_CHECKING, AbstractSet, Callable, Collection, Dict, Final, FrozenSet,
-    Iterable, List, Mapping, Optional, Set, Tuple, Union, Counter
-)
+from typing import IO, TYPE_CHECKING, Final, Optional, Union
 from typing_extensions import TypeAlias
+from collections import Counter
+from collections.abc import Callable, Collection, Iterable, Mapping, Set
 from enum import IntFlag
 from struct import Struct
 import copy
@@ -20,15 +19,13 @@ import warnings
 
 from .binformat import DeferredWrites
 from .const import FileType
-from .fgd import EntAttribute, FGD, EntityDef, EntityTypes, IODef, KVDef, Resource, ValueTypes
+from .fgd import FGD, EntAttribute, EntityDef, EntityTypes, IODef, KVDef, Resource, ValueTypes
 
 
 from .fgd import _EngineDBProto, _EntityView  # isort: split # noqa
 
 
-__all__ = [
-    'serialise', 'unserialise',
-]
+__all__ = ['serialise', 'unserialise']
 
 _fmt_8bit: Final = Struct('<B')
 _fmt_16bit: Final = Struct('<H')
@@ -41,7 +38,7 @@ _fmt_block_pos: Final = Struct('<IH')
 
 # Version number for the format.
 BIN_FORMAT_VERSION: Final = 9
-TAG_EMPTY: Final[FrozenSet[str]] = frozenset()  # This is a singleton.
+TAG_EMPTY: Final[frozenset[str]] = frozenset()  # This is a singleton.
 # Soft limit on the number of bytes for each block, needs tuning.
 MAX_BLOCK_SIZE: Final = 2048
 # When writing arrays of strings, it's much more efficient to read the whole thing, decode then
@@ -141,7 +138,7 @@ FILE_TYPE_ORDER = [
 ]
 
 # Entity types -> bits used
-ENTITY_TYPE_2_FLAG: Dict[EntityTypes, EntFlags] = {
+ENTITY_TYPE_2_FLAG: dict[EntityTypes, EntFlags] = {
     kind: EntFlags['TYPE_' + kind.name]
     for kind in EntityTypes
 }
@@ -162,7 +159,7 @@ FILE_TYPE_INDEX = {val: ind for (ind, val) in enumerate(FILE_TYPE_ORDER)}
 ENTITY_FLAG_2_TYPE = {flag: kind for (kind, flag) in ENTITY_TYPE_2_FLAG.items()}
 
 
-def make_lookup(file: IO[bytes], inv_list: List[str]) -> Callable[[], str]:
+def make_lookup(file: IO[bytes], inv_list: list[str]) -> Callable[[], str]:
     """Return a function that reads the index from the file, and returns the string it matches."""
     def lookup() -> str:
         """Perform the lookup."""
@@ -196,13 +193,13 @@ class BinStrDict:
     Each unique string is assigned a 2-byte index into the list.
     """
     def __init__(self, database: Iterable[str], base: Optional['BinStrDict']) -> None:
-        self._dict: Dict[str, int] = {
+        self._dict: dict[str, int] = {
             name: ind for ind, name
             in enumerate(sorted(database))
         }
         # If no base dict, this is for CBaseEntity, so set it to the real dict,
         # so __call__() won't add SHARED_STRINGS to the index.
-        self.base_dict: Dict[str, int] = base._dict if base is not None else self._dict
+        self.base_dict: dict[str, int] = base._dict if base is not None else self._dict
         if len(self._dict) + len(self.base_dict) >= (1 << 16):
             raise ValueError("Too many items in dictionary!")
 
@@ -231,7 +228,7 @@ class BinStrDict:
         file.write(data)
 
     @classmethod
-    def unserialise(cls, file: IO[bytes], base: List[str]) -> Tuple[List[str], Callable[[], str]]:
+    def unserialise(cls, file: IO[bytes], base: list[str]) -> tuple[list[str], Callable[[], str]]:
         """Read the dictionary from a file.
 
         This returns the dict, and a function which reads
@@ -244,7 +241,7 @@ class BinStrDict:
         return inv_list, make_lookup(file, base + inv_list)
 
     @staticmethod
-    def read_tags(file: IO[bytes], from_dict: Callable[[], str]) -> FrozenSet[str]:
+    def read_tags(file: IO[bytes], from_dict: Callable[[], str]) -> frozenset[str]:
         """Pull tags from a BinStrDict."""
         [size] = file.read(1)
         return frozenset({
@@ -268,16 +265,16 @@ class EngineDB(_EngineDBProto):
     """Unserialised database, which will be parsed progressively as required."""
     def __init__(
         self,
-        ent_map: Dict[str, Union[EntityDef, int]],
-        base_strings: List[str],
-        unparsed: List[Tuple[Iterable[str], bytes]],
+        ent_map: dict[str, Union[EntityDef, int]],
+        base_strings: list[str],
+        unparsed: list[tuple[Iterable[str], bytes]],
     ) -> None:
         self.ent_map = ent_map
         self.unparsed = unparsed
         self.base_strings = base_strings
         self.fgd: Optional[FGD] = None
 
-    def get_classnames(self) -> AbstractSet[str]:
+    def get_classnames(self) -> Set[str]:
         """Get the classnames in the database."""
         return self.ent_map.keys()
 
@@ -393,7 +390,7 @@ def kv_unserialise(
     readonly = value_ind & 128 != 0
     value_type = VALUE_TYPE_ORDER[value_ind & 127]
 
-    val_list: Optional[List[Tuple[int, str, bool, FrozenSet[str]]]]
+    val_list: Optional[list[tuple[int, str, bool, frozenset[str]]]]
 
     if value_type is ValueTypes.SPAWNFLAGS:
         default = ''  # No default for this type.
@@ -476,7 +473,7 @@ def ent_serialise(ent: EntityDef, file: IO[bytes], str_dict: BinStrSerialise) ->
 
             # We only support untagged things.
             if len(tag_map) == 1:
-                tags: FrozenSet[str]
+                tags: frozenset[str]
                 value: EntAttribute
                 [(tags, value)] = tag_map.items()
                 if not tags:
@@ -560,7 +557,7 @@ def ent_unserialise(
         out_count -= 1
 
     if res_count:
-        resources: List[Resource] = []
+        resources: list[Resource] = []
         while res_count:
             [file_ind] = file.read(1)
             file_type = FILE_TYPE_ORDER[file_ind & 127]
@@ -577,15 +574,18 @@ def ent_unserialise(
     return ent
 
 
-def compute_ent_strings(ents: Iterable[EntityDef]) -> Tuple[Mapping[EntityDef, AbstractSet[str]], Mapping[EntityDef, int]]:
+def compute_ent_strings(ents: Iterable[EntityDef]) -> tuple[
+    Mapping[EntityDef, set[str]],
+    Mapping[EntityDef, int]
+]:
     """Compute the strings each entity needs for unserialisation.
 
     This is done by serialising to a dummy file, noting the strings written.
     """
     dummy_file = io.BytesIO()
-    ent_strings: Set[str]
-    ent_to_string: Dict[EntityDef, Set[str]] = {}
-    ent_to_size: Dict[EntityDef, int] = {}
+    ent_strings: set[str]
+    ent_to_string: dict[EntityDef, set[str]] = {}
+    ent_to_size: dict[EntityDef, int] = {}
 
     def record_strings(string: str) -> bytes:
         """Store the strings written for this entity."""
@@ -626,18 +626,18 @@ def compute_ent_strings(ents: Iterable[EntityDef]) -> Tuple[Mapping[EntityDef, A
 
 
 def build_blocks(
-    all_ents: List[EntityDef],
-    ent_to_string: Mapping[EntityDef, AbstractSet[str]],
+    all_ents: list[EntityDef],
+    ent_to_string: Mapping[EntityDef, Set[str]],
     ent_to_size: Mapping[EntityDef, int],
-    overlaps: Iterable[Tuple[EntityDef, EntityDef, int]],
-) -> List[Tuple[List[EntityDef], Set[str]]]:
+    overlaps: Iterable[tuple[EntityDef, EntityDef, int]],
+) -> list[tuple[list[EntityDef], set[str]]]:
     """Group entities into the blocks to use."""
 
     class BuiltBlock:
         """Used when serialising, the data."""
         def __init__(self) -> None:
-            self.ents: List[EntityDef] = []
-            self.stringdb: Set[str] = set()
+            self.ents: list[EntityDef] = []
+            self.stringdb: set[str] = set()
             self.bytesize: int = 0
 
         def add_ent(self, ent: EntityDef) -> None:
@@ -649,9 +649,9 @@ def build_blocks(
             ent_to_block[ent] = self  # noqa: F821
             todo.discard(ent)  # noqa: F821
 
-    ent_to_block: Dict[EntityDef, BuiltBlock] = {}
+    ent_to_block: dict[EntityDef, BuiltBlock] = {}
     overflow_block = BuiltBlock()
-    all_blocks: List[BuiltBlock] = [overflow_block]
+    all_blocks: list[BuiltBlock] = [overflow_block]
     todo = set(all_ents)
 
     for ent1, ent2, overlap_size in overlaps:
@@ -720,7 +720,7 @@ def serialise(fgd: FGD, file: IO[bytes]) -> None:
     and no other base entities.
     """
     CBaseEntity = fgd.entities.pop('_cbaseentity_')
-    all_ents: List[EntityDef] = list(fgd)
+    all_ents: list[EntityDef] = list(fgd)
 
     print('Computing string sizes...')
     # We need the database for CBaseEntity, but not to include it with anything else.
@@ -792,10 +792,10 @@ def unserialise(file: IO[bytes]) -> _EngineDBProto:
     if format_version != BIN_FORMAT_VERSION:
         raise TypeError(f'Unknown format version "{format_version}"!')
 
-    block_classnames: List[List[str]] = []
-    ent_map: Dict[str, Union[EntityDef, int]] = {}
-    unparsed: List[Tuple[Iterable[str], bytes]] = []
-    positions: List[Tuple[List[str], int, int]] = []
+    block_classnames: list[list[str]] = []
+    ent_map: dict[str, Union[EntityDef, int]] = {}
+    unparsed: list[tuple[Iterable[str], bytes]] = []
+    positions: list[tuple[list[str], int, int]] = []
 
     for block_id in range(block_count):
         [cls_size] = _fmt_16bit.unpack(file.read(2))

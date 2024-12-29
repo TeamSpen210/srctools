@@ -2,8 +2,8 @@
 
 These set the arguments to the compile tools.
 """
-from typing import IO, Dict, List, Optional, Sequence, Union
-from collections import OrderedDict
+from typing import IO, Optional, Union
+from collections.abc import Sequence
 from enum import Enum
 from struct import Struct, pack, unpack
 
@@ -111,7 +111,7 @@ class Command:
         return repr(vars(self))
 
 
-def parse(file: IO[bytes]) -> Dict[str, List[Command]]:
+def parse(file: IO[bytes]) -> dict[str, list[Command]]:
     """Read a list of sequences from a file.
 
     This returns a dict mapping names to a list of sequences.
@@ -129,7 +129,7 @@ def parse(file: IO[bytes]) -> Dict[str, List[Command]]:
         cmd_struct = ST_COMMAND
 
     [seq_count] = unpack('I', file.read(4))
-    sequences = OrderedDict()  # type: Dict[str, List[Command]]
+    sequences: dict[str, list[Command]] = {}
     for _ in range(seq_count):
         seq_name = strip_cstring(file.read(128))
         [cmd_count] = unpack('I', file.read(4))
@@ -142,7 +142,7 @@ def parse(file: IO[bytes]) -> Dict[str, List[Command]]:
     return sequences
 
 
-def write(sequences: Dict[str, Sequence[Command]], file: IO[bytes]) -> None:
+def write(sequences: dict[str, Sequence[Command]], file: IO[bytes]) -> None:
     """Write commands back to a file."""
     file.write(SEQ_HEADER)
     file.write(pack('f', 0.2))

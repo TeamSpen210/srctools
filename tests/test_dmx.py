@@ -1,5 +1,5 @@
 """Test the datamodel exchange implementation."""
-from typing import Callable, Set, Tuple, Type, cast
+from typing import Callable, Set, cast
 from io import BytesIO
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -900,7 +900,7 @@ def test_ext_roundtrip_unicode(version: str) -> None:
     explicit = export(root, version, 'format')
 
     # No flags, fails. UnicodeError from binary, TokenSyntaxError from text.
-    exc: Tuple[Type[Exception], ...] = (UnicodeError, TokenSyntaxError)
+    exc: tuple[type[Exception], ...] = (UnicodeError, TokenSyntaxError)
     with pytest.raises(exc):
         Element.parse(BytesIO(silent))
 

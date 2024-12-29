@@ -3,15 +3,16 @@
 Wraps Keyvalues trees in a set of classes which smartly handle
 specifics of VMF files.
 """
-from typing import (
-    IO, TYPE_CHECKING, AbstractSet, Any, Callable, Dict, Final, FrozenSet, ItemsView,
-    Iterable, Iterator, KeysView, List, Mapping, Match, MutableMapping, Optional, Pattern,
-    Protocol, Set, Tuple, TypeVar, Union, ValuesView, overload,
-)
+from typing import IO, TYPE_CHECKING, Any, Final, Optional, Protocol, TypeVar, Union, overload
 from typing_extensions import Literal, TypeAlias, deprecated
 from array import ArrayType as Array
 from collections import defaultdict
+from collections.abc import (
+    Callable, ItemsView, Iterable, Iterator, KeysView, Mapping, MutableMapping, Sequence,
+    Set, ValuesView,
+)
 from enum import Enum, Flag
+from re import Match, Pattern
 from sys import intern
 import builtins
 import io
@@ -90,7 +91,7 @@ class DispFlag(Flag):
 
 # The VMF stores 2/4/8 if the displacement *doesn't* collide.
 # Bit 1 stores if the face has a bumpmap, set by VBSP.
-_DISP_FLAG_TO_COLL: List[DispFlag] = [
+_DISP_FLAG_TO_COLL: Sequence[DispFlag] = [
     (
         (DispFlag.COLL_PHYSICS if i & 2 == 0 else DispFlag.COLL_NONE) |
         (DispFlag.COLL_PLAYER_NPC if i & 4 == 0 else DispFlag.COLL_NONE) |
@@ -98,7 +99,7 @@ _DISP_FLAG_TO_COLL: List[DispFlag] = [
     ) for i in range(16)
 ]
 # Invert, prefer smaller = less bits set.
-_DISP_COLL_TO_FLAG: Dict[DispFlag, int] = {
+_DISP_COLL_TO_FLAG: Mapping[DispFlag, int] = {
     v: k for (k, v) in
     list(enumerate(_DISP_FLAG_TO_COLL))[::-1]
 }
@@ -154,13 +155,13 @@ def conv_kv(val: ValidKVs) -> str:
         return conv_kv(val)
 
 
-class IDMan(AbstractSet[int]):
+class IDMan(Set[int]):
     """Allocate and manage a set of unique IDs.
 
     This implements some of MutableSet, but the adding methods cannot
     be used since the ID may need to change to ensure uniqueness.
     """
-    _used: Set[int]
+    _used: set[int]
     search_pos: int
 
     def __init__(self, existing: Iterable[int] = ()) -> None:
@@ -235,7 +236,7 @@ class NullIDMan(IDMan):
             return desired
 
 
-def overlay_bounds(over: 'Entity') -> Tuple[Vec, Vec]:
+def overlay_bounds(over: 'Entity') -> tuple[Vec, Vec]:
     """Compute the bounding box of an overlay."""
     origin = Vec.from_str(over['origin'])
     mat = Matrix.from_angle(Angle.from_str(over['angles']))
@@ -318,14 +319,14 @@ def localise_overlay(over: 'Entity', origin: AnyVec, angles: Union[AnyAngle, Any
         over[key] = ang.join(' ')
 
 
-class CopySet(Set[T]):
+class CopySet(set[T]):
     """Modified version of a Set which allows modification during iteration.
 
     """
     __slots__ = ()  # No extra vars
 
     def __iter__(self) -> Iterator[T]:
-        cur_items: FrozenSet[T] = frozenset(self)
+        cur_items: frozenset[T] = frozenset(self)
 
         yield from cur_items
         # after iterating through ourselves, iterate through any new ents.
@@ -444,14 +445,14 @@ class Strata3DViewport:
         buffer.write('\t\t}\n')
 
 
-def _parse_strata_viewport(kvs: Keyvalues) -> Optional[List[Union[Strata2DViewport, Strata3DViewport]]]:
+def _parse_strata_viewport(kvs: Keyvalues) -> Optional[list[Union[Strata2DViewport, Strata3DViewport]]]:
     """Look for and parse the Strata viewport definitions."""
     try:
         vp_block = kvs.find_key('views')
     except LookupError:
         return None
 
-    ports: List[Union[Strata2DViewport, Strata3DViewport]] = []
+    ports: list[Union[Strata2DViewport, Strata3DViewport]] = []
     default_2d: Axis
 
     for key, default_2d in [  # type: ignore[assignment]  # Doesn't infer literal
@@ -540,12 +541,12 @@ class VMF:
     # the whole map
     by_target: MutableMapping[Optional[str], CopySet['Entity']]
     by_class: MutableMapping[str, CopySet['Entity']]
-    entities: List['Entity']
-    brushes: List['Solid']
-    cameras: List['Camera']
-    cordons: List['Cordon']
-    vis_tree: List['VisGroup']
-    groups: Dict[int, 'EntityGroup']
+    entities: list['Entity']
+    brushes: list['Solid']
+    cameras: list['Camera']
+    cordons: list['Cordon']
+    vis_tree: list['VisGroup']
+    groups: dict[int, 'EntityGroup']
     spawn: 'Entity'
 
     is_prefab: bool
@@ -566,7 +567,7 @@ class VMF:
     quickhide_count: int
     # If None, these are omitted in the exported file.
     strata_instance_vis: Optional[StrataInstanceVisibility]
-    strata_viewports: Optional[List[Union[Strata2DViewport, Strata3DViewport]]]
+    strata_viewports: Optional[list[Union[Strata2DViewport, Strata3DViewport]]]
 
     # Ignore our own deprecation helper function.
     # noinspection PyDeprecation
@@ -745,7 +746,7 @@ class VMF:
     def create_visgroup(
         self,
         name: str,
-        color: Union[Vec, Tuple[int, int, int]] = (255, 255, 255),
+        color: Union[Vec, tuple[int, int, int]] = (255, 255, 255),
     ) -> 'VisGroup':
         """Convenience method for creating visgroups."""
         vis = VisGroup(self, name, -1, Vec(color))
@@ -1217,7 +1218,7 @@ class VMF:
         thick: float = 16,
         mat: str = 'tools/toolsnodraw',
         inner_mat: str = '',
-    ) -> List['Solid']:
+    ) -> list['Solid']:
         """Create 6 brushes to surround the given region.
 
         If inner_mat is not specified, it's set to mat.
@@ -1389,7 +1390,7 @@ class VisGroup:
     name: str
     id: int = attrs.field(default=-1)
     color: Vec = attrs.field(factory=lambda: Vec(255, 255, 255))
-    child_groups: List['VisGroup'] = attrs.field(factory=list)
+    child_groups: list['VisGroup'] = attrs.field(factory=list)
 
     def __attrs_post_init__(self) -> None:
         self.id = self.vmf.vis_id.get_id(self.id)
@@ -1477,7 +1478,7 @@ class VisGroup:
 
 # Workaround MyPy not evaluating generics on converters.
 if TYPE_CHECKING:
-    def _conv_visgroups(x: Iterable[int]) -> Set[int]: return set(x)
+    def _conv_visgroups(x: Iterable[int]) -> set[int]: return set(x)
 else:
     _conv_visgroups = set
 
@@ -1489,9 +1490,9 @@ class Solid:
     #: A unique ID assigned to this solid. Will be picked automatically when the brush is created.
     id: int = attrs.field(default=-1)
     #: The faces for this brush.
-    sides: List['Side'] = attrs.field(factory=list)
+    sides: list['Side'] = attrs.field(factory=list)
     #: The set of IDs of user-authored visgroups this brush belongs to.
-    visgroup_ids: Set[int] = attrs.field(default=(), converter=_conv_visgroups)  # pyright: ignore
+    visgroup_ids: set[int] = attrs.field(default=(), converter=_conv_visgroups)  # pyright: ignore
     #: If set, this brush has been hidden in some way (quick hide, cordons, visgroups). It will
     #: not be compiled into the final map.
     hidden: bool = False
@@ -1644,7 +1645,7 @@ class Solid:
         """Remove this brush from the map."""
         self.map.remove_brush(self)
 
-    def get_bbox(self) -> Tuple[Vec, Vec]:
+    def get_bbox(self) -> tuple[Vec, Vec]:
         """Get two vectors representing the space this brush takes up."""
         bbox_min, bbox_max = self.sides[0].get_bbox()
         for s in self.sides[1:]:
@@ -1711,7 +1712,7 @@ class Vec4:
         return bool(self.x or self.y or self.z or self.w)
 
 
-def _list4_validator(_: object, attrib: 'attrs.Attribute[List[Vec]]', value: object) -> None:
+def _list4_validator(_: object, attrib: 'attrs.Attribute[list[Vec]]', value: object) -> None:
     """Validate the value is a list of 4 elements."""
     if not isinstance(value, list):
         raise TypeError(attrib.name + ' should be a list!')
@@ -1738,7 +1739,7 @@ class DispVertex:
     # These are for multiblend displacements, added in ASW+.
     multi_blend: Vec4 = Vec4()
     multi_alpha: Vec4 = Vec4()
-    multi_colors: Optional[List[Vec]] = attrs.field(default=None, validator=attrs.validators.optional(
+    multi_colors: Optional[list[Vec]] = attrs.field(default=None, validator=attrs.validators.optional(
         attrs.validators.deep_iterable(attrs.validators.instance_of(Vec), _list4_validator)
     ))
 
@@ -1851,7 +1852,7 @@ class Side:
         '_disp_verts',
     ]
     map: VMF
-    planes: List[Vec]
+    planes: list[Vec]
     id: int
     lightmap: int
     smooth: int
@@ -1859,19 +1860,19 @@ class Side:
     ham_rot: float
     uaxis: UVAxis
     vaxis: UVAxis
-    strata_points: Optional[List[Vec]]
+    strata_points: Optional[list[Vec]]
 
     disp_power: DispPower
     disp_pos: Optional[Vec]
     disp_elevation: float
     disp_flags: DispFlag
     disp_allowed_vert: Optional['Array[int]']
-    _disp_verts: Optional[List[DispVertex]]
+    _disp_verts: Optional[list[DispVertex]]
 
     def __init__(
         self,
         vmf_file: VMF,
-        planes: List[Vec],
+        planes: list[Vec],
         des_id: int = -1,
         lightmap: int = 16,
         smoothing: int = 0,
@@ -2086,7 +2087,7 @@ class Side:
                     f'row {y} had invalid number: {exc.args[0]}'
                 ) from None
 
-    def _iter_disp_row(self, tree: Keyvalues, name: str, size: int) -> Iterator[Tuple[int, List[str]]]:
+    def _iter_disp_row(self, tree: Keyvalues, name: str, size: int) -> Iterator[tuple[int, list[str]]]:
         """Return y, row pairs of values from a displacement array row.
 
         It verifies the row is `size` long.
@@ -2127,7 +2128,7 @@ class Side:
 
     def _parse_strata_points(self, block: Keyvalues) -> None:
         """Parse Strata Source's additional vertices block."""
-        points: List[Optional[Vec]] = [None] * block.int('numpts')
+        points: list[Optional[Vec]] = [None] * block.int('numpts')
         for child in block:
             if child.name == 'point':
                 ind_str, pos_str = child.value.split(' ', 1)
@@ -2331,7 +2332,7 @@ class Side:
         """Forget this side's ID when the object is destroyed."""
         self.map.face_id.discard(self.id)
 
-    def __getitem__(self, pos: Tuple[int, int]) -> DispVertex:
+    def __getitem__(self, pos: tuple[int, int]) -> DispVertex:
         """Return the displacement vertex at this position."""
         if self.disp_pos == 0 or self._disp_verts is None:
             raise ValueError('This face is not a displacement!')
@@ -2350,7 +2351,7 @@ class Side:
         """If a displacement, the face has disp_size*disp_size vertexes."""
         return self.disp_size ** 2
 
-    def get_bbox(self) -> Tuple[Vec, Vec]:
+    def get_bbox(self) -> tuple[Vec, Vec]:
         """Generate the highest and lowest points these planes form."""
         bbox_max = self.planes[0].copy()
         bbox_min = self.planes[0].copy()
@@ -2400,7 +2401,7 @@ class Side:
                 vert.normal @= orient
                 vert.offset_norm @= orient
 
-    def disp_get_tri_verts(self, x: int, y: int) -> Tuple[
+    def disp_get_tri_verts(self, x: int, y: int) -> tuple[
         DispVertex, DispVertex, DispVertex,
         DispVertex, DispVertex, DispVertex,
     ]:
@@ -2502,7 +2503,7 @@ _disprow_multiblend = [
 ]
 
 
-class _KeyDict(Dict[str, str]):
+class _KeyDict(dict[str, str]):
     """Temporary class to allow the `Entity.keys` dict to be accessed directly, as well as call keys()."""
     def __call__(self) -> KeysView[str]:
         return self.keys()
@@ -2522,13 +2523,13 @@ class Entity(MutableMapping[str, str]):
     To read instance ``$replace`` values operate on ``entity.fixup[var]``.
     """
     _fixup: Optional['EntityFixup']
-    outputs: List['Output']
-    solids: List[Solid]
+    outputs: list['Output']
+    solids: list[Solid]
     id: int
     hidden: bool
-    groups: Set[int]
+    groups: set[int]
 
-    visgroup_ids: Set[int]
+    visgroup_ids: set[int]
     vis_shown: bool
     vis_auto_shown: bool
     editor_color: Vec
@@ -2549,7 +2550,7 @@ class Entity(MutableMapping[str, str]):
         vis_shown: bool = True,
         vis_auto_shown: bool = True,
         logical_pos: Optional[str] = None,
-        editor_color: Union[Vec, Tuple[int, int, int]] = (255, 255, 255),
+        editor_color: Union[Vec, tuple[int, int, int]] = (255, 255, 255),
         comments: str = '',
     ) -> None:
         """Construct an entity from scratch."""
@@ -2590,7 +2591,7 @@ class Entity(MutableMapping[str, str]):
             return self._keys
 
         @keys.setter
-        def keys(self, value: Dict[str, ValidKVs]) -> None:
+        def keys(self, value: dict[str, ValidKVs]) -> None:
             """Deprecated method to replace all keys."""
             warnings.warn('This is private, call .clear_keys() and update().', DeprecationWarning, stacklevel=2)
             self.clear_keys()
@@ -2664,12 +2665,12 @@ class Entity(MutableMapping[str, str]):
         the entity group definitions.
         """
         ent_id = -1
-        solids: List[Solid] = []
-        keys: Dict[str, str] = {}
-        outputs: List[Output] = []
-        fixup: List[FixupValue] = []
-        group_ids: List[int] = []
-        visgroup_ids: List[int] = []
+        solids: list[Solid] = []
+        keys: dict[str, str] = {}
+        outputs: list[Output] = []
+        fixup: list[FixupValue] = []
+        group_ids: list[int] = []
+        visgroup_ids: list[int] = []
         vis_shown = vis_auto_shown = True
         logical_pos = None
         comment = ''
@@ -2841,7 +2842,7 @@ class Entity(MutableMapping[str, str]):
         """Add the outputs to our list."""
         self.outputs.extend(outputs)
 
-    def output_targets(self) -> Set[str]:
+    def output_targets(self) -> set[str]:
         """Return a set of the targetnames this entity triggers."""
         return {
             out.target
@@ -2887,7 +2888,7 @@ class Entity(MutableMapping[str, str]):
 
     def __repr__(self) -> str:
         """Produce a short string identifying this entity."""
-        desc: List[str] = []
+        desc: list[str] = []
         if classname := self['classname']:
             desc.append(classname)
         desc.append('Entity')
@@ -2927,9 +2928,9 @@ class Entity(MutableMapping[str, str]):
     @overload
     def __getitem__(self, key: str) -> str: ...
     @overload
-    def __getitem__(self, key: Tuple[str, T]) -> Union[str, T]: ...
+    def __getitem__(self, key: tuple[str, T]) -> Union[str, T]: ...
 
-    def __getitem__(self, key: Union[str, Tuple[str, T]]) -> Union[str, T]:
+    def __getitem__(self, key: Union[str, tuple[str, T]]) -> Union[str, T]:
         """Allow using [] syntax to search for keyvalues.
 
         - This will return '' if the value is not present.
@@ -3004,7 +3005,7 @@ class Entity(MutableMapping[str, str]):
             else:
                 self._keys[key] = str(self.map.node_id.get_id(node_id))
 
-    def __delitem__(self, key: Union[str, Tuple[str, ...]]) -> None:
+    def __delitem__(self, key: Union[str, tuple[str, ...]]) -> None:
         """Delete the specified keyvalue. Does nothing if not present.
 
         The ``classname`` keyvalue cannot be deleted.
@@ -3102,7 +3103,7 @@ class Entity(MutableMapping[str, str]):
         """Forget this entity's ID when the object is destroyed."""
         self.map.ent_id.discard(self.id)
 
-    def get_bbox(self) -> Tuple[Vec, Vec]:
+    def get_bbox(self) -> tuple[Vec, Vec]:
         """Get two vectors representing the space this entity takes up."""
         if self.is_brush():
             bbox_min, bbox_max = self.solids[0].get_bbox()
@@ -3149,15 +3150,15 @@ class EntityFixup(MutableMapping[str, str]):
     __slots__ = ['_fixup', '_matcher']
 
     def __init__(self, fixup: Iterable[FixupValue] = ()) -> None:
-        self._fixup: Dict[str, FixupValue] = {}
+        self._fixup: dict[str, FixupValue] = {}
         self._matcher: Optional[Pattern[str]] = None
         # In _fixup each variable is stored as a tuple of (var_name,
         # value, index) with keys equal to the casefolded var name.
         # var_name is kept to allow restoring the original case when exporting.
 
         # Do a check to ensure all fixup values have valid indexes:
-        used_indexes: Set[int] = set()
-        extra_vals: List[FixupValue] = []
+        used_indexes: set[int] = set()
+        extra_vals: list[FixupValue] = []
         for fix in fixup:
             if fix.id not in used_indexes:
                 used_indexes.add(fix.id)
@@ -3187,7 +3188,7 @@ class EntityFixup(MutableMapping[str, str]):
         else:
             return default
 
-    def copy_values(self) -> List[FixupValue]:
+    def copy_values(self) -> list[FixupValue]:
         """Generate a list that can be passed to the constructor."""
         return list(self._fixup.values())
 
@@ -3197,16 +3198,16 @@ class EntityFixup(MutableMapping[str, str]):
         fix._fixup = self._fixup.copy()
         return fix
 
-    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'EntityFixup':
+    def __deepcopy__(self, memodict: Optional[dict[int, Any]] = None) -> 'EntityFixup':
         fix = EntityFixup.__new__(EntityFixup)
         fix._matcher = self._matcher
         fix._fixup = self._fixup.copy()
         return fix
 
-    def __getstate__(self) -> List[FixupValue]:
+    def __getstate__(self) -> list[FixupValue]:
         return list(self._fixup.values())
 
-    def __setstate__(self, state: List[FixupValue]) -> None:
+    def __setstate__(self, state: list[FixupValue]) -> None:
         self._matcher = None
         self._fixup = {
             intern(tup.var.casefold()): tup
@@ -3243,9 +3244,9 @@ class EntityFixup(MutableMapping[str, str]):
     def __getitem__(self, key: str) -> str: ...
 
     @overload
-    def __getitem__(self, key: Tuple[str, T]) -> Union[str, T]: ...
+    def __getitem__(self, key: tuple[str, T]) -> Union[str, T]: ...
 
-    def __getitem__(self, key: Union[Tuple[str, T], str]) -> Union[str, T]:
+    def __getitem__(self, key: Union[tuple[str, T], str]) -> Union[str, T]:
         """Retrieve keys via fixup[key] or fixup[key, default].
 
         See EntityFixup.get().
@@ -3463,7 +3464,7 @@ class _EntityFixupItems(ItemsView[str, str]):
     __slots__ = ()
     _mapping: EntityFixup  # Defined in constructor.
 
-    def __iter__(self) -> Iterator[Tuple[str, str]]:
+    def __iter__(self) -> Iterator[tuple[str, str]]:
         """Yield each key, value pair."""
         for fixup in self._mapping._fixup.values():
             yield fixup.var, fixup.value
@@ -3673,7 +3674,7 @@ class Output:
         )
 
     @staticmethod
-    def parse_name(name: str) -> Tuple[Optional[str], str]:
+    def parse_name(name: str) -> tuple[Optional[str], str]:
         """Extract the instance name from values of the form:
 
         'instance:local_name;Command'
@@ -3744,13 +3745,13 @@ class Output:
             st += " (once only)" if self.times == 1 else f" ({self.times!s} times only)"
         return st
 
-    def __getstate__(self) -> Tuple[object, ...]:
+    def __getstate__(self) -> tuple[object, ...]:
         """Produce the state for pickling.
 
         We know output/input names tend to be the same often,
         so interning here will simplify the pickle.
         """
-        basic: Tuple[object, ...] = (
+        basic: tuple[object, ...] = (
             intern(self.output),
             intern(self.target),
             intern(self.input),
@@ -3769,7 +3770,7 @@ class Output:
         else:
             return basic
 
-    def __setstate__(self, state: Tuple[Any, ...]) -> None:
+    def __setstate__(self, state: tuple[Any, ...]) -> None:
         """Restore the pickled state."""
         (
             self.output,

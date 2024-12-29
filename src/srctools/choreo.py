@@ -1,6 +1,6 @@
 """Parses VCD choreo scenes, as well as data in scenes.image."""
 from __future__ import annotations
-from typing import IO, ClassVar, Dict, Final, NewType
+from typing import IO, ClassVar, Final, NewType
 from typing_extensions import Literal, Self, TypeAlias, assert_never
 from collections.abc import Callable, Iterable, Iterator
 from io import BytesIO
@@ -15,7 +15,7 @@ from srctools.tokenizer import BaseTokenizer, Token, escape_text
 
 
 CRC = NewType('CRC', int)
-ScenesImage: TypeAlias = Dict[CRC, 'Entry']
+ScenesImage: TypeAlias = dict[CRC, 'Entry']
 # Only known binary version.
 BINARY_VERSION: Final = 4
 FPS_MIN: Final = 10

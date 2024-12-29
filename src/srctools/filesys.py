@@ -22,11 +22,9 @@ supported.
 See the :py:class:`srctools.game.Game` class for parsing ``gameinfo.txt`` files into filesystems.
 To mount a :py:class:`~srctools.bsp.BSP` file, use ``ZipFileSystem(bsp.pakfile)``.
 """
-from typing import (
-    Any, BinaryIO, Dict, Final, Generic, Iterator, List, Mapping, Optional, Set, TextIO,
-    Tuple, Union, cast,
-)
+from typing import Any, BinaryIO, Final, Generic, Optional, TextIO, Union, cast
 from typing_extensions import Self, TypeVar, deprecated
+from collections.abc import Iterator, Mapping
 from zipfile import ZipFile, ZipInfo
 import io
 import os
@@ -266,9 +264,9 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
     will appear as if they are at the root level.
     """
 
-    def __init__(self, *systems: Union[FileSystem[Any], Tuple[FileSystem[Any], str]]) -> None:
+    def __init__(self, *systems: Union[FileSystem[Any], tuple[FileSystem[Any], str]]) -> None:
         super().__init__('')
-        self.systems: List[Tuple[FileSystem[Any], str]] = []
+        self.systems: list[tuple[FileSystem[Any], str]] = []
         for sys in systems:
             if isinstance(sys, tuple):
                 self.add_sys(*sys)
@@ -351,7 +349,7 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
         This requires temporarily storing the visited paths, to prevent revisiting them. If repeated
         access is not problematic, prefer :py:func:`~FileSystemChain.walk_folder_repeat()`.
         """
-        done: Set[str] = set()
+        done: set[str] = set()
         for file in self.walk_folder_repeat(folder):
             folded = file.path.casefold()
             if folded in done:
@@ -393,7 +391,7 @@ class VirtualFileSystem(FileSystem[str]):
     The encoding arg specifies how text data is presented if open_bin()
     is called.
     """
-    _mapping: Mapping[str, Tuple[str, Union[str, bytes, bytearray, memoryview]]]
+    _mapping: Mapping[str, tuple[str, Union[str, bytes, bytearray, memoryview]]]
 
     def __init__(self, mapping: Mapping[str, Union[str, bytes, bytearray, memoryview]], encoding: str = 'utf8') -> None:
         super().__init__('<virtual>')
@@ -563,7 +561,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
             self._no_close = False
             self.zip = ZipFile(path)
 
-        self._name_to_info: Dict[str, ZipInfo] = {
+        self._name_to_info: dict[str, ZipInfo] = {
             info.filename.casefold(): info
             for info in self.zip.infolist()
             # Some zip files include entries for the directories too.
@@ -629,7 +627,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
 class VPKFileSystem(FileSystem[VPKFile]):
     """Accesses files in a VPK file."""
     vpk: VPK
-    _name_to_file: Dict[str, VPKFile]
+    _name_to_file: dict[str, VPKFile]
 
     def __init__(self, path: StringPath) -> None:
         super().__init__(path)

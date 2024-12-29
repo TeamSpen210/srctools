@@ -1,5 +1,5 @@
 """Test rotations in srctools.math."""
-from typing import List, NamedTuple, Tuple
+from typing import NamedTuple
 from pathlib import Path
 import math
 
@@ -10,7 +10,7 @@ from helpers import *
 
 class RotationData(NamedTuple):
     """Result of the rotation_data fixture."""
-    angle: Tuple[float, float, float]
+    angle: tuple[float, float, float]
 
     for_x: float
     for_y: float
@@ -27,7 +27,7 @@ class RotationData(NamedTuple):
 
 # TODO: pytest-datadir doesn't have session-scope fixture.
 @pytest.fixture(scope='session')
-def rotation_data() -> List[RotationData]:
+def rotation_data() -> list[RotationData]:
     """Parse the rotation data dumped from the engine, used to check our math."""
     data = []
     with (Path(__file__).with_suffix('') / 'rotation.txt').open() as f:
@@ -380,7 +380,7 @@ def test_old_rotation(
 @pytest.mark.slow
 def test_rotating_vectors(
     py_c_vec: PyCVec,
-    rotation_data: List[RotationData],
+    rotation_data: list[RotationData],
     frozen_thawed_vec: VecClass,
     frozen_thawed_angle: AngleClass,
     frozen_thawed_matrix: MatrixClass,
@@ -462,7 +462,7 @@ def test_inplace_rotation(py_c_vec: PyCVec) -> None:
 
 def test_matrix_getters(
     py_c_vec: PyCVec,
-    rotation_data: List[RotationData],
+    rotation_data: list[RotationData],
     frozen_thawed_matrix: MatrixClass,
 ) -> None:
     """Test functions which return the basis vectors for the matrix."""
@@ -478,7 +478,7 @@ def test_matrix_getters(
 @pytest.mark.parametrize('mag', [-5.0, 1.0, -1.0, 0.0, 12.45, -28.37])
 def test_matrix_getters_with_mag(
     py_c_vec: PyCVec,
-    rotation_data: List[RotationData],
+    rotation_data: list[RotationData],
     frozen_thawed_matrix: MatrixClass,
     mag: float,
 ) -> None:
@@ -494,7 +494,7 @@ def test_matrix_getters_with_mag(
 
 def test_rotating_vec_tuples(
     py_c_vec: PyCVec,
-    rotation_data: List[RotationData],
+    rotation_data: list[RotationData],
     frozen_thawed_matrix: MatrixClass,
     frozen_thawed_angle: AngleClass,
 ) -> None:
@@ -518,7 +518,7 @@ def test_rotating_vec_tuples(
 @pytest.mark.slow
 def test_rotated_matrix_data(
     py_c_vec: PyCVec,
-    rotation_data: List[RotationData],
+    rotation_data: list[RotationData],
     frozen_thawed_matrix: MatrixClass,
 ) -> None:
     """Test our rotation code with engine rotation data."""
@@ -545,7 +545,7 @@ def test_rotated_matrix_data(
 @pytest.mark.slow
 def test_from_basis_w_engine_data(
     py_c_vec: PyCVec,
-    rotation_data: List[RotationData],
+    rotation_data: list[RotationData],
     frozen_thawed_vec: VecClass,
     frozen_thawed_angle: AngleClass,
     frozen_thawed_matrix: MatrixClass,
@@ -576,7 +576,7 @@ def test_from_basis_w_engine_data(
 
 def test_vec_cross_w_engine_data(
     py_c_vec: PyCVec,
-    rotation_data: List[RotationData],
+    rotation_data: list[RotationData],
     frozen_thawed_vec: VecClass,
 ) -> None:
     """Test Vec.cross() with engine rotation data."""

@@ -1,10 +1,8 @@
 """Handles the list of files which are desired to be packed into the BSP."""
-from typing import (
-    Callable, Collection, Dict, Generic, Iterable, Iterator, List, Optional, Set, Tuple,
-    Union,
-)
+from typing import Generic, Optional, Union
 from typing_extensions import TypeVar, deprecated
 from collections import OrderedDict
+from collections.abc import Callable, Collection, Iterable, Iterator
 from enum import Enum
 from pathlib import Path
 from zipfile import ZipFile
@@ -73,7 +71,7 @@ EXT_TYPE = {
 
 # VScript function names that imply resources. This assumes it's the first
 # argument.
-SCRIPT_FUNC_TYPES: Dict[bytes, Tuple[str, FileType]] = {
+SCRIPT_FUNC_TYPES: dict[bytes, tuple[str, FileType]] = {
     b'IncludeScript': ('scripts/vscripts/', FileType.VSCRIPT_SQUIRREL),
     b'DoIncludeScript': ('scripts/vscripts/', FileType.VSCRIPT_SQUIRREL),
     b'PrecacheScriptSound': ('', FileType.GAME_SOUND),
@@ -166,17 +164,17 @@ class ManifestedFiles(Generic[ParsedT]):
     # When packing the file, use this filetype.
     pack_type: FileType
     # A function which parses the data, given the filename and contents.
-    parse_func: Callable[[File], Dict[str, ParsedT]]
+    parse_func: Callable[[File], dict[str, ParsedT]]
     # For each identifier, the filename it's in and whatever data this was parsed into.
     # Do not display in the repr, there's thousands of these.
-    name_to_parsed: Dict[str, Tuple[str, Optional[ParsedT]]] = attrs.field(factory=dict, repr=False)
+    name_to_parsed: dict[str, tuple[str, Optional[ParsedT]]] = attrs.field(factory=dict, repr=False)
     # All the filenames we know about, in order. The value is then
     # whether they should be packed.
-    _files: Dict[str, FileMode] = attrs.Factory(OrderedDict)
-    _unparsed_file: Dict[str, File] = attrs.Factory(dict)
+    _files: dict[str, FileMode] = attrs.Factory(OrderedDict)
+    _unparsed_file: dict[str, File] = attrs.Factory(dict)
     # Records the contents of the cache file.
     # filename -> (cache_key, identifier_list)
-    _cache: Dict[str, Tuple[int, List[str]]] = attrs.Factory(dict)
+    _cache: dict[str, tuple[int, list[str]]] = attrs.Factory(dict)
 
     def force_exclude(self, filename: str) -> None:
         """Mark this soundscript file as excluded."""
@@ -240,7 +238,7 @@ class ManifestedFiles(Generic[ParsedT]):
         if key != CACHE_KEY_INVALID:
             key &= FILE_CACHE_TRUNC
 
-        identifiers: List[str]
+        identifiers: list[str]
         try:
             cached_key, identifiers = self._cache[filename]
         except KeyError:
@@ -267,7 +265,7 @@ class ManifestedFiles(Generic[ParsedT]):
 
     def add_file(
         self, filename: str,
-        items: Iterable[Tuple[str, ParsedT]],
+        items: Iterable[tuple[str, ParsedT]],
         mode: FileMode = FileMode.UNKNOWN,
     ) -> None:
         """Add a file with its parsed items."""
@@ -279,7 +277,7 @@ class ManifestedFiles(Generic[ParsedT]):
             if identifier not in self.name_to_parsed:
                 self.name_to_parsed[identifier] = (filename, data)
 
-    def fetch_data(self, identifier: str) -> Tuple[str, ParsedT]:
+    def fetch_data(self, identifier: str) -> tuple[str, ParsedT]:
         """Fetch the parsed form of this data and the file it's in, without packing."""
         [filename, data] = self.name_to_parsed[identifier.casefold()]
         if data is None:
@@ -304,14 +302,14 @@ class ManifestedFiles(Generic[ParsedT]):
             lst.pack_file(filename, self.pack_type)
         return data
 
-    def packed_files(self) -> Iterator[Tuple[str, FileMode]]:
+    def packed_files(self) -> Iterator[tuple[str, FileMode]]:
         """Yield the used files in order."""
         for file, mode in self._files.items():
             if mode.is_used:
                 yield file, mode
 
 
-def _load_soundscript(file: File) -> Dict[str, Sound]:
+def _load_soundscript(file: File) -> dict[str, Sound]:
     """Parse a soundscript file, logging errors that occur."""
     try:
         with file.open_str(encoding='cp1252') as f:
@@ -326,7 +324,7 @@ def _load_soundscript(file: File) -> Dict[str, Sound]:
         return {}
 
 
-def _load_particle_system(file: File) -> Dict[str, Particle]:
+def _load_particle_system(file: File) -> dict[str, Particle]:
     """Parse a particle system file, logging errors that occur."""
     try:
         with file.open_bin() as f:
@@ -350,15 +348,15 @@ class PackList:
     soundscript: ManifestedFiles[Sound]
     particles: ManifestedFiles[Particle]
 
-    _packed_particles: Set[str]
-    _files: Dict[str, PackFile]
+    _packed_particles: set[str]
+    _files: dict[str, PackFile]
     # folder, ext, data -> filename used
-    _inject_files: Dict[Tuple[str, str, bytes], str]
+    _inject_files: dict[tuple[str, str, bytes], str]
     # Cache of the models used for breakable chunks.
-    _break_chunks: Optional[Dict[str, List[str]]]
+    _break_chunks: Optional[dict[str, list[str]]]
     # For each model, defines the skins the model uses. None means at least
     # one use is unknown, so all skins could potentially be used.
-    skinsets: Dict[str, Optional[Set[int]]]
+    skinsets: dict[str, Optional[set[int]]]
 
     def __init__(self, fsys: FileSystemChain) -> None:
         self.fsys = fsys
@@ -392,7 +390,7 @@ class PackList:
         filename: 'str | os.PathLike[str]',
         data_type: FileType = FileType.GENERIC,
         data: Optional[bytes] = None,
-        skinset: Optional[Set[int]] = None,
+        skinset: Optional[set[int]] = None,
         optional: bool = False,
     ) -> None:
         """Queue the given file to be packed.
@@ -749,7 +747,7 @@ class PackList:
         if cache_file is not None:
             self.particles.load_cache(cache_file)
 
-        in_manifest: Set[str] = set()
+        in_manifest: set[str] = set()
 
         for prop in man.find_children('particles_manifest'):
             if prop.value.startswith('!'):
@@ -836,12 +834,12 @@ class PackList:
     ) -> None:
         """Analyse the map to pack files, using an internal database of keyvalues."""
         # Don't show the same keyvalue warning twice, it's just noise.
-        unknown_keys: Set[Tuple[str, str]] = set()
+        unknown_keys: set[tuple[str, str]] = set()
 
         # Definitions for the common keyvalues on all entities.
         base_entity = EntityDef.engine_def('_CBaseEntity_')
 
-        cache: Dict[str, EntityDef] = {}
+        cache: dict[str, EntityDef] = {}
 
         def get_ent(classname: str) -> EntityDef:
             """Look up the FGD for an entity."""
@@ -878,7 +876,7 @@ class PackList:
                 # Fall back to generic keyvalues.
                 ent_class = base_entity
 
-            skinset: Optional[Set[int]]
+            skinset: Optional[set[int]]
             if 'skinset' in ent:
                 # Special key for us - if set this is a list of skins this
                 # entity is pledging it will restrict itself to.
@@ -1024,9 +1022,9 @@ class PackList:
 
         # First retrieve existing files.
         # The packed_files dict is a casefolded name -> (orig name, bytes) tuple.
-        packed_files: Dict[str, Tuple[str, bytes]] = {}
+        packed_files: dict[str, tuple[str, bytes]] = {}
 
-        all_systems: Set[FileSystem] = {
+        all_systems: set[FileSystem] = {
             sys for sys, _ in
             self.fsys.systems
         }
@@ -1231,8 +1229,7 @@ class PackList:
 
     def _get_material_files(self, file: PackFile) -> None:
         """Find any needed files for a material."""
-
-        parents = []  # type: List[str]
+        parents: list[str] = []
         try:
             if file.data is not None:
                 # Read directly from the data we have.
@@ -1419,7 +1416,7 @@ class PackList:
     'Using entclass_resources() is deprecated, access EntityDef.engine_cls() and '
     'then EntityDef.get_resources() instead.',
 )
-def entclass_resources(classname: str) -> Iterable[Tuple[str, FileType]]:
+def entclass_resources(classname: str) -> Iterable[tuple[str, FileType]]:
     """Fetch a list of resources this entity class is known to use in code.
 
     :deprecated: Use :py:meth:`EntityDef.engine_def() <srctools.fgd.EntityDef.engine_def>` \

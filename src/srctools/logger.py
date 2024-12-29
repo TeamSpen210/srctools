@@ -3,10 +3,8 @@ Wrapper around logging to provide our own functionality.
 
 This adds the ability to log using str.format() instead of %.
 """
-from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, Generator, Iterable, List, Mapping,
-    Optional, TextIO, Tuple, Type, Union, cast, overload,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, Optional, TextIO, Union, cast, overload
+from collections.abc import Callable, Generator, Iterable, Mapping
 from io import StringIO
 from pathlib import Path
 from types import TracebackType
@@ -22,7 +20,7 @@ from srctools import StringPath
 
 __all__ = ['LoggerAdapter', 'get_handler', 'get_logger', 'init_logging', 'context']
 # Only generic in stubs!
-CTX_STACK: 'contextvars.ContextVar[List[str]]' = contextvars.ContextVar('srctools_logger')
+CTX_STACK: 'contextvars.ContextVar[list[str]]' = contextvars.ContextVar('srctools_logger')
 
 
 class LogMessage:
@@ -31,15 +29,15 @@ class LogMessage:
     The __str__() method performs the joining.
     """
     fmt: str
-    args: Tuple[object, ...]
-    kwargs: Dict[str, object]
+    args: tuple[object, ...]
+    kwargs: dict[str, object]
     has_args: bool
 
     def __init__(
         self,
         fmt: str,
-        args: Tuple[object, ...],
-        kwargs: Dict[str, object],
+        args: tuple[object, ...],
+        kwargs: dict[str, object],
     ) -> None:
         self.fmt = fmt
         self.args = args
@@ -82,8 +80,8 @@ class LogMessage:
 
 
 _SysExcInfoType = Union[
-    Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
-    Tuple[None, None, None]
+    tuple[type[BaseException], BaseException, Optional[TracebackType]],
+    tuple[None, None, None]
 ]
 if TYPE_CHECKING:  # Only generic in stubs.
     _AdapterBase = logging.LoggerAdapter[logging.Logger]
@@ -152,12 +150,9 @@ class LoggerAdapter(_AdapterBase):
 
 class Formatter(logging.Formatter):
     """Override exception handling."""
-    SKIP_LIBS: ClassVar[List[str]] = ['importlib', 'cx_freeze', 'PyInstaller']
+    SKIP_LIBS: ClassVar[list[str]] = ['importlib', 'cx_freeze', 'PyInstaller']
 
-    def formatException(self, ei: Union[
-        Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
-        Tuple[None, None, None],
-    ]) -> str:
+    def formatException(self, ei: _SysExcInfoType) -> str:
         """Ignore importlib, cx_freeze and PyInstaller."""
         exc_type, exc_value, exc_tb = ei
         buffer = StringIO()
@@ -190,7 +185,7 @@ class Formatter(logging.Formatter):
         return super().format(record)
 
 
-def get_handler(filename: 'str | os.PathLike[str]') -> logging.FileHandler:
+def get_handler(filename: Union[str, os.PathLike[str]]) -> logging.FileHandler:
     """Cycle log files, then give the required file handler."""
     path = Path(filename)
     ext = ''.join(path.suffixes)
@@ -237,7 +232,7 @@ class NullStream(TextIO):
 
     def __exit__(
         self,
-        typ: Optional[Type[BaseException]],
+        typ: Optional[type[BaseException]],
         value: Optional[BaseException],
         tback: Optional[TracebackType],
     ) -> None:
@@ -283,7 +278,7 @@ class NullStream(TextIO):
         """We never have data."""
         return ''
 
-    def readlines(self, hint: int = -1) -> List[str]:
+    def readlines(self, hint: int = -1) -> list[str]:
         """We never have data."""
         return []
 
@@ -331,7 +326,7 @@ def init_logging(
     filename: Optional[StringPath] = None,
     main_logger: str = '',
     on_error: Optional[Callable[
-        [Type[BaseException], BaseException, Optional[TracebackType]],
+        [type[BaseException], BaseException, Optional[TracebackType]],
         None,
     ]] = None,
 ) -> logging.Logger: ...
@@ -350,7 +345,7 @@ def init_logging(
     filename: Optional[StringPath] = None,
     main_logger: str = '',
     on_error: Optional[Callable[
-        [Type[BaseException], BaseException, Optional[TracebackType]],
+        [type[BaseException], BaseException, Optional[TracebackType]],
         None,
     ]] = None,
     *,
@@ -443,7 +438,7 @@ def init_logging(
     old_except_handler = sys.excepthook
 
     def except_handler(
-        exc_type: Type[BaseException],
+        exc_type: type[BaseException],
         exc_value: BaseException,
         exc_tb: Optional[TracebackType],
     ) -> None:

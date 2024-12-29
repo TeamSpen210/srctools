@@ -19,15 +19,13 @@ Specifically, the following characters are escaped:
 `\\\\n`, `\\\\t`, `\\\\v`, `\\\\b`, `\\\\r`, `\\\\f`, `\\\\a`, `\\`, `?`, `'` and `"`.
 `/` and `?` are accepted as escapes, but not produced since they're unambiguous.
 """
-import re
-from typing import (
-    TYPE_CHECKING, Final, Iterable, Iterator, List, NoReturn, Optional, Tuple, Type,
-    Union,
-)
+from typing import TYPE_CHECKING, Final, NoReturn, Optional, Union
 from typing_extensions import Self, TypeAlias, overload
+from collections.abc import Iterable, Iterator
 from enum import Enum
 from os import fspath as _conv_path
 import abc
+import re
 
 from srctools import StringPath
 
@@ -193,7 +191,7 @@ class BaseTokenizer(abc.ABC):
      It then provides tools for using those to parse data. This is an :external:py:class:`abc.ABC`,
      a subclass must be used to provide a source for the tokens.
     """
-    error_type: Type[TokenSyntaxError]
+    error_type: type[TokenSyntaxError]
     """The exception class to produce if an error occurs. This must be a subtype of 
     :py:class:`TokenSyntaxError`, since it is passed the line number and filename in addition to
     the error message. The :py:meth:`error()` method can be used to intelligently construct an
@@ -209,12 +207,12 @@ class BaseTokenizer(abc.ABC):
     """
 
     #: If set, this token will be returned next.
-    _pushback: List[Tuple[Token, str]]
+    _pushback: list[tuple[Token, str]]
 
     def __init__(
         self,
         filename: Optional[StringPath],
-        error: Type[TokenSyntaxError],
+        error: type[TokenSyntaxError],
     ) -> None:
         if filename is not None:
             self.filename = _conv_path(filename)
@@ -295,11 +293,11 @@ class BaseTokenizer(abc.ABC):
         raise TypeError('Cannot pickle Tokenizers!')
 
     @abc.abstractmethod
-    def _get_token(self) -> Tuple[Token, str]:
+    def _get_token(self) -> tuple[Token, str]:
         """Compute the next token, must be implemented by subclasses."""
         raise NotImplementedError
 
-    def __call__(self) -> Tuple[Token, str]:
+    def __call__(self) -> tuple[Token, str]:
         """Compute and fetch the next token."""
         if self._pushback:
             return self._pushback.pop()
@@ -309,7 +307,7 @@ class BaseTokenizer(abc.ABC):
         """Tokenizers are their own iterator."""
         return self
 
-    def __next__(self) -> Tuple[Token, str]:
+    def __next__(self) -> tuple[Token, str]:
         """Iterate to produce a token, stopping at EOF."""
         tok_and_val = self()
         if tok_and_val[0] is Token.EOF:
@@ -333,13 +331,13 @@ class BaseTokenizer(abc.ABC):
 
         self._pushback.append((tok, value))
 
-    def peek(self) -> Tuple[Token, str]:
+    def peek(self) -> tuple[Token, str]:
         """Peek at the next token, without removing it from the stream."""
         tok_and_val = self()
         self._pushback.append(tok_and_val)
         return tok_and_val
 
-    def skipping_newlines(self) -> Iterator[Tuple[Token, str]]:
+    def skipping_newlines(self) -> Iterator[tuple[Token, str]]:
         """Iterate over the tokens, skipping newlines."""
         while True:
             tok_and_val = tok, tok_value = self()
@@ -430,7 +428,7 @@ class Tokenizer(BaseTokenizer):
         self,
         data: Union[str, Iterable[str]],
         filename: Optional[StringPath] = None,
-        error: Type[TokenSyntaxError] = TokenSyntaxError,
+        error: type[TokenSyntaxError] = TokenSyntaxError,
         *,
         string_bracket: bool = False,
         allow_escapes: bool = True,
@@ -494,9 +492,9 @@ class Tokenizer(BaseTokenizer):
             # Out of characters after empty chunks
             return None
 
-    def _get_token(self) -> Tuple[Token, str]:
+    def _get_token(self) -> tuple[Token, str]:
         """Return the next token, value pair."""
-        value_chars: List[str]
+        value_chars: list[str]
         while True:
             next_char = self._next_char()
             if next_char is None:  # EOF, use a dummy string.
@@ -636,11 +634,11 @@ class Tokenizer(BaseTokenizer):
             else:
                 raise self.error('Unexpected character "{}"!', next_char)
 
-    def _handle_comment(self) -> Optional[Tuple[Token, str]]:
+    def _handle_comment(self) -> Optional[tuple[Token, str]]:
         """Handle a comment. The last character read was the initial slash."""
         # The next must be either a slash (//) or star (/*)
         comment_next = self._next_char()
-        comment_buf: Optional[List[str]] = [] if self.preserve_comments else None
+        comment_buf: Optional[list[str]] = [] if self.preserve_comments else None
         if comment_next == '*':
             # /* comment.
             if self.allow_star_comments:
@@ -704,9 +702,9 @@ class Tokenizer(BaseTokenizer):
                 return Token.COMMENT, ''.join(comment_buf)
         return None  # Swallow the comment.
 
-    def _handle_string(self) -> Tuple[Token, str]:
+    def _handle_string(self) -> tuple[Token, str]:
         """Handle a quoted string definition. The last character was a quote."""
-        value_chars: List[str] = []
+        value_chars: list[str] = []
         last_was_cr = False
         while True:
             next_char = self._next_char()
@@ -754,13 +752,13 @@ class IterTokenizer(BaseTokenizer):
     This is useful to pre-process a token stream before parsing it with other
     code.
     """
-    source: Iterator[Tuple[Token, str]]
+    source: Iterator[tuple[Token, str]]
 
     def __init__(
         self,
-        source: Iterable[Tuple[Token, str]],
+        source: Iterable[tuple[Token, str]],
         filename: StringPath = '',
-        error: Type[TokenSyntaxError] = TokenSyntaxError,
+        error: type[TokenSyntaxError] = TokenSyntaxError,
     ) -> None:
         super().__init__(filename, error)
         self.source = iter(source)
@@ -771,7 +769,7 @@ class IterTokenizer(BaseTokenizer):
         else:
             return f'IterTokenizer({self.source!r}, {self.filename!r}, {self.error_type!r})'
 
-    def _get_token(self) -> Tuple[Token, str]:
+    def _get_token(self) -> tuple[Token, str]:
         try:
             return next(self.source)
         except StopIteration:

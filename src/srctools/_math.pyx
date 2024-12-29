@@ -4,8 +4,8 @@ from cpython.conversion cimport PyOS_double_to_string
 from cpython.exc cimport PyErr_WarnEx
 from cpython.mem cimport PyMem_Free, PyMem_Malloc
 from cpython.object cimport Py_EQ, Py_GE, Py_GT, Py_LE, Py_LT, Py_NE, PyObject, PyTypeObject
-from cpython.unicode cimport PyUnicode_AsUTF8AndSize
 from cpython.ref cimport Py_INCREF
+from cpython.unicode cimport PyUnicode_AsUTF8AndSize
 from libc cimport math
 from libc.math cimport M_PI, NAN, cos, isnan, llround, sin, tan
 from libc.stdint cimport uint16_t, uint32_t, uint_fast8_t
@@ -81,8 +81,9 @@ cdef inline MatrixBase _matrix(type typ):
     else:
         return <MatrixBase>Matrix.__new__(Matrix)
 
-cdef object typing  # Keep private.
-import typing
+cdef object Union, Iterable, Iterator  # Keep private.
+from typing import Union
+from collections.abc import Iterable, Iterator
 
 
 # Shared functions that we use to do unpickling.
@@ -1279,10 +1280,10 @@ cdef class VecBase:
     @classmethod
     def iter_grid(
         cls,
-        object min_pos: typing.Union[Vec, typing.Tuple[int, int, int]],
-        object max_pos: typing.Union[Vec, typing.Tuple[int, int, int]],
+        object min_pos: Union[Vec, tuple[int, int, int]],
+        object max_pos: Union[Vec, tuple[int, int, int]],
         stride: int = 1,
-    ) -> typing.Iterator[Vec]:
+    ) -> Iterator[Vec]:
         """Loop over points in a bounding box. All coordinates should be integers.
 
         Both borders will be included.
@@ -1309,7 +1310,7 @@ cdef class VecBase:
 
         return it
 
-    def iter_line(self, end: VecBase, stride: int=1) -> typing.Iterator[Vec]:
+    def iter_line(self, end: VecBase, stride: int=1) -> Iterator[Vec]:
         """Yield points between this point and 'end' (including both endpoints).
 
         Stride specifies the distance between each point.
@@ -1445,7 +1446,7 @@ cdef class VecBase:
         )
 
     @cython.boundscheck(False)
-    def other_axes(self, object axis) -> typing.Tuple[float, float]:
+    def other_axes(self, object axis) -> tuple[float, float]:
         """Get the values for the other two axes."""
         cdef char axis_chr
         if isinstance(axis, str) and len(<str>axis) == 1:
@@ -1488,7 +1489,7 @@ cdef class VecBase:
             (min2.val.z - max1.val.z) > TOL or (min1.val.z - max2.val.z) > TOL
         )
 
-    def as_tuple(self) -> typing.Tuple[float, float, float]:
+    def as_tuple(self) -> tuple[float, float, float]:
         """Return the Vector as a tuple."""
         PyErr_WarnEx(DeprecationWarning, 'Vec_tuple is deprecated, use FrozenVec instead.', 1)
         return _make_tuple(round(self.val.x, ROUND_TO), round(self.val.y, ROUND_TO), round(self.val.z, ROUND_TO))
@@ -3349,7 +3350,7 @@ cdef class Angle(AngleBase):
         return AngleTransform.__new__(AngleTransform, self)
 
 
-def quickhull(vertexes: typing.Iterable[Vec]) -> typing.List[typing.Tuple[Vec, Vec, Vec]]:
+def quickhull(vertexes: Iterable[Vec]) -> list[tuple[Vec, Vec, Vec]]:
     """Use the quickhull algorithm to construct a convex hull around the provided points."""
     cdef size_t v1, v2, v3, ind
     cdef vector[quickhull.Vector3[double]] values = vector[quickhull.Vector3[double]]()
@@ -3404,4 +3405,4 @@ except Exception:
 
 del cross_vec, cross_frozenvec
 # Drop references.
-typing = None
+Iterator = Iterable = Union = None

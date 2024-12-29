@@ -1,5 +1,5 @@
 """Test tricky type definitions in the package root."""
-from typing import Dict, List, Union
+from typing import Union
 from typing_extensions import assert_type
 from io import BufferedWriter, TextIOWrapper
 
@@ -8,17 +8,17 @@ import srctools
 
 def test_conversions() -> None:
     """Check conversions + default interactions."""
-    data: List[str] = ['a', 'b', 'c']
+    data: list[str] = ['a', 'b', 'c']
     assert_type(srctools.conv_int('45'), int)
     assert_type(srctools.conv_int('45', 32), int)
-    assert_type(srctools.conv_int('45', data), Union[int, List[str]])
+    assert_type(srctools.conv_int('45', data), Union[int, list[str]])
 
     assert_type(srctools.conv_float('45.25'), float)
     assert_type(srctools.conv_float('45.25', 32.25), float)
-    assert_type(srctools.conv_float('45.25', data), Union[float, List[str]])
+    assert_type(srctools.conv_float('45.25', data), Union[float, list[str]])
 
     assert_type(srctools.conv_bool('0'), bool)
-    assert_type(srctools.conv_bool('true', data), Union[bool, List[str]])
+    assert_type(srctools.conv_bool('true', data), Union[bool, list[str]])
 
 
 def test_atomicwriter() -> None:
@@ -40,8 +40,8 @@ def test_atomicwriter() -> None:
 
 def test_emptymapping() -> None:
     """Test some default parameters."""
-    mapping: Dict[str, int] = {'abc': 123}
+    mapping: dict[str, int] = {'abc': 123}
     assert_type(srctools.EmptyMapping.get('key'), None)
-    assert_type(srctools.EmptyMapping.get(45, mapping), Dict[str, int])
+    assert_type(srctools.EmptyMapping.get(45, mapping), dict[str, int])
     assert_type(srctools.EmptyMapping.setdefault('key'), None)
-    assert_type(srctools.EmptyMapping.setdefault(45, mapping), Dict[str, int])
+    assert_type(srctools.EmptyMapping.setdefault(45, mapping), dict[str, int])

@@ -58,11 +58,9 @@ Keyvalues with children can be indexed by their names, or by a
 
 Handling ``\\n``, ``\\t``, ``\\"``, and ``\\\\`` escape characters can be enabled.
 """
-from typing import (
-    Any, Callable, ClassVar, Dict, Final, Iterable, Iterator, List, Mapping, Optional,
-    Protocol, Tuple, Type, TypeVar, Union, cast,
-)
-from typing_extensions import Literal, TypeAlias, deprecated, overload, ContextManager
+from typing import Any, ClassVar, Final, Optional, Protocol, TypeVar, Union, cast
+from typing_extensions import ContextManager, Literal, TypeAlias, deprecated, overload
+from collections.abc import Callable, Iterable, Iterator, Mapping
 import builtins  # Keyvalues.bool etc shadows these.
 import io
 import keyword
@@ -85,8 +83,8 @@ __all__ = ['KeyValError', 'NoKeyError', 'LeafKeyvalueError', 'Keyvalues', 'escap
 # Sentinel value to indicate that no default was given to find_key()
 _NO_KEY_FOUND: str = cast(str, object())
 
-_KV_Value = Union[List['Keyvalues'], str, Any]
-_As_Dict_Ret: TypeAlias = Union[str, Dict[str, '_As_Dict_Ret']]
+_KV_Value = Union[list['Keyvalues'], str, Any]
+_As_Dict_Ret: TypeAlias = Union[str, dict[str, '_As_Dict_Ret']]
 
 T = TypeVar('T')
 
@@ -157,7 +155,7 @@ class _FilenameSetter(ContextManager[str, None]):
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_val: Optional[BaseException],
         exc_tb: Optional[types.TracebackType],
     ) -> None:
@@ -243,7 +241,7 @@ class Keyvalues:
     def __init__(
         self,
         name: str,
-        value: Union[List['Keyvalues'], str],
+        value: Union[list['Keyvalues'], str],
         line_num: Optional[int] = None,
     ) -> None: ...
     @overload
@@ -251,14 +249,14 @@ class Keyvalues:
     def __init__(
         self,
         name: None,
-        value: Union[List['Keyvalues'], str],
+        value: Union[list['Keyvalues'], str],
         line_num: Optional[int] = None,
     ) -> None: ...
 
     def __init__(
         self,
         name: Optional[str],
-        value: Union[List['Keyvalues'], str],
+        value: Union[list['Keyvalues'], str],
         line_num: Optional[int] = None,
     ) -> None:
         """Create a new keyvalues instance."""
@@ -400,11 +398,11 @@ class Keyvalues:
         cur_block.line_num = 1
 
         # Cache off the value list.
-        cur_block_contents: List[Keyvalues]
+        cur_block_contents: list[Keyvalues]
         cur_block_contents = cur_block._value = []
         # A queue of the keyvalues we are currently in (outside to inside).
         # And the line numbers of each of these, for error reporting.
-        open_keyvalues: List[Keyvalues] = [cur_block]
+        open_keyvalues: list[Keyvalues] = [cur_block]
 
         # Grab a reference to the token values, so we avoid global lookups.
         STRING: Final = Token.STRING
@@ -815,7 +813,7 @@ class Keyvalues:
         except NoKeyError:  # key not present, defaults.
             return _Vec(x, y, z)
 
-    def set_key(self, path: Union[Tuple[str, ...], str], value: str) -> None:
+    def set_key(self, path: Union[tuple[str, ...], str], value: str) -> None:
         """Set the value of a key deep in the tree hierarchy.
 
         - If any of the hierarchy do not exist (or do not have children), blank keyvalues will be added automatically.
@@ -875,11 +873,11 @@ class Keyvalues:
             return self._value
 
     @overload
-    def as_array(self) -> List[str]: ...
+    def as_array(self) -> list[str]: ...
     @overload
-    def as_array(self, *, conv: Callable[[str], T]) -> List[T]: ...
+    def as_array(self, *, conv: Callable[[str], T]) -> list[T]: ...
 
-    def as_array(self, *, conv: Callable[[str], T] = cast(Any, str)) -> Union[List[T], List[str]]:
+    def as_array(self, *, conv: Callable[[str], T] = cast(Any, str)) -> Union[list[T], list[str]]:
         """Convert a keyvalue block into a list of values.
 
         If the keyvalue is a single keyvalue, the single value will be
@@ -887,7 +885,7 @@ class Keyvalues:
         of those will be yielded. The name is ignored.
         """
         if isinstance(self._value, list):
-            arr: List[T] = []
+            arr: list[T] = []
             child: Keyvalues
             for child in self._value:
                 if not isinstance(child._value, str):
@@ -980,11 +978,11 @@ class Keyvalues:
     @overload
     def __getitem__(self, index: builtins.int) -> 'Keyvalues': ...
     @overload
-    def __getitem__(self, index: slice) -> List['Keyvalues']: ...
+    def __getitem__(self, index: slice) -> list['Keyvalues']: ...
     @overload
     def __getitem__(self, index: str) -> str: ...
     @overload
-    def __getitem__(self, index: Tuple[str, T]) -> Union[str, T]: ...
+    def __getitem__(self, index: tuple[str, T]) -> Union[str, T]: ...
 
     def __getitem__(
         self,
@@ -992,9 +990,9 @@ class Keyvalues:
             str,
             builtins.int,
             slice,
-            Tuple[str, Union[str, T]],
+            tuple[str, Union[str, T]],
         ],
-    ) -> Union['Keyvalues', List['Keyvalues'], str, T]:
+    ) -> Union['Keyvalues', list['Keyvalues'], str, T]:
         """Allow indexing the children directly.
 
         - If given an index, it will return the keyvalues in that position.
@@ -1199,7 +1197,7 @@ class Keyvalues:
         folded_names = [name.casefold() for name in names]
         new_list = []
         # Optional only here because _folded_name may be None - it'll never actually be there.
-        merge: Dict[Optional[str], Keyvalues] = {
+        merge: dict[Optional[str], Keyvalues] = {
             name: Keyvalues(name, [])
             for name in folded_names
         }
@@ -1427,7 +1425,7 @@ class _Builder:
 
     def __exit__(
         self,
-        exc_type: Type[BaseException], exc_val: BaseException, exc_tb: types.TracebackType,
+        exc_type: type[BaseException], exc_val: BaseException, exc_tb: types.TracebackType,
     ) -> None:
         """Ends the keyvalue block."""
         pass
@@ -1465,7 +1463,7 @@ class _BuilderElem:
 
     def __exit__(
         self,
-        exc_type: Type[BaseException], exc_val: BaseException, exc_tb: types.TracebackType,
+        exc_type: type[BaseException], exc_val: BaseException, exc_tb: types.TracebackType,
     ) -> None:
         """End a keyvalue block."""
         self._builder._parents.pop()

@@ -9,11 +9,9 @@ not supported, only metdata can be read.
 .. _`Python Imaging Library`: https://pillow.readthedocs.io/en/stable/
 .. _`libsquish`: https://sourceforge.net/projects/libsquish/
 """
-from typing import (
-    IO, TYPE_CHECKING, Any, Dict, Iterator, List, Mapping, Optional, Sequence, Tuple,
-    Type, Union, overload,
-)
+from typing import IO, TYPE_CHECKING, Any, Optional, Union, overload
 from array import array
+from collections.abc import Iterator, Mapping, Sequence
 from enum import Enum, Flag
 from io import BytesIO
 import itertools
@@ -94,7 +92,7 @@ def _mk_fmt(
     r: int = 0, g: int = 0, b: int = 0,
     a: int = 0, *,
     grey: int = 0, size: int = 0,
-) -> Tuple[int, int, int, int, int, int]:
+) -> tuple[int, int, int, int, int, int]:
     """Helper function to construct ImageFormats."""
     global _mk_fmt_ind
     if grey:
@@ -351,7 +349,7 @@ class Frame:
     width: int
     height: int
     _data: Optional['array[int]']  # Only generic in stubs!
-    _fileinfo: Optional[Tuple[IO[bytes], int, ImageFormats]]
+    _fileinfo: Optional[tuple[IO[bytes], int, ImageFormats]]
 
     def __init__(
         self,
@@ -469,7 +467,7 @@ class Frame:
         if larger._data is not None:
             _format_funcs.scale_down(filter, larger.width, larger.height, self.width, self.height, larger._data, self._data)
 
-    def __getitem__(self, item: Tuple[int, int]) -> Pixel:
+    def __getitem__(self, item: tuple[int, int]) -> Pixel:
         """Retrieve an individual pixel at (x, y)."""
         self.load()
         assert self._data is not None
@@ -482,8 +480,8 @@ class Frame:
 
     def __setitem__(
         self,
-        item: Tuple[int, int],
-        data: Union[Pixel, Tuple[int, int, int, int]],
+        item: tuple[int, int],
+        data: Union[Pixel, tuple[int, int, int, int]],
     ) -> None:
         """Set an individual pixel at (x, y)."""
         self.load()
@@ -532,7 +530,7 @@ class Frame:
         self,
         tk: 'tkinter.Misc | None' = None,
         *,
-        bg: Optional[Tuple[int, int, int]] = None,
+        bg: Optional[tuple[int, int, int]] = None,
     ) -> 'tkinter.PhotoImage':
         """Convert the given frame into a Tkinter PhotoImage.
 
@@ -557,7 +555,7 @@ class Frame:
         )
 
     # TODO: wx has no type hints, so we can't import.
-    def to_wx_image(self, bg: Optional[Tuple[int, int, int]] = None) -> Any:
+    def to_wx_image(self, bg: Optional[tuple[int, int, int]] = None) -> Any:
         """Convert the given frame into a wxPython wx.Image.
 
         This requires wxPython to be installed.
@@ -572,7 +570,7 @@ class Frame:
         _format_funcs.alpha_flatten(self._data, img.GetDataBuffer(), self.width, self.height, bg)
         return img
 
-    def to_wx_bitmap(self, bg: Optional[Tuple[int, int, int]] = None) -> Any:
+    def to_wx_bitmap(self, bg: Optional[tuple[int, int, int]] = None) -> Any:
         """Convert the given frame into a wxPython wx.Bitmap.
 
         This requires wxPython to be installed.
@@ -602,16 +600,16 @@ class VTF:
     mipmap_count: int  #: The total number of mipmaps in the image.
 
     #: The version number of the file. Supported versions vary from ``(7, 2) - (7, 5)``.
-    version: Tuple[int, int]
+    version: tuple[int, int]
     #: An average of the colors in the texture, used to tint light bounced off surfaces.
     reflectivity: Vec
     bumpmap_scale: float
     #: In version 7.3+, arbitrary resources may be stored in a VTF. :py:class:`ResourceID` are
     #: defined by Valve, but any 4-byte ID may be used.
-    resources: Dict[Union[ResourceID, bytes], Resource]
+    resources: dict[Union[ResourceID, bytes], Resource]
     #: Textures used for particle system sprites may have this resource, defining subareas to
     #: randomly pick from when rendering.
-    sheet_info: Dict[int, 'SheetSequence']
+    sheet_info: dict[int, 'SheetSequence']
     flags: VTFFlags  #: Bitflags specifying behaviours and how the texture was compiled.
     frame_count: int  #: The number of frames, greater than one for an animated texture.
     first_frame_index: int  #: This field appears unused.
@@ -620,14 +618,14 @@ class VTF:
     #: This is usually :py:attr:`DXT1 <srctools.vtf.ImageFormats.DXT1>`.
     low_format: ImageFormats
 
-    _frames: Dict[Tuple[int, Union[CubeSide, int], int], Frame]
+    _frames: dict[tuple[int, Union[CubeSide, int], int], Frame]
     _low_res: Frame
 
     def __init__(
         self,
         width: int,
         height: int,
-        version: Tuple[int, int] = (7, 5),
+        version: tuple[int, int] = (7, 5),
         ref: AnyVec = FrozenVec(0, 0, 0),
         frames: int = 1,
         bump_scale: float = 1.0,
@@ -691,7 +689,7 @@ class VTF:
         self.mipmap_count = mip_count
 
     @classmethod
-    def read(cls: 'Type[VTF]', file: IO[bytes], header_only: bool = False) -> 'VTF':
+    def read(cls: 'type[VTF]', file: IO[bytes], header_only: bool = False) -> 'VTF':
         """Read in a VTF file.
 
         :param file: The file to read from, must be seekable.
@@ -834,7 +832,7 @@ class VTF:
     def save(
         self,
         file: IO[bytes],
-        version: Optional[Tuple[int, int]] = None,
+        version: Optional[tuple[int, int]] = None,
         sheet_seq_version: int = 1,
         asw_or_later: bool = True,
     ) -> None:
@@ -959,7 +957,9 @@ class VTF:
 
     def __exit__(
         self,
-        exc_type: Type[BaseException], exc_val: BaseException, exc_tb: types.TracebackType,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[types.TracebackType],
     ) -> None:
         """Close the streams if any frames still have them open."""
         self._low_res._fileinfo = None
@@ -1078,7 +1078,7 @@ class SheetSequence:
 
     def __init__(
         self,
-        frames: List[Tuple[float, TexCoord, TexCoord, TexCoord, TexCoord]],
+        frames: list[tuple[float, TexCoord, TexCoord, TexCoord, TexCoord]],
         clamp: bool,
         duration: float,
     ) -> None:
@@ -1087,7 +1087,7 @@ class SheetSequence:
         self.duration = duration
 
     @classmethod
-    def from_resource(cls, data: bytes) -> Dict[int, 'SheetSequence']:
+    def from_resource(cls, data: bytes) -> dict[int, 'SheetSequence']:
         """Decode from the resource data."""
         (
             version,
@@ -1098,7 +1098,7 @@ class SheetSequence:
         if version > 1:
             raise ValueError(f'Unknown version {version}!')
 
-        sequences: Dict[int, SheetSequence] = {}
+        sequences: dict[int, SheetSequence] = {}
         if sequence_count > SheetSequence.MAX_COUNT:
             raise ValueError(
                 f'Cannot have more than {SheetSequence.MAX_COUNT} '
@@ -1118,7 +1118,7 @@ class SheetSequence:
             if seq_num in sequences:
                 raise ValueError(f'Duplicate sequence number {seq_num}!')
 
-            frames: List[Tuple[float, TexCoord, TexCoord, TexCoord, TexCoord]] = []
+            frames: list[tuple[float, TexCoord, TexCoord, TexCoord, TexCoord]] = []
 
             for frame_ind in range(frame_count):
                 [duration] = struct.unpack_from('<f', data, offset)

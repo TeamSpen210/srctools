@@ -1,6 +1,7 @@
 """Classes for reading and writing Valve's VPK format, version 1."""
-from typing import IO, Dict, Final, Iterable, Iterator, List, Optional, Set, Tuple, Type, Union
+from typing import IO, Final, Optional, Union
 from typing_extensions import TypeAlias
+from collections.abc import Iterable, Iterator
 from enum import Enum
 from types import TracebackType
 import operator
@@ -19,7 +20,7 @@ __all__ = [
 ]
 VPK_SIG: Final = 0x55aa1234  #: The first byte of VPK files.
 DIR_ARCH_INDEX: Final = 0x7fff  #: The file index used for the ``_dir`` file.
-FileName: TypeAlias = Union[str, Tuple[str, str], Tuple[str, str, str]]
+FileName: TypeAlias = Union[str, tuple[str, str], tuple[str, str, str]]
 
 
 class OpenModes(Enum):
@@ -80,7 +81,7 @@ def get_arch_filename(prefix: str = 'pak01', index: Optional[int] = None) -> str
         return f'{prefix}_{index:>03}.vpk'
 
 
-def _get_file_parts(value: FileName, relative_to: str = '') -> Tuple[str, str, str]:
+def _get_file_parts(value: FileName, relative_to: str = '') -> tuple[str, str, str]:
     """Get folder, name, ext parts from a string/tuple.
 
     Possible arguments:
@@ -244,7 +245,7 @@ class VPK:
     """The VPK filename, without ``_dir.vpk``."""
 
     # fileinfo[extension][directory][filename]
-    _fileinfo: Dict[str, Dict[str, Dict[str, FileInfo]]]
+    _fileinfo: dict[str, dict[str, dict[str, FileInfo]]]
 
     mode: OpenModes
     """How the file was opened.
@@ -476,7 +477,7 @@ class VPK:
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_value: Optional[BaseException],
         exc_trace: Optional[TracebackType],
     ) -> None:
@@ -540,7 +541,7 @@ class VPK:
         If an extension or folder is specified, only files with this extension
         or in this folder are returned.
         """
-        all_folders: Iterable[Dict[str, Dict[str, FileInfo]]]
+        all_folders: Iterable[dict[str, dict[str, FileInfo]]]
         if ext:
             all_folders = [self._fileinfo.get(ext, {})]
         else:
@@ -553,7 +554,7 @@ class VPK:
                 for info in files.values():
                     yield info.filename
 
-    def _iter_folders(self, ext: Optional[str]) -> Iterable[Dict[str, Dict[str, FileInfo]]]:
+    def _iter_folders(self, ext: Optional[str]) -> Iterable[dict[str, dict[str, FileInfo]]]:
         """Yield the folder dicts matching the specified extension."""
         if ext is not None:
             try:
@@ -575,7 +576,7 @@ class VPK:
                 yield from folders.keys()
         else:
             # When yielding all, we need to deduplicate across different extensions.
-            result: Set[str] = set()
+            result: set[str] = set()
             for folder in self._fileinfo.values():
                 result.update(folder.keys())
             yield from result
@@ -703,7 +704,7 @@ class VPK:
         return all(file.verify() for file in self)
 
 
-def script_write(args: List[str]) -> None:
+def script_write(args: list[str]) -> None:
     """Create a VPK archive."""
     if len(args) not in (1, 2):
         raise ValueError("Usage: make_vpk.py [max_arch_mb] <folder>")

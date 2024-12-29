@@ -1,5 +1,5 @@
 """Test the keyvalues module."""
-from typing import Generator, List, Type, Union
+from typing import Generator, Union
 import itertools
 
 from exceptiongroup import ExceptionGroup
@@ -9,8 +9,7 @@ from srctools import keyvalues as kv_mod
 from srctools.keyvalues import KeyValError, Keyvalues, LeafKeyvalueError, NoKeyError
 # noinspection PyProtectedMember
 from srctools.tokenizer import (
-    Cy_BaseTokenizer, Cy_Tokenizer, Py_BaseTokenizer, Py_Tokenizer,
-    Tokenizer, Token,
+    Cy_BaseTokenizer, Cy_Tokenizer, Py_BaseTokenizer, Py_Tokenizer, Token, Tokenizer,
 )
 
 
@@ -24,7 +23,7 @@ else:
 
 
 @pytest.fixture(params=parms, ids=ids)
-def py_c_token(request) -> Generator[Type[Tokenizer], None, None]:
+def py_c_token(request) -> Generator[type[Tokenizer], None, None]:
     """Run the test twice, for the Python and C versions of Tokenizer."""
     orig_tok = kv_mod.Tokenizer, kv_mod.BaseTokenizer
     try:
@@ -245,7 +244,7 @@ parse_result = Keyvalues.root(
 del P
 
 
-def test_parse(py_c_token: Type[Tokenizer]) -> None:
+def test_parse(py_c_token: type[Tokenizer]) -> None:
     """Test parsing strings."""
     result = Keyvalues.parse(
         # iter() ensures sequence methods aren't used anywhere.
@@ -309,7 +308,7 @@ def test_lineno() -> None:
     assert raises.value.filename is None
 
 
-def test_single_block(py_c_token: Type[Tokenizer]) -> None:
+def test_single_block(py_c_token: type[Tokenizer]) -> None:
     """Test the single_block option for parsing."""
     tokenizer = py_c_token(parse_test, string_bracket=True)
     # Skip to the root2 section.
@@ -460,7 +459,7 @@ def test_build_exc() -> None:
     ]), prop)
 
 
-def test_parse_fails(py_c_token: Type[Tokenizer]) -> None:
+def test_parse_fails(py_c_token: type[Tokenizer]) -> None:
     """Test various forms of invalid syntax to ensure they indeed fail."""
     def t(text: str) -> None:
         """Test a string to ensure it fails parsing."""
@@ -620,7 +619,7 @@ text with
     ''')
 
 
-def test_newline_strings(py_c_token: Type[Tokenizer]) -> None:
+def test_newline_strings(py_c_token: type[Tokenizer]) -> None:
     """Test that newlines are correctly blocked if the parameter is set."""
     with pytest.raises(KeyValError):
         Keyvalues.parse('"key\nmultiline" "value"')
@@ -734,7 +733,7 @@ def test_edit() -> None:
     """Check functionality of Keyvalues.edit()"""
     test_prop = Keyvalues('Name', 'Value')
 
-    def check(prop: Keyvalues, name: str, value: Union[str, List[str]]) -> None:
+    def check(prop: Keyvalues, name: str, value: Union[str, list[str]]) -> None:
         """Check the property was edited, and has the given value."""
         nonlocal test_prop
         assert prop is test_prop

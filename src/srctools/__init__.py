@@ -1,10 +1,10 @@
-from typing import (
-    TYPE_CHECKING, AbstractSet, Any, Container, Final, Generic, ItemsView, Iterable,
-    Iterator, KeysView, List, Mapping, MutableMapping, NoReturn, Optional, Sequence, Set,
-    Tuple, Type, TypeVar, Union, ValuesView, overload,
-)
+from typing import TYPE_CHECKING, Any, Final, Generic, NoReturn, Optional, TypeVar, Union, overload
 from typing_extensions import Literal, TypeAlias
 from collections import deque
+from collections.abc import (
+    Container, ItemsView, Iterable, Iterator, KeysView, Mapping, MutableMapping, Sequence,
+    Set, ValuesView,
+)
 from pathlib import Path
 from types import TracebackType
 import io
@@ -97,7 +97,7 @@ def blacklist(
     return ''.join(chars)
 
 
-def escape_quote_split(line: str) -> List[str]:
+def escape_quote_split(line: str) -> list[str]:
     """Split quote values on a line, handling \\" correctly."""
     out_strings = []
     was_backslash = False  # Last character was a backslash
@@ -306,7 +306,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     @overload
     def update(self, m: SupportsKeysAndGetItem[Any, Any], /, **kwargs: Any) -> None: ...
     @overload
-    def update(self, m: Iterable[Tuple[Any, Any]], /, **kwargs: Any) -> None: ...
+    def update(self, m: Iterable[tuple[Any, Any]], /, **kwargs: Any) -> None: ...
     @overload
     def update(self, **kwargs: Any) -> None: ...
 
@@ -334,7 +334,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
         raise KeyError('EmptyMapping is empty')
 
 
-class _EmptySetView(AbstractSet[Any]):
+class _EmptySetView(Set[Any]):
     """Common code between EmptyKeysView and EmptyItemsView."""
     __slots__ = ()
 
@@ -354,35 +354,35 @@ class _EmptySetView(AbstractSet[Any]):
 
     def __ne__(self, other: object) -> bool:
         """All nonempty sets are non-equal."""
-        if not isinstance(other, AbstractSet):
+        if not isinstance(other, Set):
             return NotImplemented
         return len(other) > 0
 
     def __eq__(self, other: object) -> bool:
         """Only empty sets are equal."""
-        if not isinstance(other, AbstractSet):
+        if not isinstance(other, Set):
             return NotImplemented
         return len(other) == 0
 
     def __le__(self, other: object) -> bool:
         """We are <= to all sets."""
-        if isinstance(other, AbstractSet):
+        if isinstance(other, Set):
             return True
         return NotImplemented
 
     def __gt__(self, other: object) -> bool:
         """We are never > any set."""
-        if isinstance(other, AbstractSet):
+        if isinstance(other, Set):
             return False
         return NotImplemented
 
-    def __or__(self, other: Iterable[ValT]) -> Set[ValT]:
+    def __or__(self, other: Iterable[ValT]) -> set[ValT]:
         """A binary operation which returns all the other values."""
         if not isinstance(other, Iterable):
             return NotImplemented
         return set(other)
 
-    def __and__(self, other: Iterable[ValT]) -> Set[ValT]:
+    def __and__(self, other: Iterable[ValT]) -> set[ValT]:
         """A binary operation producing no values."""
         if not isinstance(other, Iterable):
             return NotImplemented
@@ -524,7 +524,7 @@ class AtomicWriter(Generic[IOKindT]):
 
     def __exit__(
         self,
-        exc_type: Optional[Type[BaseException]],
+        exc_type: Optional[type[BaseException]],
         exc_value: Optional[BaseException],
         tback: Optional[TracebackType],
     ) -> None:

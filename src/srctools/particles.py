@@ -1,5 +1,6 @@
 """Parse particle system files."""
-from typing import IO, Dict, Iterable, List, Union, overload
+from typing import IO, Union, overload
+from collections.abc import Iterable
 import copy
 
 import attrs
@@ -19,7 +20,7 @@ FORMAT_VERSION: int = 2
 
 class Operator:
     """A generic option in particles."""
-    def __init__(self, name: str, function: str, options: Dict[str, Attribute]) -> None:
+    def __init__(self, name: str, function: str, options: dict[str, Attribute]) -> None:
         self.function = function
         self.name = name
         self.options = options
@@ -38,14 +39,14 @@ class Child:
 class Particle:
     """A particle system."""
     name: str
-    options: Dict[str, Attribute] = attrs.Factory(dict)
-    renderers: List[Operator] = attrs.field(factory=list)
-    operators: List[Operator] = attrs.field(factory=list)
-    initializers: List[Operator] = attrs.field(factory=list)
-    emitters: List[Operator] = attrs.field(factory=list)
-    forces: List[Operator] = attrs.field(factory=list)
-    constraints: List[Operator] = attrs.field(factory=list)
-    children: List[Child] = attrs.field(factory=list)
+    options: dict[str, Attribute] = attrs.Factory(dict)
+    renderers: list[Operator] = attrs.field(factory=list)
+    operators: list[Operator] = attrs.field(factory=list)
+    initializers: list[Operator] = attrs.field(factory=list)
+    emitters: list[Operator] = attrs.field(factory=list)
+    forces: list[Operator] = attrs.field(factory=list)
+    constraints: list[Operator] = attrs.field(factory=list)
+    children: list[Child] = attrs.field(factory=list)
 
     @classmethod
     @overload
@@ -53,27 +54,27 @@ class Particle:
         cls,
         file: Element,
         version: int = FORMAT_VERSION,
-    ) -> Dict[str, 'Particle']: ...
+    ) -> dict[str, 'Particle']: ...
 
     @classmethod
     @overload
     def parse(
         cls,
         file: IO[bytes],
-    ) -> Dict[str, 'Particle']: ...
+    ) -> dict[str, 'Particle']: ...
 
     @classmethod
     def parse(
         cls,
         file: Union[IO[bytes], Element],
         version: int = FORMAT_VERSION,
-    ) -> Dict[str, 'Particle']:
+    ) -> dict[str, 'Particle']:
         """Parse a PCF file.
 
         The file can either be a binary file, or an already parsed DMX.
         If already parsed, the format version needs to be passed on.
         """
-        systems: Dict[str, Particle] = {}
+        systems: dict[str, Particle] = {}
         if isinstance(file, Element):
             root = file
         else:
@@ -89,7 +90,7 @@ class Particle:
         if part_list.type != ValueType.ELEMENT or not part_list.is_array:
             raise ValueError('"particleSystemDefinitions" must be an element array!')
 
-        def generic_attr(el: Element, name: str) -> List['Operator']:
+        def generic_attr(el: Element, name: str) -> list['Operator']:
             try:
                 value = el.pop(name)
             except KeyError:
@@ -144,7 +145,7 @@ class Particle:
         root = Element('', 'DmElement')
         root['particleSystemDefinitions'] = part_list = Attribute.array('', ValueType.ELEMENT)
 
-        name_to_elem: Dict[str, Element] = {}
+        name_to_elem: dict[str, Element] = {}
 
         for part in particles:
             part_elem = Element(part.name, 'DmeParticleSystemDefinition')
@@ -155,7 +156,7 @@ class Particle:
                 'renderers', 'operators', 'initializers',
                 'emitters', 'forces', 'constraints',
             ]:
-                op_list: List[Operator] = getattr(part, identifier)
+                op_list: list[Operator] = getattr(part, identifier)
                 part_elem[identifier] = op_attrlist = Attribute.array(identifier, ValueType.ELEMENT)
                 for operator in op_list:
                     op_elem = Element(operator.name, 'DmeParticleOperator')

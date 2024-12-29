@@ -1,5 +1,5 @@
 """Test the resource functions implemented for specific entities."""
-from typing import Dict, Iterable, List, Mapping, Union
+from typing import Iterable, Mapping, Union
 from operator import itemgetter
 
 import pytest
@@ -614,7 +614,7 @@ ammo_crate_models_mbase = {
     (ammo_crate_models_hl2, []),
     (ammo_crate_models_mbase, ['mapbase']),
 ], ids=['hl2', 'mapbase'])
-def test_item_ammo_crate(ammo: Dict[int, str], tags: List[str]) -> None:
+def test_item_ammo_crate(ammo: Mapping[int, str], tags: list[str]) -> None:
     """Test ammo crate models."""
     for i, ammo_mdl in ammo.items():
         check_entity(

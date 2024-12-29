@@ -3,8 +3,9 @@
 # Wherever possible, use memoryview slicing to copy channels all in one go. This is much faster
 # than a loop.
 
-from typing import TYPE_CHECKING, NewType, Callable, Dict, Iterable, List, Optional, Tuple
-from typing_extensions import TypeAlias, Buffer
+from typing import TYPE_CHECKING, NewType, Optional
+from typing_extensions import Buffer, TypeAlias
+from collections.abc import Callable, Iterable
 import array
 
 
@@ -19,11 +20,11 @@ RWView = NewType('RWView', ROView)
 Array: TypeAlias = 'array.array[int]'
 SaveFunc: TypeAlias = Callable[[Array, RWView, int, int], None]
 LoadFunc: TypeAlias = Callable[[Array, ROView, int, int], None]
-_SAVE: Dict[ImageFormats, SaveFunc] = {}
-_LOAD: Dict[ImageFormats, LoadFunc] = {}
+_SAVE: dict[ImageFormats, SaveFunc] = {}
+_LOAD: dict[ImageFormats, LoadFunc] = {}
 
 
-def ppm_convert(pixels: Array, width: int, height: int, bg: Optional[Tuple[int, int, int]]) -> bytes:
+def ppm_convert(pixels: Array, width: int, height: int, bg: Optional[tuple[int, int, int]]) -> bytes:
     """Convert a frame into a PPM-format bytestring, for passing to tkinter.
 
     If bg is set, this is the background we composite into. Otherwise, we just strip the alpha.
@@ -55,7 +56,7 @@ def ppm_convert(pixels: Array, width: int, height: int, bg: Optional[Tuple[int, 
     return bytes(buffer)
 
 
-def alpha_flatten(pixels: Array, buffer: bytearray, width: int, height: int, bg: Optional[Tuple[int, int, int]]) -> bytes:
+def alpha_flatten(pixels: Array, buffer: bytearray, width: int, height: int, bg: Optional[tuple[int, int, int]]) -> bytes:
     """Flatten the image down to RGB, by removing the alpha channel.
 
     If bg is set, this is the background we composite into. Otherwise we
@@ -89,7 +90,7 @@ def upsample(bits: int, data: int) -> int:
     return data | (data >> bits)
 
 
-def decomp565(a: int, b: int) -> Tuple[int, int, int]:
+def decomp565(a: int, b: int) -> tuple[int, int, int]:
     """Decompress 565-packed data into RGB triplets."""
     return (
         upsample(5, (a & 0b00011111) << 3),
@@ -98,7 +99,7 @@ def decomp565(a: int, b: int) -> Tuple[int, int, int]:
     )
 
 
-def compress565(r: int, g: int, b: int) -> Tuple[int, int]:
+def compress565(r: int, g: int, b: int) -> tuple[int, int]:
     """Compress an RGB triplet into 565-packed data."""
     # RRRRRGGG GGGBBBBB
     return (
@@ -219,7 +220,7 @@ def scale_down(
         raise ValueError(f"Unknown filter {filt}!")
 
 
-def saveload_rgba(mode: str) -> Tuple[LoadFunc, SaveFunc]:
+def saveload_rgba(mode: str) -> tuple[LoadFunc, SaveFunc]:
     """Make the RGB save and load functions."""
     r_off = mode.index('r')
     g_off = mode.index('g')
@@ -560,7 +561,7 @@ def load_dxt1_impl(
     data: ROView,
     width: int,
     height: int,
-    black_color: Tuple[int, int, int, int],
+    black_color: tuple[int, int, int, int],
 ) -> None:
     """Does the actual decompression."""
     if width < 4 or height < 4:
@@ -631,7 +632,7 @@ def load_dxt1_impl(
 def dxt_color_table(
     pixels: Array,
     data: ROView,
-    table: List[Tuple[int, int, int, int]],
+    table: list[tuple[int, int, int, int]],
     block_off: int,
     block_wid: int,
     block_x: int,
@@ -739,7 +740,7 @@ def load_dxt3(pixels: Array, data: ROView, width: int, height: int) -> None:
             c0r, c0g, c0b = decomp565(data[block_off + 8], data[block_off + 9])
             c1r, c1g, c1b = decomp565(data[block_off + 10], data[block_off + 11])
 
-            table: List[Tuple[int, int, int, int]] = [
+            table: list[tuple[int, int, int, int]] = [
                 (c0b, c0g, c0r, 255),
                 (c1b, c1g, c1r, 255),
                 (
@@ -796,7 +797,7 @@ def load_dxt5(pixels: Array, data: ROView, width: int, height: int) -> None:
             c0r, c0g, c0b = decomp565(data[block_off + 8], data[block_off + 9])
             c1r, c1g, c1b = decomp565(data[block_off + 10], data[block_off + 11])
 
-            table: List[Tuple[int, int, int, int]] = [
+            table: list[tuple[int, int, int, int]] = [
                 (c0b, c0g, c0r, 127),
                 (c1b, c1g, c1r, 127),
                 (

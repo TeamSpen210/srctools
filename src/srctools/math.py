@@ -19,12 +19,13 @@ but not vice-versa.
  - ``Matrix @ Matrix`` → ``Matrix``
 """
 from typing import (
-    TYPE_CHECKING, Any, Callable, ClassVar, Dict, Final, Iterable, Iterator, List,
-    NamedTuple, Optional, SupportsFloat, SupportsIndex, Tuple, Type, TypeVar, Union, cast,
+    TYPE_CHECKING, Any, ClassVar, Final, NamedTuple, Optional, SupportsFloat,
+    SupportsIndex, TypeVar, Union, cast,
 )
 from typing_extensions import (
     Literal, Protocol, Self, TypeAlias, TypeGuard, deprecated, final, overload,
 )
+from collections.abc import Callable, Iterable, Iterator
 import contextlib
 import math
 
@@ -37,7 +38,7 @@ __all__ = [
 ]
 
 # Type aliases
-Tuple3: TypeAlias = Tuple[float, float, float]
+Tuple3: TypeAlias = tuple[float, float, float]
 AnyVec: TypeAlias = Union['VecBase', 'Vec_tuple', Tuple3]
 VecUnion: TypeAlias = Union['Vec', 'FrozenVec']
 AnyAngle: TypeAlias = Union['Angle', 'FrozenAngle']
@@ -62,7 +63,7 @@ def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float)
 def parse_vec_str(
     val: Union[str, 'VecBase', 'AngleBase'],
     x: Union[T1, float] = 0.0, y: Union[T2, float] = 0.0, z: Union[T3, float] = 0.0,
-) -> Tuple[Union[T1, float], Union[T2, float], Union[T3, float]]:
+) -> tuple[Union[T1, float], Union[T2, float], Union[T3, float]]:
     """Convert a string in the form ``(4 6 -4)`` into a set of floats.
 
     If the string is unparsable or an invalid type, this uses the defaults ``x``, ``y``, ``z``.
@@ -164,33 +165,33 @@ if TYPE_CHECKING:
     class _InvAxis(Protocol):
         """Dummy class to type-check Vec.INV_AXIS"""
         @overload
-        def __getitem__(self, item: Literal['x']) -> Tuple[Literal['y'], Literal['z']]: ...
+        def __getitem__(self, item: Literal['x']) -> tuple[Literal['y'], Literal['z']]: ...
         @overload
-        def __getitem__(self, item: Literal['y']) -> Tuple[Literal['x'], Literal['z']]: ...
+        def __getitem__(self, item: Literal['y']) -> tuple[Literal['x'], Literal['z']]: ...
         @overload
-        def __getitem__(self, item: Literal['z']) -> Tuple[Literal['x'], Literal['y']]: ...
+        def __getitem__(self, item: Literal['z']) -> tuple[Literal['x'], Literal['y']]: ...
 
         @overload
-        def __getitem__(self, item: Tuple[Literal['y'], Literal['z']]) -> Literal['x']: ...
+        def __getitem__(self, item: tuple[Literal['y'], Literal['z']]) -> Literal['x']: ...
         @overload
-        def __getitem__(self, item: Tuple[Literal['z'], Literal['y']]) -> Literal['x']: ...
+        def __getitem__(self, item: tuple[Literal['z'], Literal['y']]) -> Literal['x']: ...
 
         @overload
-        def __getitem__(self, item: Tuple[Literal['x'], Literal['z']]) -> Literal['y']: ...
+        def __getitem__(self, item: tuple[Literal['x'], Literal['z']]) -> Literal['y']: ...
         @overload
-        def __getitem__(self, item: Tuple[Literal['z'], Literal['x']]) -> Literal['y']: ...
+        def __getitem__(self, item: tuple[Literal['z'], Literal['x']]) -> Literal['y']: ...
 
         @overload
-        def __getitem__(self, item: Tuple[Literal['x'], Literal['y']]) -> Literal['z']: ...
+        def __getitem__(self, item: tuple[Literal['x'], Literal['y']]) -> Literal['z']: ...
         @overload
-        def __getitem__(self, item: Tuple[Literal['y'], Literal['x']]) -> Literal['z']: ...
+        def __getitem__(self, item: tuple[Literal['y'], Literal['x']]) -> Literal['z']: ...
 
         @overload
-        def __getitem__(self, item: str) -> Tuple[str, str]: ...
+        def __getitem__(self, item: str) -> tuple[str, str]: ...
         @overload
-        def __getitem__(self, item: Tuple[str, str]) -> str: ...
+        def __getitem__(self, item: tuple[str, str]) -> str: ...
 
-        def __getitem__(self, item: Union[Tuple[str, str], str]) -> Union[Tuple[str, str], str]: ...
+        def __getitem__(self, item: Union[tuple[str, str], str]) -> Union[tuple[str, str], str]: ...
 else:
     globals()['_InvAxis'] = None
 
@@ -450,13 +451,13 @@ class VecBase:
 
     @classmethod
     @overload
-    def bbox(cls, __point: Iterable['VecBase']) -> Tuple[Self, Self]: ...
+    def bbox(cls, __point: Iterable['VecBase']) -> tuple[Self, Self]: ...
     @classmethod
     @overload
-    def bbox(cls, *points: 'VecBase') -> Tuple[Self, Self]: ...
+    def bbox(cls, *points: 'VecBase') -> tuple[Self, Self]: ...
 
     @classmethod
-    def bbox(cls, *points: Union[Iterable['VecBase'], 'VecBase']) -> Tuple[Self, Self]:
+    def bbox(cls, *points: Union[Iterable['VecBase'], 'VecBase']) -> tuple[Self, Self]:
         """Compute the bounding box for a set of points.
 
         Pass either several Vecs, or an iterable of Vecs.
@@ -632,7 +633,7 @@ class VecBase:
     del _funcname, _op, _pretty
 
     # Divmod is entirely unique.
-    def __divmod__(self, other: float) -> Tuple[Self, Self]:
+    def __divmod__(self, other: float) -> tuple[Self, Self]:
         """Divide the vector by a scalar, returning the result and remainder."""
         if isinstance(other, VecBase):
             raise TypeError("Cannot divide 2 Vectors.")
@@ -640,12 +641,12 @@ class VecBase:
             x1, x2 = divmod(self.x, other)
             y1, y2 = divmod(self.y, other)
             z1, z2 = divmod(self.z, other)
-        except TypeError:
+        except (TypeError, ValueError):
             return NotImplemented
         else:
             return type(self)(x1, y1, z1), type(self)(x2, y2, z2)
 
-    def __rdivmod__(self, other: float) -> Tuple[Self, Self]:
+    def __rdivmod__(self, other: float) -> tuple[Self, Self]:
         """Divide a scalar by a vector, returning the result and remainder."""
         if isinstance(other, VecBase):
             raise TypeError("Cannot divide 2 Vectors.")
@@ -654,7 +655,7 @@ class VecBase:
             y1, y2 = divmod(other, self.y)
             z1, z2 = divmod(other, self.z)
         except (TypeError, ValueError):
-            return NotImplemented
+            return NotImplemented  # type: ignore[no-any-return]
         else:
             return type(self)(x1, y1, z1), type(self)(x2, y2, z2)
 
@@ -983,7 +984,7 @@ class VecBase:
             return False
         return True
 
-    def other_axes(self, axis: str) -> Tuple[float, float]:
+    def other_axes(self, axis: str) -> tuple[float, float]:
         """Get the values for the other two axes."""
         if axis == 'x':
             return self._y, self._z
@@ -1184,7 +1185,7 @@ class FrozenVec(VecBase):
         """FrozenVec is immutable."""
         return self
 
-    def __deepcopy__(self, memodict: Optional[Dict[str, Any]] = None) -> 'FrozenVec':
+    def __deepcopy__(self, memodict: Optional[dict[str, Any]] = None) -> 'FrozenVec':
         """FrozenVec is immutable."""
         return self
 
@@ -1192,7 +1193,7 @@ class FrozenVec(VecBase):
         """Code required to reproduce this vector."""
         return f"FrozenVec({format_float(self._x)}, {format_float(self._y)}, {format_float(self._z)})"
 
-    def __reduce__(self) -> Tuple[Callable[[float, float, float], 'FrozenVec'], Tuple3]:
+    def __reduce__(self) -> tuple[Callable[[float, float, float], 'FrozenVec'], Tuple3]:
         """Pickling support.
 
         This redirects to a global function, so C/Python versions
@@ -1440,7 +1441,7 @@ class Vec(VecBase):
         mat._vec_rot(self)
         return self
 
-    def __reduce__(self) -> Tuple[Callable[[float, float, float], 'Vec'], Tuple3]:
+    def __reduce__(self) -> tuple[Callable[[float, float, float], 'Vec'], Tuple3]:
         """Pickling support.
 
         This redirects to a global function, so C/Python versions
@@ -1587,7 +1588,7 @@ class Vec(VecBase):
 
 
 # Maps (1, 1) -> ._bb attributes, for getting/setting by XY coordinate.
-_IND_TO_SLOT: Dict[Tuple[int, int], Literal[
+_IND_TO_SLOT: dict[tuple[int, int], Literal[
     '_aa', '_ab', '_ac',
     '_ba', '_bb', '_bc',
     '_ca', '_cb', '_cc',
@@ -1816,7 +1817,7 @@ class MatrixBase:
         """Return a vector with the given magnitude pointing along the Z axis."""
         return Py_Vec(mag * self._ca, mag * self._cb, mag * self._cc)
 
-    def __getitem__(self, item: Tuple[int, int]) -> float:
+    def __getitem__(self, item: tuple[int, int]) -> float:
         """Retrieve an individual matrix value by x, y position (0-2)."""
         return cast(float, getattr(self, _IND_TO_SLOT[item]))
 
@@ -1874,20 +1875,20 @@ class MatrixBase:
 
         # We're already in row major
         # Augment in an identity matrix
-        omat_l: List[Vec] = [
+        omat_l: list[Vec] = [
             Vec(self._aa, self._ab, self._ac),
             Vec(self._ba, self._bb, self._bc),
             Vec(self._ca, self._cb, self._cc),
         ]
-        omat_r: List[Vec] = [
+        omat_r: list[Vec] = [
             Vec(1, 0, 0),
             Vec(0, 1, 0),
             Vec(0, 0, 1),
         ]
 
         # Keep the matrix as references, so we can swap rows without damaging our matrix
-        mat_l: List[Vec] = [omat_l[0], omat_l[1], omat_l[2]]
-        mat_r: List[Vec] = [omat_r[0], omat_r[1], omat_r[2]]
+        mat_l: list[Vec] = [omat_l[0], omat_l[1], omat_l[2]]
+        mat_r: list[Vec] = [omat_r[0], omat_r[1], omat_r[2]]
 
         # Get it into row echelon form
         for n in [0, 1]:
@@ -2143,13 +2144,13 @@ class FrozenMatrix(MatrixBase):
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: Optional[Dict[str, Any]] = None) -> 'FrozenMatrix':
+    def __deepcopy__(self, memodict: Optional[dict[str, Any]] = None) -> 'FrozenMatrix':
         """Frozen matrices are immutable."""
         return self
 
-    def __reduce__(self) -> Tuple[
+    def __reduce__(self) -> tuple[
         Callable[[float, float, float, float, float, float, float, float, float], 'FrozenMatrix'],
-        Tuple[float, float, float, float, float, float, float, float, float]
+        tuple[float, float, float, float, float, float, float, float, float]
     ]:
         """Pickling support.
 
@@ -2209,7 +2210,7 @@ class Matrix(MatrixBase):
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: Optional[Dict[str, Any]] = None) -> 'Matrix':
+    def __deepcopy__(self, memodict: Optional[dict[str, Any]] = None) -> 'Matrix':
         """Duplicate this matrix."""
         rot = Py_Matrix.__new__(Py_Matrix)
 
@@ -2219,9 +2220,9 @@ class Matrix(MatrixBase):
 
         return rot
 
-    def __reduce__(self) -> Tuple[
+    def __reduce__(self) -> tuple[
         Callable[[float, float, float, float, float, float, float, float, float], 'Matrix'],
-        Tuple[float, float, float, float, float, float, float, float, float]
+        tuple[float, float, float, float, float, float, float, float, float]
     ]:
         """Pickling support.
 
@@ -2234,7 +2235,7 @@ class Matrix(MatrixBase):
             self._ca, self._cb, self._cc
         ))
 
-    def __setitem__(self, item: Tuple[int, int], value: Numeric) -> None:
+    def __setitem__(self, item: tuple[int, int], value: Numeric) -> None:
         """Set an individual matrix value by x, y position (0-2)."""
         setattr(self, _IND_TO_SLOT[item], _coerce_float(value))
 
@@ -2393,7 +2394,7 @@ class AngleBase:
             roll = roll.rstrip('0')
         return f'{pitch.rstrip(".")} {yaw.rstrip(".")} {roll.rstrip(".")}'
 
-    def as_tuple(self) -> Tuple[float, float, float]:
+    def as_tuple(self) -> tuple[float, float, float]:
         """Return the Angle as a tuple."""
         return Vec_tuple(self._pitch, self._yaw, self._roll)
 
@@ -2503,7 +2504,7 @@ class AngleBase:
             )
         return NotImplemented
 
-    def _rotate_angle(self, target: 'AngleBase', cls: Type[AngleT]) -> AngleT:
+    def _rotate_angle(self, target: 'AngleBase', cls: type[AngleT]) -> AngleT:
         """Rotate the target by this angle.
 
         Inefficient if we have more than one rotation to do.
@@ -2643,7 +2644,7 @@ class FrozenAngle(AngleBase):
                     res[axis3] = _coerce_float(val3)
         return Py_FrozenAngle(**res)
 
-    def __reduce__(self) -> Tuple[Callable[[float, float, float], 'FrozenAngle'], Tuple3]:
+    def __reduce__(self) -> tuple[Callable[[float, float, float], 'FrozenAngle'], Tuple3]:
         """Pickling support.
 
         This redirects to a global function, so C/Python versions
@@ -2671,7 +2672,7 @@ class FrozenAngle(AngleBase):
         """FrozenAngle is immutable."""
         return self
 
-    def __deepcopy__(self, memodict: Optional[Dict[str, Any]] = None) -> 'FrozenAngle':
+    def __deepcopy__(self, memodict: Optional[dict[str, Any]] = None) -> 'FrozenAngle':
         """FrozenAngle is immutable."""
         return self
 
@@ -2742,7 +2743,7 @@ class Angle(AngleBase):
 
     __copy__ = copy
 
-    def __reduce__(self) -> Tuple[Callable[[float, float, float], 'Angle'], Tuple3]:
+    def __reduce__(self) -> tuple[Callable[[float, float, float], 'Angle'], Tuple3]:
         """Pickling support.
 
         This redirects to a global function, so C/Python versions
@@ -2900,7 +2901,7 @@ class Angle(AngleBase):
         self._roll = new_ang._roll
 
 
-def quickhull(vertexes: Iterable[Vec]) -> List[Tuple[Vec, Vec, Vec]]:
+def quickhull(vertexes: Iterable[Vec]) -> list[tuple[Vec, Vec, Vec]]:
     """Use the quickhull algorithm to construct a convex hull around the provided points.
 
     This is only available when the C extension is compiled.
@@ -2998,24 +2999,24 @@ _mk = _mk_vec
 # and choose an appropriate unprefixed version. Static analysis then
 # also assumes all three are the Python version.
 
-Cy_Vec: TypeAlias = Vec
-Py_Vec: TypeAlias = Vec
-Cy_FrozenVec: TypeAlias = FrozenVec
-Py_FrozenVec: TypeAlias = FrozenVec
-Cy_VecBase: TypeAlias = VecBase
-Py_VecBase: TypeAlias = VecBase
-Cy_Angle: TypeAlias = Angle
-Py_Angle: TypeAlias = Angle
-Cy_FrozenAngle: TypeAlias = FrozenAngle
-Py_FrozenAngle: TypeAlias = FrozenAngle
-Cy_AngleBase: TypeAlias = AngleBase
-Py_AngleBase: TypeAlias = AngleBase
-Cy_Matrix: TypeAlias = Matrix
-Py_Matrix: TypeAlias = Matrix
-Cy_FrozenMatrix: TypeAlias = FrozenMatrix
-Py_FrozenMatrix: TypeAlias = FrozenMatrix
-Cy_MatrixBase: TypeAlias = MatrixBase
-Py_MatrixBase: TypeAlias = MatrixBase
+Cy_Vec = Vec
+Py_Vec = Vec
+Cy_FrozenVec = FrozenVec
+Py_FrozenVec = FrozenVec
+Cy_VecBase = VecBase
+Py_VecBase = VecBase
+Cy_Angle = Angle
+Py_Angle = Angle
+Cy_FrozenAngle = FrozenAngle
+Py_FrozenAngle = FrozenAngle
+Cy_AngleBase = AngleBase
+Py_AngleBase = AngleBase
+Cy_Matrix = Matrix
+Py_Matrix = Matrix
+Cy_FrozenMatrix = FrozenMatrix
+Py_FrozenMatrix = FrozenMatrix
+Cy_MatrixBase = MatrixBase
+Py_MatrixBase = MatrixBase
 Cy_parse_vec_str = parse_vec_str
 Py_parse_vec_str = parse_vec_str
 Cy_to_matrix = to_matrix

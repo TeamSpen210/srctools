@@ -1,5 +1,5 @@
 """Reads and writes Soundscripts."""
-from typing import IO, Callable, Dict, List, Optional, TextIO, Tuple, TypeVar, Union
+from typing import IO, Callable, Optional, TextIO, TypeVar, Union
 from enum import Enum
 import struct
 
@@ -43,7 +43,7 @@ class VOLUME(Enum):
 VOL_NORM = VOLUME.VOL_NORM
 
 # Old compatibility values, replaced by soundlevel.
-ATTENUATION: Dict[str, float] = {
+ATTENUATION: dict[str, float] = {
     'ATTN_NONE': 0.0,
     'ATTN_NORM': 0.8,
     'ATTN_IDLE': 2.0,
@@ -118,7 +118,7 @@ def split_float(
     key: str,
     enum: Callable[[str], Union[float, EnumType]],
     default: Union[float, EnumType],
-) -> Tuple[Union[float, EnumType], Union[float, EnumType]]:
+) -> tuple[Union[float, EnumType], Union[float, EnumType]]:
     """Handle values which can be a low, high pair of numbers or enum constants.
 
     A single number can be provided, producing the same value for low and high.
@@ -155,7 +155,7 @@ def split_float(
         return out, out
 
 
-def join_float(val: Tuple[Union[float, Enum], Union[float, Enum]]) -> str:
+def join_float(val: tuple[Union[float, Enum], Union[float, Enum]]) -> str:
     """Reverse split_float(). The two parameters should be stringifiable into floats/constants."""
     low, high = val
     if low == high:
@@ -247,11 +247,11 @@ def wav_is_looped(file: IO[bytes]) -> bool:
 class Sound:
     """Represents a single soundscript."""
     name: str
-    sounds: List[str] = attrs.Factory(list)
-    volume: Tuple[Union[float, VOLUME], Union[float, VOLUME]] = (VOL_NORM, VOL_NORM)
+    sounds: list[str] = attrs.Factory(list)
+    volume: tuple[Union[float, VOLUME], Union[float, VOLUME]] = (VOL_NORM, VOL_NORM)
     channel: Union[int, Channel] = Channel.DEFAULT
-    level: Tuple[Union[float, Level], Union[float, Level]] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
-    pitch: Tuple[Union[float, Pitch], Union[float, Pitch]] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM)
+    level: tuple[Union[float, Level], Union[float, Level]] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
+    pitch: tuple[Union[float, Pitch], Union[float, Pitch]] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM)
 
     _stack_start: Optional[Keyvalues] = None
     _stack_update: Optional[Keyvalues] = None
@@ -261,18 +261,18 @@ class Sound:
     def __init__(
         self,
         name: str,
-        sounds: List[str],
+        sounds: list[str],
         volume: Union[
-            Tuple[Union[float, VOLUME], Union[float, VOLUME]],
+            tuple[Union[float, VOLUME], Union[float, VOLUME]],
             float, VOLUME,
         ] = (VOL_NORM, VOL_NORM),
         channel: Union[int, Channel] = Channel.DEFAULT,
         level: Union[
-            Tuple[Union[float, Level], Union[float, Level]],
+            tuple[Union[float, Level], Union[float, Level]],
             float, Level,
         ] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM),
         pitch: Union[
-            Tuple[Union[float, Pitch], Union[float, Pitch]],
+            tuple[Union[float, Pitch], Union[float, Pitch]],
             float, Pitch,
         ] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM),
 
@@ -359,7 +359,7 @@ class Sound:
         return res
 
     @classmethod
-    def parse(cls, file: Keyvalues) -> Dict[str, 'Sound']:
+    def parse(cls, file: Keyvalues) -> dict[str, 'Sound']:
         """Parses a soundscript file.
 
         This returns a dict mapping casefolded names to Sounds.
@@ -399,7 +399,7 @@ class Sound:
                 level = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
 
             # Either 1 "wave", or multiple in "rndwave".
-            wavs: List[str] = []
+            wavs: list[str] = []
             for prop in snd_prop:
                 if prop.name == 'wave':
                     wavs.append(prop.value)

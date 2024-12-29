@@ -1,9 +1,8 @@
 """Parses SMD model/animation data."""
-from typing import (
-    Any, ClassVar, Dict, Iterable, Iterator, List, Optional, Sequence, Set, Tuple, Union,
-)
+from typing import Any, ClassVar, Optional, Union
 from typing_extensions import Protocol
 from collections import defaultdict
+from collections.abc import Iterable, Iterator, Sequence
 from copy import deepcopy
 from operator import itemgetter
 import math
@@ -46,7 +45,7 @@ class Bone:
     def __copy__(self) -> 'Bone':
         return Bone(self.name, self.parent)
 
-    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'Bone':
+    def __deepcopy__(self, memodict: Optional[dict[int, Any]] = None) -> 'Bone':
         return Bone(self.name, deepcopy(self.parent, memodict))
 
     def __eq__(self, other: object) -> bool:
@@ -85,7 +84,7 @@ class BoneFrame:
     def __copy__(self) -> 'BoneFrame':
         return BoneFrame(self.bone, self.position, self.rotation)
 
-    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'BoneFrame':
+    def __deepcopy__(self, memodict: Optional[dict[int, Any]] = None) -> 'BoneFrame':
         return BoneFrame(
             deepcopy(self.bone, memodict),
             self.position.copy(),
@@ -100,7 +99,7 @@ class Vertex:
     norm: Vec
     tex_u: float
     tex_v: float
-    links: List[Tuple[Bone, float]]
+    links: list[tuple[Bone, float]]
 
     def __init__(
         self,
@@ -108,7 +107,7 @@ class Vertex:
         norm: Vec,
         tex_u: float,
         tex_v: float,
-        links: List[Tuple[Bone, float]],
+        links: list[tuple[Bone, float]],
     ) -> None:
         self.pos = pos
         self.norm = norm
@@ -135,7 +134,7 @@ class Vertex:
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'Vertex':
+    def __deepcopy__(self, memodict: Optional[dict[int, Any]] = None) -> 'Vertex':
         return Vertex(
             self.pos.copy(),
             self.norm.copy(),
@@ -212,7 +211,7 @@ class Triangle:
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'Triangle':
+    def __deepcopy__(self, memodict: Optional[dict[int, Any]] = None) -> 'Triangle':
         """Duplicate this triangle."""
         return Triangle(
             self.mat,
@@ -247,7 +246,7 @@ class ParseError(Exception):
         super().__init__(f'{line_num}: {msg.format(*args)}')
 
 
-def _clean_file(file: Iterable[bytes]) -> Iterator[Tuple[int, bytes]]:
+def _clean_file(file: Iterable[bytes]) -> Iterator[tuple[int, bytes]]:
     line_num = 0
     for line in file:
         line_num += 1
@@ -270,11 +269,14 @@ class Mesh:
     * Animation frames
     * Optionally triangle data.
     """
+    bones: dict[str, Bone]
+    animation: dict[int, list[BoneFrame]]
+    triangles: list[Triangle]
     def __init__(
         self,
-        bones: Dict[str, Bone],
-        animation: Dict[int, List[BoneFrame]],
-        triangles: List[Triangle]
+        bones: dict[str, Bone],
+        animation: dict[int, list[BoneFrame]],
+        triangles: list[Triangle]
     ) -> None:
         self.bones = bones
         self.animation = animation
@@ -283,7 +285,7 @@ class Mesh:
     def __copy__(self) -> 'Mesh':
         return Mesh(self.bones, self.animation, self.triangles)
 
-    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'Mesh':
+    def __deepcopy__(self, memodict: Optional[dict[int, Any]] = None) -> 'Mesh':
         return Mesh(
             deepcopy(self.bones, memodict),
             deepcopy(self.animation, memodict),
@@ -319,9 +321,9 @@ class Mesh:
         """
         file_iter = _clean_file(file)
 
-        bones: Optional[Dict[int, Bone]] = None
-        anim: Optional[Dict[int, List[BoneFrame]]] = None
-        tri: List[Triangle] = []
+        bones: Optional[dict[int, Bone]] = None
+        anim: Optional[dict[int, list[BoneFrame]]] = None
+        tri: list[Triangle] = []
 
         line_num = 1
 
@@ -374,9 +376,9 @@ class Mesh:
         }, anim, tri)
 
     @staticmethod
-    def _parse_smd_bones(file_iter: Iterator[Tuple[int, bytes]]) -> Dict[int, Bone]:
+    def _parse_smd_bones(file_iter: Iterator[tuple[int, bytes]]) -> dict[int, Bone]:
         """Parse the 'nodes' section of SMDs."""
-        bones: Dict[int, Bone] = {}
+        bones: dict[int, Bone] = {}
         for line_num, line in file_iter:
             if line == b'end':
                 return bones
@@ -410,11 +412,11 @@ class Mesh:
 
     @staticmethod
     def _parse_smd_anim(
-        file_iter: Iterator[Tuple[int, bytes]],
-        bones: Dict[int, Bone],
-    ) -> Dict[int, List[BoneFrame]]:
+        file_iter: Iterator[tuple[int, bytes]],
+        bones: dict[int, Bone],
+    ) -> dict[int, list[BoneFrame]]:
         """Parse the 'skeleton' section of SMDs."""
-        frames: Dict[int, List[BoneFrame]] = {}
+        frames: dict[int, list[BoneFrame]] = {}
         time: Optional[int] = None
         for line_num, line in file_iter:
             if line.startswith((b'//', b'#', b';')):
@@ -447,9 +449,9 @@ class Mesh:
         raise ParseError('end', 'No end to skeleton section!')
 
     @staticmethod
-    def _parse_smd_tri(file_iter: Iterator[Tuple[int, bytes]], bones: Dict[int, Bone]) -> List[Triangle]:
+    def _parse_smd_tri(file_iter: Iterator[tuple[int, bytes]], bones: dict[int, Bone]) -> list[Triangle]:
         """Parse the 'triangles' section of SMDs."""
-        tris: List[Triangle] = []
+        tris: list[Triangle] = []
         # Temporary vertex, which we overwrite in the loop.
         points = [Vertex(Vec(), Vec(), 0.0, 0.0, [])] * 3
         for line_num, line in file_iter:
@@ -532,9 +534,9 @@ class Mesh:
         file.write(b"version 1\nnodes\n")
 
         # Deconstruct the tree into indexes, with parents before children.
-        bone_indexes: Dict[Bone, int] = {}
+        bone_indexes: dict[Bone, int] = {}
         next_ind = 0
-        todo: Set[Bone] = set(self.bones.values())
+        todo: set[Bone] = set(self.bones.values())
         while todo:
             changed = False
             for bone in list(todo):
@@ -649,7 +651,7 @@ class Mesh:
     # The triangles required for a prism.
     # Each sublist is a triangle.
     # The tuples are (x, y, z, u, v).
-    _BBOX_MESH_DATA: ClassVar[Sequence[Sequence[Tuple[int, int, int, float, float]]]] = [
+    _BBOX_MESH_DATA: ClassVar[Sequence[Sequence[tuple[int, int, int, float, float]]]] = [
         [
             (-1, -1, -1, 0.0, 0.0),
             (-1, +1, +1, 1.0, 1.0),
@@ -746,7 +748,7 @@ class Mesh:
         same unique normal.
         """
         # pos -> list of vertexes close to here.
-        weld_table: Dict[Tuple[float, float, float], List[Vertex]] = {}
+        weld_table: dict[tuple[float, float, float], list[Vertex]] = {}
         for tri in self.triangles:
             vert: Vertex
             for i, vert in enumerate(tri):
@@ -763,19 +765,19 @@ class Mesh:
                 else:
                     existing.append(vert)
 
-    def split_collision(self) -> List['Mesh']:
+    def split_collision(self) -> list['Mesh']:
         """Partition a concave collision mesh into each convex volume.
 
         This will first 'weld' the vertexes, so each convex volume will share
         vertex objects.
         """
         self.weld_vertexes()
-        vert_to_tris: Dict[Vertex, List[Triangle]] = defaultdict(list)
+        vert_to_tris: dict[Vertex, list[Triangle]] = defaultdict(list)
         for tri in self.triangles:
             for vert in tri:
                 vert_to_tris[vert].append(tri)
 
-        groups: List[Set[Triangle]] = []
+        groups: list[set[Triangle]] = []
         todo = set(self.triangles)
         # To group, we have to recursively go through the verts.
         # We use the id() of vertexes to match, since they're the same now.
@@ -783,7 +785,7 @@ class Mesh:
             start = todo.pop()
             unchecked = {start}
             group = {start}
-            verts: Set[Vertex] = set()
+            verts: set[Vertex] = set()
             groups.append(group)
             while unchecked:
                 tri = unchecked.pop()
@@ -813,11 +815,11 @@ class Mesh:
 
     def smooth_normals(self) -> None:
         """Replace all normals with ones smoothing adjacient faces."""
-        vert_to_tris: Dict[
-            Tuple[float, float, float],
-            Tuple[List[Triangle], List[Vertex]]
+        vert_to_tris: dict[
+            tuple[float, float, float],
+            tuple[list[Triangle], list[Vertex]]
         ] = defaultdict(lambda: ([], []))
-        tri_to_normal: Dict[Triangle, Vec] = {}
+        tri_to_normal: dict[Triangle, Vec] = {}
         for tri in self.triangles:
             for vert in tri:
                 tris, verts = vert_to_tris[vert.pos.as_tuple()]

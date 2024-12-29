@@ -3,7 +3,7 @@
 Run with a list of paths pointing to the materialsystem/ folders in the SDK.
 This produces _shaderdb.py
 """
-from typing import Dict, FrozenSet, List, Optional, Set, Union
+from typing import Optional, Union
 from collections import defaultdict
 import ast
 import collections
@@ -23,14 +23,14 @@ class Var:
     default: object
     help: object
     flags: str
-    filename: Union[str, FrozenSet[str]]
+    filename: Union[str, frozenset[str]]
 
 
-VARS: Dict[str, Var] = {}
-CONFLICTS: Dict[str, Set[Var]] = collections.defaultdict(set)
+VARS: dict[str, Var] = {}
+CONFLICTS: dict[str, set[Var]] = collections.defaultdict(set)
 
 # Overrides for some vars that have mismatches.
-OVERRIDES: Dict[str, VarType] = {
+OVERRIDES: dict[str, VarType] = {
     'bluramount': VarType.FLOAT,  # Conflict, also int.
     'bloomamount': VarType.VEC4,  # Conflicted, also float.
     # On unlitgeneric is a >dx9 bool, on lightmappedgeneric it's 80, 81, 90, etc.
@@ -203,7 +203,7 @@ def dump(folder: str) -> None:
                     CONFLICTS[var_name] |= {var, other_var}
 
 
-def main(args: Optional[List[str]] = None) -> None:
+def main(args: Optional[list[str]] = None) -> None:
     """Run this script."""
     if args is None:
         args = sys.argv[1:]

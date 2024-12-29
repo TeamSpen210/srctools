@@ -3,11 +3,9 @@ The binformat module :mod:`binformat` contains functionality for handling binary
 esentially expanding on :external:mod:`struct`'s functionality.
 
 """
-from typing import (
-    IO, Any, Callable, Collection, Dict, Final, Hashable, List, Mapping, Optional, Tuple,
-    TypeVar, Union,
-)
+from typing import IO, Any, Callable, Final, Optional, TypeVar, Union
 from binascii import crc32
+from collections.abc import Collection, Hashable, Mapping
 from struct import Struct
 import functools
 import itertools
@@ -61,7 +59,7 @@ T = TypeVar("T")
 _cached_struct = functools.lru_cache()(Struct)
 
 
-def struct_read(fmt: Union[Struct, str], file: IO[bytes]) -> Tuple[Any, ...]:
+def struct_read(fmt: Union[Struct, str], file: IO[bytes]) -> tuple[Any, ...]:
     """Read a structure from the file, automatically computing the required number of bytes."""
     if not isinstance(fmt, Struct):
         fmt = _cached_struct(fmt)
@@ -79,7 +77,7 @@ def read_nullstr(file: IO[bytes], pos: Optional[int] = None, encoding: str = 'as
             return ''
         file.seek(pos)
 
-    text: List[bytes] = []
+    text: list[bytes] = []
     while True:
         char = file.read(1)
         if char == b'\0':
@@ -89,7 +87,7 @@ def read_nullstr(file: IO[bytes], pos: Optional[int] = None, encoding: str = 'as
         text.append(char)
 
 
-def read_nullstr_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> List[str]:
+def read_nullstr_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> list[str]:
     """Read the specified number of consecutive null-terminated strings from a file.
 
     If the count is zero, no reading will be performed at all.
@@ -103,7 +101,7 @@ def read_nullstr_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> 
     return arr
 
 
-def read_offset_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> List[str]:
+def read_offset_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> list[str]:
     """Read an array of offsets to null-terminated strings from the file.
 
     This first reads the specified number of signed integers, then seeks to those locations and
@@ -119,7 +117,7 @@ def read_offset_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> L
     return arr
 
 
-def read_array(fmt: Union[str, Struct], data: bytes) -> List[int]:
+def read_array(fmt: Union[str, Struct], data: bytes) -> list[int]:
     """Read a buffer containing a stream of integers.
 
     The format string should be one of the integer format characters, optionally prefixed by an
@@ -181,7 +179,7 @@ EMPTY_CHECKSUM: Final[int] = checksum(b'')
 """CRC32 checksum of an empty bytes buffer."""
 
 
-def find_or_insert(item_list: List[T], key_func: Callable[[T], Hashable] = id) -> Callable[[T], int]:
+def find_or_insert(item_list: list[T], key_func: Callable[[T], Hashable] = id) -> Callable[[T], int]:
     """Create a function for inserting items in a list if not found.
 
     This is used to build up a block of data, accessed by index.
@@ -190,7 +188,7 @@ def find_or_insert(item_list: List[T], key_func: Callable[[T], Hashable] = id) -
     The key function is used to match existing items.
 
     """
-    by_index: Dict[Hashable, int] = {key_func(item): i for i, item in enumerate(item_list)}
+    by_index: dict[Hashable, int] = {key_func(item): i for i, item in enumerate(item_list)}
 
     def finder(item: T) -> int:
         """Find or append the item."""
@@ -204,18 +202,18 @@ def find_or_insert(item_list: List[T], key_func: Callable[[T], Hashable] = id) -
     return finder
 
 
-def find_or_extend(item_list: List[T], key_func: Callable[[T], Hashable] = id) -> Callable[[List[T]], int]:
+def find_or_extend(item_list: list[T], key_func: Callable[[T], Hashable] = id) -> Callable[[list[T]], int]:
     """Create a function for positioning a sublist inside the larger list, adding it if required.
 
     This is used to build up a block of data, where subsections of it are accessed.
     """
     # We expect repeated items to be fairly uncommon, so we can skip to all
     # occurrences of the first index to speed up the search.
-    by_index: Dict[Hashable, List[int]] = {}
+    by_index: dict[Hashable, list[int]] = {}
     for k, item in enumerate(item_list):
         by_index.setdefault(key_func(item), []).append(k)
 
-    def finder(items: List[T]) -> int:
+    def finder(items: list[T]) -> int:
         """Find or append the items."""
         if not items:
             # Array is empty, so the index doesn't matter, it'll never be
@@ -263,9 +261,9 @@ class DeferredWrites:
     def __init__(self, file: IO[bytes]) -> None:
         self.file = file
         # Position to write to, and the struct format to use.
-        self.loc: Dict[Hashable, Tuple[int, Struct]] = {}
+        self.loc: dict[Hashable, tuple[int, Struct]] = {}
         # Then the bytes to write there.
-        self.data: Dict[Hashable, bytes] = {}
+        self.data: dict[Hashable, bytes] = {}
 
     def defer(self, key: Hashable, fmt: Union[str, Struct], write: bool = False) -> None:
         """Mark that data of the specified format is going to be written here.

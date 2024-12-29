@@ -1,6 +1,6 @@
 """Parse Steam configuration files to locate apps by their ID."""
-from typing import Collection, Dict, List, Mapping, Optional
-
+from typing import Optional
+from collections.abc import Collection, Mapping
 from pathlib import Path
 import sys
 
@@ -41,9 +41,9 @@ class AppInfo:
         )
 
 # Locations of Steam folders.
-_library_folders: Optional[List[Path]] = None
+_library_folders: Optional[list[Path]] = None
 # Already parsed games.
-_parsed_games: Dict[int, AppInfo] = {}
+_parsed_games: dict[int, AppInfo] = {}
 _parsed_all: bool = False
 
 
@@ -62,7 +62,7 @@ def get_steam_install_path() -> Path:
     """
     if sys.platform == "win32":
         # The registry is very reliable.
-        from winreg import OpenKeyEx, QueryValueEx, HKEY_LOCAL_MACHINE
+        from winreg import HKEY_LOCAL_MACHINE, OpenKeyEx, QueryValueEx
         try:
             with OpenKeyEx(HKEY_LOCAL_MACHINE, REG_STEAM) as key:
                 return Path(QueryValueEx(key, "InstallPath")[0])

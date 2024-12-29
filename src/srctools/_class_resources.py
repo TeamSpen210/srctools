@@ -1,6 +1,7 @@
 """This module defines functions which list resources for various entities with special functionality."""
-from typing import Callable, Dict, Final, Iterator, Mapping, Sequence, TypeVar, Union
+from typing import Callable, Final, TypeVar, Union
 from typing_extensions import TypeAlias
+from collections.abc import Iterator, Mapping, Sequence
 from enum import IntEnum
 import itertools
 
@@ -14,7 +15,7 @@ from .vmf import VMF, Entity
 ResGen: TypeAlias = Iterator[Union[Resource, Entity]]
 ClassFunc: TypeAlias = Callable[[ResourceCtx, Entity], ResGen]
 ClassFuncT = TypeVar('ClassFuncT', bound=ClassFunc)
-CLASS_FUNCS: Dict[str, ClassFunc] = {}
+CLASS_FUNCS: dict[str, ClassFunc] = {}
 # Dummy VMF, we create entities from this to pass back to recursively get resources for.
 _blank_vmf = VMF(preserve_ids=False)
 

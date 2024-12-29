@@ -1,5 +1,5 @@
 """Helpers for performing tests."""
-from typing import Callable, Generator, Iterable, Iterator, Optional, Tuple, Type, TypeVar, Union
+from typing import Callable, Generator, Iterable, Iterator, Optional, TypeVar, Union
 from typing_extensions import TypeAlias
 import builtins
 import itertools
@@ -47,17 +47,17 @@ VALID_ZERONUMS = [*VALID_NUMS, 0, -0, 2.535047750982637e-175]
 # In SMD files the maximum precision is this, so it should be a good reference.
 EPSILON = 1e-6
 
-PyCVec: TypeAlias = Tuple[
-    Type[Py_Vec], Type[Py_Angle], Type[Py_Matrix],
-    Callable[..., Tuple[float, float, float]
+PyCVec: TypeAlias = tuple[
+    type[Py_Vec], type[Py_Angle], type[Py_Matrix],
+    Callable[..., tuple[float, float, float]
 ]]
 T = TypeVar('T')
-VecClass: TypeAlias = Union[Type[Py_Vec], Type[Py_FrozenVec]]
-AngleClass: TypeAlias = Union[Type[Py_Angle], Type[Py_FrozenAngle]]
-MatrixClass: TypeAlias = Union[Type[Py_Matrix], Type[Py_FrozenMatrix]]
+VecClass: TypeAlias = Union[type[Py_Vec], type[Py_FrozenVec]]
+AngleClass: TypeAlias = Union[type[Py_Angle], type[Py_FrozenAngle]]
+MatrixClass: TypeAlias = Union[type[Py_Matrix], type[Py_FrozenMatrix]]
 
 
-def iter_vec(nums: Iterable[T]) -> Iterator[Tuple[T, T, T]]:
+def iter_vec(nums: Iterable[T]) -> Iterator[tuple[T, T, T]]:
     return itertools.product(nums, nums, nums)
 
 

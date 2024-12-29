@@ -1,5 +1,5 @@
 """Reads the GameInfo file to determine where Source game data is stored."""
-from typing import Final, List, Optional, Tuple, Union
+from typing import Final, Optional, Union
 from pathlib import Path
 import itertools
 import os
@@ -8,6 +8,7 @@ import sys
 from srctools.filesys import FileSystemChain, RawFileSystem, VPKFileSystem
 from srctools.keyvalues import Keyvalues
 from srctools.steam import find_app
+
 
 __all__ = ['GINFO', 'Game', 'find_gameinfo']
 GINFO: Final = 'gameinfo.txt'
@@ -22,10 +23,10 @@ class Game:
     tools_id: Optional[str]
     additional_content: Optional[str]
     fgd_loc: Optional[str]
-    search_paths: List[Path]
+    search_paths: list[Path]
     #: Mount configurations used in Strata Source.
     #: Allows loading searchpaths from other games, based on appid.
-    strata_mounts: List[Keyvalues]
+    strata_mounts: list[Keyvalues]
 
     def __init__(self, path: Union[str, Path], encoding: str = 'utf8') -> None:
         """Parse a game from a folder."""
@@ -103,13 +104,13 @@ class Game:
         return self.path.parent
 
     # Strata mount compatibility, both in gameinfo and in mounts.kv
-    def parse_strata_mounts(self) -> Tuple[List[Path], List[Path]]:
+    def parse_strata_mounts(self) -> tuple[list[Path], list[Path]]:
         """
         Parses the mounts in self.strata_mounts and returns two lists of paths.
         The first should take priority over gameinfo, the second comes after.
         """
-        parsed_mounts: List[Path] = []
-        parsed_mounts_heads: List[Path] = []
+        parsed_mounts: list[Path] = []
+        parsed_mounts_heads: list[Path] = []
         
         def vpk_patch(p: Path) -> Path:
             """Determine the correct filename for a VPK."""
@@ -255,7 +256,7 @@ class Game:
         return folder
 
 
-def find_gameinfo(argv: Optional[List[str]] = None) -> Game:
+def find_gameinfo(argv: Optional[list[str]] = None) -> Game:
     """Locate the game we're in, if launched as a compiler.
 
     This checks the following:

@@ -1,6 +1,7 @@
 """Implements support for collapsing instances."""
-from typing import Container, Dict, Iterable, List, MutableMapping, Optional, Set, Tuple, Union
+from typing import Optional, Union
 from typing_extensions import deprecated, overload
+from collections.abc import Container, Iterable, MutableMapping
 from enum import Enum
 from pathlib import Path
 import warnings
@@ -25,7 +26,7 @@ LOGGER = srctools.logger.get_logger(__name__)
 # Hidden variable to track the number of recursions.
 RECUR_COUNT_ATTR = '_inst_recur_count'
 # Prevent displaying errors for missing keyvalues multiple times.
-_UNKNOWN_KV: Set[Tuple[str, str]] = set()
+_UNKNOWN_KV: set[tuple[str, str]] = set()
 
 
 class FixupStyle(Enum):
@@ -44,13 +45,13 @@ class Instance:
     fixup_type: FixupStyle
     fixup: EntityFixup
     recur_count: int
-    outputs: List[Output]
+    outputs: list[Output]
 
-    ent_ids: Dict[int, int]
-    face_ids: Dict[int, int]
-    brush_ids: Dict[int, int]
-    node_ids: Dict[int, int]
-    visgroup_ids: Dict[int, int]
+    ent_ids: dict[int, int]
+    face_ids: dict[int, int]
+    brush_ids: dict[int, int]
+    node_ids: dict[int, int]
+    visgroup_ids: dict[int, int]
 
     def __init__(
         self,
@@ -200,7 +201,7 @@ class Manifest(Instance):
         self.is_toplevel = is_toplevel
 
     @classmethod
-    def parse(cls, tree: Keyvalues) -> List['Manifest']:
+    def parse(cls, tree: Keyvalues) -> list['Manifest']:
         """Parse a VMM file."""
         return [
             cls(
@@ -222,12 +223,12 @@ class Param:
 class InstanceFile:
     """Represents an instance VMF which has been parsed."""
     vmf: VMF
-    params: Dict[str, Param]
+    params: dict[str, Param]
     #: Inputs into the instance. The key is the parts of the instance:name;input string.
-    proxy_inputs: Dict[Tuple[str, str], Output]
+    proxy_inputs: dict[tuple[str, str], Output]
     #: Outputs out of the instance. The key is the parts of the instance:name;output string.
     #: The value is the ID of the entity to add the output to.
-    proxy_outputs: Dict[Tuple[str, str], Tuple[int, Output]]
+    proxy_outputs: dict[tuple[str, str], tuple[int, Output]]
 
     #: If instructed to add in a proxy later, this is the local pos to place it.
     proxy_pos: Vec
@@ -266,7 +267,7 @@ class InstanceFile:
                     default = parts[2]
                 self.params[name.casefold()] = Param(name, var_type, default)
 
-        proxy_names: Set[str] = set()
+        proxy_names: set[str] = set()
         for proxy in self.vmf.by_class['func_instance_io_proxy']:
             proxy.remove()
             self.proxy_pos = Vec.from_str(proxy['origin'])
@@ -355,7 +356,7 @@ def collapse_one(
     """
     origin = inst.pos
     orient = inst.orient
-    id_to_ent: Dict[int, Entity] = {}
+    id_to_ent: dict[int, Entity] = {}
 
     if fgd is not None:
         warnings.warn(
@@ -413,7 +414,7 @@ def collapse_one(
 
     # Only modify keyvalues after all ents have been copied over, so brush
     # IDs are all present.
-    new_ents: List[Entity] = []
+    new_ents: list[Entity] = []
 
     for old_ent in file.vmf.entities:
         if visgroup is False and (old_ent.hidden or not old_ent.vis_shown):
@@ -569,7 +570,7 @@ def collapse_all(
     """
     auto_inst_count = 0
     fgd_cache: MutableMapping[str, EntityDef] = {}
-    file_cache: Dict[str, InstanceFile] = {}
+    file_cache: dict[str, InstanceFile] = {}
 
     for _ in range(recur_limit):
         instances = list(vmf.by_class['func_instance'])

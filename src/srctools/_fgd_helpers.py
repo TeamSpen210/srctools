@@ -1,6 +1,7 @@
 """Implemenations of specific code for each FGD helper type."""
-from typing import ClassVar, Collection, Iterable, Iterator, List, Optional, Tuple, Union
+from typing import ClassVar, Optional, Union
 from typing_extensions import Self
+from collections.abc import Collection, Iterable, Iterator
 
 import attrs
 
@@ -31,7 +32,7 @@ class _HelperOneOptional(Helper):
     key: str
 
     @classmethod
-    def parse(cls, args: List[str]) -> Self:
+    def parse(cls, args: list[str]) -> Self:
         """Parse a single optional keyl."""
         if len(args) > 1:
             raise ValueError(
@@ -43,7 +44,7 @@ class _HelperOneOptional(Helper):
             key = cls._DEFAULT
         return cls(key)
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Export the helper.
 
         If the key is the default it is omitted.
@@ -91,7 +92,7 @@ class HelperSize(Helper):
         return [HelperTypes.CUBE]
 
     @classmethod
-    def parse(cls, args: List[str]) -> Self:
+    def parse(cls, args: list[str]) -> Self:
         """Parse size(x1 y1 z1, x2 y2 z2)."""
         if len(args) > 2:
             raise ValueError(
@@ -107,7 +108,7 @@ class HelperSize(Helper):
 
         return cls(size_min, size_max)
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Produce (x1 y1 z1, x2 y2 z2)."""
         return [
             str(self.bbox_min),
@@ -141,7 +142,7 @@ class HelperRenderColor(Helper):
         return [HelperTypes.TINT]
 
     @classmethod
-    def parse(cls, args: List[str]) -> Self:
+    def parse(cls, args: list[str]) -> Self:
         """Parse color(R G B)."""
         try:
             [tint] = args
@@ -154,7 +155,7 @@ class HelperRenderColor(Helper):
 
         return cls(r, g, b)
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Produce color(R G B)."""
         return [f'{self.r:g} {self.g:g} {self.b:g}']
 
@@ -169,7 +170,7 @@ class HelperSphere(Helper):
     size_key: str
 
     @classmethod
-    def parse(cls, args: List[str]) -> Self:
+    def parse(cls, args: list[str]) -> Self:
         """Parse sphere(radius, r g b)."""
         arg_count = len(args)
         if arg_count > 2:
@@ -185,7 +186,7 @@ class HelperSphere(Helper):
 
         return cls(r, g, b, size_key)
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Export the helper."""
         if self.r != 255.0 or self.g != 255.0 or self.b != 255.0:
             return [self.size_key, f'{self.r:g} {self.g:g} {self.b:g}']
@@ -215,7 +216,7 @@ class HelperLine(Helper):
     end_value: Optional[str] = None
 
     @classmethod
-    def parse(cls, args: List[str]) -> Self:
+    def parse(cls, args: list[str]) -> Self:
         """Parse line(r g b, start_key, start_value, end_key, end_value)."""
         arg_count = len(args)
         if arg_count not in (3, 5):
@@ -236,7 +237,7 @@ class HelperLine(Helper):
 
         return cls(r, g, b, start_key, start_value, end_key, end_value)
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Produce the correct line() arguments."""
         args = [
             f'{self.r:g} {self.g:g} {self.b:g}',
@@ -256,17 +257,17 @@ class HelperFrustum(Helper):
     fov: Union[str, float]
     near_z: Union[str, float]
     far_z: Union[str, float]
-    color: Union[str, Tuple[float, float, float]]
+    color: Union[str, tuple[float, float, float]]
     pitch_scale: Union[str, float]
 
     @classmethod
-    def parse(cls, args: List[str]) -> Self:
+    def parse(cls, args: list[str]) -> Self:
         """Parse frustum(fov, near, far, color, pitch_scale)."""
         # These are the default values if not provided.
         fov: Union[str, float] = '_fov'
         nearz: Union[str, float] = '_nearplane'
         farz: Union[str, float] = '_farz'
-        color: Union[str, Tuple[float, float, float]] = '_light'
+        color: Union[str, tuple[float, float, float]] = '_light'
         pitch: Union[str, float] = -1.0
 
         try:
@@ -309,7 +310,7 @@ class HelperFrustum(Helper):
 
         return cls(fov, nearz, farz, color, pitch)
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Export back out frustrum() arguments."""
 
         if isinstance(self.color, tuple):
@@ -342,7 +343,7 @@ class HelperCylinder(HelperLine):
     end_radius: Optional[str] = None
 
     @classmethod
-    def parse(cls, args: List[str]) -> Self:
+    def parse(cls, args: list[str]) -> Self:
         """Parse cylinder(r g b, start key/value/radius, end key/value/radius)."""
         arg_count = len(args)
         if arg_count not in (3, 4, 6, 7):
@@ -368,7 +369,7 @@ class HelperCylinder(HelperLine):
             start_radius, end_radius,
         )
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Produce the correct line() arguments."""
         args = [
             f'{self.r:g} {self.g:g} {self.b:g}',
@@ -411,7 +412,7 @@ class HelperBoundingBox(Helper):
     max: str
 
     @classmethod
-    def parse(cls, args: List[str]) -> Self:
+    def parse(cls, args: list[str]) -> Self:
         """Parse wirebox(min, max)"""
         try:
             [key_min, key_max] = args
@@ -420,7 +421,7 @@ class HelperBoundingBox(Helper):
 
         return cls(key_min, key_max)
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Produce the wirebox(min, max) arguments."""
         return [self.min, self.max]
 
@@ -456,7 +457,7 @@ class HelperSprite(Helper):
             return [HelperTypes.CUBE, HelperTypes.SPRITE, HelperTypes.ENT_SPRITE]
 
     @classmethod
-    def parse(cls, args: List[str]) -> Self:
+    def parse(cls, args: list[str]) -> Self:
         """Parse iconsprite(mat)."""
         if len(args) > 1:
             raise ValueError(f'Expected up to 1 argument, got {args!r}!')
@@ -465,7 +466,7 @@ class HelperSprite(Helper):
         else:
             return cls(None)
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Produce the arguments for iconsprite()."""
         if self.mat is not None:
             # / characters etc require quotes.
@@ -530,7 +531,7 @@ class HelperModel(Helper):
             return [HelperTypes.CUBE, HelperTypes.MODEL, HelperTypes.MODEL_NEG_PITCH, HelperTypes.MODEL_PROP]
 
     @classmethod
-    def parse(cls, args: List[str]) -> Self:
+    def parse(cls, args: list[str]) -> Self:
         """Parse iconsprite(mat)."""
         if len(args) > 1:
             raise ValueError(f'Expected up to 1 argument, got {args!r}!')
@@ -539,7 +540,7 @@ class HelperModel(Helper):
         else:
             return cls(None)
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Produce the arguments for iconsprite()."""
         if self.model is not None:
             return [self.model]
@@ -626,7 +627,7 @@ class HelperLightSpot(Helper):
     pitch_scale: float
 
     @classmethod
-    def parse(cls, args: List[str]) -> Self:
+    def parse(cls, args: list[str]) -> Self:
         """Parse lightcone(inner, outer, color, pitch_scale)."""
         if len(args) >= 1:
             inner_cone = args[0]
@@ -647,7 +648,7 @@ class HelperLightSpot(Helper):
 
         return cls(inner_cone, outer_cone, color, pitch_scale)
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Produce the arguments for lightcone()."""
         # If any parameter is different, all previous must be provided.
         if self.pitch_scale != 1.0:
@@ -674,13 +675,13 @@ class HelperLightSpotBlackMesa(Helper):
     color_kv: str
 
     @classmethod
-    def parse(cls, args: List[str]) -> Self:
+    def parse(cls, args: list[str]) -> Self:
         """Parse newlightcone(theta, phi, lightcolor)."""
         if len(args) != 3:
             raise ValueError(f'Expected 3 arguments, got {args!r}!')
         return cls(args[0], args[1], args[2])
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Produce the arguments for iconsprite()."""
         return [self.theta_kv, self.phi_kv, self.color_kv]
 
@@ -694,7 +695,7 @@ class HelperRope(Helper):
     name_kv: Optional[str]  # Extension in Portal: Revolution
 
     @classmethod
-    def parse(cls, args: List[str]) -> Self:
+    def parse(cls, args: list[str]) -> Self:
         """Parse keyframe(name)."""
         if len(args) > 1:
             raise ValueError(f'Expected up to one argument, got {args!r}!')
@@ -702,7 +703,7 @@ class HelperRope(Helper):
             return cls(None)
         return cls(args[0])
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Produce the arguments for keyframe()."""
         if not self.name_kv:
             return []
@@ -735,14 +736,14 @@ class HelperExtAppliesTo(Helper):
     TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.EXT_APPLIES_TO
     IS_EXTENSION: ClassVar[bool] = True
 
-    tags: List[str] = attrs.Factory(list)
+    tags: list[str] = attrs.Factory(list)
 
     @classmethod
-    def parse(cls, args: List[str]) -> Self:
+    def parse(cls, args: list[str]) -> Self:
         """Parse appliesto(tag1, tag2)."""
         return cls(args)
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Produce the arguments for appliesto()."""
         return self.tags
 
@@ -753,14 +754,14 @@ class HelperExtOrderBy(Helper):
     TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.EXT_ORDERBY
     IS_EXTENSION: ClassVar[bool] = True
 
-    order: List[str] = attrs.Factory(list)
+    order: list[str] = attrs.Factory(list)
 
     @classmethod
-    def parse(cls, args: List[str]) -> Self:
+    def parse(cls, args: list[str]) -> Self:
         """Parse orderby(key1, key2)."""
         return cls(args)
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Produce the arguments for orderby()."""
         return self.order
 
@@ -773,10 +774,10 @@ class HelperExtAutoVisgroups(Helper):
     TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.EXT_AUTO_VISGROUP
     IS_EXTENSION: ClassVar[bool] = True
 
-    path: List[str] = attrs.Factory(list)
+    path: list[str] = attrs.Factory(list)
 
     @classmethod
-    def parse(cls, args: List[str]) -> Self:
+    def parse(cls, args: list[str]) -> Self:
         """Parse autovis(group1, group2)."""
         if len(args) > 0 and args[0].casefold() != 'auto':
             args.insert(0, 'Auto')
@@ -784,6 +785,6 @@ class HelperExtAutoVisgroups(Helper):
             raise ValueError(f'Expected 2 or more arguments, got {args!r}!')
         return cls(args)
 
-    def export(self) -> List[str]:
+    def export(self) -> list[str]:
         """Produce the arguments for autovis()."""
         return self.path

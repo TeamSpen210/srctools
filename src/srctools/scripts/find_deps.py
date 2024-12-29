@@ -1,5 +1,5 @@
 """Finds dependencies used by resources or maps."""
-from typing import List, Optional
+from typing import Optional
 import argparse
 import os
 
@@ -11,7 +11,7 @@ from srctools.packlist import PackList
 from srctools.vmf import VMF
 
 
-def main(args: Optional[List[str]] = None) -> None:
+def main(args: Optional[list[str]] = None) -> None:
     """Main script."""
     parser = argparse.ArgumentParser(description=__doc__)
 

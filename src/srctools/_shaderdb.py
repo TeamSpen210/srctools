@@ -1,9 +1,7 @@
-from typing import Dict, Type
-
 from srctools.vmt import VarType
 
 
-def _shader_db(var_type: Type[VarType], DB: Dict[str, VarType]) -> None:
+def _shader_db(var_type: type[VarType], DB: dict[str, VarType]) -> None:
     """Build a database of material parameters to their types."""
     [FLAG, MATERIAL, STR, TEXTURE, INT, FLOAT, BOOL, COLOR, VEC2, VEC3, VEC4, MATRIX, MATRIX_4X2, FOUR_CC] = var_type
     DB['%compile2dsky'] = FLAG
