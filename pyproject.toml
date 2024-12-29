@@ -105,11 +105,12 @@ exclude = [
 stubPath = "src/"   # Use our module for stubs.
 # We want to do conversions when setting.
 reportPropertyTypeMismatch = false
-pythonVersion = "3.8"
+pythonVersion = "3.9"
 # We omit PIL in the tools CI, not necessary.
 reportMissingModuleSource = false
 
 [tool.mypy]
+local_partial_types = true
 warn_unused_ignores = true
 warn_redundant_casts = true
 warn_return_any = true

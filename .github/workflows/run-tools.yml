@@ -21,10 +21,10 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - name: Set up Python 3.12
+    - name: Set up Python 3.13
       uses: actions/setup-python@v5
       with:
-        python-version: '3.12'
+        python-version: '3.13'
         cache: 'pip'
         cache-dependency-path: |
           test-requirements.txt
@@ -46,10 +46,6 @@ jobs:
       if: (success() || failure()) && steps.install_deps.outcome == 'success'
 
     # Check every version.
-    - name: MyPy - Python 3.8
-      run: |
-        mypy --python-version 3.8 src/srctools/ type_tests/
-      if: (success() || failure()) && steps.install_deps.outcome == 'success'
     - name: MyPy - Python 3.9
       run: |
         mypy --python-version 3.9 src/srctools/ type_tests/
@@ -66,11 +62,11 @@ jobs:
       run: |
         mypy --python-version 3.12 src/srctools/ type_tests/
       if: (success() || failure()) && steps.install_deps.outcome == 'success'
-
-    - name: Pyright - Python 3.8
+    - name: MyPy - Python 3.13
       run: |
-        pyright --pythonversion 3.8
+        mypy --python-version 3.13 src/srctools/ type_tests/
       if: (success() || failure()) && steps.install_deps.outcome == 'success'
+
     - name: Pyright - Python 3.9
       run: |
         pyright --pythonversion 3.9
@@ -86,4 +82,8 @@ jobs:
     - name: Pyright - Python 3.12
       run: |
         pyright --pythonversion 3.12
+      if: (success() || failure()) && steps.install_deps.outcome == 'success'
+    - name: Pyright - Python 3.13
+      run: |
+        pyright --pythonversion 3.13
       if: (success() || failure()) && steps.install_deps.outcome == 'success'
