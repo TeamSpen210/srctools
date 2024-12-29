@@ -1,5 +1,5 @@
 # Static analysis test requirements.
-types-Pillow>=11.0.0
+types-Pillow>=10.2.0
 types-pyinstaller>=6.11.0
 mypy == 1.14.0
 pyright == 1.1.391
