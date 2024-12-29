@@ -84,6 +84,9 @@ distance-dirty = "{base_version}.dev{distance}+{rev}.dirty.{build_date:%Y.%m.%d}
 method = "basic"
 file = "src/srctools/_version.py"
 
+[tool.cibuildwheel]
+archs = "auto64"
+
 # After building, run tests to check it works.
 # Disable assertion rewriting since that sometimes has issues on PyPy.
 before-test = "pip install -r test-requirements.txt"
