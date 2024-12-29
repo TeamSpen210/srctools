@@ -91,8 +91,6 @@ archs = "auto64"
 # Disable assertion rewriting since that sometimes has issues on PyPy.
 before-test = "pip install -r test-requirements.txt"
 test-command = 'pytest --assert=plain -m "not slow" {project}/tests'
-[tool.cibuildwheel.config-settings-windows]
-	setup-args = "--vsenv" # Use MSVC, not MinGW
 
 [tool.pytest.ini_options]
 markers = [
