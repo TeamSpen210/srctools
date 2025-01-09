@@ -65,24 +65,9 @@ src_collapse_manifest = "srctools.scripts.collapse_manifest:main"
 [project.entry-points]
 pyinstaller40 = {hook-dirs="srctools._pyinstaller:get_hook_dirs"}
 
-[tool.setuptools.packages.find]
-	where = ["src"]
-	include = ["srctools*"]
-
-[tool.versioningit.vcs]
-default-tag = "v0.0.0"
-
-[tool.versioningit.tag2version]
-rmprefix = "postcompiler_"  # For old tags
-
-[tool.versioningit.format]
-distance = "{base_version}.dev_{distance}+{rev}"
-dirty = "{base_version}+dirty_{build_date:%Y.%m.%d}"
-distance-dirty = "{base_version}.dev{distance}+{rev}.dirty.{build_date:%Y.%m.%d}"
-
-[tool.versioningit.write]
-method = "basic"
-file = "src/srctools/_version.py"
+[tool.meson-python.args]
+# Use MSVC on Windows.
+setup = ['--vsenv']
 
 [tool.cibuildwheel]
 archs = "auto64"
