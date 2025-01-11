@@ -1,5 +1,6 @@
 """Test the datamodel exchange implementation."""
-from typing import Callable, Set, cast
+from typing import cast
+from collections.abc import Callable
 from io import BytesIO
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -38,7 +39,7 @@ EXPORT_VALS = [
 ]
 
 
-def _assert_tree_elem(path: str, tree1: Element, tree2: Element, checked: Set[UUID]) -> None:
+def _assert_tree_elem(path: str, tree1: Element, tree2: Element, checked: set[UUID]) -> None:
     """Checks two elements are the same."""
     if tree1 is None or tree2 is None:
         # Old code stored none for NULL elements

@@ -1,5 +1,6 @@
 """Test the FGD module."""
-from typing import Any, Callable, Generator
+from typing import Any
+from collections.abc import Callable, Generator
 import copy
 import io
 

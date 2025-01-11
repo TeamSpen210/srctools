@@ -1,4 +1,5 @@
-from typing import Any, Callable, Iterable, Iterator, Type, Union
+from typing import Any, Union
+from collections.abc import Callable, Iterable, Iterator
 from itertools import tee, zip_longest
 import codecs
 import platform
@@ -217,7 +218,7 @@ def test_prop_tokens(py_c_token: type[Tokenizer]) -> None:
     check_tokens(tok, prop_parse_tokens)
 
 
-def test_nonprop_tokens(py_c_token: Type[Tokenizer]) -> None:
+def test_nonprop_tokens(py_c_token: type[Tokenizer]) -> None:
     """Test the tokenizer returns the correct sequence of tokens for non-Property strings."""
     Tokenizer = py_c_token
 
@@ -237,7 +238,7 @@ def test_nonprop_tokens(py_c_token: Type[Tokenizer]) -> None:
     check_tokens(tok, noprop_parse_tokens)
 
 
-def test_pushback(py_c_token: Type[Tokenizer]) -> None:
+def test_pushback(py_c_token: type[Tokenizer]) -> None:
     """Test pushing back tokens."""
     Tokenizer = py_c_token
     tok = Tokenizer(prop_parse_test, '', string_bracket=True)
@@ -271,7 +272,7 @@ def test_pushback(py_c_token: Type[Tokenizer]) -> None:
     (Token.PLUS, '+'),
     (Token.COMMA, ','),
 ])
-def test_pushback_opvalues(py_c_token: Type[Tokenizer], token: Token, val: str) -> None:
+def test_pushback_opvalues(py_c_token: type[Tokenizer], token: Token, val: str) -> None:
     """Test the operator tokens pushback the correct fixed value."""
     tok: Tokenizer = py_c_token(['test data'], string_bracket=False)
     tok.push_back(token, val)
@@ -287,7 +288,7 @@ def test_pushback_opvalues(py_c_token: Type[Tokenizer], token: Token, val: str) 
     assert tok() == (token, val)
 
 
-def test_call_next(py_c_token: Type[Tokenizer]) -> None:
+def test_call_next(py_c_token: type[Tokenizer]) -> None:
     """Test that tok() functions, and it can be mixed with iteration."""
     tok: Tokenizer = py_c_token('''{ "test" } "test" { = } ''', 'file')
 
@@ -310,7 +311,7 @@ def test_call_next(py_c_token: Type[Tokenizer]) -> None:
         next(it1)
 
 
-def test_star_comments(py_c_token: Type[Tokenizer]) -> None:
+def test_star_comments(py_c_token: type[Tokenizer]) -> None:
     """Test disallowing /* */ comments."""
     Tokenizer = py_c_token
 
@@ -380,7 +381,7 @@ def test_star_comments(py_c_token: Type[Tokenizer]) -> None:
         pass
 
 
-def test_bom(py_c_token: Type[Tokenizer]) -> None:
+def test_bom(py_c_token: type[Tokenizer]) -> None:
     """Test skipping a UTF8 BOM at the beginning."""
     Tokenizer = py_c_token
 
@@ -425,7 +426,7 @@ def test_bom(py_c_token: Type[Tokenizer]) -> None:
     check_tokens(Tokenizer(['e', ' ', 'f']), [(Token.STRING, 'e'), (Token.STRING, 'f')])
 
 
-def test_universal_newlines(py_c_token: Type[Tokenizer]) -> None:
+def test_universal_newlines(py_c_token: type[Tokenizer]) -> None:
     r"""Test that \r characters are replaced by \n, even in direct strings."""
     tokens = [
         (Token.STRING, 'Line'),
@@ -463,7 +464,7 @@ def test_token_has_value() -> None:
     assert Token.COMMENT.has_value
 
 
-def test_constructor(py_c_token: Type[Tokenizer]) -> None:
+def test_constructor(py_c_token: type[Tokenizer]) -> None:
     """Test various argument syntax for the tokenizer."""
     Tokenizer = py_c_token
 
@@ -474,7 +475,7 @@ def test_constructor(py_c_token: Type[Tokenizer]) -> None:
     Tokenizer(['blah', 'blah'], string_bracket=True)
 
 
-def test_tok_filename(py_c_token: Type[Tokenizer]) -> None:
+def test_tok_filename(py_c_token: type[Tokenizer]) -> None:
     """Test that objects other than a direct string can be passed as filename."""
     Tokenizer = py_c_token
 
@@ -502,7 +503,7 @@ def test_tok_filename(py_c_token: Type[Tokenizer]) -> None:
     ('colon_operator', False),
     ('plus_operator', False),
 ])
-def test_obj_config(py_c_token: Type[Tokenizer], parm: str, default: bool) -> None:
+def test_obj_config(py_c_token: type[Tokenizer], parm: str, default: bool) -> None:
     """Test getting and setting configuration attributes."""
     Tokenizer = py_c_token
 
@@ -552,7 +553,7 @@ def test_escape_text(inp: str, out: str, func: Callable[[str], str]) -> None:
         assert func(inp) is inp
 
 
-def test_brackets(py_c_token: Type[Tokenizer]) -> None:
+def test_brackets(py_c_token: type[Tokenizer]) -> None:
     """Test the [] handling produces the right results."""
     check_tokens(py_c_token('"blah" [ !!text45() ]', string_bracket=True), [
         (Token.STRING, "blah"),
@@ -592,7 +593,7 @@ def test_brackets(py_c_token: Type[Tokenizer]) -> None:
     (':', Token.COLON, 'colon_operator'),
     ('+', Token.PLUS, 'plus_operator'),
 ], ids=['colon', 'plus'])
-def test_conditional_op(py_c_token: Type[Tokenizer], op: str, option: str, tok: Token) -> None:
+def test_conditional_op(py_c_token: type[Tokenizer], op: str, option: str, tok: Token) -> None:
     """Test : and + can be detected as a string or operator depending on the option."""
     disabled = {option: False}
     enabled = {option: True}
@@ -640,7 +641,7 @@ def test_conditional_op(py_c_token: Type[Tokenizer], op: str, option: str, tok: 
     ])
 
 
-def test_invalid_bracket(py_c_token: Type[Tokenizer]) -> None:
+def test_invalid_bracket(py_c_token: type[Tokenizer]) -> None:
     """Test detecting various invalid combinations of [] brackets."""
     with pytest.raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('[ unclosed', string_bracket=True):
@@ -659,7 +660,7 @@ def test_invalid_bracket(py_c_token: Type[Tokenizer]) -> None:
             pass
 
 
-def test_invalid_paren(py_c_token: Type[Tokenizer]) -> None:
+def test_invalid_paren(py_c_token: type[Tokenizer]) -> None:
     with pytest.raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('( unclosed', string_bracket=True):
             pass
@@ -677,7 +678,7 @@ def test_invalid_paren(py_c_token: Type[Tokenizer]) -> None:
             pass
 
 
-def test_allow_escapes(py_c_token: Type[Tokenizer]) -> None:
+def test_allow_escapes(py_c_token: type[Tokenizer]) -> None:
     """Test parsing with and without escapes enabled."""
     check_tokens(py_c_token(r'{ "string\n" "tab\ted" }', allow_escapes=False), [
         Token.BRACE_OPEN,
@@ -704,7 +705,7 @@ def test_allow_escapes(py_c_token: Type[Tokenizer]) -> None:
         tok()
 
 
-def test_preserve_comments(py_c_token: Type[Tokenizer]) -> None:
+def test_preserve_comments(py_c_token: type[Tokenizer]) -> None:
     """Test the ability to output comments."""
     text = '''
     "a" { "b" } // end-of-"line" comment
@@ -780,7 +781,7 @@ Error occurred on line 45, with file "a file".'''
 Error occurred on line 250.'''
 
 
-def test_tok_error(py_c_token: Type[Tokenizer]) -> None:
+def test_tok_error(py_c_token: type[Tokenizer]) -> None:
     """Test the tok.error() helper."""
     tok: Tokenizer = py_c_token(['test'], 'filename.py')
     tok.line_num = 45
@@ -819,7 +820,7 @@ error_messages = {
 
 
 @pytest.mark.parametrize('token', Token)
-def test_tok_error_messages(py_c_token: Type[Tokenizer], token: Token) -> None:
+def test_tok_error_messages(py_c_token: type[Tokenizer], token: Token) -> None:
     """Test the tok.error() handler with token types."""
     fmt = error_messages[token]  # If KeyError, needs to be updated.
     tok: Tokenizer = py_c_token(['test'], 'fname')
@@ -830,7 +831,7 @@ def test_tok_error_messages(py_c_token: Type[Tokenizer], token: Token) -> None:
         tok.error(token, 'val1', 'val2')
 
 
-def test_unicode_error_wrapping(py_c_token: Type[Tokenizer]) -> None:
+def test_unicode_error_wrapping(py_c_token: type[Tokenizer]) -> None:
     """Test that Unicode errors are wrapped into TokenSyntaxError."""
     def raises_unicode() -> Iterator[str]:
         yield "line of_"
@@ -845,13 +846,13 @@ def test_unicode_error_wrapping(py_c_token: Type[Tokenizer]) -> None:
     assert isinstance(exc_info.value.__cause__, UnicodeDecodeError)
 
 
-def test_early_binary_arg(py_c_token: Type[Tokenizer]) -> None:
+def test_early_binary_arg(py_c_token: type[Tokenizer]) -> None:
     """Test that passing bytes values is caught before looping."""
     with pytest.raises(TypeError):
         py_c_token(b'test')
 
 
-def test_block_iter(py_c_token: Type[Tokenizer]) -> None:
+def test_block_iter(py_c_token: type[Tokenizer]) -> None:
     """Test the Tokenizer.block() helper."""
     # First two correct usages:
     tok = py_c_token('''\
@@ -934,7 +935,7 @@ def test_block_iter(py_c_token: Type[Tokenizer]) -> None:
     [Cy_BaseTokenizer, Py_BaseTokenizer],
     ids=['Cython', 'Python'],
 )
-def test_subclass_base(Tok: Type[BaseTokenizer]) -> None:
+def test_subclass_base(Tok: type[BaseTokenizer]) -> None:
     """Test subclassing of the base tokenizer."""
     class Sub(Tok):
         def __init__(self, tok):

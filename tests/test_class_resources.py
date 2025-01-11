@@ -1,5 +1,6 @@
 """Test the resource functions implemented for specific entities."""
-from typing import Iterable, Mapping, Union
+from typing import Union
+from collections.abc import Iterable, Mapping
 from operator import itemgetter
 
 import pytest

@@ -190,16 +190,15 @@ extend-ignore = [
 	"E221",  # Allow multiple spaces before operators if we want to align
 	"E226",  # Allow no spaces like "1+1", sometimes useful to indicate precedence
 
-	# Pyupgrade:
-	# Keep using typing types even with __future__.annotations.
-	"UP006", "UP007",
-
 	# Flake8-pie:
 	# Prefer to use pass in empty functions, even if docstring is present
 	"PIE790",
 	# Allow aliases for enum values, used often.
 	"PIE796",
 	]
+
+[tool.ruff.lint.pyupgrade]
+keep-runtime-typing = true
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = [

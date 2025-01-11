@@ -1,5 +1,5 @@
 """Test the VTF library."""
-from typing import Generator
+from collections.abc import Generator
 from array import array
 from io import BytesIO
 from pathlib import Path
