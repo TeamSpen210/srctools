@@ -14,6 +14,7 @@ Version (dev)
 * Avoid escaping `/` and `?`, these are unambiguous.
 * Add :py:attr:`ValueTypes.EXT_SOUNDSCAPE <srctools.fgd.ValueTypes.EXT_SOUNDSCAPE>`.
 * Support exporting FGDs with unevaulated string bases.
+* Add suppport for reading non-directory VPK files, where contents are all in one file.
 * FGDs may optionally permit unknown value types to be parsed/exported in string form.
 * Fix some options being incorrectly handled in Strata game mounts definitions.
 * Allow entities to delete multiple keyvalues at once.
