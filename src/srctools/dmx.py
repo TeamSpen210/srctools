@@ -2051,6 +2051,21 @@ class Element(Mapping[str, Attribute]):
         """Remove all attributes from the element."""
         self._members.clear()
 
+    def get_wrap(self, name: str, default: Union[Attribute, ConvValue, Sequence[ConvValue]] = '', /) -> Attribute:
+        """Retrieve the specified attribute, or return a default.
+
+        If the defalt is an Attribute it is returned unchanged, otherwise it is wrapped in
+        a temporary attribute.
+        """
+        try:
+            return self._members[name.casefold()]
+        except KeyError:
+            if isinstance(default, Attribute):
+                return default
+            else:
+                typ, val = deduce_type(default)
+                return Attribute(name, typ, val)
+
     def pop(self, name: str, default: Union[Attribute, ConvValue, Sequence[ConvValue]] = _UNSET) -> Attribute:
         """Remove the specified attribute and return it.
 
