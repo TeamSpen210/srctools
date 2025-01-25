@@ -12,8 +12,8 @@ build:
     python: "3.13"
   jobs:
     post_install:
-      - python -m pip install -upgrade-strategy only-if-needed --no-cache-dir --config-settings=setup-args="-Dbuild_extensions=false" .
-      - python -m pip install -exists-action=w -r docs-requirements.txt
+      - 'python -m pip install --upgrade-strategy only-if-needed --no-cache-dir --config-settings=setup-args="-Dbuild_extensions=false" .'
+      - 'python -m pip install --exists-action=w --no-cache-dir  -r docs-requirements.txt'
       # We just need to pass -config-settings, others are what RTD does by default.
 
 # Install the package.
