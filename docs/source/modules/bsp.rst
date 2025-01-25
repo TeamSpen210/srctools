@@ -116,7 +116,6 @@ Entity Lump
 -----------
 
 .. py:attribute:: BSP.ents
-
 	:type: ~srctools.vmf.VMF
 
 	The entity lump stores all entities and their keyvalues. When parsed, this is exposed as a
@@ -125,6 +124,47 @@ Entity Lump
 	are ignored. See the :py:attr:`BSP.bmodels` attribute to locate the compiled brush data for an entity.
 
 	Aside from the entities, the rest of the VMF object is ignored.
+
+.. py:attribute:: BSP.bmodels
+    :type: ~weakref.WeakKeyDictionary[Entity, BModel]
+
+    For each brush entity (including worldspawn) this defines the compiled brush data. Since this
+    is a weak dictionary, removing entities will automatically clear their brush data. In engine,
+    entities are linked to their brushes with a "model name" like ``*42``. Any entity in this
+    dictionary will have its ``model`` keyvalue overwritten to point to the specified model.
+
+.. py:class:: BModel
+
+    .. py:attribute:: mins
+        :type: Vec
+
+    .. py:attribute:: maxes
+        :type: Vec
+
+        Axial bounding box surrounding the brush model.
+
+    .. py:attribute:: origin
+        :type: Vec
+
+        Original position of the brushes.
+
+    .. py:attribute:: node
+        :type: VisTree
+
+        References the root node for the visleaf tree for this brush model.
+
+    .. py:attribute:: faces
+        :type: list[Face]
+
+        All faces in this brush model, unsorted.
+
+    .. py:attribute:: phys_keyvalues
+        :type: Keyvalues | None
+
+        If this brush model is solid, this contains the VPhysics data. It is very similar to that
+        in `.phy` model files. For each brush, this stores metadata like mass, surfaceprop, etc.
+
+    .. automethod:: clear_physics
 
 Pakfile
 -------
@@ -257,10 +297,6 @@ The visleaf structure is composed of a tree either of nodes or vis-leafs.
 
 
 .. Lumps TODO:
-    bmodels: ParsedLump['WeakKeyDictionary[Entity, BModel]'] = ParsedLump(
-        BSP_LUMPS.MODELS,
-        BSP_LUMPS.PHYSCOLLIDE,
-    )
     brushes: ParsedLump[list[Brush]] = ParsedLump(BSP_LUMPS.BRUSHES, BSP_LUMPS.BRUSHSIDES)
     water_leaf_info: ParsedLump[list[LeafWaterInfo]] = ParsedLump(BSP_LUMPS.LEAFWATERDATA)
     # This is None if VVIS has not been run.
@@ -300,9 +336,7 @@ These methods have been replaced by others, and should not be used.
 
 .. Classes TODO:
 'DetailProp', 'DetailPropModel', 'DetailPropOrientation', 'DetailPropShape', 'DetailPropSprite',
-'Cubemap', 'Overlay',
-'VisTree', 'VisLeaf', 'VisLeafFlags', 'LeafWaterInfo',
-'Visibility',
-'BModel', 'Plane', 'PlaneType',
+'LeafWaterInfo', 'Visibility',
+'Plane', 'PlaneType',
 'Primitive', 'Face', 'Edge', 'RevEdge',
 'Brush', 'BrushSide', 'BrushContents',
