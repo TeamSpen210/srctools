@@ -1,0 +1,1 @@
+option('build_extensions', type : 'boolean', value : true, description: 'Build C extensions.')
