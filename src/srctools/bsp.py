@@ -403,29 +403,28 @@ class StaticPropVersion(Enum):
         self.size = size
         self.variant = name
 
-    # V4 and V5 are used in original HL2 maps.
-    V4 = (4, 56)
-    V5 = (5, 60)  # adds forcedFadeScale
-    V6 = (6, 64)  # Some TF2 maps, adds min/max DX level
-    V7 = (7, 68)  # Old L4D maps, adds rendercolor
-    V8 = (8, 68)  # Main L4D, removes min/max DX, adds min/max GPU and CPU
-    V9 = (9, 72)  # L4D2, adds disableX360.
-    V10 = (10, 76)  # Old CSGO, adds new flags integer
-    V11 = (11, 80)  # New CSGO, with uniform prop scaling.
+    V4 = (4, 56) #: V4 and V5 are used in original HL2 maps.
+    V5 = (5, 60)  #: adds forcedFadeScale
+    V6 = (6, 64)  #: Some TF2 maps, adds min/max DX level
+    V7 = (7, 68)  #: Old L4D maps, adds rendercolor
+    V8 = (8, 68)  #: Main L4D, removes min/max DX, adds min/max GPU and CPU
+    V9 = (9, 72)  #: L4D2, adds disableX360.
+    V10 = (10, 76)  #: Old CSGO, adds new flags integer
+    V11 = (11, 80)  #: New CSGO, with uniform prop scaling.
 
-    # Source 2013, also appears with version 7 but is identical.
-    # Based on v6, adds lightmapped props.
-    # Despite the actual versions, more like v6.
+    #: Source 2013, also appears with version 7 but is identical.
+    #: Based on v6, adds lightmapped props.
+    #: Despite the version number, more like v6.
     V_LIGHTMAP_v7 = (7, 72)
     V_LIGHTMAP_v10 = (10, 72)
-    V_LIGHTMAP_MESA = (11, 80, 'Mesa')  # Adds rendercolor to V10
+    V_LIGHTMAP_MESA = (11, 80, 'Mesa')  #: Adds rendercolor to V10
 
-    V_CHAOS_V12 = (12, 80)  # Changes the leaf list from uint16 to uint32
-    V_CHAOS_V13 = (13, 88)  # Changes scale from one float to three for non-uniform scaling
+    V_CHAOS_V12 = (12, 80)  #: Changes the leaf list from uint16 to uint32
+    V_CHAOS_V13 = (13, 88)  #: Changes scale from one float to three for non-uniform scaling
 
     # V6_WNAME = (5, 188)  # adds targetname, used by The Ship and Bloody Good Time.
-    UNKNOWN = (0, 0, 'unknown')  # Before prop is read.
-    # All games should recognise this, so switch to this if set to unknown.
+    UNKNOWN = (0, 0, 'unknown')  #: Indicates the lump has not been parsed.
+    #: All games should recognise this, so switch to this if set to unknown.
     DEFAULT = V5
 
     @property
@@ -447,7 +446,7 @@ _STATIC_PROP_VERSIONS: Mapping[tuple[int, int], StaticPropVersion] = {
 
 
 class StaticPropFlags(Flag):
-    """Bitflags specified for static props."""
+    """Bitflags specified for static props. These are actually split over two flag fields, but are merged here for simplicity."""
     NONE = 0
 
     DOES_FADE = 0x01  # Is the fade distances set?
@@ -462,7 +461,7 @@ class StaticPropFlags(Flag):
 
     # These are set in the secondary flags section.
     #: Disable affecting projected texture lighting.
-    #: In games supporting lightmapped props (TF2), this instead, disables per-luxel lighting.
+    #: In games supporting lightmapped props (TF2), this instead disables per-luxel lighting.
     NO_SHADOW_DEPTH = 0x100
     NO_LIGHTMAP = 0x100
     BOUNCED_LIGHTING = 0x0400  #: Bounce lighting off the prop.
@@ -1093,15 +1092,23 @@ class StaticProp:
     * ``v11+`` adds uniform scaling.
     """
     model: str
-    origin: Vec
+    origin: Vec  #: Position of the prop.
     angles: Angle = attrs.field(factory=Angle)
+    #: Scaling factor for the prop, only available in CSGO and derived mods. Strata Source
+    #: additionally adds the ability to scale independently in each axis. Either type can be set -
+    #: only the X axis is used if only uniform scaling is supported.
     scaling: Union[Vec, float] = attrs.field(factory=lambda: Vec(1.0, 1.0, 1.0))
+    #: When compiled, VBSP uses the model geometry to statically determine the visleafs the model
+    #: occupies and stores them here.
     visleafs: set[VisLeaf] = attrs.field(factory=set, repr=False)
     solidity: int = 6
     flags: StaticPropFlags = StaticPropFlags.NONE
     skin: int = 0
     min_fade: float = 0.0
     max_fade: float = 0.0
+    #: This is the location used for non-vertex lighting, in world space. It defaults to the prop origin
+    #: (or ``$illumposition`` value), but can be changed by ``info_lighting`` entities. There is
+    #: no direct way to tell if this is custom or not.
     lighting: Vec = attrs.Factory(_staticprop_lighting_default, takes_self=True)
     fade_scale: float = -1.0
 
@@ -1112,7 +1119,9 @@ class StaticProp:
     min_gpu_level: int = 0
     max_gpu_level: int = 0
 
+    #: Also known as "Render Colour".
     tint: Vec = attrs.field(factory=lambda: Vec(255, 255, 255))
+    #: Also known as "Render FX", the alpha value used for the prop.
     renderfx: int = 255
     disable_on_xbox: bool = False
 

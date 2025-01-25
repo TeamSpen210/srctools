@@ -170,6 +170,39 @@ should be used to create each entry:
     :undoc-members:
 
 
+Static Props
+------------
+
+.. py:attribute:: BSP.props
+    :type: list[StaticProp]
+
+    ``prop_static`` entities are specially handled by VBSP, and stored in their own game lump (with ID ``sprp``).
+    This lump has undergone significant changes in various games, so many attributes may do nothing.
+
+.. py:attribute:: BSP.static_prop_version
+    :type: StaticPropVersion
+    :value: StaticPropVersion.UNKNOWN
+
+    The version number for static props is unreliable, with incompatible games using overlapping versions.
+    The byte size of each prop structure is used to determine the precise version used. This stores
+    the version detected to allow saving correctly. This can also be set manually before ``props``
+    is accessed to override the automatic detection.
+
+.. autoclass:: StaticProp
+    :members:
+    :undoc-members:
+
+.. autosrcenum:: StaticPropFlags
+	:members:
+	:undoc-members:
+	:member-order: bysource
+
+.. autosrcenum:: StaticPropVersion
+	:members:
+	:undoc-members:
+	:member-order: bysource
+
+
 .. Lumps TODO:
     cubemaps: ParsedLump[list[Cubemap]] = ParsedLump(BSP_LUMPS.CUBEMAPS)
     overlays: ParsedLump[list[Overlay]] = ParsedLump(
@@ -224,9 +257,7 @@ These methods have been replaced by others, and should not be used.
 	:deprecated: Use the relevant property directly, or set :py:attribute:`Lump.data`.
 
 .. Classes TODO:
-'StaticProp', 'StaticPropFlags',
 'DetailProp', 'DetailPropModel', 'DetailPropOrientation', 'DetailPropShape', 'DetailPropSprite',
-'TexData', 'TexInfo',
 'Cubemap', 'Overlay',
 'VisTree', 'VisLeaf', 'VisLeafFlags', 'LeafWaterInfo',
 'Visibility',
