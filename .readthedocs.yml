@@ -7,15 +7,20 @@ version: 2
 
 # Set the version of Python and other tools you might need
 build:
-  os: ubuntu-20.04
+  os: ubuntu-24.04
   tools:
-    python: "3.11"
+    python: "3.13"
+  jobs:
+    post_install:
+      # We just need to pass -config-settings, others are what RTD does by default.
+      - python -m pip install -upgrade-strategy only-if-needed --no-cache-dir -config-settings=setup-args="-Dbuild_extensions=false" .
 
 # Install the package.
 python:
   install:
     - method: pip
-      path: .
+      # Can't use path, want to disable meson building extensions.
+      # path: .
     - requirements: docs-requirements.txt
 
 # Build documentation in the docs/ directory with Sphinx

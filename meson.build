@@ -10,17 +10,7 @@ fs = import('fs')
 py = import('python').find_installation(pure: false)
 dep_py = py.dependency()
 
-build_extensions = get_option('build_extensions')
-summary({'option': build_extensions}, section: 'Build C Extensions')
-
-# Can't check environment variables directly, need to launch Python.
-res = run_command(py, '-c', 'import os; print("READTHEDOCS" in os.environ)', check: true)
-if res.returncode() == 0 and 'True' in res.stdout()
-  build_extensions = false
-endif
-summary({'stdout': res.stdout(), 'build': build_extensions}, section: 'Build C Extensions')
-
-if build_extensions
+if get_option('build_extensions')
     # Build quickhull.
     inc_quickhull = include_directories('src' / 'quickhull')
     lib_quickhull = static_library(

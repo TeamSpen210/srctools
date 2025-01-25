@@ -44,7 +44,7 @@ py.install_sources(pure_python, subdir: 'srctools')
 subdir('_pyinstaller')
 subdir('scripts')
 
-if build_extensions
+if get_option('build_extensions')
     py.extension_module(
         '_math',
         files(
