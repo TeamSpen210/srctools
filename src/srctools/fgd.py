@@ -719,28 +719,59 @@ class Snippet(Generic[ValueT_co]):
                 ),
             )
         elif snippet_kind in ('kv', 'keyvalue'):
-            kv_name = tokeniser.expect(Token.STRING)
-            cls._add(
-                'keyvalue', fgd.snippet_keyvalue,
-                path, definition_line, snippet_id,
-                KVDef._parse(fgd, kv_name, tokeniser, error_desc),
+            cls._parse_kv_io(
+                fgd, tokeniser,
+                fgd.snippet_keyvalue, cls._parse_kv,
+                path, definition_line, error_desc,
+                'keyvalue', snippet_id,
             )
         elif snippet_kind == 'input':
-            cls._add(
-                'input', fgd.snippet_input,
-                path, definition_line, snippet_id,
-                IODef._parse(fgd, tokeniser),
+            cls._parse_kv_io(
+                fgd, tokeniser,
+                fgd.snippet_input, cls._parse_io,
+                path, definition_line, error_desc,
+                'input', snippet_id,
             )
         elif snippet_kind == 'output':
-            cls._add(
-                'output', fgd.snippet_output,
-                path, definition_line, snippet_id,
-                IODef._parse(fgd, tokeniser),
+            cls._parse_kv_io(
+                fgd, tokeniser,
+                fgd.snippet_output, cls._parse_io,
+                path, definition_line, error_desc,
+                'output', snippet_id,
             )
         else:
             raise tokeniser.error(
                 f'Unknown snippet type "{snippet_kind}" for snippet "{path}:{snippet_id}"!'
             )
+
+    @staticmethod
+    def _parse_kv(fgd: FGD, tokeniser: BaseTokenizer, error_desc: str) -> tuple[TagsSet, KVDef]:
+        """Callable for _parse_kv_io."""
+        kv_name = tokeniser.expect(Token.STRING)
+        # noinspection PyProtectedMember
+        return KVDef._parse(fgd, kv_name, tokeniser, error_desc)
+
+    @staticmethod
+    def _parse_io(fgd: FGD, tokeniser: BaseTokenizer, error_desc: str) -> tuple[TagsSet, IODef]:
+        """Callable for _parse_kv_io."""
+        # noinspection PyProtectedMember
+        return IODef._parse(fgd, tokeniser)
+
+    @classmethod
+    def _parse_kv_io(
+        cls,
+        fgd: FGD, tokeniser: BaseTokenizer,
+        field: SnippetDict[T],
+        parse: Callable[[FGD, BaseTokenizer, str], T],
+        path: str, definition_line: int, error_desc: str,
+        kind: str, snippet_id: str,
+    ) -> None:
+        """Parse an input or output definition."""
+        cls._add(
+            kind, field,
+            path, definition_line, snippet_id,
+            parse(fgd, tokeniser, error_desc),
+        )
 
 
 @attrs.frozen
