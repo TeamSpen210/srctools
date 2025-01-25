@@ -362,12 +362,12 @@ LUMP_REBUILD_ORDER: list[Union[bytes, BSP_LUMPS]] = [
 
 class PlaneType(Enum):
     """The orientation of a plane."""
-    X = 0  # Exactly in the X axis.
-    Y = 1  # Exactly in the Y axis.
-    Z = 2  # Exactly in the Z axis.
-    ANY_X = 3  # Pointing mostly in the X axis
-    ANY_Y = 4  # Pointing mostly in the Y axis.
-    ANY_Z = 5  # Pointing mostly in the Z axis.
+    X = 0  #: Exactly in the X axis.
+    Y = 1  #: Exactly in the Y axis.
+    Z = 2  #: Exactly in the Z axis.
+    ANY_X = 3  #: Pointing mostly in the X axis
+    ANY_Y = 4  #: Pointing mostly in the Y axis.
+    ANY_Z = 5  #: Pointing mostly in the Z axis.
 
     @classmethod
     def from_normal(cls, normal: Vec) -> 'PlaneType':

@@ -260,7 +260,7 @@ Overlays
 .. py:attribute:: BSP.overlays
     :type: list[Overlay]
 
-    ``info_overlay``s are stored in this special lump.
+    ``info_overlay`` s are stored in this special lump.
 
 .. autoclass:: Overlay
     :members:
@@ -273,11 +273,13 @@ Visleafs
 The visleaf structure is composed of a tree either of nodes or vis-leafs.
 
 .. py:attribute:: BSP.visleafs
-    :types: list[VisLeaf]
+    :type: list[VisLeaf]
+
     The array of all visleafs.
 
 .. py:attribute:: BSP.nodes
     :type: list[VisTree]
+
     The array of nodes, each splitting the parent into two children.
 
 .. automethod:: BSP.vis_tree
@@ -295,22 +297,72 @@ The visleaf structure is composed of a tree either of nodes or vis-leafs.
 	:undoc-members:
 	:member-order: bysource
 
+Planes
+------
+.. TODO Descriptions.
+
+.. py:attribute:: BSP.planes
+    :type: list[Plane]
+
+.. autoclass:: Plane
+	:members:
+	:undoc-members:
+
+.. autosrcenum:: PlaneType
+
+    .. automethod:: PlaneType.from_normal
+
+
+Faces
+-----
+.. TODO description
+
+.. py:attribute:: BSP.faces
+    :type: list[Face]
+
+.. py:attribute:: BSP.orig_faces
+    :type: list[Face]
+
+    These faces more closely match those in Hammer.
+
+.. py:attribute:: BSP.hdr_faces
+    :type: list[Face]
+
+    Face data used in HDR mode.
+
+.. py:attribute:: BSP.primitives
+
+    Primitive surfaces, also known as 't-junctions' or 'waterverts' are generated to
+    stitch together T-junction faces. This fixes potential seams.
+
+.. py:attribute:: BSP.surfedges
+    :type: list[Edge]
+
+.. py:attribute:: BSP.vertexes
+    :type: list[Vec]
+
+.. autoclass:: Face
+    :members:
+    :undoc-members:
+
+.. autoclass:: Primitive
+    :members:
+    :undoc-members:
+
+.. autoclass:: Edge
+    :members:
+    :undoc-members:
+
+.. autoclass:: RevEdge
+    :members:
+    :undoc-members:
+
 
 .. Lumps TODO:
     brushes: ParsedLump[list[Brush]] = ParsedLump(BSP_LUMPS.BRUSHES, BSP_LUMPS.BRUSHSIDES)
     water_leaf_info: ParsedLump[list[LeafWaterInfo]] = ParsedLump(BSP_LUMPS.LEAFWATERDATA)
     # This is None if VVIS has not been run.
     visibility: ParsedLump[Optional[Visibility]] = ParsedLump(BSP_LUMPS.VISIBILITY)
-    vertexes: ParsedLump[list[Vec]] = ParsedLump(BSP_LUMPS.VERTEXES)
-    surfedges: ParsedLump[list[Edge]] = ParsedLump(BSP_LUMPS.SURFEDGES, BSP_LUMPS.EDGES)
-    planes: ParsedLump[list[Plane]] = ParsedLump(BSP_LUMPS.PLANES)
-    faces: ParsedLump[list[Face]] = ParsedLump(BSP_LUMPS.FACES)
-    orig_faces: ParsedLump[list[Face]] = ParsedLump(BSP_LUMPS.ORIGINALFACES)
-    hdr_faces: ParsedLump[list[Face]] = ParsedLump(BSP_LUMPS.FACES_HDR)
-    primitives: ParsedLump[list[Primitive]] = ParsedLump(
-        BSP_LUMPS.PRIMITIVES,
-        BSP_LUMPS.PRIMINDICES, BSP_LUMPS.PRIMVERTS,
-    )
     # Game lumps
     detail_props: ParsedLump[list['DetailProp']] = ParsedLump(LMP_ID_DETAIL_PROPS)
 
@@ -326,17 +378,12 @@ Deprecated Functionality
 These methods have been replaced by others, and should not be used.
 
 .. automethod:: BSP.read_header
-	:deprecated: No longer has functionality.
 
 .. automethod:: BSP.read_game_lumps
-	:deprecated: No longer has functionality.
 
 .. automethod:: BSP.replace_lump
-	:deprecated: Use the relevant property directly, or set :py:attribute:`Lump.data`.
 
 .. Classes TODO:
-'DetailProp', 'DetailPropModel', 'DetailPropOrientation', 'DetailPropShape', 'DetailPropSprite',
-'LeafWaterInfo', 'Visibility',
-'Plane', 'PlaneType',
-'Primitive', 'Face', 'Edge', 'RevEdge',
-'Brush', 'BrushSide', 'BrushContents',
+    'DetailProp', 'DetailPropModel', 'DetailPropOrientation', 'DetailPropShape', 'DetailPropSprite',
+    'LeafWaterInfo', 'Visibility',
+    'Brush', 'BrushSide', 'BrushContents',
