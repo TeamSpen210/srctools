@@ -483,10 +483,10 @@ class StaticPropFlags(Flag):
 class VisLeafFlags(Flag):
     """Visleaf flags."""
     NONE = 0x0
-    SKY_3D = 0x01  # The 3D skybox is visible from here.
-    SKY_2D = 0x04  # The 2D skybox is visible from here.
-    RADIAL = 0x02  # Has culled portals, due to far-z fog limits.
-    HAS_DETAIL_OBJECTS = 0x08  # Contains detail props - ingame only, not set in BSP.
+    SKY_3D = 0x01  #: The 3D skybox is visible from here.
+    SKY_2D = 0x04  #: The 2D skybox is visible from here.
+    RADIAL = 0x02  #: Has culled portals, due to far-z fog limits.
+    HAS_DETAIL_OBJECTS = 0x08  #: Contains detail props - ingame only, not set in BSP.
 
     # Undocumented flags, still in maps though?
     # Looks like uninitialised members.
@@ -874,8 +874,8 @@ class Cubemap:
     The position is integral, and the size can be zero for the default
     or a positive number for different powers of 2.
     """
-    origin: Vec  # Always integer coordinates
-    size: int = 0
+    origin: Vec  #: Always integer coordinates
+    size: int = 0  #: Resolution to use for the cubemap textures.
 
     @property
     def resolution(self) -> int:
@@ -949,22 +949,26 @@ class VisLeaf:
     """A leaf in the visleaf/BSP data.
 
     The bounds are defined implicitly by the parent node planes.
+    The ambient light data is currently not parsed.
     """
     contents: BrushContents
     cluster_id: int
-    area: int
+    area: int  #: Each 'area' is an isolated section of map, separated by world geometry or areaportals.
     flags: VisLeafFlags
     mins: Vec
     maxes: Vec
     faces: list[Face]
     brushes: list[Brush]
     water_id: int
-    _ambient: bytes = bytes(24)
+    _ambient: bytes = bytes(24)  # TODO: Parse this.
     # This is LEAF_MIN_DIST_TO_WATER
     min_water_dist: int = 65535
 
     def test_point(self, point: Vec) -> Optional['VisLeaf']:
-        """Test the given point against us, returning ourselves or None."""
+        """Test the given point against us, returning ourselves or None.
+
+        This is used by the corresponding method in VisTree to find hits.
+        """
         return self if point.in_bbox(self.mins, self.maxes) else None
 
 
@@ -987,13 +991,13 @@ class VisTree:
     @property
     @deprecated('Use tree.plane.normal')
     def plane_norm(self) -> Vec:
-        """Deprecated alias for tree.plane.normal."""
+        """:deprecated: Alias for tree.plane.normal."""
         return self.plane.normal
 
     @property
     @deprecated('Use tree.plane.dist')
     def plane_dist(self) -> float:
-        """Deprecated alias for tree.plane.dist."""
+        """:deprecated: Alias for tree.plane.dist."""
         return self.plane.dist
 
     def test_point(self, point: Vec) -> Optional[VisLeaf]:

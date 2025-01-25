@@ -203,23 +203,66 @@ Static Props
 	:member-order: bysource
 
 
+Cubemaps
+--------
+
+.. py:attribute:: BSP.cubemaps
+    :type: list[Cubemap]
+
+    ``env_cubemap`` entities are parsed out of the VMF and stored in their own lump.
+
+.. autoclass:: Cubemap
+    :members:
+
+Overlays
+--------
+
+.. py:attribute:: BSP.overlays
+    :type: list[Overlay]
+
+    ``info_overlay``s are stored in this special lump.
+
+.. autoclass:: Overlay
+    :members:
+    :undoc-members:
+
+
+Visleafs
+--------
+
+The visleaf structure is composed of a tree either of nodes or vis-leafs.
+
+.. py:attribute:: BSP.visleafs
+    :types: list[VisLeaf]
+    The array of all visleafs.
+
+.. py:attribute:: BSP.nodes
+    :type: list[VisTree]
+    The array of nodes, each splitting the parent into two children.
+
+.. automethod:: BSP.vis_tree
+
+.. autoclass:: VisTree
+    :members:
+    :undoc-members:
+
+.. autoclass:: VisLeaf
+    :members:
+    :undoc-members:
+
+.. autosrcenum:: VisLeafFlags
+	:members:
+	:undoc-members:
+	:member-order: bysource
+
+
 .. Lumps TODO:
-    cubemaps: ParsedLump[list[Cubemap]] = ParsedLump(BSP_LUMPS.CUBEMAPS)
-    overlays: ParsedLump[list[Overlay]] = ParsedLump(
-        BSP_LUMPS.OVERLAYS,
-        BSP_LUMPS.OVERLAY_FADES, BSP_LUMPS.OVERLAY_SYSTEM_LEVELS,
-    )
     bmodels: ParsedLump['WeakKeyDictionary[Entity, BModel]'] = ParsedLump(
         BSP_LUMPS.MODELS,
         BSP_LUMPS.PHYSCOLLIDE,
     )
     brushes: ParsedLump[list[Brush]] = ParsedLump(BSP_LUMPS.BRUSHES, BSP_LUMPS.BRUSHSIDES)
-    visleafs: ParsedLump[list[VisLeaf]] = ParsedLump(
-        BSP_LUMPS.LEAFS,
-        BSP_LUMPS.LEAFFACES, BSP_LUMPS.LEAFBRUSHES, BSP_LUMPS.LEAFMINDISTTOWATER,
-    )
     water_leaf_info: ParsedLump[list[LeafWaterInfo]] = ParsedLump(BSP_LUMPS.LEAFWATERDATA)
-    nodes: ParsedLump[list[VisTree]] = ParsedLump(BSP_LUMPS.NODES)
     # This is None if VVIS has not been run.
     visibility: ParsedLump[Optional[Visibility]] = ParsedLump(BSP_LUMPS.VISIBILITY)
     vertexes: ParsedLump[list[Vec]] = ParsedLump(BSP_LUMPS.VERTEXES)
@@ -233,7 +276,6 @@ Static Props
         BSP_LUMPS.PRIMINDICES, BSP_LUMPS.PRIMVERTS,
     )
     # Game lumps
-    props: ParsedLump[list['StaticProp']] = ParsedLump(LMP_ID_STATIC_PROPS)
     detail_props: ParsedLump[list['DetailProp']] = ParsedLump(LMP_ID_DETAIL_PROPS)
 
 Miscellaneous
