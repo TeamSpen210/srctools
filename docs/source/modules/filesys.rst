@@ -4,41 +4,119 @@ srctools.filesys
 .. automodule:: srctools.filesys
 	:synopsis: Provides a unified API for reading from different sources, like Source does.
 
-.. autoexception:: RootEscapeError
-   :members:
-
 .. autofunction:: get_filesystem
+
+.. autoclass:: FileSystem
+
+	.. autoattribute:: path
+
+	.. automethod:: walk_folder
+
+	.. automethod:: open_bin
+
+	.. automethod:: open_str
+
+	.. automethod:: read_kv1
+
+	.. automethod:: __eq__
+
+	.. automethod:: __iter__
+
+	.. automethod:: __getitem__
+
+	.. automethod:: __contains__
+
+.. autoclass:: File()
+
+	.. automethod:: open_bin
+
+	.. automethod:: open_str
+
+	.. automethod:: cache_key
+
+	.. automethod:: __fspath__
 
 .. py:data:: CACHE_KEY_INVALID
    :value: -1
 
-   This is returned from :py:meth:`FileSystem.cache_key()` to indicate no key could be computed.
+   This is returned from :py:meth:`File.cache_key` to indicate no key could be computed.
 
-.. autoclass:: FileSystem
+.. autoexception:: RootEscapeError
    :members:
-   :private-members:
-   :special-members:
-
-.. autoclass:: File
-   :members:
-   :private-members:
-   :special-members:
 
 ========================
 Concrete implementations
 ========================
 
+The specific implementations of base ``FileSystem`` methods have been omitted.
+
 .. autoclass:: FileSystemChain
-   :members:
+
+	.. autoattribute:: systems
+
+	.. automethod:: get_system
+
+	.. automethod:: add_sys
+
+	.. automethod:: walk_folder_repeat
 
 .. autoclass:: RawFileSystem
-   :members:
 
+	.. autoattribute:: constrain_path
 .. autoclass:: VirtualFileSystem
-   :members:
+
+	.. autoattribute:: bytes_encoding
+
+	.. py:attribute:: path
+		:value: "<virtual>"
+
+		Always constant.
+
 
 .. autoclass:: ZipFileSystem
-   :members:
+
+	.. autoattribute:: zip
 
 .. autoclass:: VPKFileSystem
-   :members:
+
+	.. autoattribute:: vpk
+
+===============================
+Implementing Custom FileSystems
+===============================
+Custom filesystems can be implemented by subclassing :py:class`FileSystem`. File objects store a
+"data" value, which is private to the filesystem implementation, and can hold things like a
+file-info object. Specify it as the `_FileDataT` typevar.
+These are the methods that should be overridden:
+
+* :py:meth:`FileSystem.walk_folder`
+* :py:meth:`FileSystem.open_str`
+* :py:meth:`FileSystem.open_bin`
+
+.. automethod:: FileSystem._file_exists
+
+.. automethod:: FileSystem._get_file
+
+.. automethod:: FileSystem._get_cache_key
+
+These methods can be called by subclasses:
+
+.. automethod:: File.__init__
+
+.. automethod:: FileSystem._get_data
+
+========================
+Deprecated Functionality
+========================
+
+.. automethod:: FileSystem.read_prop
+
+.. automethod:: FileSystem._check_open
+
+.. automethod:: FileSystem.__enter__
+
+.. automethod:: FileSystem.__exit__
+
+.. automethod:: FileSystem.open_ref
+
+.. automethod:: FileSystem.close_ref

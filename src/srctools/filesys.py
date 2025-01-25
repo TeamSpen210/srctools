@@ -9,7 +9,9 @@ call :py:func:`~File.open_bin()` or :py:func:`~File.open_str()` to read the cont
 supported.
 
 * :py:class:`FileSystem` is the base :external:py:class:`~abc.ABC`, which can be subclassed to
-  define additional subsystems.
+  define additional filesystems.
+* :py:class:`File` represents a file found inside any of the filesystems. It is not publically
+  constructible.
 * :py:class:`RawFileSystem` provides access to a directory, optionally prohibiting access to parent
   folders.
 * :py:class:`ZipFileSystem` and :py:class:`VPKFileSystem` provide access to their respective
@@ -52,10 +54,11 @@ _FileDataT = TypeVar('_FileDataT', default=Any)
 
 
 def get_filesystem(path: str) -> 'FileSystem[Any]':
-    """Return a filesystem given a path.
+    """Give a file path, determine the appopriate filesystem.
 
-    If the path is a directory this returns a RawFileSystem.
-    Otherwise, it returns a VPK or zip, depending on extension.
+    If the path is a directory this returns a :py:class:`RawFileSystem`.
+    Otherwise, it returns a :py:class:`VPKFileSystem` or :py:class:`ZipFileSystem`,
+    depending on the extension.
     """
     if os.path.isdir(path):
         return RawFileSystem(path)
@@ -98,7 +101,7 @@ class File(Generic[FileSysT_co]):
         path: str,
         data: Any,
     ) -> None:
-        """Create a File.
+        """Create a File. Should only be called by FileSystem subclasses.
 
         :param system: should be the filesystem which matches.
         :param path: is the relative path for the file.
@@ -123,6 +126,8 @@ class File(Generic[FileSysT_co]):
         """Return a file-like object in unicode mode.
 
         This should be closed when done.
+
+        :param encoding: Encoding to use.
         """
         return self.sys.open_str(self, encoding)
 
@@ -138,12 +143,11 @@ class File(Generic[FileSysT_co]):
 
 class FileSystem(Generic[_FileDataT]):
     """Base class for different systems defining the interface."""
+    #: Path to this filesystem root, such as the folder or archive file.
     path: str
-    _ref_count: int
 
     def __init__(self, path: StringPath) -> None:
         self.path = os.fspath(path)
-        self._ref_count = 0
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self.path!r})'
@@ -158,7 +162,7 @@ class FileSystem(Generic[_FileDataT]):
 
     @deprecated('References concept removed, filesystems are always open.')
     def _check_open(self) -> None:
-        """Ensure self._ref is valid."""
+        """:deprecated: filesystems are always valid."""
 
     def read_kv1(self, path: Union[str, File[Self]], encoding: str = 'utf8') -> Keyvalues:
         """Read a Keyvalues1 file from the filesystem.
@@ -203,14 +207,16 @@ class FileSystem(Generic[_FileDataT]):
         return self.walk_folder('')
 
     def __getitem__(self, name: str) -> File[Self]:
+        """Index the filesystem to locate a file."""
         return self._get_file(name)
 
     def __contains__(self, name: str) -> bool:
+        """Check if a file exists."""
         return self._file_exists(name)
 
     @classmethod
     def _get_data(cls, file: File[Self]) -> _FileDataT:
-        """Accessor for file._data, to show the relationship to the type
+        """Accessor for ``file._data``, to show the relationship to the type
         checker.
 
         It should only be available to that filesystem, and produces the type.
@@ -221,6 +227,7 @@ class FileSystem(Generic[_FileDataT]):
 
     # The following should be overridden:
     def _file_exists(self, name: str) -> bool:
+        """Check if a file exists. The default implementation checks for :py:class`FileNotFoundError`."""
         try:
             self._get_file(name)
             return True
@@ -236,16 +243,21 @@ class FileSystem(Generic[_FileDataT]):
         raise NotImplementedError
 
     def open_str(self, name: Union[str, File[Self]], encoding: str = 'utf8') -> TextIO:
-        """Open a file in unicode mode or raise FileNotFoundError.
+        """Open a file in unicode mode or raise :py:class:`FileNotFoundError`.
 
         This should be closed when done.
+
+        :param name: Filename, or a file handle belonging to this system.
+        :param encoding: Encoding to use.
         """
         raise NotImplementedError
 
     def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:
-        """Open a file in bytes mode or raise FileNotFoundError.
+        """Open a file in bytes mode or raise :py:class:`FileNotFoundError`.
 
         This should be closed when done.
+
+        :param name: Filename, or a file handle belonging to this system.
         """
         raise NotImplementedError
 
@@ -263,10 +275,12 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
     Each system can additionally be filtered to only allow access to files inside a subfolder. These
     will appear as if they are at the root level.
     """
+    #: The child filesystems, as (filesystem, subfolder) tuples.
+    systems: list[tuple[FileSystem[Any], str]]
 
     def __init__(self, *systems: Union[FileSystem[Any], tuple[FileSystem[Any], str]]) -> None:
         super().__init__('')
-        self.systems: list[tuple[FileSystem[Any], str]] = []
+        self.systems = []
         for sys in systems:
             if isinstance(sys, tuple):
                 self.add_sys(*sys)
@@ -361,7 +375,7 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
         """Walk folders, but allow repeating files.
 
         If a file is contained in multiple systems, it will be yielded for each. The first is the
-        highest-priority. Using this instead of  :py:func:`~FileSystemChain.walk_folder()` is
+        highest-priority. Using this instead of  :py:func:`~FileSystem.walk_folder()` is
         cheaper, since a set of visited files must be maintained.
         """
         for sys, prefix in self.systems:
@@ -388,10 +402,11 @@ class VirtualFileSystem(FileSystem[str]):
     """Access a dict as if it were a filesystem.
 
     The dict should map file paths to either bytes or strings.
-    The encoding arg specifies how text data is presented if open_bin()
+    The encoding arg specifies how text data is presented if :py:meth:`~FileSystem.open_bin()`
     is called.
     """
     _mapping: Mapping[str, tuple[str, Union[str, bytes, bytearray, memoryview]]]
+    bytes_encoding: str  #: Encoding used to convert text data for :py:meth:`~FileSystem.open_bin()`.
 
     def __init__(self, mapping: Mapping[str, Union[str, bytes, bytearray, memoryview]], encoding: str = 'utf8') -> None:
         super().__init__('<virtual>')
@@ -480,7 +495,11 @@ class RawFileSystem(FileSystem[str]):
     """Accesses files in a real folder.
 
     This can prohibit access to folders above the root.
+
+    :raises RootEscapeError: if such access occurs.
     """
+    #: If enabled, this prohibits accessing files above its root.
+    constrain_path: bool
     def __init__(self, path: StringPath, constrain_path: bool = True) -> None:
         super().__init__(os.path.abspath(path))
         self.constrain_path = constrain_path
@@ -547,19 +566,12 @@ class RawFileSystem(FileSystem[str]):
 
 class ZipFileSystem(FileSystem[ZipInfo]):
     """Accesses files in a zip file."""
-    _no_close: bool
-    zip: ZipFile
+    zip: ZipFile  #: The open zipfile object.
 
     def __init__(self, path: StringPath, zipfile: Optional[ZipFile] = None) -> None:
         super().__init__(path)
 
-        if zipfile is not None:
-            # The user owns the responsibility to close the zipfile, not us.
-            self._no_close = True
-            self.zip = zipfile
-        else:
-            self._no_close = False
-            self.zip = ZipFile(path)
+        self.zip = zipfile if zipfile is not None else ZipFile(path)
 
         self._name_to_info: dict[str, ZipInfo] = {
             info.filename.casefold(): info
@@ -626,7 +638,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
 
 class VPKFileSystem(FileSystem[VPKFile]):
     """Accesses files in a VPK file."""
-    vpk: VPK
+    vpk: VPK  #: The VPK to read from.
     _name_to_file: dict[str, VPKFile]
 
     def __init__(self, path: StringPath) -> None:
