@@ -1,5 +1,6 @@
 """Implements a documenter for Enum classes."""
 from collections import defaultdict
+from inspect import Signature
 
 from typing import Any, Dict, Iterable, List, Tuple, Type
 from dataclasses import dataclass
@@ -47,6 +48,10 @@ class EnumDocumenter(ClassDocumenter):
         super().__init__(*args)
         self.options = self.options.copy()
         self.options['show-inheritance'] = True
+
+    def _get_signature(self) -> tuple[Any | None, str | None, Signature | None]:
+        """Don't show the guts of EnumMeta."""
+        return None, None, None
 
     @classmethod
     def can_document_member(cls, member: Any, membername: str, isattr: bool, parent: Any) -> bool:
