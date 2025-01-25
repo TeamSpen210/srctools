@@ -509,10 +509,15 @@ class Lump:
     """Represents a lump header in a BSP file.
 
     """
+    #: Type of lump.
     type: BSP_LUMPS
+    #: The version value is stored in the BSP. Not totally reliable, Valve sometimes modifies lumps
+    #: without updating the ID.
     version: int
+    #: If not parsed, contains the raw data for the lump. When the associated property is accessed,
+    #: this is automatically cleared.
     data: bytes = b''
-    # If true, this is LZMA compressed.
+    #: If true, this is LZMA compressed.
     is_compressed: bool = False
 
     def __repr__(self) -> str:
@@ -525,9 +530,15 @@ class GameLump:
 
     These are designed to be game-specific.
     """
+    #: ID for the lump. Should be 4 bytes long.
     id: bytes
+    #: Arbitary bitflags, aside from 0x1 which represents compression.
     flags: int
+    #: Version number for this lump. Not totally reliable, since different games have
+    #: used the same version number for different layouts.
     version: int
+    #: If not parsed, contains the raw data for the lump. When the associated property is accessed,
+    #: this is automatically cleared.
     data: bytes = b''
 
     ST: ClassVar[struct.Struct] = struct.Struct('<4s HH ii')
@@ -611,6 +622,9 @@ class TexInfo:
     """Represents texture positioning / scaling info.
 
     Overlays don't use the offset/shifts, setting them to ``(0, 0, 0)`` and ``-99999.0`` respectively.
+
+    TexInfo structures reference an additional TextData struct, containing texture size and reflectivity information.
+    This is managed automatically.
     """
     s_off: Vec
     s_shift: float
@@ -620,6 +634,8 @@ class TexInfo:
     lightmap_s_shift: float
     lightmap_t_off: Vec
     lightmap_t_shift: float
+    #: Bitflags calculated from the material, like translucency, whether lighting calculation is
+    #: required and portalability.
     flags: SurfFlags
     _info: TexData
 
@@ -1274,11 +1290,13 @@ class BSP:
         Union[bytes, BSP_LUMPS],
         Callable[['BSP', Any], Union[bytes, Generator[bytes, None, None]]]
     ]] = {}
-    #: The version ID in the file.
+    #: The version ID in the file. Will be a :py:class:`VERSIONS` enum if known, otherwise an integer.
     version: Union[VERSIONS, int]
-    #: A srctools-specific version to identify some games with unique handling.
+    #: A srctools-specific version to identify some games with unique handling. Inferred from the
+    #: version ID if specified there.
     game_ver: GameVersion
     lump_layout: LumpDataLayout
+    #: A counter for the map revision. Incremented whenever Hammer saves the VMF.
     map_revision: int
 
     def __init__(
@@ -1286,6 +1304,7 @@ class BSP:
         filename: StringPath,
         version: Union[VERSIONS, GameVersion, None] = None,
     ) -> None:
+        """Create and load a BSP."""
         self.filename = filename
         self.map_revision = -1  # The map's revision count
         self.lumps: dict[BSP_LUMPS, Lump] = {}
