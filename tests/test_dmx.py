@@ -1,5 +1,5 @@
 """Test the datamodel exchange implementation."""
-from typing import Any, List, Tuple, cast
+from typing import Any, cast
 from collections.abc import Callable
 from io import BytesIO
 from pathlib import Path
@@ -489,7 +489,7 @@ def test_binary_text_conversion(typ: ValueType, attr: str, value, binary: bytes,
     'int', 'float', 'bool', 'str', 'bytes', 'time', 'color',
     'vec2', 'vec3', 'vec4', 'angle', 'quaternion', 'matrix',
 ])
-def test_attr_array_constructor(typ: ValueType, iterable: List[Any], expected: List[Any]) -> None:
+def test_attr_array_constructor(typ: ValueType, iterable: list[Any], expected: list[Any]) -> None:
     """Test constructing an array attribute."""
     expected_type = type(expected[0])
     attr = Attribute.array('some_array', typ, iterable)
@@ -515,7 +515,7 @@ def test_attr_array_elem_constructor() -> None:
     assert attr[2].val_elem is elem1
 
 
-deduce_type_tests: List[Tuple[Any, ValueType, Any]] = [
+deduce_type_tests: list[tuple[Any, ValueType, Any]] = [
     (5, ValueType.INT, 5),
     (5.0, ValueType.FLOAT, 5.0),
     (False, ValueType.BOOL, False),
@@ -574,7 +574,7 @@ def test_deduce_type_basic(input_val: Any, val_type: ValueType, output: Any) -> 
     (collections.deque([1.0, 2.0, 3.0]), ValueType.FLOAT, [1.0, 2.0, 3.0]),
     (range(5), ValueType.INT, [0, 1, 2, 3, 4]),
 ])
-def test_deduce_type_array(input_val: List[Any], val_type: ValueType, output: List[Any]) -> None:
+def test_deduce_type_array(input_val: list[Any], val_type: ValueType, output: list[Any]) -> None:
     """Test array deduction, and some special cases."""
     [test_type, test_arr] = deduce_type(input_val)
     assert test_type is val_type
