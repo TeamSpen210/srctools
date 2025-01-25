@@ -53,7 +53,8 @@ FileSysT = TypeVar('FileSysT', bound=FileSystem)
 _fake_vmf = VMF(preserve_ids=False)
 # Collections of tags.
 TagsSet: TypeAlias = frozenset[str]
-SnippetDict: TypeAlias = 'dict[str, Snippet[T]]'
+SnippetDict: TypeAlias = dict[str, list['Snippet[T]']]
+SnippetLookupDict: TypeAlias = Mapping[str, Sequence['Snippet[T]']]
 SpawnFlags: TypeAlias = tuple[int, str, bool, TagsSet]
 Choices: TypeAlias = tuple[str, str, TagsSet]
 
@@ -343,7 +344,7 @@ def _read_colon_list(
     tok: BaseTokenizer,
     had_colon: bool = False,
     desc_offset: int = -1,
-    snippet_desc: Mapping[str, Snippet[str]] = srctools.EmptyMapping,
+    snippet_desc: SnippetLookupDict[str] = srctools.EmptyMapping,
 ) -> list[str]:
     """Read strings seperated by colons, up to the end of the line.
 
@@ -375,7 +376,7 @@ def _read_colon_list(
 
             if not ready_for_string:
                 raise tok.error('Too many strings (#snippet "{}")!', desc_key)
-            strings.append(Snippet.lookup(tok.error, 'description', snippet_desc, desc_key))
+            strings.append(Snippet.lookup_single(tok.error, 'description', snippet_desc, desc_key))
             ready_for_string = False
         elif token is Token.NEWLINE:
             if ready_for_string:
@@ -447,7 +448,7 @@ def _write_longstring(file: IO[str], extended: bool, text: str, *, indent: str) 
 
 def _parse_colon_array(
     tok: BaseTokenizer, error_desc: str, kind: str,
-    snippet_mapping: Mapping[str, Snippet[Sequence[T]]],
+    snippet_mapping: SnippetLookupDict[Sequence[T]],
     parse: Callable[[BaseTokenizer, str, str, list[str], TagsSet], T],
 ) -> list[T]:
     """Parse through an array of colon-separated values, like in choices/flags keyvalues.
@@ -457,7 +458,8 @@ def _parse_colon_array(
     tok_typ, tok_value = tok()
     if tok_typ is Token.DIRECTIVE and tok_value == "snippet":
         # A line like "... = #snippet" - include a single array, no additional values.
-        return list(Snippet.lookup(tok.error, kind, snippet_mapping, tok.expect(Token.STRING)))
+        # Make sure to copy the list, we don't want to share. We know the contents are immutable.
+        return list(Snippet.lookup_single(tok.error, kind, snippet_mapping, tok.expect(Token.STRING)))
     else:
         tok.push_back(tok_typ, tok_value)
 
@@ -469,7 +471,7 @@ def _parse_colon_array(
         elif token is Token.DIRECTIVE and first_value == 'snippet':
             # Include an existing list of values, maybe with inline values.
             key = tok.expect(Token.STRING)
-            val_list.extend(Snippet.lookup(tok.error, kind, snippet_mapping, key))
+            val_list.extend(Snippet.lookup_single(tok.error, kind, snippet_mapping, key))
             continue
         elif token is not Token.STRING:
             raise tok.error(token, first_value)
@@ -640,39 +642,97 @@ class Snippet(Generic[ValueT_co]):
     value: ValueT_co
 
     @classmethod
-    def lookup(
+    def lookup_single(
         cls,
         error: Callable[[str], BaseException],
         kind: str,
-        mapping: Mapping[str, Snippet[T]],
+        mapping: SnippetLookupDict[T],
         key: str,
     ) -> T:
-        """Locate a snippet using the specified mapping.
+        """Locate the one snippet using the specified mapping.
+
+        If not found or having multiple, `error` is used to create the exception to raise, using `kind` as the snippet
+        type.
+        """
+        try:
+            snippets = mapping[key.casefold()]
+        except KeyError:
+            names = {snip.name for snip_list in mapping.values() for snip in snip_list}
+            raise error(f'Snippet "{key}" does not exist. Known {kind} snippets: {sorted(names)}') from None
+        try:
+            [snip] = snippets
+            return snip.value
+        except ValueError:
+            raise error(f'Multiple snippets with name "{key}" exist!') from None
+
+    @classmethod
+    def lookup_multi(
+        cls,
+        error: Callable[[str], BaseException],
+        kind: str,
+        mapping: SnippetLookupDict[T],
+        key: str,
+    ) -> Iterator[T]:
+        """Locate all snippets with a key using the specified mapping.
 
         If not found, `error` is used to create the exception to raise, using `kind` as the snippet
         type.
         """
         try:
-            return mapping[key.casefold()].value
+            snippets = mapping[key.casefold()]
         except KeyError:
-            names = [snip.name for snip in mapping.values()]
-            names.sort()
-            raise error(f'Snippet "{key}" does not exist. Known {kind} snippets: {names}') from None
+            names = {snip.name for snip_list in mapping.values() for snip in snip_list}
+            raise error(f'Snippet "{key}" does not exist. Known {kind} snippets: {sorted(names)}') from None
+        else:
+            for snip in snippets:
+                yield snip.value
 
     @classmethod
-    def _add(cls, kind: str, mapping: SnippetDict[T], path: str, line: int, name: str, value: T) -> None:
+    def _add(
+        cls,
+        kind: str, mapping: SnippetDict[T],
+        path: str, line: int, name: str,
+        value: T, replace: bool = False,
+    ) -> None:
         """Create and add a snippet to the mapping, raising an error on collisions."""
+        key = name.casefold()
+        snip = Snippet(name, path, line, value)
+        if replace:
+            if key not in mapping:
+                raise ValueError(
+                    f'Tried to replace {kind} snippet with name "{name}", but none exist!'
+                )
+            mapping[key] = [snip]
+        else:
+            try:
+                existing = mapping[key]
+            except KeyError:
+                mapping[key] = [snip]
+            else:
+                raise ValueError(
+                    f'Two {kind} snippets were defined with the name "{name}":\n'
+                    f'- {existing[0].source_path}:{existing[0].source_line}\n'
+                    f'- {path}:{line}'
+                )
+
+    @classmethod
+    def _append(
+        cls, mapping: SnippetDict[T],
+        path: str, line: int,
+        name: str, value: T,
+    ) -> None:
+        """Create and add a snippet to the mapping, adding to existing values."""
+        snip = Snippet(name, path, line, value)
         key = name.casefold()
         try:
             existing = mapping[key]
         except KeyError:
-            mapping[key] = Snippet(name, path, line, value)
+            mapping[key] = [snip]
         else:
-            raise ValueError(
-                f'Two {kind} snippets were defined with the name "{name}":\n'
-                f'- {existing.source_path}:{existing.source_line}'
-                f'- {path}:{line}'
-            )
+            for exist in existing:
+                if exist.value == value:
+                    return
+            existing.append(snip)
 
     # noinspection PyProtectedMember
     @classmethod
@@ -680,6 +740,14 @@ class Snippet(Generic[ValueT_co]):
         """Parse snippet definitions in a FGD."""
         definition_line = tokeniser.line_num  # Before further parsing.
         snippet_kind = tokeniser.expect(Token.STRING).casefold()
+
+        tok, tok_value = tokeniser()
+        if tok is Token.STRING and tok_value == 'replace':
+            replace = True
+        else:
+            replace = False
+            tokeniser.push_back(tok, tok_value)
+
         snippet_id = tokeniser.expect(Token.STRING)
         tokeniser.expect(Token.EQUALS)
         error_desc = f'snippet "{path}:{snippet_id}'
@@ -697,7 +765,7 @@ class Snippet(Generic[ValueT_co]):
             cls._add(
                 'description', fgd.snippet_desc,
                 path, definition_line, snippet_id,
-                desc,
+                desc, replace=replace,
             )
         # These two can both use and produce snippets, producing a bit of redundancy.
         elif snippet_kind == 'choices':
@@ -707,7 +775,7 @@ class Snippet(Generic[ValueT_co]):
                 _parse_colon_array(
                     tokeniser, error_desc,
                     'choices list', fgd.snippet_choices, _parse_choices,
-                ),
+                ),  replace=replace,
             )
         elif snippet_kind in ('flags', 'spawnflags'):
             cls._add(
@@ -716,28 +784,28 @@ class Snippet(Generic[ValueT_co]):
                 _parse_colon_array(
                     tokeniser, error_desc,
                     'flags list', fgd.snippet_flags, _parse_flags,
-                ),
+                ), replace=replace,
             )
         elif snippet_kind in ('kv', 'keyvalue'):
             cls._parse_kv_io(
                 fgd, tokeniser,
                 fgd.snippet_keyvalue, cls._parse_kv,
-                path, definition_line, error_desc,
-                'keyvalue', snippet_id,
+                path, definition_line, error_desc, replace,
+                snippet_id,
             )
         elif snippet_kind == 'input':
             cls._parse_kv_io(
                 fgd, tokeniser,
                 fgd.snippet_input, cls._parse_io,
-                path, definition_line, error_desc,
-                'input', snippet_id,
+                path, definition_line, error_desc, replace,
+                snippet_id,
             )
         elif snippet_kind == 'output':
             cls._parse_kv_io(
                 fgd, tokeniser,
                 fgd.snippet_output, cls._parse_io,
-                path, definition_line, error_desc,
-                'output', snippet_id,
+                path, definition_line, error_desc, replace,
+                snippet_id,
             )
         else:
             raise tokeniser.error(
@@ -752,7 +820,7 @@ class Snippet(Generic[ValueT_co]):
         return KVDef._parse(fgd, kv_name, tokeniser, error_desc)
 
     @staticmethod
-    def _parse_io(fgd: FGD, tokeniser: BaseTokenizer, error_desc: str) -> tuple[TagsSet, IODef]:
+    def _parse_io(fgd: FGD, tokeniser: BaseTokenizer, _: str) -> tuple[TagsSet, IODef]:
         """Callable for _parse_kv_io."""
         # noinspection PyProtectedMember
         return IODef._parse(fgd, tokeniser)
@@ -763,15 +831,50 @@ class Snippet(Generic[ValueT_co]):
         fgd: FGD, tokeniser: BaseTokenizer,
         field: SnippetDict[T],
         parse: Callable[[FGD, BaseTokenizer, str], T],
-        path: str, definition_line: int, error_desc: str,
-        kind: str, snippet_id: str,
+        path: str, definition_line: int,
+        error_desc: str, replace: bool,
+        snippet_id: str,
     ) -> None:
-        """Parse an input or output definition."""
-        cls._add(
-            kind, field,
-            path, definition_line, snippet_id,
-            parse(fgd, tokeniser, error_desc),
-        )
+        """Parse a keyvalues, input or output definition."""
+        tok, tok_value = tokeniser()
+        if tok is Token.BRACK_OPEN:
+            # We have multiple.
+            while True:
+                tok, tok_value = tokeniser()
+                if tok is Token.NEWLINE:
+                    continue
+                elif tok is Token.BRACK_CLOSE:
+                    break
+                else:
+                    tokeniser.push_back(tok, tok_value)
+                    # We're multi-line, use the line for each definition
+                    line = tokeniser.line_num
+                    if replace:
+                        field[snippet_id.casefold()] = [Snippet(
+                            snippet_id, path, line,
+                            parse(fgd, tokeniser, error_desc),
+                        )]
+                        replace = False
+                    else:
+                        cls._append(
+                            field,
+                            path, line, snippet_id,
+                            parse(fgd, tokeniser, error_desc),
+                        )
+        else:
+            # One value.
+            tokeniser.push_back(tok, tok_value)
+            if replace:
+                field[snippet_id.casefold()] = [Snippet(
+                    snippet_id, path, definition_line,
+                    parse(fgd, tokeniser, error_desc),
+                )]
+            else:
+                cls._append(
+                    field,
+                    path, definition_line, snippet_id,
+                    parse(fgd, tokeniser, error_desc),
+                )
 
 
 @attrs.frozen
@@ -1631,7 +1734,7 @@ class EntityDef:
                     # No colon yet, or we have text without '+' between
                     raise tok.error(doc_token, token_value)
                 # Included from an earlier snippet.
-                desc.append(Snippet.lookup(
+                desc.extend(Snippet.lookup_single(
                     tok.error,
                     'description', fgd.snippet_desc,
                     tok.expect(Token.STRING),
@@ -1645,7 +1748,7 @@ class EntityDef:
                 if tok_typ is Token.STRING:
                     desc.append(tok_val)
                 elif tok_typ is Token.DIRECTIVE and tok_val == 'snippet':
-                    desc.append(Snippet.lookup(
+                    desc.extend(Snippet.lookup_single(
                         tok.error, 'description', fgd.snippet_desc,
                         tok.expect(Token.STRING),
                     ))
@@ -1680,20 +1783,20 @@ class EntityDef:
                 value_kind = tok.expect(Token.STRING).casefold()
                 key = tok.expect(Token.STRING)
                 if value_kind == 'input':
-                    tags, io_def = Snippet.lookup(tok.error, 'input', fgd.snippet_input, key)
-                    io_tags_map = entity.inputs.setdefault(io_def.name.casefold(), {})
-                    io_tags_map[tags] = io_def
+                    for tags, io_def in Snippet.lookup_multi(tok.error, 'input', fgd.snippet_input, key):
+                        io_tags_map = entity.inputs.setdefault(io_def.name.casefold(), {})
+                        io_tags_map[tags] = io_def
                 elif value_kind == 'output':
-                    tags, io_def = Snippet.lookup(tok.error, 'output', fgd.snippet_output, key)
-                    io_tags_map = entity.outputs.setdefault(io_def.name.casefold(), {})
-                    io_tags_map[tags] = io_def
+                    for tags, io_def in Snippet.lookup_multi(tok.error, 'output', fgd.snippet_output, key):
+                        io_tags_map = entity.outputs.setdefault(io_def.name.casefold(), {})
+                        io_tags_map[tags] = io_def
                 elif value_kind == 'keyvalue':
-                    tags, kv_def = Snippet.lookup(tok.error, 'keyvalue', fgd.snippet_keyvalue, key)
-                    kv_tags_map = entity.keyvalues.setdefault(kv_def.name.casefold(), {})
-                    if not kv_tags_map:
-                        # New, add to the ordering.
-                        entity.kv_order.append(kv_def.name.casefold())
-                    kv_tags_map[tags] = kv_def
+                    for tags, kv_def in Snippet.lookup_multi(tok.error, 'keyvalue', fgd.snippet_keyvalue, key):
+                        kv_tags_map = entity.keyvalues.setdefault(kv_def.name.casefold(), {})
+                        if not kv_tags_map:
+                            # New, add to the ordering.
+                            entity.kv_order.append(kv_def.name.casefold())
+                        kv_tags_map[tags] = kv_def
                 else:
                     raise tok.error(
                         'Unknown snippet type "{}". Valid in this context: '

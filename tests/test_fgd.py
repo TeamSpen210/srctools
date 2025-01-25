@@ -470,18 +470,18 @@ def test_snippet_desc(py_c_token) -> None:
     with pytest.raises(ValueError, match="^Two description snippets were defined"):
         fgd.parse_file(fsys, fsys['overlap.fgd'])
     assert fgd.snippet_desc == {
-        'first_desc': Snippet(
+        'first_desc': [Snippet(
             'first_Desc', 'snippets.fgd', 1,
             'Some text. Another line of description.\nAnd another.',
-        ),
-        'another': Snippet(
+        )],
+        'another': [Snippet(
             'Another', 'snippets.fgd', 4,
             'Some description',
-        ),
-        'entdesc': Snippet(
+        )],
+        'entdesc': [Snippet(
             'EntDesc', 'snippets.fgd', 5,
             'This is an entity that does things.',
-        ),
+        )],
     }
     fgd.parse_file(fsys, fsys['ent_def.fgd'])
 
@@ -523,7 +523,7 @@ def test_snippet_choices(py_c_token) -> None:
         ('1', 'Yes', frozenset()),
     ]
     assert fgd.snippet_choices == {
-        'trinary': Snippet('TRInary', 'snippets.fgd', 2, choices)
+        'trinary': [Snippet('TRInary', 'snippets.fgd', 2, choices)]
     }
     kv = fgd['test_ent'].kv['keyvalue']
     assert kv == KVDef(
@@ -535,7 +535,8 @@ def test_snippet_choices(py_c_token) -> None:
         val_list=choices,
     )
     # It shouldn't be a shared list!
-    assert kv.val_list is not fgd.snippet_choices['trinary'].value
+    [snip] = fgd.snippet_choices['trinary']
+    assert kv.val_list is not snip.value
 
 
 def test_snippet_spawnflags(py_c_token) -> None:
@@ -573,7 +574,7 @@ def test_snippet_spawnflags(py_c_token) -> None:
     ]
 
     assert fgd.snippet_flags == {
-        'trigger': Snippet('Trigger', 'snippets.fgd', 2, spawnflags)
+        'trigger': [Snippet('Trigger', 'snippets.fgd', 2, spawnflags)]
     }
     kv = fgd['test_ent'].kv['spawnflags']
     assert kv == KVDef(
@@ -586,7 +587,8 @@ def test_snippet_spawnflags(py_c_token) -> None:
         ]
     )
     # It shouldn't be a shared list!
-    assert kv.val_list is not fgd.snippet_flags['trigger'].value
+    [snip] = fgd.snippet_flags['trigger']
+    assert kv.val_list is not snip.value
 
 
 def test_snippet_keyvalues(py_c_token) -> None:
@@ -598,10 +600,15 @@ def test_snippet_keyvalues(py_c_token) -> None:
         0: "Yes"
         1: "No"
     ]
+    
+    @snippet keyvalue KVBlock = [
+        start_open(boolean) : "Start Open": 1
+        height(int) : "Height" : 48
+    ]
     """})
     fgd.parse_file(fsys, fsys['snippets.fgd'])
     assert fgd.snippet_keyvalue == {
-        'invstartenabled': Snippet(
+        'invstartenabled': [Snippet(
             'InvStartEnabled', 'snippets.fgd', 2,
             (frozenset(['-ENGINE']), KVDef(
                 'start_enabled', ValueTypes.CHOICES,
@@ -613,7 +620,23 @@ def test_snippet_keyvalues(py_c_token) -> None:
                     ('1', 'No', frozenset()),
                 ]
             ))
-        )
+        )],
+        'kvblock': [
+            Snippet(
+                'KVBlock', 'snippets.fgd', 8,
+                (frozenset(), KVDef(
+                    'start_open', ValueTypes.BOOL,
+                    disp_name="Start Open", default='1'
+                ))
+            ),
+            Snippet(
+                'KVBlock', 'snippets.fgd', 9,
+                (frozenset(), KVDef(
+                    'height', ValueTypes.INT,
+                    disp_name="Height", default='48'
+                ))
+            ),
+        ]
     }
 
 
@@ -627,25 +650,81 @@ def test_snippet_io(py_c_token) -> None:
     """})
     fgd.parse_file(fsys, fsys['snippets.fgd'])
     assert fgd.snippet_input == {
-        'user1': Snippet(
+        'user1': [Snippet(
             'uSer1', 'snippets.fgd', 2,
             (frozenset(['+TAG']), IODef(
                 name='FireUser1',
                 type=ValueTypes.VOID,
                 desc="Causes this entity's OnUser1 output to be fired.",
             ))
-        )
+        )]
     }
     assert fgd.snippet_output == {
-        'user1': Snippet(
+        'user1': [Snippet(
             'uSer1', 'snippets.fgd', 3,
             (frozenset(['-TAG']), IODef(
                 name='OnUser1',
                 type=ValueTypes.VOID,
                 desc="Fired in response to FireUser1 input.",
             ))
-        )
+        )]
     }
+
+def test_snippet_no_dup(py_c_token) -> None:
+    """Test duplicating snippets is not allowed."""
+    fgd = FGD()
+    fsys = VirtualFileSystem({
+        'snip_1.fgd': """\
+
+        @snippet input InpBlock = FirstInput(void) : "Does something."
+        
+        @snippet desc a_desc = "Some description"
+        @snippet input InpBlock = SecondInput(void) : "I/O appends to existing."
+        @snippet desc replace a_desc = "Overwrites existing."
+        """,
+        'snip_2.fgd': """\
+        @snippet desc a_desc = "Will error, no replace command."
+        """,
+        'snip_3.fgd': """\
+        @snippet desc replace missing = "Will error, first does not exist."
+        """,
+    })
+    fgd.parse_file(fsys, fsys['snip_1.fgd'])
+    assert fgd.snippet_input == {
+        'inpblock': [
+            Snippet(
+                'InpBlock', 'snip_1.fgd', 2,
+                (frozenset(), IODef(
+                    'FirstInput', ValueTypes.VOID,
+                    "Does something."
+                ))
+            ), Snippet(
+                'InpBlock', 'snip_1.fgd', 5,
+                (frozenset(), IODef(
+                    'SecondInput', ValueTypes.VOID,
+                    "I/O appends to existing."
+                ))
+            )
+        ]
+    }
+    assert fgd.snippet_desc == {
+        'a_desc': [Snippet(
+            'a_desc', 'snip_1.fgd', 6,
+            "Overwrites existing."
+        )]
+    }
+    with pytest.raises(ValueError) as catcher:
+        fgd.parse_file(fsys, fsys['snip_2.fgd'])
+    assert str(catcher.value) == (
+        'Two description snippets were defined with the name "a_desc":\n'
+        '- snip_1.fgd:6\n'
+        '- snip_2.fgd:1'
+    )
+    with pytest.raises(ValueError) as catcher:
+        fgd.parse_file(fsys, fsys['snip_3.fgd'])
+    assert str(catcher.value) == (
+        'Tried to replace description snippet with name "missing", but none exist!'
+    )
 
 
 PARSE_EOF = {
