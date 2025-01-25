@@ -605,6 +605,10 @@ def test_snippet_keyvalues(py_c_token) -> None:
         start_open(boolean) : "Start Open": 1
         height(int) : "Height" : 48
     ]
+    
+    @PointClass = some_ent [
+        #snippet keyvalue InvStartEnabled
+    ]
     """})
     fgd.parse_file(fsys, fsys['snippets.fgd'])
     assert fgd.snippet_keyvalue == {
@@ -638,6 +642,12 @@ def test_snippet_keyvalues(py_c_token) -> None:
             ),
         ]
     }
+    # Check it was included, but is not shared.
+    snip_kv = fgd.snippet_keyvalue['invstartenabled'][0].value[1]
+    ent_kv = fgd.entities['some_ent'].kv['start_enabled', {'-engine'}]
+    assert ent_kv == snip_kv
+    assert ent_kv is not snip_kv
+    assert ent_kv.val_list is not snip_kv.val_list
 
 
 def test_snippet_io(py_c_token) -> None:
@@ -647,6 +657,11 @@ def test_snippet_io(py_c_token) -> None:
 
     @snippet input uSer1 = FireUser1[+tag](void) : "Causes this entity's OnUser1 output to be fired." 
     @snippet output uSer1 = OnUser1[-tag](void) : "Fired in response to FireUser1 input."
+    
+    @PointClass = some_ent [
+        #snippet input User1
+        #snippet output User1
+    ]
     """})
     fgd.parse_file(fsys, fsys['snippets.fgd'])
     assert fgd.snippet_input == {
@@ -669,6 +684,17 @@ def test_snippet_io(py_c_token) -> None:
             ))
         )]
     }
+    # Check they were included correctly, but are not shared (since these are mutable).
+    [tags, snip_in] = fgd.snippet_input['user1'][0].value
+    [tags, snip_out] = fgd.snippet_output['user1'][0].value
+    ent = fgd.entities['some_ent']
+    ent_inp = ent.inp['fireuser1', {'tag'}]
+    ent_out = ent.out['onuser1', ()]
+    assert ent_inp == snip_in
+    assert ent_inp is not snip_in, 'Shared!'
+    assert ent_out == snip_out
+    assert ent_out is not snip_out, 'Shared!'
+
 
 def test_snippet_no_dup(py_c_token) -> None:
     """Test duplicating snippets is not allowed."""

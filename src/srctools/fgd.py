@@ -1785,18 +1785,18 @@ class EntityDef:
                 if value_kind == 'input':
                     for tags, io_def in Snippet.lookup_multi(tok.error, 'input', fgd.snippet_input, key):
                         io_tags_map = entity.inputs.setdefault(io_def.name.casefold(), {})
-                        io_tags_map[tags] = io_def
+                        io_tags_map[tags] = io_def.copy()
                 elif value_kind == 'output':
                     for tags, io_def in Snippet.lookup_multi(tok.error, 'output', fgd.snippet_output, key):
                         io_tags_map = entity.outputs.setdefault(io_def.name.casefold(), {})
-                        io_tags_map[tags] = io_def
+                        io_tags_map[tags] = io_def.copy()
                 elif value_kind == 'keyvalue':
                     for tags, kv_def in Snippet.lookup_multi(tok.error, 'keyvalue', fgd.snippet_keyvalue, key):
                         kv_tags_map = entity.keyvalues.setdefault(kv_def.name.casefold(), {})
                         if not kv_tags_map:
                             # New, add to the ordering.
                             entity.kv_order.append(kv_def.name.casefold())
-                        kv_tags_map[tags] = kv_def
+                        kv_tags_map[tags] = kv_def.copy()
                 else:
                     raise tok.error(
                         'Unknown snippet type "{}". Valid in this context: '
