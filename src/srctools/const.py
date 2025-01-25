@@ -1,5 +1,5 @@
 """Various useful constants and enums."""
-from typing import Any
+from typing import Any, Union
 from collections.abc import MutableMapping
 from enum import Enum, Flag
 import sys
@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 
-def add_unknown(ns: MutableMapping[str, Any], long: bool = False) -> None:
+def add_unknown(ns: MutableMapping[str, Any], long: Union[int, bool] = False) -> None:
     """Add dummy members for :external:class:`enum.Flag` to allow all bits to be set.
 
     It should be called at the end of the class body. This is useful to allow for some
@@ -20,7 +20,8 @@ def add_unknown(ns: MutableMapping[str, Any], long: bool = False) -> None:
 
     :param ns: The class namespace to add members to. This should be set to \
         :external:func:`locals()` or :external:func:`vars()`.
-    :param long: If set, extend to 64 bits, not 32 bits.
+    :param long: If True, extend to 64 bits, not 32 bits.
+        Alternatively, pass an integer to specify a specific number of bits.
     """
     # First, determine which bits we already have.
     used_bits = 0
@@ -30,7 +31,9 @@ def add_unknown(ns: MutableMapping[str, Any], long: bool = False) -> None:
             used_bits |= n
 
     # The zero bit is always available as a pseudo-flag.
-    for i in range(1, 64 if long else 32):
+    if isinstance(long, bool):
+        long = 64 if long else 32
+    for i in range(1, long):
         bit = 1 << i
         if not bit & used_bits:
             # We don't have to stick to var naming rules, so just name it

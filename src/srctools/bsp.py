@@ -490,10 +490,7 @@ class VisLeafFlags(Flag):
 
     # Undocumented flags, still in maps though?
     # Looks like uninitialised members.
-    _BIT_3 = 1 << 3
-    _BIT_4 = 1 << 4
-    _BIT_5 = 1 << 5
-    _BIT_6 = 1 << 6
+    add_unknown(locals(), 7)
 
 
 class DetailPropOrientation(Enum):
