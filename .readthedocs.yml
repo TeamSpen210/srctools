@@ -12,16 +12,16 @@ build:
     python: "3.13"
   jobs:
     post_install:
-      # We just need to pass -config-settings, others are what RTD does by default.
       - python -m pip install -upgrade-strategy only-if-needed --no-cache-dir -config-settings=setup-args="-Dbuild_extensions=false" .
+      # We just need to pass -config-settings, others are what RTD does by default.
 
 # Install the package.
 python:
   install:
     - method: pip
+    - requirements: docs-requirements.txt
       # Can't use path, want to disable meson building extensions.
       # path: .
-    - requirements: docs-requirements.txt
 
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
