@@ -4,9 +4,10 @@ import unittest.mock
 
 import pytest
 
+from srctools import Vec
 from srctools.bsp import (
     BSP, BSP_LUMPS, VERSIONS, GameLump, GameVersion, Lump, runlength_decode,
-    runlength_encode,
+    runlength_encode, PlaneType, Plane
 )
 
 
@@ -69,3 +70,31 @@ def test_pvs_runlength_roundtrip(seed: int) -> None:
     comp = runlength_encode(data)
     reconstruct = runlength_decode(comp)
     assert reconstruct == data
+
+
+def test_plane_type_calculation() -> None:
+    """Planes have a type field which will be lazily recalculated."""
+    assert PlaneType.from_normal(Vec(1, 0, 0)) is PlaneType.X
+    assert PlaneType.from_normal(Vec(-1, 0, 0)) is PlaneType.X
+
+    assert PlaneType.from_normal(Vec(0, 1,0)) is PlaneType.Y
+    assert PlaneType.from_normal(Vec(0, -1, 0)) is PlaneType.Y
+
+    assert PlaneType.from_normal(Vec(0, 0, 1)) is PlaneType.Z
+    assert PlaneType.from_normal(Vec(0, 0, -1)) is PlaneType.Z
+
+    assert PlaneType.from_normal(Vec(-0.6, -0.5, 0.5)) is PlaneType.ANY_X
+    assert PlaneType.from_normal(Vec(0.5, 0.6, -0.5)) is PlaneType.ANY_Y
+    assert PlaneType.from_normal(Vec(0.2, 0.6, -0.7)) is PlaneType.ANY_Z
+
+
+def test_plane_type_invalidation() -> None:
+    """Planes have a type field which will be lazily recalculated."""
+    plane = Plane(Vec(1, 0, 0), 32)
+    assert plane.type is PlaneType.X
+    plane.normal = Vec(0, 1, 0)
+    assert plane.type is PlaneType.Y
+    plane.type = PlaneType.ANY_Z
+    assert plane.type is PlaneType.ANY_Z
+    plane.normal = Vec(0, -0.9, 0.1)
+    assert plane.type is PlaneType.ANY_Y
