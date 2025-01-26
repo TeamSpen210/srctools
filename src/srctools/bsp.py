@@ -724,6 +724,10 @@ class Plane:
         """Set the plane type."""
         self._type = value
 
+    def copy(self) -> 'Plane':
+        """Duplicate the plane."""
+        return Plane(self.normal, self.dist, self._type)
+
     def __invert__(self) -> 'Plane':
         """Return the inverse of this plane."""
         return Plane(-self.normal, -self.dist)
