@@ -704,20 +704,32 @@ class TexInfo:
 class Plane:
     """A plane."""
     def _normal_setattr(self, _: 'attrs.Attribute[Vec]', value: Vec) -> Vec:
-        """Recompute the plane type whenever the normal is changed."""
+        """Invalidate the plane type whenever the normal is changed."""
         value = Vec(value)
-        self.type = PlaneType.from_normal(value)
+        self._type = None
         return value
-
-    def _type_default(self) -> 'PlaneType':
-        """Compute the plane type parameter if not provided."""
-        return PlaneType.from_normal(self.normal)
 
     normal: Vec = attrs.field(on_setattr=_normal_setattr)
     dist: float = attrs.field(converter=float, validator=attrs.validators.instance_of(float))
-    type: PlaneType = attrs.Factory(_type_default, takes_self=True)
+    _type: Optional[PlaneType] = None
 
-    del _normal_setattr, _type_default
+    del _normal_setattr
+
+    @property
+    def type(self) -> PlaneType:
+        """Return the plane type, calculating if necessary."""
+        if self._type is None:
+            self._type = PlaneType.from_normal(self.normal)
+        return self._type
+
+    @type.setter
+    def type(self, value: PlaneType) -> None:
+        """Set the plane type."""
+        self._type = value
+
+    def __invert__(self) -> 'Plane':
+        """Return the inverse of this plane."""
+        return Plane(-self.normal, -self.dist)
 
 
 @attrs.define(eq=False)
