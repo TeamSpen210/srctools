@@ -13,7 +13,8 @@ import math
 import attrs
 
 from srctools import FrozenVec, Vec
-from srctools import vmf, smd
+from srctools import smd
+from srctools.vmf import Solid as MapBrush, Side as MapFace, VMF
 from srctools.bsp import Plane
 
 
@@ -33,7 +34,7 @@ EPSILON = 1e-6
 @attrs.define(eq=False)
 class Polygon:
     """A face, including the associated vertices."""
-    original: Optional[vmf.Side]
+    original: Optional[MapFace]
     vertices: list[FrozenVec]
     plane: Plane
 
@@ -52,7 +53,7 @@ class Polygon:
         return Polygon(self.original, self.vertices.copy(), self.plane.copy())
 
     @classmethod
-    def from_brush(cls, brush: vmf.Solid) -> 'VertBrush':
+    def from_brush(cls, brush: MapBrush) -> 'VertBrush':
         """Convert a VMF brush into a set of polygons with vertices computed."""
         polys = {}
         for side in brush:
@@ -102,7 +103,7 @@ class Polygon:
                 Vec.dot(v, vt - cent),
                 Vec.dot(u, vt - cent),
             ))
-        return VertBrush(poly_list)
+        return VertBrush.from_polys(poly_list)
 
     def to_smd_tris(self, links: list[tuple[smd.Bone, float]]) -> Iterator[smd.Triangle]:
         """Convert to SMD triangles."""
@@ -183,36 +184,48 @@ class VertBrush:
 
     CSG operations can be performed on this, before it is converted back to a VMF brush.
     """
-    polys: list['Polygon']
+    root: 'Node'
 
-    def _copy(self) -> list['Polygon']:
-        """Copy our polygons."""
-        return [poly.copy() for poly in self.polys]
+    @classmethod
+    def from_polys(cls, polys: list['Polygon']) -> 'VertBrush':
+        """Build the tree from a set of polygons."""
+        root = Node()
+        root.build(polys)
+        return cls(root)
 
-    def to_vmf(self, vmf: vmf.VMF) -> list[vmf.Solid]:
-        """Convert this """
+    def to_vmf(self, vmf: VMF) -> list[MapBrush]:
+        """Convert this to a set of new brushes."""
+        result = []
+        todo: list[tuple[list[Plane], Node]] = [([], self.root)]
+        while todo:
+            planes, node = todo.pop()
+            if node.front is None and node.back is None:
+                result.append(MapBrush(vmf, sides=[
+                    MapFace.from_plane(vmf, plane.normal * plane.dist, plane.normal)
+                    for plane in planes
+                ]))
+            if node.front is not None:
+                todo.append(([*planes, node.plane], node.front))
+            if node.back is not None:
+                todo.append(([*planes, ~node.plane], node.back))
+        return result
 
-    def __or__(self, other: 'VertBrush') -> 'Node':
+    def __or__(self, other: 'VertBrush') -> 'VertBrush':
         """Union two brushes."""
-        node_a = Node()
-        node_a.build(self._copy())
-        node_b = Node()
-        node_b.build(other._copy())
+        node_a = self.root.copy()
+        node_b = other.root.copy()
         node_a.clip_to(node_b)
         node_b.clip_to(node_a)
         node_b.invert()
         node_b.clip_to(node_a)
         node_b.invert()
         node_a.build(node_b.iter_polys())
-        return node_a
-        # return VertBrush(list(node_a.iter_polys()))
+        return VertBrush(node_a)
 
     def __sub__(self, other: 'VertBrush') -> 'VertBrush':
         """Carve the other brush out of this one."""
-        node_a = Node()
-        node_b = Node()
-        node_a.build(self._copy())
-        node_b.build(other._copy())
+        node_a = self.root.copy()
+        node_b = other.root.copy()
         node_a.invert()
         node_a.clip_to(node_b)
         node_b.clip_to(node_a)
@@ -222,14 +235,13 @@ class VertBrush:
 
         node_a.build(node_b.iter_polys())
         node_a.invert()
-        return VertBrush(list(node_a.iter_polys()))
+        return VertBrush(node_a)
 
     def __and__(self, other: 'VertBrush') -> 'VertBrush':
         """Intersect two brushes."""
-        node_a = Node()
-        node_b = Node()
-        node_a.build(self._copy())
-        node_b.build(other._copy())
+        node_a = self.root.copy()
+        node_b = other.root.copy()
+
         node_a.invert()
         node_b.clip_to(node_a)
         node_b.invert()
@@ -238,7 +250,7 @@ class VertBrush:
 
         node_a.build(node_b.iter_polys())
         node_a.invert()
-        return VertBrush(list(node_a.iter_polys()))
+        return VertBrush(node_a)
 
 
 @attrs.define
@@ -263,7 +275,7 @@ class Node:
             self.plane = todo[0].plane
         while todo:
             poly = todo.pop()
-            poly.split(self.plane, todo, todo, front, back)
+            poly.split(self.plane, self.polygons, self.polygons, front, back)
         if front:
             if self.front is None:
                 self.front = Node()
@@ -284,10 +296,11 @@ class Node:
 
     def invert(self) -> None:
         """Flip this tree inside out, so solid space is empty and vice versa."""
-        # TODO: Copy in the process, make this __invert__?
         for poly in self.polygons:
             poly.vertices.reverse()
             poly.plane = ~poly.plane
+        if self.plane is not None:
+            self.plane = ~self.plane
         if self.front is not None:
             self.front.invert()
         if self.back is not None:
@@ -314,10 +327,9 @@ class Node:
             front_polys = self.front.clip_polys(front_polys)
         if self.back is not None:
             back_polys = self.back.clip_polys(back_polys)
-            return front_polys + back_polys
         else:
-            # Why this else??
-            return front_polys
+            back = []
+        return front_polys + back_polys
 
     def clip_to(self, tree: 'Node') -> None:
         """Remove polygons from this tree that intersect the other tree."""
