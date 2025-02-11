@@ -54,6 +54,27 @@ def test_join() -> None:
     assert sndscript.join_float((8.28, sndscript.VOL_NORM)) == '8.28, VOL_NORM'
 
 
+def test_parse() -> None:
+    """Test parsing a basic soundscript."""
+    kv = Keyvalues.root(Keyvalues('some.Sound', [
+        Keyvalues('channel', 'CHAN_VoICE'),
+        Keyvalues('soundlevel', 'sndLVL_85db, 0.4'),
+        Keyvalues('volume', '0.85, 0.95'),
+        Keyvalues('wave', ')util/some_sound.wav'),
+    ]))
+    sound_dict = sndscript.Sound.parse(kv)
+    assert len(sound_dict) == 1
+    sound = sound_dict['some.sound']
+    assert sound.sounds == [')util/some_sound.wav']
+    assert sound.channel is sndscript.Channel.VOICE
+    assert sound.level == (sndscript.Level.SNDLVL_85dB, 0.4)
+    assert sound.volume == (0.85, 0.95)
+    assert sound.force_v2 is False
+    assert not sound.stack_start
+    assert not sound.stack_stop
+    assert not sound.stack_update
+
+
 @pytest.mark.parametrize('fname, loop', [
     ('sound_noloop.wav', False),
     ('sound_loop.wav', True),
