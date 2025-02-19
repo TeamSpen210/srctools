@@ -110,6 +110,12 @@ class Level(Enum):
         return self.name
 
 
+SOUND_LEVELS = {
+    level.name.upper(): level
+    for level in Level
+}
+
+
 EnumType = TypeVar('EnumType', bound=Enum)
 
 
@@ -380,7 +386,7 @@ class Sound:
             if 'soundlevel' in snd_prop:
                 level = split_float(
                     snd_prop, 'soundlevel',
-                    Level.__getitem__,
+                    SOUND_LEVELS.__getitem__,
                     Level.SNDLVL_NORM,
                 )
             elif 'attenuation' in snd_prop:
