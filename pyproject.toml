@@ -71,6 +71,7 @@ setup = ['--vsenv']
 
 [tool.cibuildwheel]
 archs = "auto64"
+skip = ["pp37*", "pp38*", "pp39*"]
 
 # After building, run tests to check it works.
 # Disable assertion rewriting since that sometimes has issues on PyPy.
@@ -153,6 +154,8 @@ select = [
 	"PLC", "PLE", "PLW",  # Pylint.
 
 	"TC005",  # Empty type-checking block.
+	"TC008",  # Remove type alias quotes
+	"TC010",  # String in union.
 ]
 allowed-confusables = [
 	"×",  # Multiplication sign
