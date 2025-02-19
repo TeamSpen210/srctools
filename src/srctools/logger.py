@@ -184,7 +184,8 @@ class Formatter(logging.Formatter):
 
         if exc_type is not None and exc_value is not None:
             # Include much more of exception groups in the log files.
-            if self.expand_exc_groups and sys.version_info >= (3, 11):
+            # Mypy needs version check first.
+            if sys.version_info >= (3, 11) and self.expand_exc_groups:
                 tb_exc = traceback.TracebackException(
                     exc_type, exc_value, trace,
                     max_group_depth=64,
