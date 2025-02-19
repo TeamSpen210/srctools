@@ -3,7 +3,7 @@ Wrapper around logging to provide our own functionality.
 
 This adds the ability to log using str.format() instead of %.
 """
-from typing import TYPE_CHECKING, Any, ClassVar, Optional, TextIO, Union, cast, overload
+from typing import Literal, TYPE_CHECKING, Any, ClassVar, Optional, TextIO, Union, cast, overload
 from collections.abc import Callable, Generator, Iterable, Mapping
 from io import StringIO
 from pathlib import Path
@@ -151,6 +151,15 @@ class LoggerAdapter(_AdapterBase):
 class Formatter(logging.Formatter):
     """Override exception handling."""
     SKIP_LIBS: ClassVar[list[str]] = ['importlib', 'cx_freeze', 'PyInstaller']
+    def __init__(
+        self,
+        template: str,
+        *,
+        expand_exc_groups: bool=False,
+        style: Literal['{']='{',  # Here only for backwards compat.
+    ) -> None:
+        super().__init__(template, style=style)
+        self.expand_exc_groups = expand_exc_groups
 
     def formatException(self, ei: _SysExcInfoType) -> str:
         """Ignore importlib, cx_freeze and PyInstaller."""
@@ -174,7 +183,16 @@ class Formatter(logging.Formatter):
             trace = exc_tb
 
         if exc_type is not None and exc_value is not None:
-            for line in traceback.TracebackException(exc_type, exc_value, trace).format():
+            # Include much more of exception groups in the log files.
+            if self.expand_exc_groups and sys.version_info >= (3, 11):
+                tb_exc = traceback.TracebackException(
+                    exc_type, exc_value, trace,
+                    max_group_depth=64,
+                    max_group_width=100,
+                )
+            else:
+                tb_exc = traceback.TracebackException(exc_type, exc_value, trace)
+            for line in tb_exc.format():
                 buffer.write(line)
 
         return buffer.getvalue().rstrip('\n')
@@ -385,13 +403,13 @@ def init_logging(
     # Put more info in the log file, since it's not onscreen.
     long_log_format = Formatter(
         '[{levelname}]{srctools_context} {module}.{funcName}(): {message}',
-        style='{',
+        expand_exc_groups=True,
     )
     # Console messages, etc.
     short_log_format = Formatter(
         # One letter for level name
         '[{levelname[0]}]{srctools_context} {module}.{funcName}(): {message}',
-        style='{',
+        expand_exc_groups=False,
     )
 
     if filename is not None:
