@@ -2452,15 +2452,13 @@ class FGD:
     @overload
     def export(
         self, file: TextIO, *,
-        label_spawnflags: bool = True,
+        label_spawnflags: bool = True, custom_syntax: bool = True,
     ) -> None: ...
-
     @overload
     def export(
         self, *,
-        label_spawnflags: bool = True,
+        label_spawnflags: bool = True, custom_syntax: bool = True,
     ) -> str: ...
-
     def export(
         self, file: Optional[TextIO] = None, *,
         label_spawnflags: bool = True,

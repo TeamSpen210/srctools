@@ -358,7 +358,7 @@ class Keyvalues:
 
     @staticmethod
     def parse(
-        file_contents: Union[str, BaseTokenizer, Iterator[str]],
+        file_contents: Union[str, BaseTokenizer, Iterable[str]],
         filename: StringPath = '', *,
         flags: Mapping[str, bool] = EmptyMapping,
         newline_keys: bool = False,
