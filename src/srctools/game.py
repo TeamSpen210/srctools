@@ -3,6 +3,7 @@ from typing import Final, Optional, Union
 from pathlib import Path
 import itertools
 import os
+import re
 import sys
 
 from srctools.filesys import FileSystemChain, RawFileSystem, VPKFileSystem
@@ -28,8 +29,16 @@ class Game:
     #: Allows loading searchpaths from other games, based on appid.
     strata_mounts: list[Keyvalues]
 
-    def __init__(self, path: Union[str, Path], encoding: str = 'utf8') -> None:
-        """Parse a game from a folder."""
+    def __init__(
+        self,
+        path: Union[str, Path],
+        encoding: str = 'utf8',
+    ) -> None:
+        """Parse a game from a folder.
+
+        :param path: The location of the game folder containing gameinfo.txt
+        :param encoding: Encoding to use to parse gameinfo.
+        """
         if isinstance(path, Path):
             self.path = path
         else:
@@ -176,14 +185,24 @@ class Game:
 
     def parse_search_path(self, prop: Keyvalues) -> Path:
         """Evaluate options like :code:`|gameinfo_path|`."""
-        if prop.value.casefold().startswith('|gameinfo_path|'):
-            return (self.path / prop.value[15:]).absolute()
+        token = prop.value.casefold()
+        if token.startswith('|gameinfo_path|'):
+            return (self.path / prop.value.removeprefix('|gameinfo_path|')).absolute()
 
         # We should have to figure out which of the possible paths this is.
         # But, the game (public/filesystem_init.cpp) doesn't actually, it
         # assumes Steam has included the needed VPKs.
-        if prop.value.casefold().startswith('|all_source_engine_paths|'):
-            return (self.root / prop.value[25:]).absolute()
+        if token.startswith('|all_source_engine_paths|'):
+            return (self.root / prop.value.removeprefix('|all_source_engine_paths|')).absolute()
+
+        # New 2013MP feature, mounts from another game directly.
+        if match := re.match(r'\|appid_([0-9]+)\|', token):
+            try:
+                appid = int(match.group(1))
+            except (TypeError, ValueError):
+                raise ValueError(f'Invalid App ID {match.group(1)} in "{prop.value}"!') from None
+            app = find_app(appid)
+            return (app.path / prop.value[match.end():]).absolute()
 
         return (self.root / prop.value).absolute()
 
@@ -195,11 +214,13 @@ class Game:
         mounts_head, mounts = self.parse_strata_mounts()
         fsys = FileSystemChain()
 
-        for path in reversed(mounts_head):  # We need to reverse the list here
+        # Add things in order: mounts head first, then VPKs, raw folders, regular mounts.
+
+        for path in mounts_head:
             if path.suffix == ".vpk" and path.is_file():
-                fsys.add_sys(VPKFileSystem(path), priority=True)
+                fsys.add_sys(VPKFileSystem(path))
             else:
-                fsys.add_sys(RawFileSystem(path), priority=True)
+                fsys.add_sys(RawFileSystem(path))
 
         for path in self.search_paths:
             if path.is_dir():

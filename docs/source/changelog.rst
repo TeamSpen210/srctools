@@ -18,6 +18,7 @@ Version (dev)
 * FGDs may optionally permit unknown value types to be parsed/exported in string form.
 * Fix some options being incorrectly handled in Strata game mounts definitions.
 * Allow entities to delete multiple keyvalues at once.
+* Add support for `|appid_XXX|` syntax in `gameinfo.txt` files.
 * Fix silent buttons trying to pack invalid `Buttons.snd0` soundscripts.
 * Handle entities being added/removed during iteration of :py:meth:`VMF.search() <srctools.vmf.VMF.search>`.
 * Share common strings in the engine database to save some space.
