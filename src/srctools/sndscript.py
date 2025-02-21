@@ -370,90 +370,96 @@ class Sound:
 
         This returns a dict mapping casefolded names to Sounds.
         """
-        sounds = {}
-        for snd_prop in file:
-            volume = split_float(
-                snd_prop, 'volume',
-                VOLUME.__getitem__,
-                1.0,
+        return {
+            sound_kv.name: cls.parse_one(sound_kv)
+            for sound_kv in file
+        }
+
+    @classmethod
+    def parse_one(cls, sound_kv: Keyvalues) -> 'Sound':
+        """Parse a single soundscript definition."""
+
+        volume = split_float(
+            sound_kv, 'volume',
+            VOLUME.__getitem__,
+            1.0,
+        )
+        pitch = split_float(
+            sound_kv, 'pitch',
+            Pitch.__getitem__,
+            100.0,
+        )
+
+        if 'soundlevel' in sound_kv:
+            level = split_float(
+                sound_kv, 'soundlevel',
+                SOUND_LEVELS.__getitem__,
+                Level.SNDLVL_NORM,
             )
-            pitch = split_float(
-                snd_prop, 'pitch',
-                Pitch.__getitem__,
-                100.0,
+        elif 'attenuation' in sound_kv:
+            atten_min, atten_max = split_float(
+                sound_kv, 'attenuation',
+                ATTENUATION.__getitem__,
+                ATTENUATION['ATTN_IDLE'],
             )
-
-            if 'soundlevel' in snd_prop:
-                level = split_float(
-                    snd_prop, 'soundlevel',
-                    SOUND_LEVELS.__getitem__,
-                    Level.SNDLVL_NORM,
-                )
-            elif 'attenuation' in snd_prop:
-                atten_min, atten_max = split_float(
-                    snd_prop, 'attenuation',
-                    ATTENUATION.__getitem__,
-                    ATTENUATION['ATTN_IDLE'],
-                )
-                # Convert to a soundlevel.
-                # See source_sdk/public/soundflags.h:ATTN_TO_SNDLVL()
-                level = (
-                    (50.0 + 20.0 / atten_min) if atten_min else 0.0,
-                    (50.0 + 20.0 / atten_max) if atten_max else 0.0,
-                )
-            else:
-                level = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
-
-            # Either 1 "wave", or multiple in "rndwave".
-            wavs: list[str] = []
-            for prop in snd_prop:
-                if prop.name == 'wave':
-                    wavs.append(prop.value)
-                elif prop.name == 'rndwave':
-                    for subprop in prop:
-                        wavs.append(subprop.value)
-
-            channel_str = snd_prop['channel', 'CHAN_AUTO'].upper()
-            channel: Union[int, Channel]
-            if channel_str.startswith('CHAN_'):
-                channel = Channel(channel_str)
-            else:
-                channel = int(channel_str)
-
-            sound_version = snd_prop.int('soundentry_version', 1)
-
-            if 'operator_stacks' in snd_prop:
-                if sound_version == 1:
-                    raise ValueError(
-                        'Operator stacks used with version '
-                        f'less than 2 in "{snd_prop.real_name}"!'
-                    )
-
-                start_stack, update_stack, stop_stack = (
-                    Keyvalues(stack_name, [
-                        prop.copy()
-                        for prop in
-                        snd_prop.find_children('operator_stacks', stack_name)
-                    ])
-                    for stack_name in
-                    ['start_stack', 'update_stack', 'stop_stack']
-                )
-            else:
-                start_stack, update_stack, stop_stack = [None, None, None]
-
-            sounds[snd_prop.name] = Sound(
-                snd_prop.real_name,
-                wavs,
-                volume,
-                channel,
-                level,
-                pitch,
-                start_stack,
-                update_stack,
-                stop_stack,
-                sound_version == 2,
+            # Convert to a soundlevel.
+            # See source_sdk/public/soundflags.h:ATTN_TO_SNDLVL()
+            level = (
+                (50.0 + 20.0 / atten_min) if atten_min else 0.0,
+                (50.0 + 20.0 / atten_max) if atten_max else 0.0,
             )
-        return sounds
+        else:
+            level = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
+
+        # Either 1 "wave", or multiple in "rndwave".
+        wavs: list[str] = []
+        for prop in sound_kv:
+            if prop.name == 'wave':
+                wavs.append(prop.value)
+            elif prop.name == 'rndwave':
+                for subprop in prop:
+                    wavs.append(subprop.value)
+
+        channel_str = sound_kv['channel', 'CHAN_AUTO'].upper()
+        channel: Union[int, Channel]
+        if channel_str.startswith('CHAN_'):
+            channel = Channel(channel_str)
+        else:
+            channel = int(channel_str)
+
+        sound_version = sound_kv.int('soundentry_version', 1)
+
+        if 'operator_stacks' in sound_kv:
+            if sound_version == 1:
+                raise ValueError(
+                    'Operator stacks used with version '
+                    f'less than 2 in "{sound_kv.real_name}"!'
+                )
+
+            start_stack, update_stack, stop_stack = (
+                Keyvalues(stack_name, [
+                    prop.copy()
+                    for prop in
+                    sound_kv.find_children('operator_stacks', stack_name)
+                ])
+                for stack_name in
+                ['start_stack', 'update_stack', 'stop_stack']
+            )
+        else:
+            start_stack = update_stack = stop_stack = None
+
+        return Sound(
+            sound_kv.real_name,
+            wavs,
+            volume,
+            channel,
+            level,
+            pitch,
+            start_stack,
+            update_stack,
+            stop_stack,
+            sound_version == 2,
+        )
 
     def export(self, file: TextIO) -> None:
         """Write a sound to a file.
