@@ -1508,7 +1508,7 @@ class _EntityView(Generic[T]):
         except KeyError:
             ent_map[name] = {tags: value}
         else:
-            ent_map[name][tags] = value
+            tag_map[tags] = value
 
     def __delitem__(self, name: Union[str, tuple[str, Collection[str]]]) -> None:
         """Remove the value from the entity. This never affects bases.

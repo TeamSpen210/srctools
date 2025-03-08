@@ -384,8 +384,6 @@ class Material(MutableMapping[str, str]):
                         pass
                 elif always_add or prop.name in copy._params:
                     copy[prop.real_name] = prop.value
-                else:
-                    pass
         return copy
 
     def __iter__(self) -> Iterator[str]:

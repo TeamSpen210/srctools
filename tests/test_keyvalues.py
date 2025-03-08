@@ -358,7 +358,7 @@ def test_apply_filename() -> None:
     outer_group = ExceptionGroup('outer', [
         val_err := ValueError('unrelated'),
         outer_err := NoKeyError('OuterKey', 12),
-        inner_group := ExceptionGroup('inner', [
+        ExceptionGroup('inner', [
             already_set := NoKeyError('AlreadySet', 14, 'another.kv'),
             inner_err := NoKeyError('InnerKey', 48),
         ]),

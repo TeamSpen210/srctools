@@ -1,0 +1,7 @@
+extend = "../pyproject.toml"
+
+[lint]
+extend-ignore = [
+	"PLC2801",  # Allow direct dunder calls, we want to test specific code paths.
+	"F841",  # Unused local var, used to assert types.
+]

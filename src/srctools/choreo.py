@@ -502,7 +502,7 @@ class FlexAnimTrack:
             value = min(255, max(0, round(track.value * 255.0)))
             file.write(struct.pack(
                 '<fBh',
-                track.time, track.value,
+                track.time, value,
                 track.curve_type.export_binary(),
             ))
         if self.dir_track is not None:
@@ -511,7 +511,7 @@ class FlexAnimTrack:
                 value = min(255, max(0, round(track.value * 255.0)))
                 file.write(struct.pack(
                     '<fBh',
-                    track.time, track.value,
+                    track.time, value,
                     track.curve_type.export_binary(),
                 ))
 
