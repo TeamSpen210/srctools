@@ -107,7 +107,7 @@ FLAGS_DEFAULT = {
 class KeyValError(TokenSyntaxError):
     """An error that occurred when parsing a Valve KeyValues file.
 
-    See the base class :py:class:`TokenSyntaxError` for available attributes.
+    See the base class for available attributes.
     """
 
 
@@ -289,11 +289,12 @@ class Keyvalues:
 
     @property
     def name(self) -> str:
-        """Produces a :py:meth:`str.casefold`-ed version of the keyvalue's name. Usually names are case-insensitive.
+        """Produces a :py:meth:`str.casefold`-ed version of the keyvalue's name.
 
+        Usually names are treated as case-insensitive, so this makes it convenient to do comparisons.
         Assigning to this automatically updates both this and :py:attr:`real_name`.
 
-        :deprecated: 'Root' keyvalues have a name of :py:const:`None`. This will be replaced by a blank string, use :py:meth:`is_root()` instead.
+        :deprecated: 'Root' keyvalues have a name of :py:obj:`None`. This will be replaced by a blank string, use :py:meth:`is_root()` instead.
         """
         if self._folded_name is None:
             warnings.warn("The name of root keyvalues will change to a blank string in the future.", DeprecationWarning, 2)
@@ -315,7 +316,7 @@ class Keyvalues:
 
         Assigning to this automatically updates both this and :py:attr:`name`.
 
-        :deprecated: 'Root' keyvalues have a name of :py:const:`None`. This will be replaced by a blank string, use :py:meth:`is_root()` instead.
+        :deprecated: 'Root' keyvalues have a name of :py:obj:`None`. This will be replaced by a blank string, use :py:meth:`is_root()` instead.
         """
         if self._real_name is None:
             warnings.warn("The name of root keyvalues will change to a blank string in the future.", DeprecationWarning, 2)
@@ -369,10 +370,16 @@ class Keyvalues:
     ) -> "Keyvalues":
         """Returns a Keyvalues tree parsed from given text.
 
-        :param file_contents: should be an iterable of strings or a single string. Alternatively,
-          file_contents may be an already created tokenizer. In this case ``allow_escapes`` is ignored.
+        Valve's parsers are very inconsistent, sometimes accepting escape sequences, having
+        keyvalues all on the same line and allowing newlines in the middle of text. For this
+        reason many options are provided to fine tune parsing, and determine how strict to treat
+        input.
+
+        :param file_contents: should be an iterable of strings (like a file object) or a
+          single string. Alternatively, file_contents may be an already created tokenizer. In this
+          case ``allow_escapes`` is ignored.
         :param filename: If set this should be the source of the text for debug purposes. If not
-          supplied, ``file_contents.name`` will be used if present.
+          supplied, the ``name`` attribute of ``file_contents`` will be used if present.
         :param single_block: If set, parse a single keyvalues block, instead of a file with multiple
           roots. Importantly this will exit after hitting this brace, allowing it to be called in
           the middle of parsing a larger document.
@@ -382,8 +389,8 @@ class Keyvalues:
           This means unterminated strings will be caught late (if at all), but it allows parsing
           some generated data blocks inside things like `.PHY` files.
         :param newline_keys: This specifies if newline characters are allowed in keys.
-          Keys are prohibited by default, since this is fairly useless, but if quote characters are
-          mismatched it'll catch the mistake early.
+          Keys are prohibited by default, since this is fairly useless. If a quote character is
+          omitted accidentally, this check is likely to quickly catch the error.
         :param newline_values: This specifies if newline characters are allowed in string values.
         """
         # The block we are currently adding to.
@@ -1268,9 +1275,9 @@ class Keyvalues:
         indent_braces: builtins.bool = True,
         start_indent: str = '',
     ) -> Optional[str]:
-        """Serialise the keyvalues data to a file, or return as a string.
+        """Serialise the keyvalues data to a file, or return as a string if no file is provided.
 
-        Recursive trees are not permitted.
+        This does not handle cyclic loops in the tree.
 
         :param file: The file to write to. If omitted, the data is returned instead.
         :param indent: The characters to use for each indentation level.
