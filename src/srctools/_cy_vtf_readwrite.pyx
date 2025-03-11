@@ -850,22 +850,33 @@ FORMATS[26] = Format("UVLX8888", &size_8888, &load_copy, &save_copy)
 FORMATS[27] = Format("NONE", NULL, NULL, NULL)
 FORMATS[28] = Format("ATI1N", &size_ati1n, NULL, NULL)
 FORMATS[29] = Format("ATI2N", &size_ati2n, &load_ati2n, &save_ati2n)
+cdef object ImageFormats = None
 
 
 def init(formats: 'srctools.vtf.ImageFormats') -> None:
     """Verify that the Python enum matches our array of functions."""
+    global ImageFormats
     cdef size_t index
     cdef bytes name
     for fmt in formats:
         index = fmt.ind
-        assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))
-        assert strcmp((<str ?>fmt.name).encode('ascii'), FORMATS[index].name) == 0, f'{fmt} != {FORMATS[index].name.decode("ascii")}'
+        if not (0 <= index < (sizeof(FORMATS) // sizeof(Format))):
+            raise AssertionError(f'Invalid index {index}')
+        if strcmp((<str ?>fmt.name).encode('ascii'), FORMATS[index].name) != 0:
+            raise AssertionError(f'{index}: {fmt} != {FORMATS[index].name.decode("ascii")}')
         if FORMATS[index].load != NULL or FORMATS[index].save != NULL:
-            assert FORMATS[index].size != NULL, FORMATS[index].name.decode("ascii")
+            if FORMATS[index].size == NULL:
+                raise AssertionError(f'Null size for {FORMATS[index].name.decode("ascii")}')
+    ImageFormats = formats
 
 
 def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:
     """Load pixels from data in the given format."""
+    if ImageFormats is None:
+        raise AssertionError('init() not called')
+    if type(fmt) is not ImageFormats:
+        raise TypeError('fmt must be an ImageFormats enum value.')
+
     cdef Py_ssize_t data_size = 4 * width * height
     if data_size != len(pixels):
         raise BufferError(f"Incorrect pixel array size. Expected {data_size} bytes, got {len(pixels)} bytes.")
@@ -887,6 +898,11 @@ def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[:
 
 
 def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:
+    if ImageFormats is None:
+        raise AssertionError('init() not called')
+    if type(fmt) is not ImageFormats:
+        raise TypeError('fmt must be an ImageFormats enum value.')
+
     cdef Py_ssize_t data_size = 4 * width * height
     if data_size != len(pixels):
         raise BufferError(f"Incorrect pixel array size. Expected {data_size} bytes, got {len(pixels)} bytes.")
