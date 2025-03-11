@@ -173,6 +173,11 @@ class ImageFormats(Enum):
         """Checks if the format is compressed in 4x4 blocks."""
         return self.name.startswith('DXT') or self.name in ('ATI1N', 'ATI2N')
 
+    @property
+    def is_transparent(self) -> bool:
+        """Checks if the format supports transparency."""
+        return self in _FORMAT_TRANSPARENT
+
     def frame_size(self, width: int, height: int) -> int:
         """Compute the number of bytes needed for this image size."""
         if self.is_compressed:
@@ -221,6 +226,16 @@ FORMAT_ORDER[-1] = ImageFormats.NONE
 # They're backward because why not.
 FORMAT_ORDER[34] = FORMAT_ORDER[37] = ImageFormats.ATI2N
 FORMAT_ORDER[35] = FORMAT_ORDER[38] = ImageFormats.ATI1N
+
+# Formats which are transparent. Most with A bits are, then there's
+# a few extra special cases in both directions.
+_FORMAT_TRANSPARENT = {
+    fmt for fmt in ImageFormats
+    if fmt.a > 0
+} | {
+    ImageFormats.BGR888_BLUESCREEN, ImageFormats.RGB888_BLUESCREEN,
+    ImageFormats.DXT1_ONEBITALPHA, ImageFormats.DXT5,
+} - {ImageFormats.BGRX5551, ImageFormats.BGRX8888}
 
 
 class VTFFlags(Flag):
