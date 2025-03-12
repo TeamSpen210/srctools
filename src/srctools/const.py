@@ -12,11 +12,19 @@ __all__ = [
 
 
 def add_unknown(ns: MutableMapping[str, Any], long: Union[int, bool] = False) -> None:
-    """Add dummy members for :external:class:`enum.Flag` to allow all bits to be set.
+    """Adds dummy members for :external:class:`enum.Flag` to allow all bits to be set.
 
-    It should be called at the end of the class body. This is useful to allow for some
-    compatibility with unhandled games, ensuring extra bits are preserved when resaving.
-    All existing bits will be skipped.
+    It should be called at the end of the class body, like so::
+
+        class SomeFlags(Flag):
+            A = 1
+            B = 2
+            C = 16
+            add_unknown(locals())
+        SomeFlags(255) # == SomeFlags.A|B|C|2|3|5|6|7: 255>
+
+    This is useful to allow for some compatibility with unhandled games, ensuring extra bits are
+    preserved when resaving. Each member will be named with the position of its bit.
 
     :param ns: The class namespace to add members to. This should be set to \
         :external:func:`locals()` or :external:func:`vars()`.
