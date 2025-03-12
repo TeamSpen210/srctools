@@ -68,6 +68,7 @@ To read and write keyvalues files, use :py:meth:`~Keyvalues.parse` and :py:meth:
 :py:meth:`~Keyvalues.serialise` is also available with the spelling :py:meth:`~Keyvalues.serialize`.
 
 .. automethod:: Keyvalues.export
+	:for: line
 
 .. autoclass:: KeyValError
 
@@ -114,10 +115,13 @@ if the parse fails or the key is missing.
 For searching deeper in trees, the following iterators are available:
 
 .. automethod:: Keyvalues.find_all
+	:for: kv
 
 .. automethod:: Keyvalues.find_children
+	:for: child
 
 .. automethod:: Keyvalues.iter_tree
+	:for: kv
 
 In many keyvalues files, arrays of data are defined as a block of leaf values, where the name of each
 is identical or irrelevant. The following helper function makes parsing these easier:
