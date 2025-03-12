@@ -1037,10 +1037,11 @@ class VMF:
         or the exact classname.
 
         Entities added or renamed after iteration begins will not be detected.
+        Unnamed entities will never be detected. If the name is blank, this therefore finds nothing.
         """
-        name = name.casefold()
         if not name:
             return
+        name = name.casefold()
 
         if name[-1] == '*':
             name = name[:-1]
