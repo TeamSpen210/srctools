@@ -790,8 +790,8 @@ class Keyvalues:
     def bool(self, key: str, def_: Union[builtins.bool, T] = False) -> Union[builtins.bool, T]:
         """Return the value of a boolean key.
 
-        The value may be case-insensitively 'true', 'false', '1', '0', 'T',
-        'F', 'y', 'n', 'yes', or 'no'.
+        The value may be case-insensitively ``true``, ``false``, ``1``, ``0``, ``T``,
+        ``F``, ``y``, ``n``, ``yes``, or ``no``.
         If multiple keys with the same name are present, this will use the
         last only.
         """
@@ -890,6 +890,8 @@ class Keyvalues:
         If the keyvalue is a single keyvalue, the single value will be
         yielded. Otherwise, each child must be a single value and each
         of those will be yielded. The name is ignored.
+
+        :parameter conv: If provided, this will be called on every value to convert it.
         """
         if isinstance(self._value, list):
             arr: list[T] = []

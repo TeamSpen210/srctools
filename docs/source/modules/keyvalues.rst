@@ -10,7 +10,7 @@ A keyvalues file is a tree structure composed of keyvalue nodes. Each has a name
 and either a single string value or any number of children. Duplicate names are allowed.
 
 ===============
-Core Attributes
+Core Behaviours
 ===============
 
 Keyvalues are represented with :py:class:`Keyvalues` objects, which have three forms:
@@ -33,9 +33,17 @@ Keyvalues are represented with :py:class:`Keyvalues` objects, which have three f
 
 	.. autoattribute:: line_num
 
-	.. automethod:: is_root
+	The following two methods allow identifying the type of a keyvalue.
 
 	.. automethod:: has_children
+
+	.. automethod:: is_root
+
+If an operation is performed on a leaf keyvalue which requires children, the following exception
+is raised:
+
+.. autoclass:: LeafKeyvalueError
+	:show-inheritance:
 
 
 ===================
@@ -59,31 +67,41 @@ To read and write keyvalues files, use :py:meth:`~Keyvalues.parse` and :py:meth:
 
 :py:meth:`~Keyvalues.serialise` is also available with the spelling :py:meth:`~Keyvalues.serialize`.
 
-If an error occurs, the following exception is raised:
+.. automethod:: Keyvalues.export
 
 .. autoclass:: KeyValError
 
-.. autodata:: FLAGS_DEFAULT
+.. todo: Document FLAGS_DEFAULT?
 
 =========
 Searching
 =========
-.. todo: Organise these.
 
-.. automethod:: Keyvalues.find_all
+A number of different methods are available to search a tree and locate specific keyvalues. When
+searching by name, all methods are case-insensitive, and return the *last* matching value, not the
+first.
+
+The simplest search is to find a matching key as a direct child. :py:meth:`~Keyvalues.find_key` finds
+any child, while :py:meth:`~Keyvalues.find_block` only finds blocks. Keyvalues can also be indexed
+to retrieve a string value::
+
+	kv['value']  # Returns the contents, or raises
+	kv['value', 'default'] # Returns default value if not found.
+
 
 .. automethod:: Keyvalues.find_key
 
 .. automethod:: Keyvalues.find_block
 
-.. automethod:: Keyvalues.find_children
+This exception is raised if a lookup fails. Currently direct indexing raises :py:exc:`IndexError`,
+but this will change. Prefer catching :py:exc:`LookupError`, which will catch both.
 
 .. autoclass:: NoKeyError
 	:show-inheritance:
 
-.. automethod:: Keyvalues.iter_tree
-
-.. automethod:: Keyvalues.__iter__
+As a convenience, :py:meth:`Keyvalues.int`, :py:meth:`Keyvalues.float`, :py:meth:`~Keyvalues.bool`
+and :py:meth:`~Keyvalues.vec` will search for a key, parse to the specified type, returning a default
+if the parse fails or the key is missing.
 
 .. automethod:: Keyvalues.bool
 
@@ -93,7 +111,24 @@ Searching
 
 .. automethod:: Keyvalues.vec
 
-.. automethod:: Keyvalues.append
+For searching deeper in trees, the following iterators are available:
+
+.. automethod:: Keyvalues.find_all
+
+.. automethod:: Keyvalues.find_children
+
+.. automethod:: Keyvalues.iter_tree
+
+In many keyvalues files, arrays of data are defined as a block of leaf values, where the name of each
+is identical or irrelevant. The following helper function makes parsing these easier:
+
+.. automethod:: Keyvalues.as_array
+
+Block keyvalues are also sequences, and support iteration and :py:func:`len()` as normal.
+
+.. automethod:: Keyvalues.__iter__
+
+.. automethod:: Keyvalues.__len__
 
 =======
 Editing
@@ -104,21 +139,9 @@ Editing
 
 .. automethod:: Keyvalues.extend
 
-.. automethod:: Keyvalues.as_array
-
-.. automethod:: Keyvalues.as_dict
-
 .. automethod:: Keyvalues.build
 
-.. automethod:: Keyvalues.clear
-
-.. automethod:: Keyvalues.copy
-
-.. automethod:: Keyvalues.edit
-
 .. automethod:: Keyvalues.ensure_exists
-
-.. automethod:: Keyvalues.export
 
 .. automethod:: Keyvalues.merge_children
 
@@ -153,3 +176,16 @@ Special methods
 .. automethod:: Keyvalues.__setitem__
 
 .. automethod:: Keyvalues.__delitem__
+
+
+=============
+Miscellaneous
+=============
+
+.. automethod:: Keyvalues.as_dict
+
+.. automethod:: Keyvalues.clear
+
+.. automethod:: Keyvalues.copy
+
+.. automethod:: Keyvalues.edit
