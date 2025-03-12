@@ -976,25 +976,27 @@ class VisTree:
     Each of these is a plane splitting the map in two, which then has a child
     tree or visleaf on either side.
     """
-    plane: Plane
+    plane: Plane  #: The plane the tree is cut on.
     mins: Vec
-    maxes: Vec
-    faces: list[Face]
+    maxes: Vec #: The bounding box for the tree.
+    faces: list[Face]  #: All brush faces present in this tree node.
+    #: Index of the 'area' this tree is located in.
+    #: Each area is entirely separated by areaportals and solid geometry.
     area_ind: int
     # Initialised empty, set during loading.
-    child_neg: Union['VisTree', VisLeaf] = attrs.field(default=None)
-    child_pos: Union['VisTree', VisLeaf] = attrs.field(default=None)
+    child_neg: Union['VisTree', VisLeaf] = attrs.field(default=None)  #: The child on the negative side of the plane.
+    child_pos: Union['VisTree', VisLeaf] = attrs.field(default=None)  #: The child on the positive side of the plane.
 
     @property
     @deprecated('Use tree.plane.normal')
     def plane_norm(self) -> Vec:
-        """:deprecated: Alias for tree.plane.normal."""
+        """:deprecated: Alias for :py:attr:`tree.plane.normal <Plane.normal>`."""
         return self.plane.normal
 
     @property
     @deprecated('Use tree.plane.dist')
     def plane_dist(self) -> float:
-        """:deprecated: Alias for tree.plane.dist."""
+        """:deprecated: Alias for :py:attr:`tree.plane.dist <Plane.dist>`."""
         return self.plane.dist
 
     def test_point(self, point: Vec) -> Optional[VisLeaf]:

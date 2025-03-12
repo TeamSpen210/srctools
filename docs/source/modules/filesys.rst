@@ -11,6 +11,7 @@ srctools.filesys
 	.. autoattribute:: path
 
 	.. automethod:: walk_folder
+		:for: file
 
 	.. automethod:: open_bin
 
@@ -59,6 +60,7 @@ The specific implementations of base ``FileSystem`` methods have been omitted.
 	.. automethod:: add_sys
 
 	.. automethod:: walk_folder_repeat
+		:for: file
 
 .. autoclass:: RawFileSystem
 

@@ -272,12 +272,12 @@ Visleafs
 
 The visleaf structure is composed of a tree either of nodes or vis-leafs.
 
-.. py:attribute:: BSP.visleafs
+.. attribute:: BSP.visleafs
     :type: list[VisLeaf]
 
     The array of all visleafs.
 
-.. py:attribute:: BSP.nodes
+.. attribute:: BSP.nodes
     :type: list[VisTree]
 
     The array of nodes, each splitting the parent into two children.
@@ -285,8 +285,29 @@ The visleaf structure is composed of a tree either of nodes or vis-leafs.
 .. automethod:: BSP.vis_tree
 
 .. autoclass:: VisTree
-    :members:
-    :undoc-members:
+
+    .. autoattribute:: plane
+
+    .. autoattribute:: mins
+
+    .. autoattribute:: maxes
+
+    .. autoattribute:: child_neg
+
+    .. autoattribute:: child_pos
+
+    .. autoattribute:: area_ind
+
+    .. autoattribute:: faces
+
+    .. automethod:: test_point
+
+    .. automethod:: VisTree.iter_leafs
+        :for: visleaf
+
+    .. autoattribute:: plane_norm
+
+    .. autoattribute:: plane_dist
 
 .. autoclass:: VisLeaf
     :members:
