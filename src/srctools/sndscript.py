@@ -429,6 +429,9 @@ class Sound:
 
         sound_version = sound_kv.int('soundentry_version', 1)
 
+        start_stack: Optional[Keyvalues]
+        update_stack: Optional[Keyvalues]
+        stop_stack: Optional[Keyvalues]
         if 'operator_stacks' in sound_kv:
             if sound_version == 1:
                 raise ValueError(

@@ -2271,8 +2271,7 @@ def deduce_type_single(value: ConvValue) -> tuple[ValueType, Value]:
     else:
         # NamedTuple, ensure they're a float.
         if isinstance(value, tuple):
-            # Type checker doesn't know all value classes take floats.
-            return val_type, tuple.__new__(type(value), map(float, value))  # type: ignore
+            return val_type, tuple.__new__(type(value), map(float, value))
         else:  # No change needed.
             return val_type, value
     raise TypeError(f'Could not deduce value type for {type(value)}.') from None
