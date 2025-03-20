@@ -31,6 +31,7 @@ pure_python = files(
     'vec.py',
     'vmf.py',
     'vmt.py',
+    'vphys.py',
     'vpk.py',
     'vtf.py',
 )
