@@ -21,12 +21,11 @@ class LedgeBase:
 @attrs.define(kw_only=True)
 class Ledge(LedgeBase):
     """Some sort of hull?"""
-    _point_offset: int
     client_data: bytes
     has_children: int
     is_compact: int
     size_div_16: int
-    tri_count: int
+    triangles: list[Triangle]
     future_data: int
 
 
@@ -40,7 +39,6 @@ class LedgeNode(LedgeBase):
         """Parse the tree of nodes."""
         if pos in memo:
             return memo[pos]
-        print(f'parse_tree({pos})')
         f.seek(pos)
         (
             off_right, off_ledge,
@@ -58,9 +56,9 @@ class LedgeNode(LedgeBase):
                 left=left, right=right
             )
             return node
-        f.seek(pos + off_ledge)
+        f.seek(ledge_pos := pos + off_ledge)
         (
-            point_off,
+            point_pos,
             client_data,
             flags,
             size_bytes,
@@ -69,17 +67,62 @@ class LedgeNode(LedgeBase):
         ) = binformat.struct_read('<ii B3s hh', f)
         has_children = flags >> 30
         is_compact = (flags >> 28) & 0b11
+        point_pos += ledge_pos
+        triangles = [
+            Triangle.parse(f, point_pos) for _ in range(tri_count)
+        ]
         memo[pos] = ledge = Ledge(
             center=center, box_sizes=box_sizes, radius=radius,
-            point_offset=point_off,
             has_children=has_children,
             is_compact=is_compact,
             size_div_16=int.from_bytes(size_bytes, 'little'),
-            tri_count=tri_count,
             future_data=future,
             client_data=client_data,
+            triangles=triangles,
         )
         return ledge
+
+
+@attrs.define
+class Triangle:
+    tri_index: int
+    pierce_index: int
+    mat_index: int
+    virtual: bool
+    edges: list[Edge]
+
+    @classmethod
+    def parse(cls, f: IO[bytes], point_pos: int) -> Triangle:
+        """Parse the triangle."""
+        data = int.from_bytes(f.read(4), 'little')
+        tri_index = data >> 20
+        pierce_index = (data >> 8) & ((1<<12) - 1)
+        mat_index = (data >> 1) & 0b1111111
+        virtual = data & 1 != 0
+        return cls(
+            tri_index, pierce_index, mat_index, virtual,
+            edges=[
+                Edge.parse(f, point_pos) for _ in range(3)
+            ]
+        )
+
+
+@attrs.define
+class Edge:
+    pos: Vec
+    opposite: int
+    virtual: bool
+
+    @classmethod
+    def parse(cls, f: IO[bytes], point_pos: int) -> Edge:
+        """Parse the edge."""
+        (start, opposite) = binformat.struct_read('hH', f)
+        is_virtual = opposite & 1 != 0
+        opposite >>= 1
+        with binformat.rewind(f):
+            f.seek(point_pos + start * 16)
+            (x, y, z) = binformat.struct_read(binformat.ST_VEC, f)
+        return cls(Vec(x, y, z), opposite, is_virtual)
 
 
 @attrs.define
@@ -110,6 +153,9 @@ class Collision:
             version,
             mdl_type,
         ) = binformat.struct_read('<hh', f)  # collideheader_t
+
+        if mdl_type != 0:
+            raise ValueError(f'Unknown solid type {mdl_type:02x}?')
         (
             surf_size,
             drag_ax_x,
@@ -126,9 +172,6 @@ class Collision:
             size,
             ledgetree_root_off,
         ) = binformat.struct_read('<3f 3f f B3s i 12x', f)  # compactsurface_t
-
-        if mdl_type != 0:
-            raise ValueError(f'Unknown solid type {mdl_type:02x}?')
 
         ledgetree = LedgeNode.parse_tree(f, {}, surf_pos + ledgetree_root_off)
 
