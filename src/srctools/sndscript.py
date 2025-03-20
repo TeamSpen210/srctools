@@ -11,7 +11,7 @@ from srctools.keyvalues import Keyvalues, NoKeyError
 
 __all__ = [
     'SND_CHARS', 'Pitch', 'VOL_NORM', 'Channel', 'Level',
-    'Sound', 'wav_is_looped',
+    'Sound', 'wav_is_looped', 'split_float', 'join_float',
 ]
 
 # All the prefixes wavs can have.
@@ -119,13 +119,13 @@ SOUND_LEVELS = {
 EnumType = TypeVar('EnumType', bound=Enum)
 
 
-def split_float(
+def parse_split_float(
     kv: Keyvalues,
     key: str,
     enum: Callable[[str], Union[float, EnumType]],
     default: Union[float, EnumType],
 ) -> tuple[Union[float, EnumType], Union[float, EnumType]]:
-    """Handle values which can be a low, high pair of numbers or enum constants.
+    """Parse pairs of float/enum values from keyvalues.
 
     A single number can be provided, producing the same value for low and high.
 
@@ -141,9 +141,25 @@ def split_float(
         return (default, default)
     if leaf_kv.has_children():
         raise ValueError(f'Keyvalues block used for "{key}" option in "{kv.real_name}" sound!')
-    val = leaf_kv.value
-    if ',' in val:
-        s_low, s_high = val.split(',')
+    return split_float(leaf_kv.value, enum, default)
+
+
+def split_float(
+    value: str,
+    enum: Callable[[str], Union[float, EnumType]],
+    default: Union[float, EnumType],
+) -> tuple[Union[float, EnumType], Union[float, EnumType]]:
+    """Handle values which can be a low, high pair of numbers or enum constants.
+
+    A single number can be provided, producing the same value for low and high.
+
+    :param value: The value to read.
+    :param enum: This is either an Enum with values to match text constants, or a converter function
+        returning enums or raising ValueError, KeyError or IndexError.
+    :param default: If either value or the whole string is unparsable, this default is used.
+    """
+    if ',' in value:
+        s_low, s_high = value.split(',')
         try:
             low = enum(s_low.strip().upper())
         except (LookupError, ValueError):
@@ -155,9 +171,9 @@ def split_float(
         return low, high
     else:
         try:
-            out = enum(val.strip().upper())
+            out = enum(value.strip().upper())
         except (LookupError, ValueError):
-            out = conv_float(val, default)
+            out = conv_float(value, default)
         return out, out
 
 
@@ -379,25 +395,25 @@ class Sound:
     def parse_one(cls, sound_kv: Keyvalues) -> 'Sound':
         """Parse a single soundscript definition."""
 
-        volume = split_float(
+        volume = parse_split_float(
             sound_kv, 'volume',
             VOLUME.__getitem__,
             1.0,
         )
-        pitch = split_float(
+        pitch = parse_split_float(
             sound_kv, 'pitch',
             Pitch.__getitem__,
             100.0,
         )
 
         if 'soundlevel' in sound_kv:
-            level = split_float(
+            level = parse_split_float(
                 sound_kv, 'soundlevel',
                 SOUND_LEVELS.__getitem__,
                 Level.SNDLVL_NORM,
             )
         elif 'attenuation' in sound_kv:
-            atten_min, atten_max = split_float(
+            atten_min, atten_max = parse_split_float(
                 sound_kv, 'attenuation',
                 ATTENUATION.__getitem__,
                 ATTENUATION['ATTN_IDLE'],

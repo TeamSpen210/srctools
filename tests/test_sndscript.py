@@ -1,4 +1,5 @@
 from pathlib import Path
+import re
 
 import pytest
 
@@ -7,15 +8,32 @@ from srctools import Keyvalues, sndscript
 
 def test_split() -> None:
     """Test float splitting logic."""
-    prop = Keyvalues('World.TestSound', [
-        Keyvalues('num', '4.5'),
-        Keyvalues('unparsable', 'notfloat'),
-        Keyvalues('twonum', '1.2, 3.4'),
+    enum_func = sndscript.Pitch.__getitem__
 
-        Keyvalues('single_enum', ' Pitch_low '),
-        Keyvalues('dual_enum', ' pITch_hiGh, pitCH_loW'),
-        Keyvalues('enum_num', ' PItch_hiGH, 3.5'),
-        Keyvalues('num_enum', '3.5, PItch_LOw '),
+    assert sndscript.split_float('4.5', enum_func, 4.0) == (4.5, 4.5)
+    assert sndscript.split_float('notfloat', enum_func, 4.0) == (4.0, 4.0)
+    assert sndscript.split_float('1.2, 3.4', enum_func, 4.0) == (1.2, 3.4)
+
+    assert sndscript.split_float(
+        ' Pitch_low ', enum_func, 4.0
+    ) == (sndscript.Pitch.PITCH_LOW, sndscript.Pitch.PITCH_LOW)
+
+    assert sndscript.split_float(
+' pITch_hiGh, pitCH_loW', enum_func, 4.0,
+    ) == (sndscript.Pitch.PITCH_HIGH, sndscript.Pitch.PITCH_LOW)
+
+    assert sndscript.split_float(
+        ' PItch_hiGH, 3.5', enum_func, 4.0,
+    ) == (sndscript.Pitch.PITCH_HIGH, 3.5)
+    assert sndscript.split_float(
+        '3.5, PItch_LOw ', enum_func, 4.0
+    ) == (3.5, sndscript.Pitch.PITCH_LOW)
+
+
+def test_split_parse() -> None:
+    """Test behaviour of parse_split_float."""
+    kv = Keyvalues('World.TestSound', [
+        Keyvalues('working', 'pitch_low, 4.5'),
         Keyvalues('a_block', [
             Keyvalues('a', '1'),
             Keyvalues('b', '2'),
@@ -23,25 +41,18 @@ def test_split() -> None:
     ])
     enum_func = sndscript.Pitch.__getitem__
 
-    assert sndscript.split_float(prop, 'num', enum_func, 4.0) == (4.5, 4.5)
-    assert sndscript.split_float(prop, 'unparsable', enum_func, 4.0) == (4.0, 4.0)
-    assert sndscript.split_float(prop, 'twonum', enum_func, 4.0) == (1.2, 3.4)
+    assert sndscript.parse_split_float(
+        kv, 'working', enum_func, 4.0,
+    ) == (sndscript.Pitch.PITCH_LOW, 4.5)
 
-    assert sndscript.split_float(
-        prop, 'single_enum', enum_func, 4.0
-    ) == (sndscript.Pitch.PITCH_LOW, sndscript.Pitch.PITCH_LOW)
+    assert sndscript.parse_split_float(
+        kv, 'missing', enum_func, 4.0,
+    ) == (4.0, 4.0)
 
-    assert sndscript.split_float(
-        prop, 'dual_enum', enum_func, 4.0,
-    ) == (sndscript.Pitch.PITCH_HIGH, sndscript.Pitch.PITCH_LOW)
-
-    assert sndscript.split_float(prop, 'enum_num', enum_func, 4.0) == (sndscript.Pitch.PITCH_HIGH, 3.5)
-    assert sndscript.split_float(prop, 'num_enum', enum_func, 4.0) == (3.5, sndscript.Pitch.PITCH_LOW)
-
-    with pytest.raises(
-        ValueError, match='Keyvalues block used for "a_block" option in "World.TestSound" sound!',
-    ):
-        sndscript.split_float(prop, 'a_block', enum_func, 5.0, )
+    with pytest.raises(ValueError, match=re.escape(
+        'Keyvalues block used for "a_block" option in "World.TestSound" sound!'
+    )):
+        sndscript.parse_split_float(kv, 'a_block', enum_func, 5.0, )
 
 
 def test_join() -> None:
@@ -73,6 +84,10 @@ def test_parse() -> None:
     assert not sound.stack_start
     assert not sound.stack_stop
     assert not sound.stack_update
+
+
+def test_parse_opstacks() -> None:
+    """Test parsing a v2 soundscript, with operator stacks."""
 
 
 @pytest.mark.parametrize('fname, loop', [
