@@ -2,8 +2,8 @@
 from typing import Union
 from collections.abc import Generator
 import itertools
+import sys
 
-from exceptiongroup import ExceptionGroup
 import pytest
 
 from srctools import keyvalues as kv_mod
@@ -12,6 +12,9 @@ from srctools.keyvalues import KeyValError, Keyvalues, LeafKeyvalueError, NoKeyE
 from srctools.tokenizer import (
     Cy_BaseTokenizer, Cy_Tokenizer, Py_BaseTokenizer, Py_Tokenizer, Token, Tokenizer,
 )
+
+if sys.version_info < (3, 11):
+    from exceptiongroup import BaseExceptionGroup
 
 
 if Cy_Tokenizer is not None:

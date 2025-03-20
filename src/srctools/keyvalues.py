@@ -69,13 +69,14 @@ import sys
 import types
 import warnings
 
-from exceptiongroup import BaseExceptionGroup
-
 from srctools import BOOL_LOOKUP, EmptyMapping, StringPath
 from srctools.math import Vec as _Vec
 from srctools.tokenizer import (
     BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text, format_exc_fileinfo,
 )
+
+if sys.version_info < (3, 11):
+    from exceptiongroup import BaseExceptionGroup
 
 
 __all__ = ['KeyValError', 'NoKeyError', 'LeafKeyvalueError', 'Keyvalues', 'escape_text']
