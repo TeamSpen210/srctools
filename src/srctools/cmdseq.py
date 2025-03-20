@@ -2,6 +2,7 @@
 
 These set the arguments to the compile tools.
 """
+import attrs
 from typing import IO, Optional, Union
 from collections.abc import Sequence
 from enum import Enum
@@ -51,24 +52,16 @@ def pad_string(text: str, length: int) -> bytes:
     return text.encode('ascii') + b'\0' * (length - len(text))
 
 
+@attrs.define
 class Command:
     """A command to run."""
-    def __init__(
-        self,
-        executable: Union[str, SpecialCommand],
-        args: str,
-        *,
-        enabled: bool = True,
-        ensure_file: Optional[str] = None,
-        use_proc_win: bool = True,
-        no_wait: bool = False,
-    ) -> None:
-        self.exe = executable
-        self.enabled = enabled
-        self.args = args
-        self.ensure_file = ensure_file
-        self.use_proc_win = use_proc_win
-        self.no_wait = no_wait
+    exe: Union[str, SpecialCommand]
+    args: str
+
+    enabled: bool = attrs.field(default=True, kw_only=True)
+    ensure_file: Optional[str] = attrs.field(default=None, kw_only=True)
+    use_proc_win: bool = attrs.field(default=True, kw_only=True)
+    no_wait: bool = attrs.field(default=False, kw_only=True)
 
     @classmethod
     def parse(
@@ -106,9 +99,6 @@ class Command:
 
     def __bool__(self) -> bool:
         return self.enabled
-
-    def __repr__(self) -> str:
-        return repr(vars(self))
 
 
 def parse(file: IO[bytes]) -> dict[str, list[Command]]:
