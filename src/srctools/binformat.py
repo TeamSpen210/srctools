@@ -5,8 +5,9 @@ esentially expanding on :external:mod:`struct`'s functionality.
 """
 from typing import IO, Any, Callable, Final, Optional, TypeVar, Union
 from binascii import crc32
-from collections.abc import Collection, Hashable, Mapping
+from collections.abc import Collection, Generator, Hashable, Mapping
 from struct import Struct
+import contextlib
 import functools
 import itertools
 import lzma
@@ -165,6 +166,14 @@ def write_array(fmt: Union[str, Struct], data: Collection[int]) -> bytes:
 def str_readvec(file: IO[bytes]) -> Vec:
     """Shortcut to read a 3-float vector from a file."""
     return Vec(ST_VEC.unpack(file.read(ST_VEC.size)))
+
+
+@contextlib.contextmanager
+def rewind(file: IO[bytes]) -> Generator[int, Any, Any]:
+    """Save the current file position when entering, then restore on exit."""
+    pos = file.tell()
+    yield pos
+    file.seek(pos)
 
 
 def checksum(data: bytes, prior: int = 0) -> int:

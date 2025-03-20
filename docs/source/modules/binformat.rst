@@ -57,6 +57,11 @@ Structure tools
 
 -------------
 
+.. autofunction:: rewind
+	:with: pos
+
+-------------
+
 .. autofunction:: read_array
 
 .. autofunction:: write_array
