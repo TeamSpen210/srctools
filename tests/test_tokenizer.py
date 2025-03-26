@@ -589,6 +589,42 @@ def test_brackets(py_c_token: type[Tokenizer]) -> None:
     ])
 
 
+def test_parens(py_c_token: type[Tokenizer]) -> None:
+    """Test the () handling produces the right results."""
+    check_tokens(py_c_token('"blah" ( !!text45[] )', string_parens=True, string_bracket=True), [
+        (Token.STRING, "blah"),
+        (Token.PAREN_ARGS, " !!text45[] ")
+    ])
+
+    check_tokens(py_c_token('"blah" ( !!text45[] )', string_parens=False, string_bracket=True), [
+        (Token.STRING, "blah"),
+        Token.PAREN_OPEN,
+        (Token.STRING, "!!text45"),
+        (Token.PROP_FLAG, ''),
+        Token.PAREN_CLOSE,
+    ])
+
+    # Without, we don't care about brackets.
+    check_tokens(py_c_token('( unclosed {}', string_parens=False), [
+        Token.PAREN_OPEN,
+        (Token.STRING, 'unclosed'),
+        Token.BRACE_OPEN,
+        Token.BRACE_CLOSE,
+    ])
+
+    # Corner case, check EOF while reading the string.
+    check_tokens(py_c_token('( unclosed', string_parens=False), [
+        Token.PAREN_OPEN,
+        (Token.STRING, 'unclosed'),
+    ])
+
+    # Without, we don't care about brackets.
+    check_tokens(py_c_token('unopened )', string_parens=False), [
+        (Token.STRING, 'unopened'),
+        Token.PAREN_CLOSE,
+    ])
+
+
 @pytest.mark.parametrize('op, tok, option', [
     (':', Token.COLON, 'colon_operator'),
     ('+', Token.PLUS, 'plus_operator'),
@@ -644,37 +680,37 @@ def test_conditional_op(py_c_token: type[Tokenizer], op: str, option: str, tok: 
 def test_invalid_bracket(py_c_token: type[Tokenizer]) -> None:
     """Test detecting various invalid combinations of [] brackets."""
     with pytest.raises(TokenSyntaxError):
-        for tok, tok_value in py_c_token('[ unclosed', string_bracket=True):
+        for _ in py_c_token('[ unclosed', string_bracket=True):
             pass
 
     with pytest.raises(TokenSyntaxError):
-        for tok, tok_value in py_c_token('unopened ]', string_bracket=True):
+        for _ in py_c_token('unopened ]', string_bracket=True):
             pass
 
     with pytest.raises(TokenSyntaxError):
-        for tok, tok_value in py_c_token('[ok] bad ]', string_bracket=True):
+        for _ in py_c_token('[ok] bad ]', string_bracket=True):
             pass
 
     with pytest.raises(TokenSyntaxError):
-        for tok, tok_value in py_c_token('[ no [ nesting ] ]', string_bracket=True):
+        for _ in py_c_token('[ no [ nesting ] ]', string_bracket=True):
             pass
 
 
 def test_invalid_paren(py_c_token: type[Tokenizer]) -> None:
     with pytest.raises(TokenSyntaxError):
-        for tok, tok_value in py_c_token('( unclosed', string_bracket=True):
+        for _ in py_c_token('( unclosed', string_parens=True):
             pass
 
     with pytest.raises(TokenSyntaxError):
-        for tok, tok_value in py_c_token('unopened )', string_bracket=True):
+        for _ in py_c_token('unopened )', string_parens=True):
             pass
 
     with pytest.raises(TokenSyntaxError):
-        for tok, tok_value in py_c_token('(ok) bad )', string_bracket=True):
+        for _ in py_c_token('(ok) bad )', string_parens=True):
             pass
 
     with pytest.raises(TokenSyntaxError):
-        for tok, tok_value in py_c_token('( no ( nesting ) )', string_bracket=True):
+        for _ in py_c_token('( no ( nesting ) )', string_parens=True):
             pass
 
 
@@ -812,6 +848,8 @@ error_messages = {
     Token.BRACE_CLOSE: 'Unexpected "}" character!',
     Token.BRACK_OPEN: 'Unexpected "[" character!',
     Token.BRACK_CLOSE: 'Unexpected "]" character!',
+    Token.PAREN_OPEN: 'Unexpected "(" character!',
+    Token.PAREN_CLOSE: 'Unexpected ")" character!',
     Token.COLON: 'Unexpected ":" character!',
     Token.COMMA: 'Unexpected "," character!',
     Token.EQUALS: 'Unexpected "=" character!',

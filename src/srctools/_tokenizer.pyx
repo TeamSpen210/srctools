@@ -50,6 +50,9 @@ cdef:
     object BRACK_OPEN = Token.BRACK_OPEN
     object BRACK_CLOSE = Token.BRACK_CLOSE
 
+    object PAREN_OPEN = Token.PAREN_OPEN
+    object PAREN_CLOSE = Token.PAREN_CLOSE
+
     # Reuse a single tuple for these, since the value is constant.
     tuple EOF_TUP = (Token.EOF, '')
     tuple NEWLINE_TUP = (Token.NEWLINE, '\n')
@@ -65,6 +68,9 @@ cdef:
     tuple BRACK_OPEN_TUP = (BRACK_OPEN, '[')
     tuple BRACK_CLOSE_TUP = (BRACK_CLOSE, ']')
 
+    tuple PAREN_OPEN_TUP = (PAREN_OPEN, '(')
+    tuple PAREN_CLOSE_TUP = (PAREN_CLOSE, ')')
+
     uchar *EMPTY_BUF = b''  # Initial value, just so it's valid.
 
 # Characters not allowed for bare names on a line.
@@ -76,6 +82,7 @@ cdef extern from *:
     """
 struct TokFlags {
     unsigned char string_brackets: 1;
+    unsigned char string_parens: 1;
     unsigned char allow_escapes: 1;
     unsigned char colon_operator: 1;
     unsigned char plus_operator: 1;
@@ -87,6 +94,7 @@ struct TokFlags {
     """
     cdef struct TokFlags:
         bint string_brackets
+        bint string_parens
         bint allow_escapes
         bint colon_operator
         bint plus_operator
@@ -145,6 +153,7 @@ cdef class BaseTokenizer:
         self.line_num = 1
         self.flags = {
             'string_brackets': 0,
+            'string_parens': 1,
             'allow_escapes': 0,
             'colon_operator': 0,
             'plus_operator': 0,
@@ -227,6 +236,7 @@ cdef class BaseTokenizer:
                 str_msg = 'File ended unexpectedly!'
             elif message is NEWLINE:
                 str_msg = 'Unexpected newline!'
+            # Unroll all these so the strings are cached, and this hopefully is just a lookup.
             elif message is BRACE_OPEN:
                 str_msg = 'Unexpected "{" character!'
             elif message is BRACE_CLOSE:
@@ -235,6 +245,10 @@ cdef class BaseTokenizer:
                 str_msg = 'Unexpected "[" character!'
             elif message is BRACK_CLOSE:
                 str_msg = 'Unexpected "]" character!'
+            elif message is PAREN_OPEN:
+                str_msg = 'Unexpected "(" character!'
+            elif message is PAREN_CLOSE:
+                str_msg = 'Unexpected ")" character!'
             elif message is COLON:
                 str_msg = 'Unexpected ":" character!'
             elif message is EQUALS:
@@ -314,6 +328,10 @@ cdef class BaseTokenizer:
             value = '{'
         elif tok_val == 7:  # BRACE_CLOSE
             value = '}'
+        elif tok_val == 8:  # PAREN_OPEN
+            value = '('
+        elif tok_val == 9:  # PAREN_CLOSE
+            value = ')'
         elif tok_val == 12:  # BRACK_OPEN
             value = '['
         elif tok_val == 13:  # BRACK_CLOSE
@@ -414,6 +432,7 @@ cdef class Tokenizer(BaseTokenizer):
         error=None,
         *,
         bint string_bracket: bool = False,
+        bint string_parens: bool = True,
         bint allow_escapes: bool = True,
         bint allow_star_comments: bool = False,
         bint preserve_comments: bool = False,
@@ -429,6 +448,7 @@ cdef class Tokenizer(BaseTokenizer):
 
         cdef TokFlags flags = {
             'string_brackets': string_bracket,
+            'string_parens': string_parens,
             'allow_escapes': allow_escapes,
             'allow_star_comments': allow_star_comments,
             'preserve_comments': preserve_comments,
@@ -497,6 +517,18 @@ cdef class Tokenizer(BaseTokenizer):
     @string_bracket.setter
     def string_bracket(self, bint value) -> None:
         self.flags.string_brackets = value
+
+    @property
+    def string_parens(self) -> bool:
+        """Controls whether (parenthesed) blocks are parsed as a single string-like block.
+
+        If disabled these are parsed as PAREN_OPEN, STRING, PAREN_CLOSE.
+        """
+        return self.flags.string_parens
+
+    @string_parens.setter
+    def string_parens(self, bint value) -> None:
+        self.flags.string_parens = value
 
     @property
     def allow_escapes(self) -> bool:
@@ -844,6 +876,10 @@ cdef class Tokenizer(BaseTokenizer):
 
             elif next_char == b'(':
                 # Parentheses around text...
+                # Some code might want to parse this individually.
+                if not self.flags.string_parens:
+                    return PAREN_OPEN_TUP
+
                 self.buf_reset()
                 while True:
                     next_char, is_eof = self._next_char()
@@ -858,7 +894,11 @@ cdef class Tokenizer(BaseTokenizer):
                     self.buf_add_char(next_char)
 
             elif next_char == b')':
-                raise self._error('No open () to close with ")"!')
+                if self.flags.string_parens:
+                    # If string_parens is set (using PAREN_ARGS), this is a
+                    # syntax error - we don't have an open one to close!
+                    raise self._error('No open () to close with ")"!')
+                return PAREN_CLOSE_TUP
 
             # Directives
             elif next_char == b'#':

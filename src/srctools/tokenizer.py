@@ -116,6 +116,8 @@ class Token(Enum):
 
     BRACE_OPEN = 6  #: A ``{`` character.
     BRACE_CLOSE = 7  #: A ``}`` character.
+    PAREN_OPEN = 8  #: A ``(`` character. Only used if ``PAREN_ARGS`` is not.
+    PAREN_CLOSE = 9  #: A ``)`` character.
 
     PROP_FLAG = 11  #: A ``[!flag]``
     BRACK_OPEN = 12  #: A ``[`` character. Only used if ``PROP_FLAG`` is not.
@@ -138,6 +140,9 @@ _OPERATOR_VALS = {
 
     Token.BRACE_OPEN: '{',
     Token.BRACE_CLOSE: '}',
+
+    Token.PAREN_OPEN: '(',
+    Token.PAREN_CLOSE: ')',
 
     Token.BRACK_OPEN: '[',
     Token.BRACK_CLOSE: ']',
@@ -410,6 +415,11 @@ class Tokenizer(BaseTokenizer):
     If disabled these are parsed as :py:const:`~Token.BRACK_OPEN`, :py:const:`~Token.STRING` \
     then :py:const:`~Token.BRACK_CLOSE`.
     """
+    string_parens: bool
+    """If set, `(bracket)` blocks are parsed as a single string-like block. \
+    If disabled these are parsed as :py:const:`~Token.PAREN_OPEN`, :py:const:`~Token.STRING` \
+    then :py:const:`~Token.PAREN_CLOSE`.
+    """
     allow_escapes: bool
     """This determines whether ``\\n``-style escapes are expanded."""
     allow_star_comments: bool
@@ -431,6 +441,7 @@ class Tokenizer(BaseTokenizer):
         error: type[TokenSyntaxError] = TokenSyntaxError,
         *,
         string_bracket: bool = False,
+        string_parens: bool = True,
         allow_escapes: bool = True,
         allow_star_comments: bool = False,
         preserve_comments: bool = False,
@@ -462,6 +473,7 @@ class Tokenizer(BaseTokenizer):
         self._char_index = -1
 
         self.string_bracket = bool(string_bracket)
+        self.string_parens = bool(string_parens)
         self.allow_escapes = bool(allow_escapes)
         self.allow_star_comments = bool(allow_star_comments)
         self.colon_operator = bool(colon_operator)
@@ -555,6 +567,9 @@ class Tokenizer(BaseTokenizer):
                     value_chars.append(next_char)
 
             elif next_char == '(':
+                # Some code might want to parse this individually.
+                if not self.string_parens:
+                    return Token.PAREN_OPEN, '('
                 # Parentheses around text...
                 value_chars = []
                 while True:
@@ -589,7 +604,11 @@ class Tokenizer(BaseTokenizer):
                 return Token.BRACK_CLOSE, ']'
 
             elif next_char == ')':
-                raise self.error('No open () to close with ")"!')
+                if self.string_parens:
+                    # If string_parens is set (using PAREN_ARGS), this is a
+                    # syntax error - we don't have an open one to close!
+                    raise self.error('No open () to close with ")"!')
+                return Token.PAREN_CLOSE, ')'
 
             elif next_char == '#':  # A #name "directive", which we casefold.
                 value_chars = []

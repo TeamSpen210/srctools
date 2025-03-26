@@ -11,6 +11,7 @@ Version (dev)
 * Drop support for Python 3.8.
 * Switch to Meson for building the package.
 * #35: Only use character escapes in FGD custom syntax mode. The original parser only allows `\\n`.
+* Add :py:attr:`Token.PAREN_OPEN <srctools.tokenizer.Token.PAREN_OPEN>`/:py:attr:`~srctools.tokenizer.Token.PAREN_CLOSE`, enabled by :py:attr:`Tokenizer.string_parens <srctools.tokenizer.Tokenizer.string_parens>`.
 * Avoid escaping `/` and `?`, these are unambiguous.
 * Add :py:attr:`ValueTypes.EXT_SOUNDSCAPE <srctools.fgd.ValueTypes.EXT_SOUNDSCAPE>`.
 * Support exporting FGDs with unevaulated string bases.
