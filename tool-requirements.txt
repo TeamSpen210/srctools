@@ -4,3 +4,4 @@ types-pyinstaller>=6.11.0
 mypy == 1.15.0
 pyright == 1.1.391
 ruff == 0.9.10
+exceptiongroup >= 1.2.0  # For 3.9/3.10 typing
