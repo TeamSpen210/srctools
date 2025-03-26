@@ -1,6 +1,7 @@
 """Tests for the VMF library."""
 from typing import Optional
 from enum import Enum
+import re
 
 from dirty_equals import IsList
 from pytest_regressions.file_regression import FileRegressionFixture
@@ -105,7 +106,7 @@ def test_entkey_basic() -> None:
     internal_keys = ent._keys  # noqa
     assert len(ent) == 1
     assert list(ent) == ['classname']
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning, match=re.escape('use the entity as a mapping')):
         assert list(ent.keys()) == ['classname']
     assert list(ent.values()) == ['info_null']
     assert list(ent.items()) == [('classname', 'info_null')]
@@ -141,7 +142,7 @@ def test_entkey_basic() -> None:
         'classname', 'target', 'health', 'Range', 'allowRespawn', 'canKill', 'movedirection',
         check_order=False,
     )
-    with pytest.warns(DeprecationWarning):
+    with pytest.warns(DeprecationWarning, match=re.escape('use the entity as a mapping')):
         keys = ent.keys()
     assert list(keys) == IsList(
         'classname', 'target', 'health', 'Range', 'allowRespawn', 'canKill', 'movedirection',

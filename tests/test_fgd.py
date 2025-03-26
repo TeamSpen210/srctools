@@ -3,6 +3,7 @@ from typing import Any
 from collections.abc import Callable, Generator
 import copy
 import io
+import re
 
 from pytest_regressions.file_regression import FileRegressionFixture
 import pytest
@@ -467,7 +468,7 @@ def test_snippet_desc(py_c_token) -> None:
 """
     })
     fgd.parse_file(fsys, fsys['snippets.fgd'])
-    with pytest.raises(ValueError, match="^Two description snippets were defined"):
+    with pytest.raises(ValueError, match=r"^Two description snippets were defined"):
         fgd.parse_file(fsys, fsys['overlap.fgd'])
     assert fgd.snippet_desc == {
         'first_desc': [Snippet(
@@ -739,18 +740,16 @@ def test_snippet_no_dup(py_c_token) -> None:
             "Overwrites existing."
         )]
     }
-    with pytest.raises(ValueError) as catcher:
-        fgd.parse_file(fsys, fsys['snip_2.fgd'])
-    assert str(catcher.value) == (
+    with pytest.raises(ValueError, match=re.escape(
         'Two description snippets were defined with the name "a_desc":\n'
         '- snip_1.fgd:6\n'
         '- snip_2.fgd:1'
-    )
-    with pytest.raises(ValueError) as catcher:
-        fgd.parse_file(fsys, fsys['snip_3.fgd'])
-    assert str(catcher.value) == (
+    )):
+        fgd.parse_file(fsys, fsys['snip_2.fgd'])
+    with pytest.raises(ValueError, match=re.escape(
         'Tried to replace description snippet with name "missing", but none exist!'
-    )
+    )):
+        fgd.parse_file(fsys, fsys['snip_3.fgd'])
 
 
 PARSE_EOF = {
