@@ -14,7 +14,7 @@ from srctools.tokenizer import (
 )
 
 if sys.version_info < (3, 11):
-    from exceptiongroup import BaseExceptionGroup
+    from exceptiongroup import ExceptionGroup
 
 
 if Cy_Tokenizer is not None:
