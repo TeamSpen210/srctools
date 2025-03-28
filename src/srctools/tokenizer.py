@@ -180,10 +180,15 @@ ESCAPES = {
     '\\': '\\',
     '?': '?',
 }
+# Regexes to locate escape text, then the dict to locate the resultant character.
 ESCAPES_INV = {char: f'\\{sym}' for sym, char in ESCAPES.items()}
 ESCAPE_RE = re.compile('|'.join(
     re.escape(c) for c in ESCAPES_INV
     if c not in '?/'
+))
+ESCAPE_MULTILINE_RE = re.compile('|'.join(
+    re.escape(c) for c in ESCAPES_INV
+    if c not in '?/\n'
 ))
 
 #: Characters not allowed for bare strings. These must be quoted.
@@ -795,9 +800,23 @@ class IterTokenizer(BaseTokenizer):
             return Token.EOF, ''
 
 
-def escape_text(text: str) -> str:
-    r"""Escape special characters and backslashes, so tokenising reproduces them."""
-    return ESCAPE_RE.sub(lambda match: ESCAPES_INV[match.group()], text)
+def _escape_matcher(match: re.Match[str]) -> str:
+    """Substitution function for escape_text()."""
+    return ESCAPES_INV[match.group()]
+
+
+def escape_text(text: str, multiline: bool=False) -> str:
+    r"""Escape special characters and backslashes, so tokenising reproduces them.
+
+    This matches utilbuffer.cpp in the SDK.
+    The following characters are escaped: \t, \v, \b, \r, \f, \a, \, ', ".
+    / and ? are accepted as escapes, but not produced since they're unambiguous.
+    In addition, \n is escaped only if `multiline` is false.
+
+    :parameter text: The text to escape.
+    :parameter multiline: If set, allow `\\n` unchanged.
+    """
+    return (ESCAPE_MULTILINE_RE if multiline else ESCAPE_RE).sub(_escape_matcher, text)
 
 
 # This is available as both C and Python versions, plus the unprefixed

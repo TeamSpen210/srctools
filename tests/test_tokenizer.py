@@ -553,6 +553,13 @@ def test_escape_text(inp: str, out: str, func: Callable[[str], str]) -> None:
         assert func(inp) is inp
 
 
+@pytest.mark.parametrize('func', [_py_escape_text, escape_text], ids=['Py', 'Cy'])
+def test_escape_text_multiline(func: Callable[[str, bool], str]) -> None:
+    """Test both versions of the multiline escape mode."""
+    assert func('\t"regular\n\n\nvalue"\r', False) == '\\t\\"regular\\n\\n\\nvalue\\"\\r'
+    assert func('\t"regular\n\n\nvalue"\r', True) == '\\t\\"regular\n\n\nvalue\\"\\r'
+
+
 def test_brackets(py_c_token: type[Tokenizer]) -> None:
     """Test the [] handling produces the right results."""
     check_tokens(py_c_token('"blah" [ !!text45() ]', string_bracket=True), [

@@ -3808,7 +3808,7 @@ class Output:
         # Don't bother escaping the delay/times values, since those can't be text.
         return (
             f'"{escape_text(self.exp_out())}" "{escape_text(self.target)}{sep}'
-            f'{escape_text(self.exp_in())}{sep}{escape_text(self.params)}{sep}'
+            f'{escape_text(self.exp_in())}{sep}{escape_text(self.params, True)}{sep}'
             f'{self.delay:g}{sep}{self.times}"\n'
         )
 

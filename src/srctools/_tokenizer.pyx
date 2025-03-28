@@ -1110,12 +1110,13 @@ cdef inline Py_ssize_t _write_escape(
 
 
 @cython.nonecheck(False)
-def escape_text(str text not None: str) -> str:
+def escape_text(str text not None: str, bint multiline: bool = False) -> str:
     r"""Escape special characters and backslashes, so tokenising reproduces them.
 
     This matches utilbuffer.cpp in the SDK.
-    The following characters are escaped: \n, \t, \v, \b, \r, \f, \a, \, ', ".
+    The following characters are escaped: \t, \v, \b, \r, \f, \a, \, ', ".
     / and ? are accepted as escapes, but not produced since they're unambiguous.
+    In addition, \n is escaped only if `multiline` is false.
     """
     # UTF8 = ASCII for the chars we care about, so we can just loop over the
     # UTF8 data.
@@ -1129,7 +1130,9 @@ def escape_text(str text not None: str) -> str:
     # First loop to compute the full string length, and check if we need to
     # escape at all.
     for i in range(size):
-        if in_buf[i] in b'\n\t\v\b\r\f\a\\\'"':
+        if in_buf[i] in b'\t\v\b\r\f\a\\\'"':
+            final_size += 1
+        elif in_buf[i] == b'\n' and not multiline:
             final_size += 1
 
     if size == final_size:  # Unchanged, return original
@@ -1143,10 +1146,8 @@ def escape_text(str text not None: str) -> str:
             raise MemoryError
         for i in range(size):
             letter = in_buf[i]
-            # b'ntvbrfa?\'"'
-            if letter == b'\n':
-                j = _write_escape(out_buff, j, b'n')
-            elif letter == b'\t':
+            # b'tvbrfa?\'"'
+            if letter == b'\t':
                 j = _write_escape(out_buff, j, b't')
             elif letter == b'\v':
                 j = _write_escape(out_buff, j, b'v')
@@ -1165,7 +1166,10 @@ def escape_text(str text not None: str) -> str:
             elif letter == b"'":
                 j = _write_escape(out_buff, j, b"'")
             else:
-                out_buff[j] = letter
+                if letter == b"\n" and not multiline:
+                    j = _write_escape(out_buff, j, b"n")
+                else:
+                    out_buff[j] = letter
             j += 1
         out_buff[final_size] = b'\0'
         return PyUnicode_FromStringAndSize(<char *>out_buff, final_size)

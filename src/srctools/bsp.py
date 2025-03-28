@@ -2985,7 +2985,7 @@ class BSP:
         for ent in itertools.chain([vmf.spawn], vmf.entities):
             out.write(b'{\n')
             for key, value in ent.items():
-                out.write(f'"{key}" "{escape_text(value)}"\n'.encode('ascii', 'surrogateescape'))
+                out.write(f'"{key}" "{escape_text(value, True)}"\n'.encode('ascii', 'surrogateescape'))
             for output in ent.outputs:
                 if use_comma_sep is not None:
                     output.comma_sep = use_comma_sep
