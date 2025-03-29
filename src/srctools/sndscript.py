@@ -10,8 +10,9 @@ from srctools.keyvalues import Keyvalues, NoKeyError
 
 
 __all__ = [
-    'SND_CHARS', 'Pitch', 'VOL_NORM', 'Channel', 'Level',
+    'SoundChars', 'Pitch', 'VOL_NORM', 'Channel', 'Level',
     'Sound', 'wav_is_looped', 'split_float', 'join_float',
+    'SND_CHARS',
 ]
 
 #: Possible sound characters.
