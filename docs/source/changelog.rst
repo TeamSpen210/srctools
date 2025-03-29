@@ -26,6 +26,7 @@ Version (dev)
 * Share common strings in the engine database to save some space.
 * Fix saving the `PHYSCOLLIDE` BSP lump.
 * In log files, increase size limits for :py:class:`ExceptionGroup` tracebacks.
+* Add :py:class:`srctools.sndscript.SoundChars`, allowing easier parsing of sound characters.
 * Add :py:attr:`srctools.vtf.ImageFormats.is_transparent`.
 * Add :py:meth:`srctools.dmx.Element.get_wrap()`, allowing handling defaults more conveniently.
 * Make :py:attr:`EntityDef.kv <srctools.fgd.EntityDef.kv>`, :py:attr:`.inp <srctools.fgd.EntityDef.inp>`

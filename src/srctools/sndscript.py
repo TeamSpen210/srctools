@@ -1,6 +1,6 @@
 """Reads and writes Soundscripts."""
-from typing import IO, Callable, Optional, TextIO, TypeVar, Union
-from enum import Enum
+from typing import IO, Callable, Optional, TextIO, Tuple, TypeVar, Union
+import enum
 import struct
 
 import attrs
@@ -14,11 +14,88 @@ __all__ = [
     'Sound', 'wav_is_looped', 'split_float', 'join_float',
 ]
 
-# All the prefixes wavs can have.
+#: Possible sound characters.
+#: deprecated: Use SoundChars instead.
 SND_CHARS = '*@#<>^)}$!?'
 
 
-class Pitch(float, Enum):
+class SoundChars(enum.Flag):
+    """Flags to represent sound characters which can be added to the start of sound filenames.
+
+    Despite comments in the SDK, more than 2 are permitted simultaneously.
+    To re-assemble into a set of characters, call :py:obj:`str`.
+    """
+    none = 0  #: A filename with no characters included.
+
+    #: Stream the sound from disc, discarded afterwards. Use for one-off dialogue files or
+    # music, to not keep them in memory.
+    stream = enum.auto()
+    user_vox = enum.auto()  #: Marks player voice chat data, shouldn't ever be used.
+    sentence = enum.auto()  #: Dialog from the NPC sentence system.
+    dry_mix = enum.auto()  #:  DSP FX is bypassed for this sound.
+    doppler = enum.auto()  #:  Doppler encoded stereo wav: left wav (incoming) and right wav (outgoing).
+    #: Stereo wav has direction cone: mix left wav (front facing)
+    #: with right wav (rear facing) based on sound facing direction
+    directional = enum.auto()
+    dist_variant = enum.auto()  #: Distance variant encoded stereo wav (left is close, right is far)
+    #: Non-directional - sound appears to play from everywhere,
+    #: but still has distance volume falloff.
+    omni = enum.auto()
+    spatial_stereo = enum.auto()  #: Spatialised stereo wav
+    dir_stereo = enum.auto()  #: Directional stereo wav (like doppler)
+    fast_pitch = enum.auto()  #: Forces low quality, non-interpolated pitch shift
+    subtitled = enum.auto()  #: Indicates subtitles were forced on.
+
+    hrtf_force = enum.auto()  #: CSGO+ only. Enables HRTF for all players including the owner.
+    hrtf = enum.auto()  #: CSGO+ only. Enables HRTF for non-owners.
+    #: CSGO+ only. Enables HRTF for non-owner players, fading to stereo instead if close.
+    hrtf_blend = enum.auto()
+    radio = enum.auto()  #: CSGO+ only. Used for 'radio' sounds tha are played without spatialisation.
+    music = enum.auto()  #: CSGO+ only. Used for main menu music.
+
+    @classmethod
+    def from_fname(cls, filename: str) -> Tuple['SoundChars', str]:
+        """Parse sound characters out of a filename, then return both."""
+        flag = cls.none
+        i = 0
+        for i, char in enumerate(filename):
+            try:
+                flag |= CHAR_TO_FLAG[char]
+            except KeyError:
+                break
+        return flag, filename[i:]
+
+    def __str__(self) -> str:
+        return ''.join([
+            char
+            for char, flag in CHAR_TO_FLAG.items()
+            if flag in self
+        ])
+
+
+CHAR_TO_FLAG = {
+    '*': SoundChars.stream,
+    '?': SoundChars.user_vox,
+    '!': SoundChars.sentence,
+    '#': SoundChars.dry_mix,
+    '>': SoundChars.doppler,
+    '<': SoundChars.directional,
+    '^': SoundChars.dist_variant,
+    '@': SoundChars.omni,
+    ')': SoundChars.spatial_stereo,
+    '(': SoundChars.dir_stereo,
+    '}': SoundChars.fast_pitch,
+    '$': SoundChars.subtitled,
+    '&': SoundChars.hrtf_force,
+    '~': SoundChars.hrtf,
+    '`': SoundChars.hrtf_blend,
+    '+': SoundChars.radio,
+    '%': SoundChars.music,
+}
+FLAG_TO_CHAR = {flag: char for char, flag in CHAR_TO_FLAG.items()}
+
+
+class Pitch(float, enum.Enum):
     """The constants permitted for sound pitches."""
     PITCH_NORM = 100.0
     PITCH_LOW = 95.0
@@ -28,7 +105,7 @@ class Pitch(float, Enum):
         return self.name
 
 
-class VOLUME(Enum):
+class VOLUME(enum.Enum):
     """Special value, substitutes default volume (usually 1)."""
     VOL_NORM = 'VOL_NORM'
 
@@ -53,7 +130,7 @@ ATTENUATION: dict[str, float] = {
 }
 
 
-class Channel(Enum):
+class Channel(enum.Enum):
     """Different categories of sounds."""
     DEFAULT = "CHAN_AUTO"
     GUNFIRE = "CHAN_WEAPON"
@@ -73,7 +150,7 @@ class Channel(Enum):
         return self.value
 
 
-class Level(Enum):
+class Level(enum.Enum):
     """Soundlevel constants - attenuation."""
     SNDLVL_NONE = 'SNDLVL_NONE'
     SNDLVL_20dB = 'SNDLVL_20dB'
@@ -116,7 +193,7 @@ SOUND_LEVELS = {
 }
 
 
-EnumType = TypeVar('EnumType', bound=Enum)
+EnumType = TypeVar('EnumType', bound=enum.Enum)
 
 
 def parse_split_float(
@@ -177,7 +254,7 @@ def split_float(
         return out, out
 
 
-def join_float(val: tuple[Union[float, Enum], Union[float, Enum]]) -> str:
+def join_float(val: tuple[Union[float, enum.Enum], Union[float, enum.Enum]]) -> str:
     """Reverse split_float(). The two parameters should be stringifiable into floats/constants."""
     low, high = val
     if low == high:

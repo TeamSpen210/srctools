@@ -65,6 +65,64 @@ def test_join() -> None:
     assert sndscript.join_float((8.28, sndscript.VOL_NORM)) == '8.28, VOL_NORM'
 
 
+def test_soundchar_parse() -> None:
+    """Test parsing sound characters out of filenames."""
+    SoundChars = sndscript.SoundChars
+    assert SoundChars.from_fname('sound/regular.wav') == (
+        SoundChars.none, "sound/regular.wav")
+    assert SoundChars.from_fname('#)sound/some_sound.wav') == (
+        SoundChars.dry_mix | SoundChars.spatial_stereo, "sound/some_sound.wav")
+    assert SoundChars.from_fname('*><^@sound\\some_SOund.wav') == (
+        SoundChars.stream | SoundChars.directional | SoundChars.doppler | SoundChars.dist_variant
+        | SoundChars.omni, "sound\\some_SOund.wav")
+
+    assert SoundChars.from_fname('*test.wav') == (SoundChars.stream, 'test.wav')
+    assert SoundChars.from_fname('?test.wav') == (SoundChars.user_vox, 'test.wav')
+    assert SoundChars.from_fname('!test.wav') == (SoundChars.sentence, 'test.wav')
+    assert SoundChars.from_fname('#test.wav') == (SoundChars.dry_mix, 'test.wav')
+    assert SoundChars.from_fname('>test.wav') == (SoundChars.doppler, 'test.wav')
+    assert SoundChars.from_fname('<test.wav') == (SoundChars.directional, 'test.wav')
+    assert SoundChars.from_fname('^test.wav') == (SoundChars.dist_variant, 'test.wav')
+    assert SoundChars.from_fname('@test.wav') == (SoundChars.omni, 'test.wav')
+    assert SoundChars.from_fname(')test.wav') == (SoundChars.spatial_stereo, 'test.wav')
+    assert SoundChars.from_fname('(test.wav') == (SoundChars.dir_stereo, 'test.wav')
+    assert SoundChars.from_fname('}test.wav') == (SoundChars.fast_pitch, 'test.wav')
+    assert SoundChars.from_fname('$test.wav') == (SoundChars.subtitled, 'test.wav')
+    assert SoundChars.from_fname('&test.wav') == (SoundChars.hrtf_force, 'test.wav')
+    assert SoundChars.from_fname('~test.wav') == (SoundChars.hrtf, 'test.wav')
+    assert SoundChars.from_fname('`test.wav') == (SoundChars.hrtf_blend, 'test.wav')
+    assert SoundChars.from_fname('+test.wav') == (SoundChars.radio, 'test.wav')
+    assert SoundChars.from_fname('%test.wav') == (SoundChars.music, 'test.wav')
+
+
+def test_soundchar_join() -> None:
+    """Test reassembling sound characters."""
+    SoundChars = sndscript.SoundChars
+    assert str(SoundChars.dir_stereo | SoundChars.omni) == '@('
+    assert str(SoundChars.omni | SoundChars.dir_stereo | SoundChars.hrtf) == '@(~'
+    assert str(SoundChars.music | SoundChars.spatial_stereo) == ')%'
+    assert str(SoundChars.stream | SoundChars.directional
+               | SoundChars.doppler | SoundChars.dist_variant) == '*><^'
+
+    assert str(SoundChars.stream) == '*'
+    assert str(SoundChars.user_vox) == '?'
+    assert str(SoundChars.sentence) == '!'
+    assert str(SoundChars.dry_mix) == '#'
+    assert str(SoundChars.doppler) == '>'
+    assert str(SoundChars.directional) == '<'
+    assert str(SoundChars.dist_variant) == '^'
+    assert str(SoundChars.omni) == '@'
+    assert str(SoundChars.spatial_stereo) == ')'
+    assert str(SoundChars.dir_stereo) == '('
+    assert str(SoundChars.fast_pitch) == '}'
+    assert str(SoundChars.subtitled) == '$'
+    assert str(SoundChars.hrtf_force) == '&'
+    assert str(SoundChars.hrtf) == '~'
+    assert str(SoundChars.hrtf_blend) == '`'
+    assert str(SoundChars.radio) == '+'
+    assert str(SoundChars.music) == '%'
+
+
 def test_parse() -> None:
     """Test parsing a basic soundscript."""
     kv = Keyvalues.root(Keyvalues('some.Sound', [
