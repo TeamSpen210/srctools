@@ -293,7 +293,7 @@ Version 2.3.2
 * Automatically add the ``update`` folder to searchpath precedence, fixing TeamSpen210/HammerAddons#164.
 * Make DMX scalar type deduction more strict (removing iterable -> vec support), making it typesafe.
 * Add :py:data:`srctools.filesys.CACHE_KEY_INVALID`.
-* Add :py:func:`srctools.math.Matrix.from_angstr()`.
+* Add :py:func:`Matrix.from_angstr() <srctools.math.MatrixBase.from_angstr>`.
 
 -------------
 Version 2.3.1

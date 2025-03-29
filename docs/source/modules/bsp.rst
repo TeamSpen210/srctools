@@ -136,15 +136,15 @@ Entity Lump
 .. py:class:: BModel
 
     .. py:attribute:: mins
-        :type: Vec
+        :type: ~srctools.math.Vec
 
     .. py:attribute:: maxes
-        :type: Vec
+        :type: ~srctools.math.Vec
 
         Axial bounding box surrounding the brush model.
 
     .. py:attribute:: origin
-        :type: Vec
+        :type: ~srctools.math.Vec
 
         Original position of the brushes.
 
@@ -159,7 +159,7 @@ Entity Lump
         All faces in this brush model, unsorted.
 
     .. py:attribute:: phys_keyvalues
-        :type: Keyvalues | None
+        :type: ~srctools.keyvalues.Keyvalues | None
 
         If this brush model is solid, this contains the VPhysics data. It is very similar to that
         in `.phy` model files. For each brush, this stores metadata like mass, surfaceprop, etc.
@@ -187,7 +187,7 @@ as S/T positioning, lightmap and other data. This allows brushes with matching d
 use texinfo, but ignore the S/T positioning. VBSP stores some data derived from the
 material's `$basetexture` in the BSP - its size and reflectivity. This means that creating `TexInfo`
 requires either providing this extra data manually, or supplying a
-:py:class:`~srctools.fsys.FileSystem` to automatically read this data from the material/texture files.
+:py:class:`~srctools.filesys.FileSystem` to automatically read this data from the material/texture files.
 
 .. py:attribute:: BSP.textures
 	:type: list[str]

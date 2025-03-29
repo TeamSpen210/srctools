@@ -186,7 +186,7 @@ Special methods
 Miscellaneous
 =============
 
-.. automethod:: Keyvalues.as_dict
+.. automethod:: Keyvalues.as_dict() -> dict
 
 .. automethod:: Keyvalues.clear
 

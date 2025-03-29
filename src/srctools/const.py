@@ -53,7 +53,7 @@ class FileType(Enum):
     """Different kinds of files for Source, mainly to indicate resources to pack.
 
     If this represents a specific file type, the value is the extension. Otherwise, it's an
-    arbitrary integer.
+    arbitrary integer. That occurs for things like soundscript entries which are arbitary names.
     """
     GENERIC = 0  #: Arbitrary file type.
     SOUNDSCRIPT = 1  #: Script file containing soundscripts.
@@ -68,7 +68,8 @@ class FileType(Enum):
     #: Classname of another entity that this entity includes.
     #: This is only permitted in the FGD file.
     ENTITY = 4
-    #: Name of a function to call defined inside the packlist module.
+    #: Name of a function to call defined inside the packlist module. This is used to mark entities
+    #: which require special handling.
     ENTCLASS_FUNC = 5
 
     #: Randomised generic chunk gibs.
