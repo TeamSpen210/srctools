@@ -1,5 +1,5 @@
 """Reads and writes Soundscripts."""
-from typing import IO, Callable, Optional, TextIO, Tuple, TypeVar, Union
+from typing import IO, Callable, Optional, TextIO, TypeVar, Union
 import enum
 import struct
 
@@ -55,7 +55,7 @@ class SoundChars(enum.Flag):
     music = enum.auto()  #: CSGO+ only. Used for main menu music.
 
     @classmethod
-    def from_fname(cls, filename: str) -> Tuple['SoundChars', str]:
+    def from_fname(cls, filename: str) -> tuple['SoundChars', str]:
         """Parse sound characters out of a filename, then return both."""
         flag = cls.none
         i = 0
