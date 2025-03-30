@@ -6,7 +6,7 @@ Changelog
 	:backlinks: none
 
 -------------
-Version (dev)
+Version 2.5.0
 -------------
 * Drop support for Python 3.8.
 * Switch to Meson for building the package.
