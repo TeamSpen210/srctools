@@ -731,6 +731,17 @@ class Plane:
         """Return the inverse of this plane."""
         return Plane(-self.normal, -self.dist)
 
+    def intersect_line(self, a: Union[Vec, FrozenVec], b: Union[Vec, FrozenVec]) -> Optional[Vec]:
+        """Given a line segment, calculate the point where it intersects the plane."""
+        off = b - a
+        denom = off.dot(self.normal)
+        if abs(denom) < 1e-9:
+            return None
+        t = (self.dist - a.dot(self.normal)) / denom
+        if 0 <= t <= 1:
+            return a + off * t
+        return None
+
 
 @attrs.define(eq=False)
 class Primitive:
