@@ -14,6 +14,7 @@ pure_python = files(
     'fgd.py',
     'filesys.py',
     'game.py',
+    'geometry.py',
     'instancing.py',
     'keyvalues.py',
     'logger.py',
