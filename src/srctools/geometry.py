@@ -1,23 +1,13 @@
 """Implements tools for manipulating geometry."""
-from typing import Optional, Literal
+from typing import Optional
 
-from collections.abc import Iterator
-
-from enum import Flag
+from collections.abc import Iterator, MutableMapping
 
 import attrs
 
-from srctools import FrozenVec, Matrix, Vec
-from srctools import vmf, smd
+from srctools import EmptyMapping, FrozenVec, Matrix, VMF, Vec
+from srctools import vmf as vmf_mod, smd
 from srctools.bsp import Plane
-
-
-class Intersect(Flag):
-    """Indicates the result of an intersection."""
-    COPLANAR = 0
-    FRONT = 1
-    BACK = 2
-    SPANNING = 3
 
 
 MAX_PLANE = [
@@ -35,7 +25,7 @@ class Geometry:
     polys: list['Polygon']
 
     @classmethod
-    def from_brush(cls, brush: vmf.Solid) -> 'Geometry':
+    def from_brush(cls, brush: vmf_mod.Solid) -> 'Geometry':
         """Convert a VMF brush into a set of polygons with vertices computed."""
         polys = []
         for side in brush:
@@ -47,11 +37,66 @@ class Geometry:
             if poly._recalculate(polys)
         ])
 
+    def rebuild(self, vmf: vmf_mod.VMF, mat: str) -> vmf_mod.Solid:
+        """Rebuild faces and the brush for this geometry."""
+        return vmf_mod.Solid(vmf, -1, [
+            poly.build_face(vmf, mat)
+            for poly in self.polys
+        ])
+
+    def clip(
+        self, plane: Plane,
+        side_mapping: MutableMapping[int, int] = EmptyMapping,
+    ) -> tuple[Optional['Geometry'], Optional['Geometry']]:
+        """Clip this geometry by the specified plane.
+
+        Returns self/None if entirely on one side, otherwise copies the geo and returns two solids.
+        If provided, side_mapping will be set to have original -> new side IDs, if copying is
+        required.
+        """
+        front_verts = back_verts = 0
+        for poly in self.polys:
+            for vert in poly.vertices:
+                off = plane.normal.dot(vert) - plane.dist
+                if off > 1e-6:
+                    front_verts += 1
+                elif off < -1e-6:
+                    back_verts += 1
+        if front_verts and not back_verts:
+            return (None, self)
+        elif back_verts and not front_verts:
+            return (self, None)
+        front = self
+        # Make a copy of each poly, but share faces for now.
+        back = Geometry([
+            Polygon(poly.original, list(poly.vertices), poly.plane)
+            for poly in self.polys
+        ])
+        front.polys.append(Polygon(None, [], ~plane))
+        back.polys.append(Polygon(None, [], plane))
+        front.polys = [
+            poly for poly in front.polys
+            if poly._recalculate(front.polys)
+        ]
+        back.polys = [
+            poly for poly in back.polys
+            if poly._recalculate(back.polys)
+        ]
+        # Now, copy faces only if used by both. If only used by one, preserve it.
+        front_used = set()
+        for poly in front.polys:
+            if poly.original is not None:
+                front_used.add(poly.original)
+        for poly in back.polys:
+            if poly.original is not None and poly in front_used:
+                poly.original = poly.original.copy(side_mapping=side_mapping)
+        return front, back
+
 
 @attrs.define(eq=False)
 class Polygon:
     """A face, including the associated vertices."""
-    original: Optional[vmf.Side]
+    original: Optional[vmf_mod.Side]
     vertices: list[FrozenVec]
     plane: Plane
 
@@ -64,6 +109,36 @@ class Polygon:
     def plane_dist(self) -> float:
         """Make it easier to access the plane distance."""
         return self.plane.dist
+
+    def build_face(self, vmf: VMF, mat: str) -> vmf_mod.Side:
+        """Apply the polygon to the face. If the face is not present, create it.
+
+        Returns the face, since it is known to exist.
+        """
+        if len(self.vertices) < 3:
+            raise ValueError('No verts?')
+        if self.original is None:
+            orient = Matrix.from_basis(x=self.plane.normal)
+            vert = self.vertices[0]
+            self.original = vmf_mod.Side(
+                vmf,
+                [
+                    vert + orient.left(16),
+                    vert,
+                    vert + orient.up(-16),
+                ],
+                mat=mat,
+            )
+            self.original.reset_uv()
+        elif Vec.dot(self.plane.normal, self.original.normal()) < 0.99:
+            # Not aligned, recalculate.
+            self.original.planes = [
+                self.vertices[0],
+                self.vertices[1],
+                Vec.cross(self.plane.normal, self.vertices[1] - self.vertices[0])
+            ]
+            self.original.reset_uv()
+        return self.original
 
     def _recalculate(self, polys: list['Polygon']) -> bool:
         """Recalculate vertices by intersecting planes. Returns whether this is still valid."""
