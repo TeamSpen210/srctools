@@ -2210,6 +2210,13 @@ class Side:
             vaxis=UVAxis(*v),
         )
 
+    def reset_uv(self) -> None:
+        """Recalculate UV orientations to match the face, discarding the rotation."""
+        orient = Matrix.from_basis(x=FrozenVec(self.normal()))
+        self.uaxis.x, self.uaxis.y, self.uaxis.z = -orient.left()
+        self.vaxis.x, self.vaxis.y, self.vaxis.z = -orient.up()
+        self.ham_rot = 0.0
+
     def copy(
         self,
         des_id: int = -1,
