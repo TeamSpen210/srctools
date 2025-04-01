@@ -1,18 +1,13 @@
-"""Implements tools for manipulating geometry.
-
-This is based on `csg.js <https://github.com/evanw/csg.js/>`_
-"""
-from typing import Optional
+"""Implements tools for manipulating geometry."""
+from typing import Optional, Literal
 
 from collections.abc import Iterator
 
 from enum import Flag
-import collections
-import math
 
 import attrs
 
-from srctools import FrozenVec, Vec
+from srctools import FrozenVec, Matrix, Vec
 from srctools import vmf, smd
 from srctools.bsp import Plane
 
@@ -23,6 +18,34 @@ class Intersect(Flag):
     FRONT = 1
     BACK = 2
     SPANNING = 3
+
+
+MAX_PLANE = [
+    FrozenVec(-100_000, -100_000),
+    FrozenVec(100_000, -100_000),
+    FrozenVec(100_000, 100_000),
+    FrozenVec(-100_000, 100_000),
+]
+
+
+# noinspection PyProtectedMember
+@attrs.define(eq=False)
+class Geometry:
+    """A group of faces with vertices calculated for geometry operations."""
+    polys: list['Polygon']
+
+    @classmethod
+    def from_brush(cls, brush: vmf.Solid) -> 'Geometry':
+        """Convert a VMF brush into a set of polygons with vertices computed."""
+        polys = []
+        for side in brush:
+            norm = side.normal()
+            polys.append(Polygon(side, [], Plane(norm, Vec.dot(side.planes[0], norm))))
+
+        return Geometry([
+            poly for poly in polys
+            if poly._recalculate(polys)
+        ])
 
 
 @attrs.define(eq=False)
@@ -42,58 +65,34 @@ class Polygon:
         """Make it easier to access the plane distance."""
         return self.plane.dist
 
-    @classmethod
-    def from_brush(cls, brush: vmf.Solid) -> list['Polygon']:
-        """Convert a VMF brush into a set of polygons with vertices computed."""
-        polys = {}
-        for side in brush:
-            norm = side.normal()
-            polys[side] = cls(side, [], Plane(norm, Vec.dot(side.planes[0], norm)))
+    def _recalculate(self, polys: list['Polygon']) -> bool:
+        """Recalculate vertices by intersecting planes. Returns whether this is still valid."""
+        # First, initialise with a massive plane.
+        orient = Matrix.from_basis(z=self.plane.normal)
+        pos = (self.plane.normal * self.plane.dist).freeze()
+        self.vertices = [pos + off @ orient for off in MAX_PLANE]
 
-        all_verts: dict[FrozenVec, FrozenVec] = {}
+        for other in polys:
+            if other is not self:
+                self._clip_plane(other.plane)
+        return len(self.vertices) >= 3
 
-        # First compute all the vertices.
-        # Poly verts will then hold a vert and the other two planes.
-        poly_list = list(polys.values())
-        poly_verts: dict[Polygon, set[FrozenVec]] = {poly: set() for poly in poly_list}
-        vert_polys: dict[FrozenVec, set[Polygon]] = collections.defaultdict(set)
-        for i, poly_a in enumerate(poly_list):
-            for j, poly_b in enumerate(poly_list[i:], i):
-                for poly_c in poly_list[j:]:
-                    divisor = Vec.dot(Vec.cross(poly_a.norm, poly_b.norm), poly_c.norm)
-                    if abs(divisor) < 0.001:
-                        continue
-
-                    vert = (
-                        poly_a.plane_dist * FrozenVec.cross(poly_b.norm, poly_c.norm) +
-                        poly_b.plane_dist * FrozenVec.cross(poly_c.norm, poly_a.norm) +
-                        poly_c.plane_dist * FrozenVec.cross(poly_a.norm, poly_b.norm)
-                    ) / divisor
-                    vert = all_verts.setdefault(vert, vert)
-                    # We need to now also check it's inside the brush, since three
-                    # planes can potentially also intersect outside the brush.
-                    for poly in poly_list:
-                        if Vec.dot(vert, poly.norm) - poly.plane_dist < -0.01:
-                            break
-                    else:
-                        poly_verts[poly_a].add(vert)
-                        poly_verts[poly_b].add(vert)
-                        poly_verts[poly_c].add(vert)
-                        vert_polys[vert] |= {poly_a, poly_b, poly_c}
-
-        for poly, vert_set in poly_verts.items():
-            # Create a pair of basis vectors orthogonal to the normal,
-            # then we can use those to sort the vectors by their angle around
-            # the normal - putting them in order. Now we have an edge loop.
-            poly.vertices = verts = list(vert_set)
-            u = (verts[1] - verts[0]).norm()
-            v = FrozenVec.cross(u, poly.norm)
-            cent = sum((vert for vert in verts), FrozenVec()) / len(verts)
-            verts.sort(key=lambda vt: math.atan2(
-                Vec.dot(v, vt - cent),
-                Vec.dot(u, vt - cent),
-            ))
-        return poly_list
+    def _clip_plane(self, plane: Plane) -> None:
+        """Clip these verts against the provided plane."""
+        new_verts = []
+        count = len(self.vertices)
+        for i, vert in enumerate(self.vertices):
+            off = plane.normal.dot(vert) - plane.dist
+            if off > -1e-6:  # On safe side.
+                new_verts.append(vert)
+                continue
+            mid = plane.intersect_line(self.vertices[(i - 1) % count], vert)
+            if mid is not None:
+                new_verts.append(mid)
+            mid = plane.intersect_line(vert, self.vertices[(i + 1) % count])
+            if mid is not None:
+                new_verts.append(mid)
+        self.vertices = new_verts
 
     def to_smd_tris(self, links: list[tuple[smd.Bone, float]]) -> Iterator[smd.Triangle]:
         """Convert to SMD triangles."""
