@@ -1,13 +1,13 @@
 """Implements tools for manipulating geometry."""
 from typing import Optional
 
-from collections.abc import Iterator, MutableMapping
+from collections.abc import Iterable, Iterator, MutableMapping
 
 import attrs
 
 from srctools import EmptyMapping, FrozenVec, Matrix, VMF, Vec
 from srctools import vmf as vmf_mod, smd
-from srctools.bsp import Plane
+from srctools.bsp import Plane, PlaneType
 
 
 MAX_PLANE = [
@@ -16,6 +16,16 @@ MAX_PLANE = [
     FrozenVec(100_000, 100_000),
     FrozenVec(-100_000, 100_000),
 ]
+# Determine the order to split brushes when carving.
+# We want to prioritise axial brushes to improve results.
+PLANE_PRIORITY = {
+    PlaneType.Z: 0,
+    PlaneType.X: 1,
+    PlaneType.Y: 2,
+    PlaneType.ANY_X: 3,
+    PlaneType.ANY_Y: 4,
+    PlaneType.ANY_Z: 5,
+}
 
 
 # noinspection PyProtectedMember
@@ -36,6 +46,9 @@ class Geometry:
             poly for poly in polys
             if poly._recalculate(polys)
         ])
+
+    def __iter__(self) -> Iterator['Polygon']:
+        yield from self.polys
 
     def rebuild(self, vmf: vmf_mod.VMF, mat: str) -> vmf_mod.Solid:
         """Rebuild faces and the brush for this geometry."""
@@ -88,9 +101,31 @@ class Geometry:
             if poly.original is not None:
                 front_used.add(poly.original)
         for poly in back.polys:
-            if poly.original is not None and poly in front_used:
+            if poly.original is not None and poly.original in front_used:
                 poly.original = poly.original.copy(side_mapping=side_mapping)
         return front, back
+
+    @classmethod
+    def carve(cls, target: Iterable['Geometry'], subtract: 'Geometry') -> list['Geometry']:
+        """Carve a set of brushes by another."""
+        # Sort planes to prefer axial splits first.
+        planes = sorted(subtract.polys, key=lambda poly: PLANE_PRIORITY[poly.plane.type])
+
+        result = []
+        todo = list(target)
+        for splitter in planes:
+            next_todo = []
+            for brush in todo:
+                front, back = brush.clip(splitter.plane)
+                # Anything in front is outside the subtract brush, so it must be kept.
+                if front is not None:
+                    result.append(front)
+                # Back brushes need to be split further.
+                if back is not None:
+                    next_todo.append(back)
+            todo = next_todo
+        # Any brushes that were 'back' for all planes are inside = should be removed.
+        return result
 
 
 @attrs.define(eq=False)
@@ -119,7 +154,7 @@ class Polygon:
             raise ValueError('No verts?')
         if self.original is None:
             orient = Matrix.from_basis(x=self.plane.normal)
-            vert = self.vertices[0]
+            vert = self.vertices[0].thaw()
             self.original = vmf_mod.Side(
                 vmf,
                 [
@@ -133,8 +168,8 @@ class Polygon:
         elif Vec.dot(self.plane.normal, self.original.normal()) < 0.99:
             # Not aligned, recalculate.
             self.original.planes = [
-                self.vertices[0],
-                self.vertices[1],
+                self.vertices[0].thaw(),
+                self.vertices[1].thaw(),
                 Vec.cross(self.plane.normal, self.vertices[1] - self.vertices[0])
             ]
             self.original.reset_uv()
@@ -163,10 +198,10 @@ class Polygon:
                 continue
             mid = plane.intersect_line(self.vertices[(i - 1) % count], vert)
             if mid is not None:
-                new_verts.append(mid)
+                new_verts.append(mid.freeze())
             mid = plane.intersect_line(vert, self.vertices[(i + 1) % count])
             if mid is not None:
-                new_verts.append(mid)
+                new_verts.append(mid.freeze())
         self.vertices = new_verts
 
     def to_smd_tris(self, links: list[tuple[smd.Bone, float]]) -> Iterator[smd.Triangle]:

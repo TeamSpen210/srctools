@@ -59,6 +59,7 @@ TEXINFO_IND_TYPE = 'h'  # The type used to index into texinfo (i or h).
 
 T = TypeVar('T')
 KeyT = TypeVar('KeyT')  # Needs to be hashable, typecheckers currently don't handle that.
+VecT = TypeVar('VecT', bound=Union[Vec, FrozenVec])
 
 # Game lump IDs
 LMP_ID_STATIC_PROPS = b'sprp'
@@ -731,7 +732,7 @@ class Plane:
         """Return the inverse of this plane."""
         return Plane(-self.normal, -self.dist)
 
-    def intersect_line(self, a: Union[Vec, FrozenVec], b: Union[Vec, FrozenVec]) -> Optional[Vec]:
+    def intersect_line(self, a: VecT, b: Union[Vec, FrozenVec]) -> Optional[VecT]:
         """Given a line segment, calculate the point where it intersects the plane."""
         off = b - a
         denom = off.dot(self.normal)
@@ -739,7 +740,8 @@ class Plane:
             return None
         t = (self.dist - a.dot(self.normal)) / denom
         if 0 <= t <= 1:
-            return a + off * t
+            # FrozenVec | Vec is actually VecT
+            return a + off * t  # type: ignore
         return None
 
 
