@@ -1,4 +1,9 @@
-"""This module defines functions which list resources for various entities with special functionality."""
+"""This module defines functions which list resources for various entities with special functionality.
+
+Each function here should be registered via @cls_func, with its name used as the key in FGD resources.
+Use the context and entity to determine values, keeping in mind the ent could be missing keys.
+As a convenience yielding a blank resource is ignored.
+"""
 from typing import Callable, Final, TypeVar, Union
 from typing_extensions import TypeAlias
 from collections.abc import Iterator, Mapping, Sequence
@@ -940,13 +945,18 @@ def prop_door_rotating(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Parse the special door_options block."""
     try:
         mdl = Model(ctx.fsys, ctx.fsys[ent['model']])
-        kv = Keyvalues.parse(mdl.keyvalues, single_line=True).find_key('door_options')
+        kv = Keyvalues.parse(mdl.keyvalues, single_line=True).find_block('door_options')
     except (OSError, KeyValError, NoKeyError):
         return
-    skin = kv.find_key(f'skin{ent["skin"]}', or_blank=True)
-    hardware_key = kv.find_key(f'hardware{ent["hardware"]}', or_blank=True)
-    defaults = kv.find_key('defaults', or_blank=True)
-    for key in ['open', 'close', 'move']:
+    skin = kv.find_block(f'skin{ent["skin"]}', or_blank=True)
+    hardware_key = kv.find_block(f'hardware{ent["hardware"]}', or_blank=True)
+    # Both names are possible.
+    try:
+        defaults = kv.find_block('defaults')
+    except NoKeyError:
+        defaults = kv.find_block('default', or_blank=True)
+    # 'pound' is for L4D infected, assuming it's not based on hardware.
+    for key in ['open', 'close', 'move', 'pound']:
         try:
             yield Resource.snd(skin[key])
         except LookupError:
@@ -956,7 +966,15 @@ def prop_door_rotating(ctx: ResourceCtx, ent: Entity) -> ResGen:
             yield Resource.snd(hardware_key[key])
         except LookupError:
             yield Resource.snd(defaults[key, ''])
-
+    # L4D/CSGO has damage1/2/3 models, but just look for any key.
+    damage_keys = set()
+    for key in skin:
+        if key.name.startswith('damage'):
+            yield Resource.mdl(key.value)
+            damage_keys.add(key)
+    for key in defaults:
+        if key.name.startswith('damage') and key not in damage_keys:
+            yield Resource.mdl(key.value)
 
 @cls_func
 def skybox_swapper(ctx: ResourceCtx, ent: Entity) -> ResGen:
