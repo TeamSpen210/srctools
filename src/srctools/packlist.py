@@ -502,7 +502,7 @@ class PackList:
                         if existing_skins is not None:
                             self.skinsets[filename] = existing_skins | skinset
 
-        if not data and filename.endswith(('.wav', '.mp3')) and '$gender' in filename:
+        if not data and filename.endswith(('.wav', '.mp3', '.ogg')) and '$gender' in filename:
             # Special case for raw sounds, they can have gendered files.
             # Just include both variants.
             self.pack_file(filename.replace('$gender', 'female'), data_type, optional=optional)
@@ -597,7 +597,7 @@ class PackList:
 
         sound_name = sound_name.casefold().replace('\\', '/')
         # Check for raw sounds first.
-        if sound_name.endswith(('.wav', '.mp3')):
+        if sound_name.endswith(('.wav', '.mp3', '.ogg')):
             sound_name = sound_name.lstrip(SND_CHARS)
             if not sound_name.startswith('sound/'):
                 sound_name = 'sound/' + sound_name
