@@ -1,4 +1,7 @@
-"""Implements tools for manipulating geometry."""
+"""Implements tools for manipulating geometry.
+
+See `polylib.cpp <https://github.com/ValveSoftware/source-sdk-2013/blob/0565403b153dfcde602f6f58d8f4d13483696a13/src/utils/common/polylib.cpp>`_ for some of the algorithms.
+"""
 from typing import Optional
 
 from collections.abc import Iterable, Iterator, MutableMapping
@@ -177,6 +180,7 @@ class Polygon:
 
     def _recalculate(self, polys: list['Polygon']) -> bool:
         """Recalculate vertices by intersecting planes. Returns whether this is still valid."""
+
         # First, initialise with a massive plane.
         orient = Matrix.from_basis(z=self.plane.normal)
         pos = (self.plane.normal * self.plane.dist).freeze()
@@ -198,10 +202,10 @@ class Polygon:
                 continue
             mid = plane.intersect_line(self.vertices[(i - 1) % count], vert)
             if mid is not None:
-                new_verts.append(mid.freeze())
+                new_verts.append(mid)
             mid = plane.intersect_line(vert, self.vertices[(i + 1) % count])
             if mid is not None:
-                new_verts.append(mid.freeze())
+                new_verts.append(mid)
         self.vertices = new_verts
 
     def to_smd_tris(self, links: list[tuple[smd.Bone, float]]) -> Iterator[smd.Triangle]:
