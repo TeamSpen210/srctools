@@ -968,13 +968,13 @@ def prop_door_rotating(ctx: ResourceCtx, ent: Entity) -> ResGen:
             yield Resource.snd(defaults[key, ''])
     # L4D/CSGO has damage1/2/3 models, but just look for any key.
     damage_keys = set()
-    for key in skin:
-        if key.name.startswith('damage'):
-            yield Resource.mdl(key.value)
-            damage_keys.add(key)
-    for key in defaults:
-        if key.name.startswith('damage') and key not in damage_keys:
-            yield Resource.mdl(key.value)
+    for child in skin:
+        if child.name.startswith('damage'):
+            yield Resource.mdl(child.value)
+            damage_keys.add(child.name)
+    for child in defaults:
+        if child.name.startswith('damage') and child.name not in damage_keys:
+            yield Resource.mdl(child.value)
 
 @cls_func
 def skybox_swapper(ctx: ResourceCtx, ent: Entity) -> ResGen:
