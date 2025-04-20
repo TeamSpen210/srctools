@@ -205,10 +205,12 @@ class FileInfo:
     def write(self, data: bytes, arch_index: Optional[int] = None) -> None:
         """Replace this file with the given byte data.
 
-        arch_index is the pak_01_000 file to put data into (or None for _dir). This is ignored
-        if the VPK is singular.
-        Data written to the directory file is not immediately saved, py:meth:`VPK.write_dirfile()`
-        must subsequently be called to do so.
+        :param data: The contents of the file to write.
+        :param arch_index: This is the ``pak_01_000.vpk`` file to put data into
+            (or :obj:`None` for ``_dir``). This is ignored if the VPK is singular.
+
+        - Data written to the directory file is not immediately saved, :py:meth:`VPK.write_dirfile()`
+          must subsequently be called to do so.
         - If this file already exists in the VPK, the old data is not removed from numeric files.
           For this reason VPK writes should be done once per file if possible.
         """

@@ -122,13 +122,14 @@ def conv_kv(val: ValidKVs) -> str:
     """Convert a type into a string matching Valve's syntax.
 
     The following types are allowed:
+
     * Strings: Passed unchanged.
-    * Booleans: Converted to `1` or `0`.
+    * Booleans: Converted to ``1`` or ``0``.
     * :py:class:`int`: Stringified as normal.
-    * :py:class`float`: Strips `.0` if integral.
+    * :py:class:`float`: Strips ``.0`` if integral.
     * [:py:class:`Frozen<srctools.math.FrozenVec>`] :py:class:`Vec <srctools.math.Vec>`,
       [:py:class:`Frozen<srctools.math.FrozenAngle>`] :py:class:`Angle <srctools.math.Angle>`:
-      Uses the standard `1 2 3` form.
+      Uses the standard ``1 2 3`` form.
     * [:py:class:`Frozen<srctools.math.FrozenMatrix>`] :py:class:`Matrix <srctools.math.Matrix>`:
       Converted to the corresponding angle.
     * Any enum: Allowed if the value is itself convertable.

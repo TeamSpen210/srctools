@@ -105,7 +105,7 @@ Version 2.3.15
 --------------
 * `HammerAddons#237 <https://github.com/TeamSpen210/HammerAddons/issues/237>`_: FGD model helpers should override each other.
 * Fix #20: VTF.compute_mipmaps() not working for cubemaps.
-* Correctly handle `.vvd`/`.vtx` etc files being packed as :py:class:`MODEL <srctools.const.FileType.GENERIC`.
+* Correctly handle `.vvd`/`.vtx` etc files being packed as :py:class:`MODEL <srctools.const.FileType.GENERIC>`.
 * Improve performance of pure-Python VTF save/loading code.
 * Add :py:meth:`Vec.clamped() <srctools.math.VecBase.clamped>`, for applying min/max bounds to a vector.
 * Fix :py:meth:`Entity.make_unique() <srctools.vmf.Entity.make_unique>` renaming entities with numeric suffixes which were already unique.

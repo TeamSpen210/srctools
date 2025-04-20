@@ -171,10 +171,6 @@ Special methods
 
 .. automethod:: Keyvalues.__contains__
 
-.. automethod:: Keyvalues.__iter__
-
-.. automethod:: Keyvalues.__len__
-
 .. automethod:: Keyvalues.__getitem__
 
 .. automethod:: Keyvalues.__setitem__

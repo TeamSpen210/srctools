@@ -17,6 +17,8 @@ project = 'srctools'
 copyright = '2025, TeamSpen210'
 author = 'TeamSpen210'
 
+needs_sphinx = '8.2'
+
 # The full version, including alpha/beta/rc tags
 # Use RTD version if available, otherwise check project.
 try:
@@ -45,6 +47,7 @@ templates_path = ['_templates']
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
+python_trailing_comma_in_multi_line_signatures = True
 maximum_signature_line_length = 56
 
 # -- Intersphinx ------
