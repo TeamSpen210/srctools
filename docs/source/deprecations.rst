@@ -1,7 +1,59 @@
+############
 Deprecations
-============
+############
 
 Several features and modules are deprecated, renamed to something else or removed to allow other features.
+
+
+srctools.dmx
+------------
+
+.. py:currentmodule:: srctools.dmx
+
+.. py:data:: STUB
+
+	Call :py:meth:`srctools.dmx.StubElement.stub()` instead.
+
+.. py:class:: AngleTup
+	:no-index:
+	:canonical: srctools.math.FrozenAngle
+
+	Was a named tuple, use the frozen class instead.
+
+.. py:class:: Vec3
+	:no-index:
+	:canonical: srctools.math.FrozenVec
+
+	Was a named tuple, use the frozen class instead.
+
+
+srctools.filesys
+----------------
+
+.. py:currentmodule:: srctools.filesys
+
+.. automethod:: FileSystem.read_prop
+
+.. automethod:: FileSystem._check_open
+
+.. automethod:: FileSystem.__enter__
+
+.. automethod:: FileSystem.__exit__
+
+.. automethod:: FileSystem.open_ref
+
+.. automethod:: FileSystem.close_ref
+
+
+srctools.fgd
+------------
+
+.. py:class:: srctools.fgd.Keyvalues
+	:no-index:
+	:canonical: srctools.fgd.KVDef
+
+	This was renamed so it is not confused with Keyvalues1 trees.
+
 
 
 srctools.property_parser
@@ -31,7 +83,6 @@ Deprecated original name of :py:class:`srctools.keyvalues.KeyValError`.
 	:canonical: srctools.keyvalues.NoKeyError
 
 Deprecated original name of :py:class:`srctools.keyvalues.NoKeyError`.
-
 
 srctools.vec
 ------------

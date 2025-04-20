@@ -106,19 +106,3 @@ These methods can be called by subclasses:
 .. automethod:: File.__init__
 
 .. automethod:: FileSystem._get_data
-
-========================
-Deprecated Functionality
-========================
-
-.. automethod:: FileSystem.read_prop
-
-.. automethod:: FileSystem._check_open
-
-.. automethod:: FileSystem.__enter__
-
-.. automethod:: FileSystem.__exit__
-
-.. automethod:: FileSystem.open_ref
-
-.. automethod:: FileSystem.close_ref
