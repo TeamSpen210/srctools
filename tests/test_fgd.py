@@ -1043,3 +1043,34 @@ def test_io_copy(func: Callable[[IODef], IODef]) -> None:
     assert duplicate.type is ValueTypes.STRING
     assert duplicate.custom_type == 'special_str'
     assert duplicate.desc == 'Outputs a special value'
+
+
+def test_resource_shorthand() -> None:
+    """Test the shorthand resource methods."""
+    assert Resource.mat(
+        'some_material.vmt', frozenset({"A", "-B"})
+    ) == Resource('some_material.vmt', FileType.MATERIAL, frozenset({"A", "-B"}))
+
+    assert Resource.snd(
+        'sound/error.wav', frozenset({"A", "-B"})
+    ) == Resource('sound/error.wav', FileType.GAME_SOUND, frozenset({"A", "-B"}))
+
+    assert Resource.weapon_script(
+        'scripts/death.txt', frozenset({"A", "-B"})
+    ) == Resource('scripts/death.txt', FileType.WEAPON_SCRIPT, frozenset({"A", "-B"}))
+
+    assert Resource.mdl(
+        'models/noskin.mdl', frozenset({"A", "-B"})
+    ) == Resource('models/noskin.mdl', FileType.MODEL, frozenset({"A", "-B"}))
+
+    assert Resource.mdl(
+        'models/skinnable.mdl', frozenset({"A", "-B"}), 0,
+    ) == Resource('models/skinnable.mdl#0', FileType.MODEL, frozenset({"A", "-B"}))
+
+    assert Resource.mdl(
+        'models/skinnable.mdl', frozenset({"A", "-B"}), [],
+    ) == Resource('models/skinnable.mdl', FileType.MODEL, frozenset({"A", "-B"}))
+
+    assert Resource.mdl(
+        'models/skinnable.mdl', frozenset({"A", "-B"}), [0, 4, 8]
+    ) == Resource('models/skinnable.mdl#0,4,8', FileType.MODEL, frozenset({"A", "-B"}))

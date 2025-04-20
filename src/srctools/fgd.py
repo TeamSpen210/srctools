@@ -889,8 +889,15 @@ class Resource:
     tags: TagsSet = frozenset()
 
     @classmethod
-    def mdl(cls, filename: str, tags: TagsSet = frozenset()) -> Resource:
-        """Create a resource definition for a model."""
+    def mdl(cls, filename: str, tags: TagsSet = frozenset(), skinset: Union[Sequence[int], int]=()) -> Resource:
+        """Create a resource definition for a model.
+
+        Models have an optional `filename#1,2,3` suffix to specify which skins are used.
+        """
+        if isinstance(skinset, int):
+            filename = f'{filename}#{skinset}'
+        elif skinset:
+            filename = f'{filename}#{",".join(map(str, skinset))}'
         return cls(filename, FileType.MODEL, tags)
 
     @classmethod

@@ -23,6 +23,7 @@ ClassFuncT = TypeVar('ClassFuncT', bound=ClassFunc)
 CLASS_FUNCS: dict[str, ClassFunc] = {}
 # Dummy VMF, we create entities from this to pass back to recursively get resources for.
 _blank_vmf = VMF(preserve_ids=False)
+NO_TAGS: frozenset[str] = frozenset()  # Allows not needing a keyword argument in some calls.
 
 FLAG_NPC_START_EFFICENT = 1 << 4
 FLAG_NPC_DROP_HEALTHKIT = 1 << 3
@@ -548,7 +549,7 @@ def item_ammo_ar2_altfire(ctx: ResourceCtx, ent: Entity) -> ResGen:
     variant = conv_int(ent['ezvariant'])
     model, skin, snd = EZ_MODEL_FOLDERS[variant]
 
-    yield Resource.mdl(f'models/items/{model}combine_rifle_ammo01.mdl#{skin}')
+    yield Resource.mdl(f'models/items/{model}combine_rifle_ammo01.mdl', NO_TAGS, skin)
 
 
 @cls_func
@@ -559,7 +560,7 @@ def item_battery(ctx: ResourceCtx, ent: Entity) -> ResGen:
     variant = conv_int(ent['ezvariant'])
     model, skin, snd = EZ_MODEL_FOLDERS[variant]
 
-    yield Resource.mdl(f'models/items/{model}battery.mdl#{skin}')
+    yield Resource.mdl(f'models/items/{model}battery.mdl', NO_TAGS, skin)
 
 
 @cls_func
@@ -572,9 +573,9 @@ def item_healthkit(ctx: ResourceCtx, ent: Entity, kind: str = 'kit') -> ResGen:
 
     if kind == 'vial' and model == '':
         # Special case, the regular model is not in items.
-        yield Resource.mdl('models/healthvial.mdl#0')
+        yield Resource.mdl('models/healthvial.mdl', NO_TAGS, 0)
     else:
-        yield Resource.mdl(f'models/items/{model}health{kind}.mdl#{skin}')
+        yield Resource.mdl(f'models/items/{model}health{kind}.mdl', NO_TAGS, skin)
     yield Resource.snd(f'Health{kind.title()}{snd}.Touch')
 
 
