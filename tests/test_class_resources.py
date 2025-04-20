@@ -750,12 +750,11 @@ def test_item_item_crate() -> None:
 
 
 def test_item_teamflag() -> None:
-    check_entity(classname='item_teamflag')
     check_entity(
         Resource.mat('materials/vgui/flags/my_flag_red.vmt'),
         Resource.mat('materials/vgui/flags/my_flag_blue.vmt'),
         Resource.mat('materials/effects/trail/the_trail_red.vmt'),
-        Resource.mat('materials/effects/trail/the_trail_blue.vmt'),
+        Resource.mat('materials/effects/trail/the_trail_blu.vmt'),
         classname='item_teamflag',
         flag_icon='flags/my_flag',
         flag_trail='trail/the_trail',
@@ -765,10 +764,18 @@ def test_item_teamflag() -> None:
         Resource.mat('materials/not_vgui/my_flag_red.vmt'),
         Resource.mat('materials/not_vgui/my_flag_blue.vmt'),
         Resource.mat('materials/non_effects/the_trail_red.vmt'),
-        Resource.mat('materials/non_effects/the_trail_blue.vmt'),
+        Resource.mat('materials/non_effects/the_trail_blu.vmt'),
         classname='item_teamflag',
         flag_icon='../not_vgui/my_flag',
         flag_trail='../non_effects/the_trail',
+    )
+    # Test missing KVs -> defaults.
+    check_entity(
+        Resource.mat('materials/hud/objectives_flagpanel_carried_red.vmt'),
+        Resource.mat('materials/hud/objectives_flagpanel_carried_blue.vmt'),
+        Resource.mat('materials/effects/flagtrail_red.vmt'),
+        Resource.mat('materials/effects/flagtrail_blu.vmt'),
+        classname='item_teamflag',
     )
 
 

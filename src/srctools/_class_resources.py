@@ -263,6 +263,7 @@ BREAKABLE_SPAWNS_HL1: Mapping[int, str] = {
 }
 
 
+@cls_func
 def base_plat_train(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Check for HL1 train movement sounds."""
     if 'movesnd' in ent:
@@ -509,20 +510,21 @@ def item_item_crate(ctx: ResourceCtx, ent: Entity) -> ResGen:
 @cls_func
 def item_teamflag(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """This item has several special team-specific options."""
-    for kvalue, prefix in [
-        ('flag_icon', 'materials/vgui/'),
-        ('flag_trail', 'materials/effects/')
+    icon = ent['flag_icon'] or '../hud/objectives_flagpanel_carried'
+    trail = ent['flag_trail'] or 'flagtrail'
+
+    for prefix, mat in [
+        ('materials/vgui/', f'{icon}_red.vmt'),
+        ('materials/vgui/', f'{icon}_blue.vmt'),
+        ('materials/effects/', f'{trail}_red.vmt'),
+        ('materials/effects/', f'{trail}_blu.vmt'),
     ]:
-        value = ent[kvalue]
-        if value:
-            # Allow going up one directory - this is done by Valve in the icon.
-            # Going up two outside materials/ doesn't make any sense.
-            if value.startswith(('../', '..\\')):
-                folder = f'materials/{value[3:]}'
-            else:
-                folder = prefix + value
-            yield Resource.mat(folder + '_red.vmt')
-            yield Resource.mat(folder + '_blue.vmt')
+        # Allow going up one directory - this is done by Valve in the icon.
+        # Going up two outside materials/ doesn't make any sense.
+        if mat.startswith(('../', '..\\')):
+            yield Resource.mat(f'materials/{mat[3:]}')
+        else:
+            yield Resource.mat(f'{prefix}{mat}')
 
 
 EZ_MODEL_FOLDERS = [
