@@ -1,6 +1,9 @@
 Changelog
 =========
 
+.. _Thenderek0: https://github.com/TheEnderek0
+.. _ozxybox: https://github.com/ozxybox
+
 .. contents::
 	:local:
 	:backlinks: none
@@ -17,32 +20,32 @@ Version 2.5.0
 -------------
 * Drop support for Python 3.8.
 * Switch to Meson for building the package.
-* #35: Only use character escapes in FGD custom syntax mode. The original parser only allows `\\n`.
+* #35: Only use character escapes in FGD custom syntax mode. The original parser only allows ``\n``.
 * Add :attr:`Token.PAREN_OPEN <srctools.tokenizer.Token.PAREN_OPEN>`/:attr:`~srctools.tokenizer.Token.PAREN_CLOSE`, enabled by :attr:`Tokenizer.string_parens <srctools.tokenizer.Tokenizer.string_parens>`.
-* Avoid escaping `/` and `?`, these are unambiguous. BSPs also allow `\n` in values again.
-* Add `multiline` parameter to :py:func:`~srctools.tokenizer.escape_text`, to allow preserving `\\n`.
+* Avoid escaping ``/`` and ``?``, these are unambiguous. BSPs also allow `\n` in values again.
+* Add ``multiline`` parameter to :py:func:`~srctools.tokenizer.escape_text`, to allow preserving ``\n``.
 * Add :attr:`ValueTypes.EXT_SOUNDSCAPE <srctools.fgd.ValueTypes.EXT_SOUNDSCAPE>`.
 * Support exporting FGDs with unevaulated string bases.
 * Add suppport for reading non-directory VPK files, where contents are all in one file.
 * FGDs may optionally permit unknown value types to be parsed/exported in string form.
 * Fix some options being incorrectly handled in Strata game mounts definitions.
 * Allow entities to delete multiple keyvalues at once.
-* Add support for `|appid_XXX|` syntax in `gameinfo.txt` files.
-* Fix silent buttons trying to pack invalid `Buttons.snd0` soundscripts.
+* Add support for ``|appid_XXX|`` syntax in ``gameinfo.txt`` files.
+* Fix silent buttons trying to pack invalid ``Buttons.snd0`` soundscripts.
 * Handle entities being added/removed during iteration of :py:meth:`VMF.search() <srctools.vmf.VMF.search>`.
 * Share common strings in the engine database to save some space.
-* Fix saving the `PHYSCOLLIDE` BSP lump.
-* In log files, increase size limits for :py:class:`ExceptionGroup` tracebacks.
-* Add :py:class:`srctools.sndscript.SoundChars`, allowing easier parsing of sound characters.
-* Add :py:attr:`srctools.vtf.ImageFormats.is_transparent`.
-* Add :py:meth:`srctools.dmx.Element.get_wrap()`, allowing handling defaults more conveniently.
-* Make :py:attr:`EntityDef.kv <srctools.fgd.EntityDef.kv>`, :py:attr:`.inp <srctools.fgd.EntityDef.inp>`
-  and :py:attr:`.out <srctools.fgd.EntityDef.out>` views settable, improve behaviour.
+* Fix saving the ``PHYSCOLLIDE`` BSP lump.
+* In log files, increase size limits for :class:`ExceptionGroup` tracebacks.
+* Add :class:`srctools.sndscript.SoundChars`, allowing easier parsing of sound characters.
+* Add :attr:`srctools.vtf.ImageFormats.is_transparent`.
+* Add :meth:`srctools.dmx.Element.get_wrap()`, allowing handling defaults more conveniently.
+* Make :attr:`EntityDef.kv <srctools.fgd.EntityDef.kv>`, :attr:`.inp <srctools.fgd.EntityDef.inp>`
+  and :attr:`.out <srctools.fgd.EntityDef.out>` views settable, improve behaviour.
 
 -------------
 Version 2.4.1
 -------------
-* Add py:mod:`srctools.steam`, written by `Thenderek0 <https://github.com/TheEnderek0>`_.
+* Add py:mod:`srctools.steam`, written by `Thenderek0`_.
   This allows locating Steam games based on their app ID. Support was also added for parsing Strata
   mount definitions in gameinfo.txt.
 * Add `header_only` option for :py:meth:`VTF.read() <srctools.vtf.VTF.read>`, allowing reading only metadata if the image is not required.
@@ -57,10 +60,12 @@ Version 2.4.1
 * Add a `custom_syntax` option to :py:meth:`FGD.export() <srctools.fgd.FGD.export>`, disabling
   export of custom syntax. Resources can now be exported.
 * Correctly produce an error if a FGD entity definition is missing its closing bracket.
-* Escape all characters `utilbuffer.cpp` does - `\\n`, `\\t`, `\\v`, `\\b`, `\\r`, `\\f`, `\\a`, `\\`, `?`, `'`, `"`.
+* Escape all characters `utlbuffer.cpp <utlbuffer_esc_>`_ does - ``\n``, ``\t``, ``\v``, ``\b``, ``\r``, ``\f``, ``\a``, ``\``, ``?``, ``'``, ``"``.
 * Unconditionally enable support for escaping characters in DMX Keyvalues2, since Valve's parser can handle it. Binary formats never needed escaping.
 * Correctly look up types for conditional shader parameters (`ldr?$bumpmap`).
 * Parse FGDs correctly which have multiline strings with the plus on the second line.
+
+.. _utlbuffer_esc: https://github.com/ValveSoftware/source-sdk-2013/blob/0565403b153dfcde602f6f58d8f4d13483696a13/src/tier1/utlbuffer.cpp#L57-L69
 
 -------------
 Version 2.4.0
@@ -76,7 +81,7 @@ Version 2.4.0
 * Allow directly passing enums to set VMF keyvalues and fixups, if the ``value`` is itself a valid value.
 * Parse Strata Source's other VMF additions - viewport configuration, brush face vertices and instance visibility.
 * Add :py:attr:`Tokenizer.plus_operator <srctools.tokenizer.Tokenizer.plus_operator>`, allowing
-  `+` to be parsed as an operator for FGDs but still be valid inside bare strings elsewhere.
+  ``+`` to be parsed as an operator for FGDs but still be valid inside bare strings elsewhere.
   These are common in ``gameinfo.txt``.
 * Add :py:attr:`Solid.is_cordon <srctools.vmf.Solid.is_cordon>` to replace
   :py:attr:`cordon_solid <srctools.vmf.Solid.is_cordon>`, better representing its boolean nature.
@@ -87,7 +92,7 @@ Version 2.4.0
 Version 2.3.17
 --------------
 * Added :py:meth:`Keyvalues.serialise() <srctools.keyvalues.Keyvalues.serialise>`, a replacement for :py:meth:`~srctools.keyvalues.Keyvalues.export`.
-* Fix `+` and `=` being parsed as part of a bare string if not the first character.
+* Fix ``+`` and ``=`` being parsed as part of a bare string if not the first character.
 * Fix keyvalue-type snippets causing a parse error for code coming after them.
 * Include filename/line number in missing snippet errors.
 
@@ -166,7 +171,7 @@ Version 2.3.10
 * Fix :py:meth:`srctools.vtf.Frame.copy_from()` not clearing cached unparsed file data. If the VTF
   was parsed from a file, this could case changes to be overwritten with the original data.
 * Add :py:meth:`srctools.vtf.Frame.fill()`, for filling a frame with a constant colour.
-* Add support for `Chaos non-uniform static prop scaling <https://github.com/TeamSpen210/srctools/pull/17>`_ (by `@ozxybox <https://github.com/ozxybox>`_).
+* Add support for `Chaos non-uniform static prop scaling <https://github.com/TeamSpen210/srctools/pull/17>`_ (by `ozxybox`_).
 * Correctly handle non-float numeric values being passed to various :py:mod:`srctools.math` operations.
 * Compute the total vertex count for parsed models.
 
@@ -176,11 +181,13 @@ Version 2.3.9
 
 * Fix Cython version of :py:meth:`Vec.join() <srctools.math.VecBase.join>` using a default of
   :samp:`{x} {y} {z}`, not :samp:`{x}, {y}, {z}`.
-* Added support for the `Chaos <https://chaosinitiative.github.io/Wiki/docs/Reference/bsp-v25/>`_ BSP format (by `@ozxybox <https://github.com/ozxybox>`_).
+* Added support for the `Strata BSP format <strata_bsp_>`_ (by `ozxybox`_).
 * Improve internal FGD database format to allow parsing entities as they are required. For best
   efficiency, use :py:meth:`EntityDef.engine_def() <srctools.fgd.EntityDef.engine_def>` instead of
   :py:meth:`FGD.engine_dbase() <srctools.fgd.FGD.engine_dbase()>` if possible.
 * Fix a few bugs with instance collapsing.
+
+.. _strata_bsp: https://wiki.stratasource.org/modding/overview/bsp-v25
 
 -------------
 Version 2.3.8
