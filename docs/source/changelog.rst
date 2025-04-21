@@ -6,15 +6,22 @@ Changelog
 	:backlinks: none
 
 -------------
+Version (dev)
+-------------
+
+* Treat ``ogg`` files as valid sounds in various places.
+* Consistently raise :class:`TypeError` if invalid types are sent to a :class:`Tokenizer`.
+
+-------------
 Version 2.5.0
 -------------
 * Drop support for Python 3.8.
 * Switch to Meson for building the package.
 * #35: Only use character escapes in FGD custom syntax mode. The original parser only allows `\\n`.
-* Add :py:attr:`Token.PAREN_OPEN <srctools.tokenizer.Token.PAREN_OPEN>`/:py:attr:`~srctools.tokenizer.Token.PAREN_CLOSE`, enabled by :py:attr:`Tokenizer.string_parens <srctools.tokenizer.Tokenizer.string_parens>`.
+* Add :attr:`Token.PAREN_OPEN <srctools.tokenizer.Token.PAREN_OPEN>`/:attr:`~srctools.tokenizer.Token.PAREN_CLOSE`, enabled by :attr:`Tokenizer.string_parens <srctools.tokenizer.Tokenizer.string_parens>`.
 * Avoid escaping `/` and `?`, these are unambiguous. BSPs also allow `\n` in values again.
 * Add `multiline` parameter to :py:func:`~srctools.tokenizer.escape_text`, to allow preserving `\\n`.
-* Add :py:attr:`ValueTypes.EXT_SOUNDSCAPE <srctools.fgd.ValueTypes.EXT_SOUNDSCAPE>`.
+* Add :attr:`ValueTypes.EXT_SOUNDSCAPE <srctools.fgd.ValueTypes.EXT_SOUNDSCAPE>`.
 * Support exporting FGDs with unevaulated string bases.
 * Add suppport for reading non-directory VPK files, where contents are all in one file.
 * FGDs may optionally permit unknown value types to be parsed/exported in string form.

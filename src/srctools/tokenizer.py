@@ -497,9 +497,9 @@ class Tokenizer(BaseTokenizer):
             try:
                 for chunk in self._chunk_iter:
                     if isinstance(chunk, bytes):
-                        raise ValueError('Cannot parse binary data!')
+                        raise TypeError('Cannot parse binary data!')
                     if not isinstance(chunk, str):
-                        raise ValueError("Data was not a string!")
+                        raise TypeError(f'Expected string, got {type(chunk).__name__}')
                     if chunk:
                         self._cur_chunk = chunk
                         self._char_index = 0

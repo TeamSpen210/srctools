@@ -893,8 +893,51 @@ def test_unicode_error_wrapping(py_c_token: type[Tokenizer]) -> None:
 
 def test_early_binary_arg(py_c_token: type[Tokenizer]) -> None:
     """Test that passing bytes values is caught before looping."""
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError, match=r'^Cannot parse binary data! Decode'):
         py_c_token(b'test')
+
+
+ILLEGAL_VALS = [
+    (b'bytes', r'^Cannot parse binary data!$'),
+    (None, r'^Expected string, got None(Type)?$'),
+    (45, r'^Expected string, got int$'),
+]
+
+
+@pytest.mark.parametrize('value, match', ILLEGAL_VALS)
+def test_illegal_values_iter(py_c_token: type[Tokenizer], value: object, match: str) -> None:
+    """Test that passing various invalid values are disallowed."""
+    res = []
+    with pytest.raises(TypeError, match=match):
+        for vals in py_c_token([", ", "= ", value, ","]):
+            res.append(vals)
+    # Succeeded up to this chunk.
+    assert res == [(Token.COMMA, ","), (Token.EQUALS, "=")]
+
+
+@pytest.mark.parametrize('value, match', ILLEGAL_VALS)
+def test_illegal_values_file(py_c_token: type[Tokenizer], value: object, match: str) -> None:
+    """Test that passing various invalid values are disallowed."""
+    data = iter([", ", "= ", value, ":"])
+
+    class File(Any):  # Silence type errors.
+        """Mock file."""
+        def read(self, count: int) -> object:
+            """Cython version tries to call read()."""
+            return next(data, "")
+
+        def __iter__(self):
+            """Python implementation iterates."""
+            return self
+
+        def __next__(self) -> object:
+            return next(data)
+
+    res = []
+    with pytest.raises(TypeError, match=match):
+        for vals in py_c_token(File()):
+            res.append(vals)
+    assert res == [(Token.COMMA, ","), (Token.EQUALS, "=")]
 
 
 def test_block_iter(py_c_token: type[Tokenizer]) -> None:

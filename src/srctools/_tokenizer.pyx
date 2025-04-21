@@ -403,17 +403,20 @@ cdef class Tokenizer(BaseTokenizer):
         * allow_escapes controls whether \\n-style escapes are expanded.
         * allow_star_comments if enabled allows /* */ comments.
     """
+    # chunk_iter is either a file.read() method or iterator object.
+    # cur_chunk is the current string part, keeping that alive.
+    # We then cache the UTF8 pointer inside that, and use char_index to iterate.
     cdef object cur_chunk
     cdef object chunk_iter
     cdef Py_ssize_t char_index # Position inside cur_chunk
+    cdef const uchar *chunk_buf
+    cdef Py_ssize_t chunk_size
 
     # Private buffer, to hold string parts we're constructing.
     # Tokenizers are expected to be temporary, so we just never shrink.
     cdef Py_ssize_t buf_size  # 2 << x
     cdef Py_ssize_t buf_pos
     cdef uchar *val_buffer
-    cdef const uchar *chunk_buf
-    cdef Py_ssize_t chunk_size
 
     def __cinit__(self):
         self.buf_size = 128
@@ -625,19 +628,22 @@ cdef class Tokenizer(BaseTokenizer):
 
         if self.flags.file_input:
             try:
-                self.cur_chunk = self.chunk_iter(FILE_BUFFER)
+                chunk_obj = self.chunk_iter(FILE_BUFFER)
             except UnicodeDecodeError as exc:
                 raise self._error(f"Could not decode file:\n{exc!s}") from exc
-            self.char_index = 0
 
-            if type(self.cur_chunk) is str:
-                self.chunk_buf = <const uchar *>PyUnicode_AsUTF8AndSize(self.cur_chunk, &self.chunk_size)
-            else:
-                raise ValueError('Expected string, got ' + type(self.cur_chunk).__name__)
+            if isinstance(chunk_obj, bytes):
+                raise TypeError('Cannot parse binary data!')
+            if type(chunk_obj) is not str:
+                raise TypeError(f'Expected string, got {type(chunk_obj).__name__}')
+
+            self.cur_chunk = chunk_obj
+            self.char_index = 0
+            self.chunk_buf = <const uchar *>PyUnicode_AsUTF8AndSize(self.cur_chunk, &self.chunk_size)
 
             if self.chunk_size > 0:
                 return self.chunk_buf[0], False
-            else:
+            else:  # read() returning blank = EOF.
                 self.chunk_iter = None
                 return b'\x00', True
 
@@ -647,18 +653,18 @@ cdef class Tokenizer(BaseTokenizer):
         # or using list/tuple optimisations.
         while True:
             try:
-                chunk_obj = next(self.chunk_iter, None)
+                chunk_obj = next(self.chunk_iter)
             except UnicodeDecodeError as exc:
                 raise self._error(f"Could not decode file:\n{exc!s}") from exc
-            if chunk_obj is None:
+            except StopIteration:
                 # Out of characters after empty chunks
                 self.chunk_iter = None
                 return  b'\x00', True
 
             if isinstance(chunk_obj, bytes):
-                raise ValueError('Cannot parse binary data!')
+                raise TypeError('Cannot parse binary data!')
             if type(chunk_obj) is not str:
-                raise ValueError("Data was not a string!")
+                raise TypeError(f'Expected string, got {type(chunk_obj).__name__}')
 
             if len(<str>chunk_obj) > 0:
                 self.cur_chunk = chunk_obj
