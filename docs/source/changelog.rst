@@ -1,9 +1,6 @@
 Changelog
 =========
 
-.. _Thenderek0: https://github.com/TheEnderek0
-.. _ozxybox: https://github.com/ozxybox
-
 .. contents::
 	:local:
 	:backlinks: none
@@ -14,13 +11,14 @@ Version (dev)
 
 * Treat ``ogg`` files as valid sounds in various places.
 * Consistently raise :class:`TypeError` if invalid types are sent to a :class:`Tokenizer`.
+* Properly add ``base_plat_train`` class resource function and fix the ``item_teamflag``.
 
 -------------
 Version 2.5.0
 -------------
 * Drop support for Python 3.8.
 * Switch to Meson for building the package.
-* #35: Only use character escapes in FGD custom syntax mode. The original parser only allows ``\n``.
+* :src-issue:`35`: Only use character escapes in FGD custom syntax mode. The original parser only allows ``\n``.
 * Add :attr:`Token.PAREN_OPEN <srctools.tokenizer.Token.PAREN_OPEN>`/:attr:`~srctools.tokenizer.Token.PAREN_CLOSE`, enabled by :attr:`Tokenizer.string_parens <srctools.tokenizer.Tokenizer.string_parens>`.
 * Avoid escaping ``/`` and ``?``, these are unambiguous. BSPs also allow `\n` in values again.
 * Add ``multiline`` parameter to :py:func:`~srctools.tokenizer.escape_text`, to allow preserving ``\n``.
@@ -45,24 +43,24 @@ Version 2.5.0
 -------------
 Version 2.4.1
 -------------
-* Add py:mod:`srctools.steam`, written by `Thenderek0`_.
+* Add :mod:`srctools.steam`, written by :gh-user:`Thenderek0`.
   This allows locating Steam games based on their app ID. Support was also added for parsing Strata
   mount definitions in gameinfo.txt.
 * Add `header_only` option for :py:meth:`VTF.read() <srctools.vtf.VTF.read>`, allowing reading only metadata if the image is not required.
 * Fix casing not being preserved for names of FGD keyvalues during parsing.
-* Fix :py:meth:`PackList.write_soundscript_manifest() <srctools.packlist.PackList.write_soundscript_manifest>`,
-    :py:meth:`~srctools.packlist.PackList.write_particles_manifest` and :py:meth:`~srctools.packlist.PackList.write_manifest` trying to write to a closed file.
+* Fix :meth:`PackList.write_soundscript_manifest() <srctools.packlist.PackList.write_soundscript_manifest>`,
+  :meth:`~srctools.packlist.PackList.write_particles_manifest` and :meth:`~srctools.packlist.PackList.write_manifest` trying to write to a closed file.
 * Handle string/int/float subclasses being assigned to VMF keys.
-* Add `single_block` argument to :py:meth:`Keyvalues.parse() <srctools.keyvalues.Keyvalues.parse>`,
+* Add ``single_block`` argument to :py:meth:`Keyvalues.parse() <srctools.keyvalues.Keyvalues.parse>`,
   allowing parsing blocks in the middle of a document.
-* Allow disabling the 'spawnflag labelling' FGD feature.
-* :py:mod`srctools.logging` log files will now always be written as UTF-8.
-* Add a `custom_syntax` option to :py:meth:`FGD.export() <srctools.fgd.FGD.export>`, disabling
+* Allow disabling the "spawnflag labelling" FGD feature.
+* :mod:`srctools.logging` log files will now always be written as UTF-8.
+* Add a ``custom_syntax`` option to :py:meth:`FGD.export() <srctools.fgd.FGD.export>`, disabling
   export of custom syntax. Resources can now be exported.
 * Correctly produce an error if a FGD entity definition is missing its closing bracket.
 * Escape all characters `utlbuffer.cpp <utlbuffer_esc_>`_ does - ``\n``, ``\t``, ``\v``, ``\b``, ``\r``, ``\f``, ``\a``, ``\``, ``?``, ``'``, ``"``.
 * Unconditionally enable support for escaping characters in DMX Keyvalues2, since Valve's parser can handle it. Binary formats never needed escaping.
-* Correctly look up types for conditional shader parameters (`ldr?$bumpmap`).
+* Correctly look up types for conditional shader parameters (``ldr?$bumpmap``).
 * Parse FGDs correctly which have multiline strings with the plus on the second line.
 
 .. _utlbuffer_esc: https://github.com/ValveSoftware/source-sdk-2013/blob/0565403b153dfcde602f6f58d8f4d13483696a13/src/tier1/utlbuffer.cpp#L57-L69
@@ -85,7 +83,7 @@ Version 2.4.0
   These are common in ``gameinfo.txt``.
 * Add :py:attr:`Solid.is_cordon <srctools.vmf.Solid.is_cordon>` to replace
   :py:attr:`cordon_solid <srctools.vmf.Solid.is_cordon>`, better representing its boolean nature.
-* Fix #29: Fix ``0x03`` characters causing an early EOF in the tokeniser.
+* :src-issue:`29`: Fix ``0x03`` characters causing an early EOF in the tokeniser.
 * Preserve passed in key casing in :py:meth:`~srctools.keyvalues.Keyvalues.find_key`/:py:meth:`~srctools.keyvalues.Keyvalues.find_block`'s return values.
 
 --------------
@@ -103,7 +101,7 @@ Version 2.3.16
 * Fix entity keyvalues being lowercased when parsed from files.
 * Add "snippets" to FGD parsing, allowing reuse of descriptions and other small pieces of data.
 * Allow VMTs to use ``/* */`` comments.
-* `#24 <https://github.com/TeamSpen210/srctools/pull/24>`_: Fixed incorrect :py:func:`matrix.inverse() <srctools.math.MatrixBase.inverse>` being calculated. PR by Ozxybox.
+* :src-issue:`24`: Fix incorrect :py:func:`matrix.inverse() <srctools.math.MatrixBase.inverse>` being calculated. PR by :gh-user:`Ozxybox`.
 * Allow omitting file/line number parameters for TokenSyntaxError.
 * Allow passing :py:class:`~srctools.vmf.PrismFace` to :py:class:`VMF.add_brush() <srctools.vmf.VMF.add_brush>`.
 * Parse Strata Source's VMF displacement data.
@@ -115,8 +113,8 @@ Version 2.3.16
 --------------
 Version 2.3.15
 --------------
-* `HammerAddons#237 <https://github.com/TeamSpen210/HammerAddons/issues/237>`_: FGD model helpers should override each other.
-* Fix #20: VTF.compute_mipmaps() not working for cubemaps.
+* :ha-issue:`237`: Ensure FGD model helpers will override each other.
+* :src-issue:`20`: Fix VTF.compute_mipmaps() not working for cubemaps.
 * Correctly handle `.vvd`/`.vtx` etc files being packed as :py:class:`MODEL <srctools.const.FileType.GENERIC>`.
 * Improve performance of pure-Python VTF save/loading code.
 * Add :py:meth:`Vec.clamped() <srctools.math.VecBase.clamped>`, for applying min/max bounds to a vector.
@@ -126,9 +124,9 @@ Version 2.3.15
 Version 2.3.14
 --------------
 * Drop support for Python 3.7.
-* Fix VMT parsing not handling `Proxies {` style braces.
-* Add Cythonised versions of :py:func:`~srctools.conv_int`, :py:func`~srctools.conv_float` and :py:func`~srctools.conv_bool`.
-* Added a ``repr()`` for :py:class:`srctools.vmf.Entity`.
+* Fix VMT parsing not braces on the same line as the block name, like ``Proxies {``.
+* Add Cythonised versions of :py:func:`~srctools.conv_int`, :py:func:`~srctools.conv_float` and :py:func:`~srctools.conv_bool`.
+* Added a :func:`repr` for :py:class:`srctools.vmf.Entity`.
 * Automatically clean up up empty sets when removing entities from :py:attr:`VMF.by_class <srctools.vmf.VMF.by_class>` and :py:attr:`.by_target <srctools.vmf.VMF.by_target>`.
 * Fixed saving/loading issues with a number of VTF formats.
 
@@ -140,9 +138,9 @@ Version 2.3.13
   behaviour of the flag, added the real :py:attr:`NO_FLASHLIGHT <srctools.bsp.StaticPropFlags.NO_FLASHLIGHT>` define.
 * Add :py:attr:`Tokenizer.preserve_comments <srctools.tokenizer.Tokenizer.preserve_comments>`, which
   produces :py:const:`COMMENT <srctools.tokenizer.Token.COMMENT>` tokens instead of discarding them.
-* Fix #18: Incorrect module/function names in logging messages (via @ENDERZOMBI102).
+* :src-issue:`18`: Fix incorrect module/function names in logging messages (via :gh-user:`ENDERZOMBI102`).
 * Fix :py:meth:`srctools.mdl.Model.apply_patches()` not applying material proxies from the parent.
-* Use ``surrogateescape`` when eonciding/decoding BSP data, to allow values to round-trip.
+* Use ``surrogateescape`` when encoding/decoding BSP data, to allow values to round-trip.
 
 --------------
 Version 2.3.12
@@ -150,7 +148,7 @@ Version 2.3.12
 * Handle the special ``$gender`` "variable" in WAV filenames.
 * Add ``prop_door_rotating`` class resource function.
 * Remove ``weapon_script`` class resource function, instead use a direct resource in the FGD.
-* Use py:func:`!typing_extensions.deprecated` to mark functions and methods which should not be used.
+* Use :py:func:`!typing_extensions.deprecated` to mark functions and methods which should not be used.
 
 --------------
 Version 2.3.11
@@ -171,7 +169,7 @@ Version 2.3.10
 * Fix :py:meth:`srctools.vtf.Frame.copy_from()` not clearing cached unparsed file data. If the VTF
   was parsed from a file, this could case changes to be overwritten with the original data.
 * Add :py:meth:`srctools.vtf.Frame.fill()`, for filling a frame with a constant colour.
-* Add support for `Chaos non-uniform static prop scaling <https://github.com/TeamSpen210/srctools/pull/17>`_ (by `ozxybox`_).
+* :src-pull:`17`: Add support for Strata's non-uniform static prop scaling (by :gh-user:`Ozxybox`).
 * Correctly handle non-float numeric values being passed to various :py:mod:`srctools.math` operations.
 * Compute the total vertex count for parsed models.
 
@@ -181,7 +179,7 @@ Version 2.3.9
 
 * Fix Cython version of :py:meth:`Vec.join() <srctools.math.VecBase.join>` using a default of
   :samp:`{x} {y} {z}`, not :samp:`{x}, {y}, {z}`.
-* Added support for the `Strata BSP format <strata_bsp_>`_ (by `ozxybox`_).
+* Added support for the `Strata BSP format <strata_bsp_>`_ (by :gh-user:`Ozxybox`).
 * Improve internal FGD database format to allow parsing entities as they are required. For best
   efficiency, use :py:meth:`EntityDef.engine_def() <srctools.fgd.EntityDef.engine_def>` instead of
   :py:meth:`FGD.engine_dbase() <srctools.fgd.FGD.engine_dbase()>` if possible.
@@ -275,8 +273,7 @@ Version 2.3.5
 * Allow parsing :py:class:`srctools.fgd.IODef` types which normally are not allowed for I/O.
   This will be substituted when exporting.
 * Use ``__class__.__name__`` in reprs, to better support subclasses.
-* Issue `#14 <https://github.com/TeamSpen210/srctools/issues/14>`_: Disable some size checks on
-  LZMA decompression, so more TF2 maps can be parsed.
+* :src-issue:`14`: Disable some size checks on LZMA decompression, so more TF2 maps can be parsed.
 
 -------------
 Version 2.3.4
@@ -304,7 +301,7 @@ Version 2.3.2
 
 * Make particle systems use a cache file for the manifest too.
 * Make :py:meth:`srctools.fgd.FGD.engine_db()` actually cache and copy the database.
-* Automatically add the ``update`` folder to searchpath precedence, fixing TeamSpen210/HammerAddons#164.
+* Automatically add the ``update`` folder to searchpath precedence, fixing :ha-issue:`164`.
 * Make DMX scalar type deduction more strict (removing iterable -> vec support), making it typesafe.
 * Add :py:data:`srctools.filesys.CACHE_KEY_INVALID`.
 * Add :py:func:`Matrix.from_angstr() <srctools.math.MatrixBase.from_angstr>`.

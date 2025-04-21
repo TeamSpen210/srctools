@@ -36,6 +36,7 @@ except KeyError:
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
+    'sphinx.ext.extlinks',
     'sphinxcontrib_trio',
 ]
 
@@ -56,10 +57,19 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
 }
 
+# -- Extensions ----------
 
 # Fully-qualified is way too verbose.
 autodoc_typehints_format = 'short'
 autodoc_member_order = 'bysource'
+
+
+extlinks = {
+    'gh-user': ('https://github.com/%s', '@%s'),
+    'src-issue': ('https://github.com/TeamSpen210/srctools/issue/%s', 'Issue #%s'),
+    'src-pull': ('https://github.com/TeamSpen210/srctools/pulls/%s', 'PR #%s'),
+    'ha-issue': ('https://github.com/TeamSpen210/HammerAddons/issue/%s', 'HammerAddons Issue #%s'),
+}
 
 
 # -- Options for HTML output -------------------------------------------------
