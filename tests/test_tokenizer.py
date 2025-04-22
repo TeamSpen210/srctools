@@ -1,4 +1,4 @@
-from typing import Any, Union
+from typing import Any, Union, cast
 from collections.abc import Callable, Iterable, Iterator
 from itertools import tee, zip_longest
 import codecs
@@ -920,7 +920,7 @@ def test_illegal_values_file(py_c_token: type[Tokenizer], value: object, match: 
     """Test that passing various invalid values are disallowed."""
     data = iter([", ", "= ", value, ":"])
 
-    class File(Any):  # Silence type errors.
+    class File:
         """Mock file."""
         def read(self, count: int) -> object:
             """Cython version tries to call read()."""
@@ -935,7 +935,7 @@ def test_illegal_values_file(py_c_token: type[Tokenizer], value: object, match: 
 
     res = []
     with pytest.raises(TypeError, match=match):
-        for vals in py_c_token(File()):
+        for vals in py_c_token(cast(Iterable[str], File())):
             res.append(vals)
     assert res == [(Token.COMMA, ","), (Token.EQUALS, "=")]
 
