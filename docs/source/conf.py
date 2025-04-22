@@ -66,9 +66,11 @@ autodoc_member_order = 'bysource'
 
 extlinks = {
     'gh-user': ('https://github.com/%s', '@%s'),
-    'src-issue': ('https://github.com/TeamSpen210/srctools/issue/%s', 'Issue #%s'),
+    'src-issue': ('https://github.com/TeamSpen210/srctools/issues/%s', 'Issue #%s'),
     'src-pull': ('https://github.com/TeamSpen210/srctools/pulls/%s', 'PR #%s'),
-    'ha-issue': ('https://github.com/TeamSpen210/HammerAddons/issue/%s', 'HammerAddons Issue #%s'),
+    'ha-issue': ('https://github.com/TeamSpen210/HammerAddons/issues/%s', 'HammerAddons Issue #%s'),
+    'bee-app-issue': ('https://github.com/BEEmod/BEE2.4/issues/%s', 'BEE Issue #%s'),
+    'bee-pack-issue': ('https://github.com/BEEmod/BEE2-items/issues/%s', 'BEE Issue #%s'),
 }
 
 

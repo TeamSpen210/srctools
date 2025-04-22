@@ -453,8 +453,11 @@ class PackList:
         filename = unify_path(filename)
 
         if data_type is FileType.MATERIAL:
+            if filename.endswith('.spr'):
+                # Legacy handling, sprite-type materials are found in materials/sprites.
+                filename = f'sprites/{filename[:-4]}.vmt'
             if not filename.startswith('materials/'):
-                filename = 'materials/' + filename
+                filename = f'materials/{filename}'
             # This will replace .spr materials, which don't exist any more.
             if not filename.endswith(('.vmt', '.zmat')):
                 filename = strip_extension(filename) + '.vmt'
@@ -939,7 +942,11 @@ class PackList:
                 if not value:
                     continue
 
-                if val_type is KVTypes.STR_MATERIAL:
+                if (
+                    val_type is KVTypes.STR_MATERIAL
+                    or val_type is KVTypes.STR_SPRITE
+                    or val_type is KVTypes.STR_DECAL
+                ):  # Appears differently in Hammer etc, but all load mats.
                     self.pack_file(value, FileType.MATERIAL)
                 elif val_type is KVTypes.STR_MODEL:
                     self.pack_file(value, FileType.MODEL)
@@ -950,13 +957,6 @@ class PackList:
                         self.pack_file('scripts/vscripts/' + script)
                 elif val_type is KVTypes.STR_VSCRIPT_SINGLE:
                     self.pack_file('scripts/vscripts/' + value)
-                elif val_type is KVTypes.STR_SPRITE:
-                    if not value.casefold().startswith('sprites/'):
-                        value = 'sprites/' + value
-                    if not value.casefold().startswith('materials/'):
-                        value = 'materials/' + value
-
-                    self.pack_file(value, FileType.MATERIAL)
                 elif val_type is KVTypes.STR_SOUND:
                     self.pack_soundscript(value)
                 elif val_type is KVTypes.STR_PARTICLE:
@@ -968,11 +968,12 @@ class PackList:
 
         # Handle worldspawn here - this is fairly special.
         sky_name = vmf.spawn['skyname']
-        for suffix in ['bk', 'dn', 'ft', 'lf', 'rt', 'up']:
-            self.pack_file(
-                f'materials/skybox/{sky_name}{suffix}.vmt',
-                FileType.MATERIAL,
-            )
+        if sky_name:
+            for suffix in ['bk', 'dn', 'ft', 'lf', 'rt', 'up']:
+                self.pack_file(
+                    f'materials/skybox/{sky_name}{suffix}.vmt',
+                    FileType.MATERIAL,
+                )
         self.pack_file(vmf.spawn['detailmaterial'], FileType.MATERIAL)
 
         detail_script = vmf.spawn['detailvbsp']
