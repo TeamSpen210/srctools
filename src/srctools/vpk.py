@@ -19,7 +19,7 @@ __all__ = [
     'FileInfo', 'VPK',
 ]
 VPK_SIG: Final = 0x55aa1234  #: The first byte of VPK files.
-DIR_ARCH_INDEX: Final = 0x7fff  #: The file index used for the ``_dir`` file.
+DIR_ARCH_INDEX: Final = 0x7fff  #: The file index used to indicate data is contained in the directory file.
 FileName: TypeAlias = Union[str, tuple[str, str], tuple[str, str, str]]
 
 
@@ -150,11 +150,11 @@ class FileInfo:
     dir: str = attrs.field(on_setattr=attrs.setters.frozen)
     _filename: str = attrs.field(on_setattr=attrs.setters.frozen)
     ext: str = attrs.field(on_setattr=attrs.setters.frozen)
-    crc: int
-    arch_index: Optional[int]  # pack_01_000.vpk file to use, or None for _dir.
+    crc: int  #: CRC checksum for this file.
+    arch_index: Optional[int]  #: pack_01_000.vpk file to use, or None for _dir.
     offset: int  # Offset into the archive file, including directory data if in _dir
-    arch_len: int  # Number of bytes in archive files
-    start_data: bytes  # The bytes saved into the directory header
+    arch_len: int  #: Number of bytes in archive files
+    start_data: bytes  #: The bytes saved into the directory header.
 
     @property
     def filename(self) -> str:
@@ -758,7 +758,7 @@ class VPK:
 
 
 def script_write(args: list[str]) -> None:
-    """Create a VPK archive."""
+    """Implements a command-line interface for creating a VPK archive."""
     if len(args) not in (1, 2):
         raise ValueError("Usage: make_vpk.py [max_arch_mb] <folder>")
 

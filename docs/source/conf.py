@@ -43,13 +43,16 @@ extensions = [
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
+# `names` should lookup Python objects.
+default_role = "py:obj"
+
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
 exclude_patterns = []
 
 python_trailing_comma_in_multi_line_signatures = True
-maximum_signature_line_length = 56
+maximum_signature_line_length = 80
 
 # -- Intersphinx ------
 
