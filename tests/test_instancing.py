@@ -3,9 +3,10 @@ from typing import cast
 
 import pytest
 
-from srctools import VMF, instancing
 from srctools.fgd import ValueTypes
 from srctools.math import Angle, FrozenMatrix, FrozenVec, Matrix, Vec, format_float
+from srctools.vmf import VMF
+from srctools import instancing
 
 
 MAT_CCW = FrozenMatrix.from_yaw(270)

@@ -1,7 +1,7 @@
 """Tests for the BSP static props lump."""
 import pytest
 
-from srctools import Angle, Vec
+from srctools.math import Angle, Vec
 from srctools.bsp import (
     BrushContents, StaticProp, StaticPropFlags, StaticPropVersion, VisLeaf, VisLeafFlags,
 )

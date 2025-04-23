@@ -3,7 +3,8 @@ import re
 
 import pytest
 
-from srctools import Keyvalues, sndscript
+from srctools.keyvalues import Keyvalues
+from srctools import sndscript
 
 
 def test_split() -> None:

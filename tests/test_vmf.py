@@ -8,7 +8,8 @@ from pytest_regressions.file_regression import FileRegressionFixture
 import pytest
 
 from helpers import ExactType
-from srctools import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Keyvalues, Matrix, Vec
+from srctools.keyvalues import Keyvalues
+from srctools.math import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Matrix, Vec
 from srctools.vmf import (
     VMF, Axis, Entity, Output, Strata2DViewport, Strata3DViewport,
     StrataInstanceVisibility, conv_kv,

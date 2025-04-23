@@ -13,6 +13,7 @@ Version (dev)
 * Consistently raise :class:`TypeError` if invalid types are sent to a :class:`Tokenizer`.
 * Properly add ``base_plat_train`` class resource function and fix the ``item_teamflag``.
 * :bee-pack-issue:`4299`: Fix sprites and decals not being detected properly for packing.
+* Make toplevel aliases like ``srctools.VPK`` lazy import.
 
 -------------
 Version 2.5.0

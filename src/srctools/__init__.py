@@ -548,10 +548,11 @@ class AtomicWriter(Generic[IOKindT]):
         return None  # Don't cancel the exception.
 
 
-# Import these, so people can reference 'srctools.Vec' instead of 'srctools.math.Vec'.
-# Should be done after other code, so everything's initialised.
+# We offer various lazy imports, so people can reference 'srctools.Vec' instead of 'srctools.math.Vec'.
 # Not all classes are imported, just most-used ones.
 # This shouldn't be used in our modules, to ensure the order here doesn't matter.
+# Math & keyvalues are undconditionally imported since they're always used, but the others are
+# done via __getattr__.
 # isort: off
 from .math import (
     FrozenVec, Vec,
@@ -559,16 +560,7 @@ from .math import (
     FrozenMatrix, Matrix,
     FrozenAngle, Angle,
 )
-# Deprecated.
-from .math import Vec_tuple  # noqa
 from srctools.keyvalues import NoKeyError, KeyValError, Keyvalues
-from srctools.filesys import FileSystem, FileSystemChain, get_filesystem
-from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis
-from srctools.vpk import VPK
-from srctools.fgd import FGD
-from srctools.const import GameID
-from srctools.surfaceprop import SurfaceProp, SurfChar
-from srctools.vtf import VTF
 
 _py_conv_int = _cy_conv_int = conv_int
 _py_conv_float = _cy_conv_float = conv_float
@@ -576,10 +568,26 @@ _py_conv_bool = _cy_conv_bool = conv_bool
 
 
 if TYPE_CHECKING:
-    Property = Keyvalues  #: :deprecated: Use srctools.Keyvalues.
-    __version__: str  #: :deprecated: Use importlib.metadata instead.
+    # Do things statically for checkers.
+    Property = Keyvalues
+    __version__: str
+
+    from srctools.math import Vec_tuple  # noqa # Deprecated.
+    from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis
+    from srctools.filesys import FileSystem, FileSystemChain, get_filesystem
+    from srctools.vpk import VPK
+    from srctools.fgd import FGD
+    from srctools.const import GameID
+    from srctools.surfaceprop import SurfaceProp, SurfChar
+    from srctools.vtf import VTF
 else:
     def __getattr__(name: str) -> object:
+        """Lazy load various names, and raise warnings for others."""
+        # Import into globals, so the second time it's fetched directly. We're just saving
+        # on imports, so just load a whole module at once.
+        global VMF, Entity, Solid, Side, Output, UVAxis
+        global FileSystem, FileSystemChain, get_filesystem
+        global VPK, FGD, GameID, SurfaceProp, SurfChar, VTF
         if name == 'Property':
             warnings.warn(
                 'srctools.Property is renamed to srctools.Keyvalues',
@@ -595,7 +603,33 @@ else:
             )
             from importlib.metadata import version
             return version('srctools')
-        raise AttributeError(name)
+        elif name == 'Vec_tuple':
+            warnings.warn(
+                'srctools.Vec_tuple should be replaced by srctools.math.FrozenVec',
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            from .math import Vec_tuple
+            return Vec_tuple
+        elif name in {'VMF', 'Entity', 'Solid', 'Side', 'Output', 'UVAxis'}:
+            from .vmf import VMF, Entity, Solid, Side, Output, UVAxis
+        elif name in {'FileSystem', 'FileSystemChain', 'get_filesystem'}:
+            from .filesys import FileSystem, FileSystemChain, get_filesystem
+        elif name == 'VPK':
+            from .vpk import VPK
+        elif name == 'FGD':
+            from .fgd import FGD
+        elif name == 'GameID':
+            from .const import GameID
+        elif name in {'SurfaceProp', 'SurfChar'}:
+            from .surfaceprop import SurfaceProp, SurfChar
+        elif name == 'VTF':
+            from .vtf import VTF
+        else:
+            raise AttributeError(name)
+        # The ones with warnings return, so if we get here we successfully did a lazy import.
+        # Those are in globals, so it should now work normally.
+        return globals()[name]
 
     try:
         from ._math import conv_int, conv_float, conv_bool

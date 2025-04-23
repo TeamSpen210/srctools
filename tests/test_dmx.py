@@ -11,7 +11,8 @@ from dirty_equals import IsFloat, IsInt
 import pytest
 
 from helpers import *
-from srctools import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Keyvalues, Matrix, Vec
+from srctools.math import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Matrix, Vec
+from srctools.keyvalues import Keyvalues
 from srctools.dmx import (
     TYPE_CONVERT, Attribute, Color, Element, Quaternion, Time, ValueType, Vec2, Vec4,
     deduce_type,

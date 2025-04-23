@@ -8,8 +8,9 @@ import re
 from pytest_regressions.file_regression import FileRegressionFixture
 import pytest
 
-from srctools import Vec, fgd as fgd_mod
+from srctools import fgd as fgd_mod
 from srctools.const import FileType
+from srctools.math import Vec
 from srctools.fgd import (
     FGD, AutoVisgroup, EntityDef, EntityTypes, FGDParseError, HelperExtAppliesTo,
     HelperHalfGridSnap, HelperLine, HelperModel, HelperSize, HelperSphere, IODef, KVDef,

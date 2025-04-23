@@ -6,7 +6,7 @@ import sys
 
 import attrs
 
-from srctools import Keyvalues
+from srctools.keyvalues import Keyvalues
 
 
 REG_STEAM = "SOFTWARE\\WOW6432Node\\Valve\\Steam"

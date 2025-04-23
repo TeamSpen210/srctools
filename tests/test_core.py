@@ -395,3 +395,69 @@ def test_atomic_writer_fails(tmp_path: Path) -> None:
     assert list(tmp_path.iterdir()) == [filename]   # Temp file is removed.
     # And data wasn't changed.
     assert filename.read_bytes() == b'existing_data'
+
+
+def test_alias_math() -> None:
+    """Test the lazy srctools.Vec_tuple alias."""
+    from srctools.math import Vec_tuple
+    assert srctools.Vec_tuple is Vec_tuple
+    # This isn't put in the dict, we want a warning each time.
+
+
+def test_alias_vmf() -> None:
+    """Test the lazy srctools.vmf.* aliases."""
+    from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis
+    assert srctools.VMF is VMF
+    assert srctools.Entity is Entity
+    assert srctools.Solid is Solid
+    assert srctools.Side is Side
+    assert srctools.Output is Output
+    assert srctools.UVAxis is UVAxis
+    assert 'Entity' in vars(srctools)
+    assert 'Output' in vars(srctools)
+
+
+def test_alias_fsys() -> None:
+    """Test the lazy srctools.filesys.* aliases."""
+    from srctools.filesys import FileSystem, FileSystemChain, get_filesystem
+    assert srctools.FileSystem is FileSystem
+    assert srctools.FileSystemChain is FileSystemChain
+    assert srctools.get_filesystem is get_filesystem
+    assert 'FileSystem' in vars(srctools)
+
+
+def test_alias_vpk() -> None:
+    """Test the lazy srctools.VPK alias."""
+    from srctools.vpk import VPK
+    assert srctools.VPK is VPK
+    assert 'VPK' in vars(srctools)
+
+
+def test_alias_fgd() -> None:
+    """Test the lazy srctools.FGD alias."""
+    from srctools.fgd import FGD
+    assert srctools.FGD is FGD
+    assert 'FGD' in vars(srctools)
+
+
+def test_alias_const() -> None:
+    """Test the lazy srctools.GameID alias."""
+    from srctools.const import GameID
+    assert srctools.GameID is GameID
+    assert 'GameID' in vars(srctools)
+
+
+def test_alias_surfaceprop() -> None:
+    """Test the lazy srctools.surfaceprop.* aliases."""
+    from srctools.surfaceprop import SurfaceProp, SurfChar
+    assert srctools.SurfaceProp is SurfaceProp
+    assert srctools.SurfChar is SurfChar
+    assert 'SurfaceProp' in vars(srctools)
+    assert 'SurfChar' in vars(srctools)
+
+
+def test_alias_vtf() -> None:
+    """Test the lazy srctools.VTF alias."""
+    from srctools.vtf import VTF
+    assert srctools.VTF is VTF
+    assert 'VTF' in vars(srctools)

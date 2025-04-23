@@ -3,7 +3,7 @@ import io
 
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from srctools import Keyvalues
+from srctools.keyvalues import Keyvalues
 from srctools.vmt import Material, VarType, get_parm_type
 
 

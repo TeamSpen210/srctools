@@ -15,7 +15,8 @@ from dirty_equals import IsFloat
 import pytest
 
 from helpers import *
-from srctools import Vec_tuple, math as vec_mod
+from srctools import math as vec_mod
+from srctools.math import Vec_tuple
 
 
 try:

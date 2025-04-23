@@ -1,5 +1,5 @@
 """Test packlist logic."""
-from srctools import VMF
+from srctools.vmf import VMF
 from srctools.const import FileType
 from srctools.filesys import FileSystemChain
 from srctools.packlist import strip_extension, PackList
