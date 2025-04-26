@@ -4,7 +4,7 @@ from typing import IO, TYPE_CHECKING, Any, ClassVar, Generic, Optional, TextIO, 
 from typing_extensions import Protocol, TypeAlias, overload
 from collections import ChainMap, defaultdict
 from collections.abc import (
-    Callable, Collection, Container, Iterable, Iterator, Mapping, Sequence, Set,
+    Callable, Collection, Container, Iterable, Iterator, Mapping, Sequence, Set as AbstractSet,
 )
 from copy import deepcopy
 from enum import Enum
@@ -1891,7 +1891,7 @@ class EntityDef:
         raise KeyError(classname)
 
     @classmethod
-    def engine_classes(cls) -> Set[str]:
+    def engine_classes(cls) -> AbstractSet[str]:
         """Return a set of known entity classnames, from the Hammer Addons database."""
         databases = _load_engine_db()
 
@@ -2856,7 +2856,7 @@ def _init_helper_impl() -> None:
 
 class _EngineDBProto(Protocol):
     """Unserialised database, which will be parsed progressively as required."""
-    def get_classnames(self) -> Set[str]:
+    def get_classnames(self) -> AbstractSet[str]:
         """Get the classnames in the database."""
         raise NotImplementedError
 

@@ -6,7 +6,7 @@ The dump does not contain help descriptions to keep the data small.
 from typing import IO, TYPE_CHECKING, Final, Optional, Union
 from typing_extensions import TypeAlias
 from collections import Counter
-from collections.abc import Callable, Collection, Iterable, Mapping, Set
+from collections.abc import Callable, Collection, Iterable, Mapping, Set as AbstractSet
 from enum import IntFlag
 from struct import Struct
 import copy
@@ -274,7 +274,7 @@ class EngineDB(_EngineDBProto):
         self.base_strings = base_strings
         self.fgd: Optional[FGD] = None
 
-    def get_classnames(self) -> Set[str]:
+    def get_classnames(self) -> AbstractSet[str]:
         """Get the classnames in the database."""
         return self.ent_map.keys()
 
@@ -627,7 +627,7 @@ def compute_ent_strings(ents: Iterable[EntityDef]) -> tuple[
 
 def build_blocks(
     all_ents: list[EntityDef],
-    ent_to_string: Mapping[EntityDef, Set[str]],
+    ent_to_string: Mapping[EntityDef, AbstractSet[str]],
     ent_to_size: Mapping[EntityDef, int],
     overlaps: Iterable[tuple[EntityDef, EntityDef, int]],
 ) -> list[tuple[list[EntityDef], set[str]]]:

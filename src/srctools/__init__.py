@@ -3,7 +3,7 @@ from typing_extensions import Literal, TypeAlias
 from collections import deque
 from collections.abc import (
     Container, ItemsView, Iterable, Iterator, KeysView, Mapping, MutableMapping, Sequence,
-    Set, ValuesView,
+    Set as AbstractSet, ValuesView,
 )
 from pathlib import Path
 from types import TracebackType
@@ -334,7 +334,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
         raise KeyError('EmptyMapping is empty')
 
 
-class _EmptySetView(Set[Any]):
+class _EmptySetView(AbstractSet[Any]):
     """Common code between EmptyKeysView and EmptyItemsView."""
     __slots__ = ()
 
@@ -354,25 +354,25 @@ class _EmptySetView(Set[Any]):
 
     def __ne__(self, other: object) -> bool:
         """All nonempty sets are non-equal."""
-        if not isinstance(other, Set):
+        if not isinstance(other, AbstractSet):
             return NotImplemented
         return len(other) > 0
 
     def __eq__(self, other: object) -> bool:
         """Only empty sets are equal."""
-        if not isinstance(other, Set):
+        if not isinstance(other, AbstractSet):
             return NotImplemented
         return len(other) == 0
 
     def __le__(self, other: object) -> bool:
         """We are <= to all sets."""
-        if isinstance(other, Set):
+        if isinstance(other, AbstractSet):
             return True
         return NotImplemented
 
     def __gt__(self, other: object) -> bool:
         """We are never > any set."""
-        if isinstance(other, Set):
+        if isinstance(other, AbstractSet):
             return False
         return NotImplemented
 
