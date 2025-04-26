@@ -775,15 +775,15 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     @overload
-    def vec2(cls, __name: str, __it: Iterable[builtins.float]) -> 'Attribute[Vec2]': ...
+    def vec2(cls, name: str, it: Iterable[builtins.float], /) -> 'Attribute[Vec2]': ...
 
     @classmethod
     @overload
-    def vec2(cls, __name: str, x: builtins.float = 0.0, y: builtins.float = 0.0) -> 'Attribute[Vec2]': ...
+    def vec2(cls, name: str, /, x: builtins.float = 0.0, y: builtins.float = 0.0) -> 'Attribute[Vec2]': ...
 
     @classmethod
     def vec2(
-        cls, name: str,
+        cls, name: str, /,
         x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
         y: builtins.float = 0.0,
     ) -> 'Attribute[Vec2]':
@@ -798,12 +798,12 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     @overload
-    def vec3(cls, __name: str, __it: Iterable[builtins.float]) -> 'Attribute[FrozenVec]': ...
+    def vec3(cls, name: str, it: Iterable[builtins.float], /) -> 'Attribute[FrozenVec]': ...
 
     @classmethod
     @overload
     def vec3(
-        cls, __name: str,
+        cls, name: str, /,
         x: builtins.float = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
@@ -811,7 +811,7 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     def vec3(
-        cls, name: str,
+        cls, name: str, /,
         x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
@@ -828,12 +828,12 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     @overload
-    def vec4(cls, __name: str, __it: Iterable[builtins.float]) -> 'Attribute[Vec4]': ...
+    def vec4(cls, name: str, it: Iterable[builtins.float], /) -> 'Attribute[Vec4]': ...
 
     @classmethod
     @overload
     def vec4(
-        cls, __name: str,
+        cls, name: str, /,
         x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
@@ -842,7 +842,7 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     def vec4(
-        cls, name: str,
+        cls, name: str, /,
         x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
@@ -861,12 +861,12 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     @overload
-    def color(cls, __name: str, __it: Iterable[Union[builtins.float, builtins.int]]) -> 'Attribute[Color]': ...
+    def color(cls, name: str, it: Iterable[Union[builtins.float, builtins.int]], /) -> 'Attribute[Color]': ...
 
     @classmethod
     @overload
     def color(
-        cls, __name: str,
+        cls, name: str, /,
         r: Union[builtins.float, builtins.int] = 0,
         g: Union[builtins.float, builtins.int] = 0,
         b: Union[builtins.float, builtins.int] = 0,
@@ -875,7 +875,7 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     def color(
-        cls, name: str,
+        cls, name: str, /,
         r: Union[builtins.float, builtins.int, Iterable[Union[builtins.float, builtins.int]]] = 0,
         g: Union[builtins.float, builtins.int] = 0,
         b: Union[builtins.float, builtins.int] = 0,
@@ -894,12 +894,12 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     @overload
-    def angle(cls, __name: str, __it: Iterable[builtins.float]) -> 'Attribute[FrozenAngle]': ...
+    def angle(cls, name: str, it: Iterable[builtins.float], /) -> 'Attribute[FrozenAngle]': ...
 
     @classmethod
     @overload
     def angle(
-        cls, __name: str,
+        cls, name: str, /,
         pitch: builtins.float = 0.0,
         yaw: builtins.float = 0.0,
         roll: builtins.float = 0.0,
@@ -907,7 +907,7 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     def angle(
-        cls, name: str,
+        cls, name: str, /,
         pitch: Union[builtins.float, Iterable[builtins.float]] = 0.0,
         yaw: builtins.float = 0.0, roll: builtins.float = 0.0,
     ) -> 'Attribute[FrozenAngle]':
@@ -923,12 +923,12 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     @overload
-    def quaternion(cls, __name: str, __it: Iterable[builtins.float]) -> 'Attribute[Quaternion]': ...
+    def quaternion(cls, name: str, it: Iterable[builtins.float], /) -> 'Attribute[Quaternion]': ...
 
     @classmethod
     @overload
     def quaternion(
-        cls, __name: str,
+        cls, name: str, /,
         x: builtins.float = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
@@ -937,7 +937,7 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     def quaternion(
-        cls, name: str,
+        cls, name: str, /,
         x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
@@ -2352,7 +2352,8 @@ def _conv_vec3_to_bool(v: Vec3) -> bool: return bool(v.x or v.y or v.z)
 def _conv_vec3_to_vec2(v: Vec3) -> Vec2: return Vec2(v.x, v.y)
 def _conv_vec3_to_vec4(v: Vec3) -> Vec4: return Vec4(v.x, v.y, v.z, 0.0)
 def _conv_vec3_to_angle(v: Vec3) -> FrozenAngle: return FrozenAngle(v.x, v.y, v.z)
-def _conv_vec3_to_color(v: Vec3) -> Color: return Color(_clamp_color(v.x), _clamp_color(v.y), _clamp_color(v.z))
+def _conv_vec3_to_color(v: Vec3) -> Color:
+    return Color(_clamp_color(v.x), _clamp_color(v.y), _clamp_color(v.z))
 
 def _conv_vec4_to_string(v: Vec4) -> str:
     return f'{_fmt_float(v.x)} {_fmt_float(v.y)} {_fmt_float(v.z)} {_fmt_float(v.w)}'
@@ -2360,7 +2361,8 @@ def _conv_vec4_to_bool(v: Vec4) -> bool: return bool(v.x or v.y or v.z or v.w)
 def _conv_vec4_to_vec3(v: Vec4) -> Vec3: return FrozenVec(v.x, v.y, v.z)
 def _conv_vec4_to_vec2(v: Vec4) -> Vec2: return Vec2(v.x, v.y)
 def _conv_vec4_to_quaternion(v: Vec4) -> Quaternion: return Quaternion(v.x, v.y, v.z, v.w)
-def _conv_vec4_to_color(v: Vec4) -> Color: return Color(_clamp_color(v.x), _clamp_color(v.y), _clamp_color(v.z), _clamp_color(v.w))
+def _conv_vec4_to_color(v: Vec4) -> Color:
+    return Color(_clamp_color(v.x), _clamp_color(v.y), _clamp_color(v.z), _clamp_color(v.w))
 
 def _conv_matrix_to_angle(mat: Matrix) -> FrozenAngle: return mat.to_angle().freeze()
 

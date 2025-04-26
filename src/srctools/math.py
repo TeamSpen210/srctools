@@ -453,13 +453,13 @@ class VecBase:
 
     @classmethod
     @overload
-    def bbox(cls, __point: Iterable['VecBase']) -> tuple[Self, Self]: ...
+    def bbox(cls, point: Iterable['VecBase'], /) -> tuple[Self, Self]: ...
     @classmethod
     @overload
-    def bbox(cls, *points: 'VecBase') -> tuple[Self, Self]: ...
+    def bbox(cls, /, *points: 'VecBase') -> tuple[Self, Self]: ...
 
     @classmethod
-    def bbox(cls, *points: Union[Iterable['VecBase'], 'VecBase']) -> tuple[Self, Self]:
+    def bbox(cls, /, *points: Union[Iterable['VecBase'], 'VecBase']) -> tuple[Self, Self]:
         """Compute the bounding box for a set of points.
 
         Pass either several Vecs, or an iterable of Vecs.
@@ -1402,12 +1402,12 @@ class Vec(VecBase):
         )
 
     if TYPE_CHECKING:
-        def __iadd__(self, other: Union['VecBase', Tuple3, int, float]) -> 'Vec': ...
-        def __isub__(self, other: Union['VecBase', Tuple3, int, float]) -> 'Vec': ...
-        def __imul__(self, other: float) -> 'Vec': ...
-        def __itruediv__(self, other: float) -> 'Vec': ...
-        def __ifloordiv__(self, other: float) -> 'Vec': ...
-        def __imod__(self, other: float) -> 'Vec': ...
+        def __iadd__(self, other: Union['VecBase', Tuple3, int, float]) -> Self: ...
+        def __isub__(self, other: Union['VecBase', Tuple3, int, float]) -> Self: ...
+        def __imul__(self, other: float) -> Self: ...
+        def __itruediv__(self, other: float) -> Self: ...
+        def __ifloordiv__(self, other: float) -> Self: ...
+        def __imod__(self, other: float) -> Self: ...
 
     _funcname = _op = _pretty = ''
     # Use exec() to generate all the number magic methods. This reduces code
@@ -1710,11 +1710,11 @@ class MatrixBase:
 
     @classmethod
     @overload
-    def from_angle(cls, __angle: 'AngleBase') -> Self: ...
+    def from_angle(cls, angle: 'AngleBase', /) -> Self: ...
 
     @classmethod
     @overload
-    def from_angle(cls, pitch: float, yaw: float, roll: float) -> Self: ...
+    def from_angle(cls, /, pitch: float, yaw: float, roll: float) -> Self: ...
 
     @classmethod
     def from_angle(
@@ -2243,7 +2243,7 @@ class Matrix(MatrixBase):
         """Set an individual matrix value by x, y position (0-2)."""
         setattr(self, _IND_TO_SLOT[item], _coerce_float(value))
 
-    def __imatmul__(self, other: 'MatrixBase | AngleBase') -> 'Matrix':
+    def __imatmul__(self, other: 'MatrixBase | AngleBase') -> Self:
         if isinstance(other, MatrixBase):
             self._mat_mul(other)
             return self
@@ -2866,7 +2866,7 @@ class Angle(AngleBase):
         else:
             raise KeyError(f'Invalid axis: {ind!r}')
 
-    def __imul__(self, other: Union[int, float]) -> 'Angle':
+    def __imul__(self, other: Union[int, float]) -> Self:
         """Angle ``*=`` float multiplies each value."""
         if isinstance(other, (int, float)):
             self._pitch = self._pitch * other % 360.0 % 360.0
@@ -2876,7 +2876,7 @@ class Angle(AngleBase):
         return NotImplemented
 
     # noinspection PyProtectedMember
-    def __imatmul__(self, other: Union[AngleBase, MatrixBase]) -> 'Angle':
+    def __imatmul__(self, other: Union[AngleBase, MatrixBase]) -> Self:
         """Angle ``@`` Angle or Angle ``@`` Matrix rotates the first by the second."""
         if isinstance(other, AngleBase):
             mat = Py_Matrix.from_angle(self)
