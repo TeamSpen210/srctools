@@ -7,16 +7,16 @@ perform repeated operations on a matrix.
 These classes will be replaced by Cython-optimized versions where possible, which are interchangable
 if pickled.
 
-Rotations are performed via the matrix-multiplication operator `@`, where the left is rotated by
+Rotations are performed via the matrix-multiplication operator ``@``, where the left is rotated by
 the right. Vectors can be rotated by matrices and angles and matrices can be rotated by angles,
 but not vice-versa.
 
- - ``Vec @ Angle`` → ``Vec``
- - ``Vec @ Matrix`` → ``Vec``
- - ``tuple[x, y, z] @ Angle`` → ``Vec``
- - ``Angle @ Angle`` → ``Angle``
- - ``Angle @ Matrix`` → ``Angle``
- - ``Matrix @ Matrix`` → ``Matrix``
+ - :pycode:`Vec @ Angle` → ``Vec``
+ - :pycode:`Vec @ Matrix` → ``Vec``
+ - :pycode:`tuple[x, y, z] @ Angle` → ``Vec``
+ - :pycode:`Angle @ Angle` → ``Angle``
+ - :pycode:`Angle @ Matrix` → ``Angle``
+ - :pycode:`Matrix @ Matrix` → ``Matrix``
 """
 from typing import (
     TYPE_CHECKING, Any, ClassVar, Final, NamedTuple, Optional, SupportsFloat,
@@ -330,7 +330,8 @@ class VecBase:
     __hash__ = None  # type: ignore[assignment]
 
     #: This is a dictionary containing complementary axes.
-    #: ``INV_AXIS["x", "y"]`` gives ``"z"``, and ``INV_AXIS["y"]`` returns ``("x", "z")``.
+    #: :pycode:`INV_AXIS["x", "y"]` gives :pycode:`"z"`, and :pycode:`INV_AXIS["y"]`
+    #: returns :pycode:`("x", "z")`.
     INV_AXIS = cast(_InvAxis, {
         'x': ('y', 'z'),
         'y': ('x', 'z'),
@@ -400,9 +401,9 @@ class VecBase:
         cls, val: Union[str, 'VecBase'],
         x: float = 0.0, y: float = 0.0, z: float = 0.0,
     ) -> Self:
-        """Convert a string in the form ``(4 6 -4)`` into a Vector.
+        """Convert a string in the form :samp:`(4 6 -4)` into a Vector.
 
-        If the string is unparsable, this uses the defaults ``(x,y,z)``.
+        If the string is unparsable, this uses the defaults :pycode:`(x, y, z)`.
         The string can be surrounded by any of the ``()``, ``{}``, ``[]``, ``<>`` bracket types,
         which are simply ignored.
 
@@ -439,6 +440,7 @@ class VecBase:
         """Create a Vector, given a number of axes and corresponding values.
 
         This is a convenience for doing the following::
+
             vec = Vec()
             vec[axis1] = val1
             vec[axis2] = val2
@@ -464,7 +466,7 @@ class VecBase:
         Returns a ``(min, max)`` :external:py:class:`tuple`.
         """
         # Allow passing a single iterable, but also handle a single Vec.
-        # The error messages match those produced by min()/max().
+        # The error messages match those produced by `min`/`max`.
         first: VecBase
         point_coll: Iterable[VecBase]
         if len(points) == 1 and not isinstance(points[0], VecBase):
@@ -565,7 +567,7 @@ class VecBase:
         """Convert a normal to a Source Engine angle.
 
         The angle will point its ``+x`` axis in the direction of this vector.
-        The inverse of this is ``Vec(x=1) @ Angle(pitch, yaw, roll)``.
+        The inverse of this is :pycode:`Vec(x=1) @ Angle(pitch, yaw, roll)`.
 
         :param roll: The roll is not affected by the direction of the vector, so it can be provided separately.
         """
@@ -703,7 +705,7 @@ class VecBase:
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        A tolerance of 1e-6 is accounted for automatically.
+        A tolerance of ``1e-6`` is accounted for automatically.
         """
         if isinstance(other, VecBase):
             return (
@@ -725,7 +727,7 @@ class VecBase:
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        A tolerance of 1e-6 is accounted for automatically.
+        A tolerance of ``1e-6`` is accounted for automatically.
         """
         if isinstance(other, VecBase):
             return (
@@ -747,7 +749,7 @@ class VecBase:
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        A tolerance of 1e-6 is accounted for automatically.
+        A tolerance of ``1e-6`` is accounted for automatically.
         """
         if isinstance(other, VecBase):
             return (
@@ -769,7 +771,7 @@ class VecBase:
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        A tolerance of 1e-6 is accounted for automatically.
+        A tolerance of ``1e-6`` is accounted for automatically.
         """
         if isinstance(other, VecBase):
             return (
@@ -791,7 +793,7 @@ class VecBase:
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        A tolerance of 1e-6 is accounted for automatically.
+        A tolerance of ``1e-6`` is accounted for automatically.
         """
         if isinstance(other, VecBase):
             return (
@@ -914,7 +916,7 @@ class VecBase:
         """Return the values, separated by spaces.
 
         This is the main format in Valve's file formats.
-        This strips off the .0 if no decimal portion exists.
+        This strips off the ``.0`` if no decimal portion exists.
         """
         return f'{format_float(self._x)} {format_float(self._y)} {format_float(self._z)}'
 
@@ -1089,7 +1091,7 @@ class FrozenVec(VecBase):
     ) -> 'FrozenVec':
         """Create a ``FrozenVec``.
 
-        All values are converted to :external:py:class:`float`\\ s automatically.
+        All values are converted to floats automatically.
         If no value is given, that axis will be set to ``0``.
         An iterable can be passed in (as the ``x`` argument), which will be
         used for ``x``, ``y``, and ``z``.
@@ -1208,8 +1210,8 @@ class FrozenVec(VecBase):
     def cross(self: VecUnion, other: AnyVec) -> 'FrozenVec':
         """Return the cross product of both Vectors.
 
-        If this is called as a method (``a.cross(b)``), the result will have the
-        same type as ``a``. Otherwise, if called as ``Vec.cross(a, b)`` or ``FrozenVec.cross(a, b)``, the
+        If this is called as a method (:pycode:`a.cross(b)`), the result will have the
+        same type as ``a``. Otherwise, if called as :pycode:`Vec.cross(a, b)` or :pycode:`FrozenVec.cross(a, b)`, the
         type of the class takes priority.
         """
         return Py_FrozenVec(
@@ -1250,17 +1252,19 @@ class Vec(VecBase):
 
     Operators and comparisons will treat 3-tuples interchangably with vectors, which is more
     convenient when specifying constant values.
+
     >>> Vec(3, 8, 7) - (0, 3, 4)
     Vec(3, 5, 3)
 
     Addition/subtraction can be performed between either vectors or scalar values (applying equally
     to all axes). Multiplication/division must be performed between a vector and scalar to scale -
-    use `Vec.dot()` or `Vec.cross()` for those operations.
+    use `Vec.dot() <VecBase.dot>` or `Vec.cross()` for those operations.
 
     Values can be modified by either setting/getting `x`, `y` and `z` attributes.
     In addition, the following indexes are allowed (case-insensitive):
-    * `0`  `1`  `2`
-    * `"x"`, `"y"`, `"z"`
+
+    * ``0``  ``1``  ``2``
+    * ``"x"``, ``"y"``, ``"z"``
     """
     __slots__ = ()
 
@@ -1387,8 +1391,8 @@ class Vec(VecBase):
     def cross(self: VecUnion, other: AnyVec) -> 'Vec':
         """Return the cross product of both Vectors.
 
-        If this is called as a method (``a.cross(b)``), the result will have the
-        same type as ``a``. Otherwise, if called as ``Vec.cross(a, b)`` or ``FrozenVec.cross(a, b)``, the
+        If this is called as a method (:pycode:`a.cross(b)`), the result will have the
+        same type as ``a``. Otherwise, if called as :pycode:`Vec.cross(a, b)` or :pycode:`FrozenVec.cross(a, b)`, the
         type of the class takes priority.
         """
         return Py_Vec(
@@ -1475,7 +1479,7 @@ class Vec(VecBase):
     ) -> 'Vec':
         """Old method to rotate a vector by a Source rotational angle.
 
-        :deprecated: do ``Vec(...) @ Angle(...)`` instead.
+        :deprecated: use :pycode:`Vec(...) @ Angle(...)` instead.
 
         If round is True, all values will be rounded to 6 decimals
         (since these calculations always have small inprecision.)
@@ -1497,7 +1501,7 @@ class Vec(VecBase):
     ) -> 'Vec':
         """Rotate a vector, using a string instead of a vector.
 
-        :deprecated: use `Vec(...) @ Angle.from_str(...)` instead.
+        :deprecated: use :pycode:`Vec(...) @ Angle.from_str(...)` instead.
         """
         mat = Py_Matrix.from_angle(Py_Angle.from_str(ang, pitch, yaw, roll))
         # noinspection PyProtectedMember

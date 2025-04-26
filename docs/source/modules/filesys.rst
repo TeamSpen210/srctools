@@ -96,10 +96,13 @@ These are the methods that should be overridden:
 * :py:meth:`FileSystem.open_bin`
 
 .. automethod:: FileSystem._file_exists
+	:abstractmethod:
 
 .. automethod:: FileSystem._get_file
+	:abstractmethod:
 
 .. automethod:: FileSystem._get_cache_key
+	:abstractmethod:
 
 These methods can be called by subclasses:
 

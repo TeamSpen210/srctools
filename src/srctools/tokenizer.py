@@ -16,8 +16,8 @@ produce an exception listing the relevant line number and filename.
 
 Character escapes match matches `utilbuffer.cpp <https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/tier1/utlbuffer.cpp#L57-L69>`_ in the SDK.
 Specifically, the following characters are escaped:
-`\\\\n`, `\\\\t`, `\\\\v`, `\\\\b`, `\\\\r`, `\\\\f`, `\\\\a`, `\\`, `?`, `'` and `"`.
-`/` and `?` are accepted as escapes, but not produced since they're unambiguous.
+``\\\\n``, ``\\\\t``, ``\\\\v``, ``\\\\b``, ``\\\\r``, ``\\\\f``, ``\\\\a``, `\\`, ``?``, ``'`` and ``"``.
+``/`` and ``?`` are accepted as escapes, but not produced since they're unambiguous.
 """
 from typing import TYPE_CHECKING, Final, NoReturn, Optional, Union
 from typing_extensions import Self, TypeAlias, overload
@@ -67,9 +67,9 @@ class TokenSyntaxError(Exception):
     mess: str
     """The error message that occurred."""
     file: Optional[StringPath]
-    """The filename of the file being parsed, or ``None`` if not known."""
+    """The filename of the file being parsed, or `None` if not known."""
     line_num: Optional[int]
-    """The line where the error occurred, or ``None`` if not applicable (EOF, for instance)."""
+    """The line where the error occurred, or `None` if not applicable (EOF, for instance)."""
 
     def __init__(
         self,
@@ -123,7 +123,7 @@ class Token(Enum):
     BRACK_OPEN = 12  #: A ``[`` character. Only used if ``PROP_FLAG`` is not.
     BRACK_CLOSE = 13  #: A ``]`` character.
 
-    COLON = 14  #: A ``:`` character, if :py:attr:`~Tokenizer.colon_operator` is enabled.
+    COLON = 14  #: A ``:`` character, if :py:attr:`Tokenizer.colon_operator` is enabled.
     EQUALS = 15  #: A ``=`` character.
     PLUS = 16  #: A ``+`` character, if :py:attr:`Tokenizer.plus_operator` is enabled.
     COMMA = 17  #: A ``,`` character.

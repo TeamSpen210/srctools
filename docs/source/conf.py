@@ -52,7 +52,12 @@ default_role = "py:obj"
 exclude_patterns = []
 
 python_trailing_comma_in_multi_line_signatures = True
-maximum_signature_line_length = 80
+maximum_signature_line_length = 90
+
+rst_prolog = '''
+.. role:: pycode(code)
+   :language: python
+'''
 
 # -- Intersphinx ------
 

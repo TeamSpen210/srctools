@@ -10,7 +10,7 @@ Version (dev)
 -------------
 
 * Treat ``ogg`` files as valid sounds in various places.
-* Consistently raise :class:`TypeError` if invalid types are sent to a :class:`Tokenizer`.
+* Consistently raise :class:`TypeError` if invalid types are sent to a :class:`~srctools.tokenizer.Tokenizer`.
 * Properly add ``base_plat_train`` class resource function and fix the ``item_teamflag``.
 * :bee-pack-issue:`4299`: Fix sprites and decals not being detected properly for packing.
 * Make toplevel aliases like ``srctools.VPK`` lazy import.
@@ -22,7 +22,7 @@ Version 2.5.0
 * Switch to Meson for building the package.
 * :src-issue:`35`: Only use character escapes in FGD custom syntax mode. The original parser only allows ``\n``.
 * Add :attr:`Token.PAREN_OPEN <srctools.tokenizer.Token.PAREN_OPEN>`/:attr:`~srctools.tokenizer.Token.PAREN_CLOSE`, enabled by :attr:`Tokenizer.string_parens <srctools.tokenizer.Tokenizer.string_parens>`.
-* Avoid escaping ``/`` and ``?``, these are unambiguous. BSPs also allow `\n` in values again.
+* Avoid escaping ``/`` and ``?``, these are unambiguous. BSPs also allow ``\n`` in values again.
 * Add ``multiline`` parameter to :py:func:`~srctools.tokenizer.escape_text`, to allow preserving ``\n``.
 * Add :attr:`ValueTypes.EXT_SOUNDSCAPE <srctools.fgd.ValueTypes.EXT_SOUNDSCAPE>`.
 * Support exporting FGDs with unevaulated string bases.
@@ -48,7 +48,7 @@ Version 2.4.1
 * Add :mod:`srctools.steam`, written by :gh-user:`Thenderek0`.
   This allows locating Steam games based on their app ID. Support was also added for parsing Strata
   mount definitions in gameinfo.txt.
-* Add `header_only` option for :py:meth:`VTF.read() <srctools.vtf.VTF.read>`, allowing reading only metadata if the image is not required.
+* Add ``header_only`` option for :py:meth:`VTF.read() <srctools.vtf.VTF.read>`, allowing reading only metadata if the image is not required.
 * Fix casing not being preserved for names of FGD keyvalues during parsing.
 * Fix :meth:`PackList.write_soundscript_manifest() <srctools.packlist.PackList.write_soundscript_manifest>`,
   :meth:`~srctools.packlist.PackList.write_particles_manifest` and :meth:`~srctools.packlist.PackList.write_manifest` trying to write to a closed file.
@@ -56,7 +56,7 @@ Version 2.4.1
 * Add ``single_block`` argument to :py:meth:`Keyvalues.parse() <srctools.keyvalues.Keyvalues.parse>`,
   allowing parsing blocks in the middle of a document.
 * Allow disabling the "spawnflag labelling" FGD feature.
-* :mod:`srctools.logging` log files will now always be written as UTF-8.
+* :mod:`srctools.logger` log files will now always be written as UTF-8.
 * Add a ``custom_syntax`` option to :py:meth:`FGD.export() <srctools.fgd.FGD.export>`, disabling
   export of custom syntax. Resources can now be exported.
 * Correctly produce an error if a FGD entity definition is missing its closing bracket.
@@ -73,7 +73,7 @@ Version 2.4.0
 * Added :py:mod:`srctools.choreo`, for parsing choreographed scenes.
 * Allow passing :py:class:`~srctools.math.FrozenVec` to :py:meth:`VMF.make_prism() <srctools.vmf.VMF.make_prism>`/:py:meth:`~srctools.vmf.VMF.make_hollow`.
 * Fix bare strings on the end of CRLF lines eating the ``\r``.
-* Escape characters like `"` when exporting VMFs and BSPs. This isn't supported by regular Source, but can be added by other branches.
+* Escape characters like ``"`` when exporting VMFs and BSPs. This isn't supported by regular Source, but can be added by other branches.
 * Added :py:attr:`Keyvalues.line_num <srctools.keyvalues.Keyvalues.line_num>`, to
   allow reporting the source location in exceptions.
 * :py:meth:`Keyvalues.export() <srctools.keyvalues.Keyvalues.export>` is now deprecated, use :py:meth:`serialise() <srctools.keyvalues.Keyvalues.serialise>` instead.
@@ -117,7 +117,7 @@ Version 2.3.15
 --------------
 * :ha-issue:`237`: Ensure FGD model helpers will override each other.
 * :src-issue:`20`: Fix VTF.compute_mipmaps() not working for cubemaps.
-* Correctly handle `.vvd`/`.vtx` etc files being packed as :py:class:`MODEL <srctools.const.FileType.GENERIC>`.
+* Correctly handle :file:`.vvd`/:file:`.vtx` etc files if packed as `~srctools.const.FileType.MODEL`.
 * Improve performance of pure-Python VTF save/loading code.
 * Add :py:meth:`Vec.clamped() <srctools.math.VecBase.clamped>`, for applying min/max bounds to a vector.
 * Fix :py:meth:`Entity.make_unique() <srctools.vmf.Entity.make_unique>` renaming entities with numeric suffixes which were already unique.
