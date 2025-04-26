@@ -21,7 +21,7 @@ __all__ = [
     'HelperSweptPlayerHull', 'HelperTrack', 'HelperTypes',
     'HelperVecLine', 'HelperWorldText',
 
-    'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy',
+    'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy', 'HelperExtCatapult',
 ]
 
 
@@ -276,9 +276,9 @@ class HelperFrustum(Helper):
         # These are the default values if not provided.
         fov: Union[str, float] = '_fov'
         nearz: Union[str, float] = '_nearplane'
-        farz: Union[str, float] = '_farz'
+        farz: Union[str, float] = '_farplane'
         color: Union[str, tuple[float, float, float]] = '_light'
-        pitch: Union[str, float] = -1.0
+        pitch: Union[str, float] = 1.0
 
         try:
             fov = args[0]
@@ -359,7 +359,7 @@ class HelperCylinder(HelperLine):
         if arg_count not in (3, 4, 6, 7):
             raise ValueError(f'Expected 3, 4, 6 or 7 arguments, got {args!r}!')
 
-        r, g, b = parse_vec_str(args[0])
+        r, g, b = parse_color(args[0])
         start_key = args[1]
         start_value = args[2]
 
@@ -798,3 +798,9 @@ class HelperExtAutoVisgroups(Helper):
     def export(self) -> list[str]:
         """Produce the arguments for autovis()."""
         return self.path
+
+
+@attrs.define
+class HelperExtCatapult(Helper):
+    """Specialized helper for trigger_catapult, in Hammer++."""
+    TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.ENT_CATAPULT

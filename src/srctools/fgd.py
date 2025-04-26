@@ -44,7 +44,7 @@ __all__ = [
     'HelperSweptPlayerHull', 'HelperTrack', 'HelperTypes',
     'HelperVecLine', 'HelperWorldText',
 
-    'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy',
+    'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy', 'HelperExtCatapult',
 ]
 
 T = TypeVar('T')
@@ -975,6 +975,9 @@ class Helper:
             return NotImplemented
         return self.TYPE is not other.TYPE or vars(self) != vars(other)
 
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}()'
+
 
 @attrs.define
 class UnknownHelper(Helper):
@@ -998,7 +1001,7 @@ class UnknownHelper(Helper):
 HelperT = TypeVar('HelperT', bound=Helper)
 
 
-@attrs.define(order=True, hash=True, eq=True, repr=False)
+@attrs.define(order=True, hash=True, eq=True)
 class AutoVisgroup:
     """Represents one of the autovisgroup options that can be set.
 
@@ -1009,9 +1012,6 @@ class AutoVisgroup:
     name: str
     parent: str = attrs.field(hash=False, eq=False, order=False)
     ents: set[str] = attrs.field(factory=set, hash=False, eq=False, order=False)
-
-    def __repr__(self) -> str:
-        return f'<AutoVisgroup "{self.name}">'
 
 
 class EntAttribute:

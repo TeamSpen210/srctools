@@ -8,6 +8,8 @@
 	studio(models/error.mdl)
 	studioprop()
 	studioprop(models/props/metal_box.mdl)
+	lightprop()
+	lightprop(models/editor/spotlight.mdl)
 = some_entity
 	[
 	]

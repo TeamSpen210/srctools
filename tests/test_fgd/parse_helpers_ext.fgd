@@ -1,0 +1,29 @@
+@AutoVisgroup = "Auto"
+	[
+	"Auto"
+		[
+		"some_entity"
+		]
+	"some"
+		[
+		"some_entity"
+		]
+	]
+@AutoVisgroup = "some"
+	[
+	"group"
+		[
+		"some_entity"
+		]
+	]
+
+@PointClass 
+	appliesto(tag1, tag2, !tag3)
+	orderby(a, c, b)
+	unknown(a b, c)
+= some_entity
+	[
+	a(integer) : "First"
+	c(string) : "Second"
+	b(string) : "Third"
+	]
