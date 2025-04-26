@@ -443,6 +443,81 @@ def test_parse_kv_flags(py_c_token, code, is_readonly, is_report) -> None:
     assert kv.reportable is is_report, kv
 
 
+def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture) -> None:
+    """Test parsing simple helper types."""
+    fsys = VirtualFileSystem({'test.fgd': f"""@PointClass
+    base(Base1, Base2, Base3)
+    halfgridsnap // Special, no args
+    size(-64 -48 0, 64 48 32)
+    color(128 255 0)
+    sphere()
+    sphere(radii)
+    sphere(radii, 128 192 64)
+    line(240 180 50, targetname, target)
+    line(12 180 50, targetname, target, parentname, next)
+    origin(centroid)
+    vecline("axis")
+    sidelist(decalled)
+    wirebox(mins, maxes)
+    sweptplayerhull()
+    obb(orient_mins, orient_maxes)
+    = some_entity [ ]
+    """})
+    fgd = FGD()
+    fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False)
+    ent = fgd['some_entity']
+    assert ent.helpers == [
+        fgd_mod.HelperHalfGridSnap(),
+        fgd_mod.HelperSize(Vec(-64, -48, 0), Vec(64, 48, 32)),
+        fgd_mod.HelperRenderColor(128, 255, 0),
+        fgd_mod.HelperSphere(255, 255, 255, "radius"),
+        fgd_mod.HelperSphere(255, 255, 255, "radii"),
+        fgd_mod.HelperSphere(128, 192, 64, "radii"),
+        fgd_mod.HelperLine(240, 180, 50, "targetname", "target", None, None),
+        fgd_mod.HelperLine(12, 180, 50, "targetname", "target", "parentname", "next"),
+        fgd_mod.HelperOrigin("centroid"),
+        fgd_mod.HelperVecLine("axis"),
+        fgd_mod.HelperBrushSides("decalled"),
+        fgd_mod.HelperBoundingBox("mins", "maxes"),
+        fgd_mod.HelperSweptPlayerHull(),
+        fgd_mod.HelperOrientedBBox("orient_mins", "orient_maxes"),
+    ]
+    file_regression.check(fgd.export(), basename="parse_helpers_simple", extension='.fgd')
+
+
+def test_parse_helpers_icon(py_c_token, file_regression: FileRegressionFixture) -> None:
+    """Test parsing sprite/model helper types."""
+    fsys = VirtualFileSystem({'test.fgd': f"""@PointClass
+    sprite()
+    sprite(editor/env_fire)
+    iconsprite()
+    iconsprite("editor/env_blood")
+    studio()
+    studio(models/error.mdl)
+    studioprop()
+    studioprop("models/props/metal_box.mdl")
+    lightprop()
+    lightprop("models/editor/spotlight.mdl")
+    = some_entity [ ]
+    """})
+    fgd = FGD()
+    fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False)
+    ent = fgd['some_entity']
+    assert ent.helpers == [
+        fgd_mod.HelperEnvSprite(None),
+        fgd_mod.HelperEnvSprite("editor/env_fire"),
+        fgd_mod.HelperSprite(None),
+        fgd_mod.HelperSprite("editor/env_blood"),
+        fgd_mod.HelperModel(None),
+        fgd_mod.HelperModel("models/error.mdl"),
+        fgd_mod.HelperModelProp(None),
+        fgd_mod.HelperModelProp("models/props/metal_box.mdl"),
+        fgd_mod.HelperModelLight(None),
+        fgd_mod.HelperModelLight("models/editor/spotlight.mdl"),
+    ]
+    file_regression.check(fgd.export(), basename="parse_helpers_icon", extension='.fgd')
+
+
 def test_snippet_desc(py_c_token) -> None:
     """Test snippet descriptions."""
     fgd = FGD()

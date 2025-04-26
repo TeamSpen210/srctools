@@ -25,6 +25,16 @@ __all__ = [
 ]
 
 
+def parse_color(text: str) -> tuple[int, int, int]:
+    """Parse an R G B colour."""
+    r, g, b = parse_vec_str(text, 255, 255, 255)
+    return (
+        max(0, min(255, round(r))),
+        max(0, min(255, round(g))),
+        max(0, min(255, round(b))),
+    )
+
+
 @attrs.define
 class _HelperOneOptional(Helper):
     """Utility base class for a helper with one optional parameter."""
@@ -39,7 +49,7 @@ class _HelperOneOptional(Helper):
                 'Expected up to 1 argument, got ({})!'.format(', '.join(args))
             )
         elif len(args) == 1:
-            key = args[0]
+            key = args[0].strip('"')
         else:
             key = cls._DEFAULT
         return cls(key)
@@ -133,9 +143,9 @@ class HelperRenderColor(Helper):
     """Helper implementation for color()."""
     TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.TINT
 
-    r: float
-    g: float
-    b: float
+    r: int
+    g: int
+    b: int
 
     def overrides(self) -> Collection[HelperTypes]:
         """Previous ones of these are overridden by this."""
@@ -151,7 +161,7 @@ class HelperRenderColor(Helper):
                 f'Expected 1 argument, got ({", ".join(args)})!'
             ) from None
 
-        r, g, b = parse_vec_str(tint)
+        r, g, b = parse_color(tint)
 
         return cls(r, g, b)
 
@@ -164,9 +174,9 @@ class HelperRenderColor(Helper):
 class HelperSphere(Helper):
     """Helper implementation for sphere()."""
     TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.SPHERE
-    r: float
-    g: float
-    b: float
+    r: int
+    g: int
+    b: int
     size_key: str
 
     @classmethod
@@ -174,13 +184,13 @@ class HelperSphere(Helper):
         """Parse sphere(radius, r g b)."""
         arg_count = len(args)
         if arg_count > 2:
-            raise ValueError(f'Expected 1 or 2 arguments, got ({", ".join(args)})!')
-        r = g = b = 255.0
+            raise ValueError(f'Expected 0-2 arguments, got ({", ".join(args)})!')
+        r = g = b = 255
 
         if arg_count > 0:
             size_key = args[0]
             if arg_count == 2:
-                r, g, b = parse_vec_str(args[1])
+                r, g, b = parse_color(args[1])
         else:
             size_key = 'radius'
 
@@ -188,7 +198,7 @@ class HelperSphere(Helper):
 
     def export(self) -> list[str]:
         """Export the helper."""
-        if self.r != 255.0 or self.g != 255.0 or self.b != 255.0:
+        if self.r != 255 or self.g != 255 or self.b != 255:
             return [self.size_key, f'{self.r:g} {self.g:g} {self.b:g}']
         # Always explicitly pass radius. If we use the default value,
         # Hammer doesn't display the "camera" button in options to set
@@ -207,9 +217,9 @@ class HelperLine(Helper):
     """
     TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.LINE
 
-    r: float
-    g: float
-    b: float
+    r: int
+    g: int
+    b: int
     start_key: str
     start_value: str
     end_key: Optional[str] = None
@@ -222,7 +232,7 @@ class HelperLine(Helper):
         if arg_count not in (3, 5):
             raise ValueError(f'Expected 3 or 5 arguments, got {args!r}!')
 
-        r, g, b = parse_vec_str(args[0])
+        r, g, b = parse_color(args[0])
         start_key = args[1]
         start_value = args[2]
 
@@ -536,7 +546,7 @@ class HelperModel(Helper):
         if len(args) > 1:
             raise ValueError(f'Expected up to 1 argument, got {args!r}!')
         elif len(args) == 1:
-            return cls(args[0])
+            return cls(args[0].strip('"'))
         else:
             return cls(None)
 

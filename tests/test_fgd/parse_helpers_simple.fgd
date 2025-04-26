@@ -1,0 +1,15 @@
+
+@PointClass base(Base1, Base2, Base3) 
+	halfgridsnap
+	size(-64 -48 0, 64 48 32)
+	color(128 255 0)
+	sphere(radius)
+	sphere(radii)
+	sphere(radii, 128 192 64)
+	line(240 180 50, targetname, target)
+	line(12 180 50, targetname, target, parentname, next)
+	origin(centroid)
+	vecline(axis)
+= some_entity
+	[
+	]

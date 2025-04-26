@@ -976,6 +976,7 @@ class Helper:
         return self.TYPE is not other.TYPE or vars(self) != vars(other)
 
 
+@attrs.define
 class UnknownHelper(Helper):
     """Represents an unknown helper.
 
@@ -987,14 +988,11 @@ class UnknownHelper(Helper):
     name: str  #: The name of the helper.
     args: list[str]  #: The raw parameters passed to this helper. This is not stable.
 
-    def __init__(self, name: str, args: list[str]) -> None:
-        """Unknown helpers have a name attribute."""
-        self.name = name
-        self.args = args
-
     def export(self) -> list[str]:
         """Produce the argument text to recreate this helper type."""
         return self.args[:]
+
+    __hash__ = None
 
 
 HelperT = TypeVar('HelperT', bound=Helper)

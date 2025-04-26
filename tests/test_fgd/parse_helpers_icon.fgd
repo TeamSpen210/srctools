@@ -1,0 +1,13 @@
+
+@PointClass 
+	sprite()
+	sprite("editor/env_fire")
+	iconsprite()
+	iconsprite("editor/env_blood")
+	studio()
+	studio(models/error.mdl)
+	studioprop()
+	studioprop(models/props/metal_box.mdl)
+= some_entity
+	[
+	]
