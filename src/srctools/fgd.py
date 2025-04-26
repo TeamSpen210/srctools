@@ -995,7 +995,7 @@ class UnknownHelper(Helper):
         """Produce the argument text to recreate this helper type."""
         return self.args[:]
 
-    __hash__ = None
+    __hash__ = None  # type: ignore[assignment]
 
 
 HelperT = TypeVar('HelperT', bound=Helper)

@@ -400,7 +400,8 @@ def test_atomic_writer_fails(tmp_path: Path) -> None:
 def test_alias_math() -> None:
     """Test the lazy srctools.Vec_tuple alias."""
     from srctools.math import Vec_tuple
-    assert srctools.Vec_tuple is Vec_tuple
+    with pytest.deprecated_call():
+        assert srctools.Vec_tuple is Vec_tuple
     # This isn't put in the dict, we want a warning each time.
 
 
