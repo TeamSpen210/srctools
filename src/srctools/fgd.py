@@ -977,8 +977,15 @@ class Helper:
 
 
 class UnknownHelper(Helper):
-    """Represents an unknown helper."""
+    """Represents an unknown helper.
+
+    This is intended only as a method for roundtripping FGDs with unexpected helpers.
+    If you need to interact with an unknown helper, please file an issue/PR to get it implemented
+    properly.
+    """
     TYPE: ClassVar[Optional[HelperTypes]] = None
+    name: str  #: The name of the helper.
+    args: list[str]  #: The raw parameters passed to this helper. This is not stable.
 
     def __init__(self, name: str, args: list[str]) -> None:
         """Unknown helpers have a name attribute."""
