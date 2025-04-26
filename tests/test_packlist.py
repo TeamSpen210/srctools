@@ -1,4 +1,6 @@
 """Test packlist logic."""
+from dirty_equals import IsList
+
 from srctools.vmf import VMF
 from srctools.const import FileType
 from srctools.filesys import FileSystemChain
@@ -22,6 +24,33 @@ def packing_test(vmf: VMF) -> tuple[PackList, list[tuple[FileType, str]]]:
     packlist = PackList(FileSystemChain())
     packlist.pack_from_ents(vmf, 'some_map')
     return packlist, [(file.type, file.filename) for file in packlist]
+
+
+def test_valtype_basic() -> None:
+    """Test npc_sniper, to check various basic types with no special behaviour."""
+    vmf = VMF()
+    vmf.create_ent(
+        'npc_sniper',
+        targetname='a_sniper',  # target_source
+        angles='0 90 10',  # Angle
+        radius=3.8,  # Float
+        spawnflags=1024,  # Spawnflags
+        beambrightness=15,  # Int
+        shootzombiesinchest=True,  # Boolean
+        beamcolor='255 100 125',  # Color255
+        relationship='npc_alyx D_LI 9',  # String
+        enemyfilter='some_filter',  # filterclass
+        lightingorigin='sniper_light',  # target_destination
+        velocity='0 0 50',  # Vector
+    )
+    packlist, files = packing_test(vmf)
+    assert files == IsList(  # These are all npc_sniper default resources.
+        (FileType.MATERIAL, 'materials/effects/bluelaser1.vmt'),
+        (FileType.MATERIAL, 'materials/sprites/muzzleflash1.vmt'),
+        (FileType.MATERIAL, 'materials/sprites/light_glow03.vmt'),
+        (FileType.MODEL, 'models/combine_soldier.mdl'),
+        check_order=False,
+    )
 
 
 def test_valtype_model() -> None:
