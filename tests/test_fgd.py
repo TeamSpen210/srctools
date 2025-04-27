@@ -448,6 +448,7 @@ def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture
     fsys = VirtualFileSystem({'test.fgd': f"""@PointClass
     base(Base1, Base2, Base3)
     halfgridsnap // Special, no args
+    size(32 64 128)
     size(-64 -48 0, 64 48 32)
     color(128 255 0)
     sphere()
@@ -459,6 +460,8 @@ def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture
     frustum(light_fov, light_near, light_far, bright, -1)
     cylinder(24 48 96, targetname, start, start_size, target, end, end_size)
     origin(centroid)
+    axis()
+    axis(hinge)
     vecline("axis")
     sidelist(decalled)
     wirebox(mins, maxes)
@@ -471,6 +474,7 @@ def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture
     ent = fgd['some_entity']
     assert ent.helpers == [
         fgd_mod.HelperHalfGridSnap(),
+        fgd_mod.HelperSize(Vec(-16, -32, -64), Vec(16, 32, 64)),
         fgd_mod.HelperSize(Vec(-64, -48, 0), Vec(64, 48, 32)),
         fgd_mod.HelperRenderColor(128, 255, 0),
         fgd_mod.HelperSphere(255, 255, 255, "radius"),
@@ -482,6 +486,8 @@ def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture
         fgd_mod.HelperFrustum("light_fov", "light_near", "light_far", "bright", -1.0),
         fgd_mod.HelperCylinder(24, 48, 96, "targetname", "start", "target", "end", "start_size", "end_size"),
         fgd_mod.HelperOrigin("centroid"),
+        fgd_mod.HelperAxis("axis"),
+        fgd_mod.HelperAxis("hinge"),
         fgd_mod.HelperVecLine("axis"),
         fgd_mod.HelperBrushSides("decalled"),
         fgd_mod.HelperBoundingBox("mins", "maxes"),

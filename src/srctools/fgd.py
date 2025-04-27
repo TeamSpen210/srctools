@@ -33,7 +33,7 @@ __all__ = [
     'match_tags', 'validate_tags', 'Resource', 'ResourceCtx', 'Snippet',
 
     # From srctools._fgd_helpers
-    'HelperBBox', 'HelperBoundingBox', 'HelperBreakableSurf',
+    'HelperAxis', 'HelperBBox', 'HelperBoundingBox', 'HelperBreakableSurf',
     'HelperBrushSides', 'HelperCylinder', 'HelperDecal',
     'HelperEnvSprite', 'HelperFrustum', 'HelperHalfGridSnap',
     'HelperInherit', 'HelperInstance', 'HelperLight', 'HelperLightSpot',
@@ -44,7 +44,8 @@ __all__ = [
     'HelperSweptPlayerHull', 'HelperTrack', 'HelperTypes',
     'HelperVecLine', 'HelperWorldText',
 
-    'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy', 'HelperExtCatapult',
+    'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy',
+    'HelperExtCatapult',
 ]
 
 T = TypeVar('T')
@@ -250,6 +251,7 @@ class HelperTypes(Enum):
     CYLINDER = 'cylinder'
     ORIGIN = 'origin'  #: Adds circle at an absolute position.
     VECLINE = 'vecline'  #: Draws line to an absolute position.
+    AXIS = 'axis'  #: Draws a pair of lines to an absolute position.
     BRUSH_SIDES = 'sidelist'  #: Highlights brush faces.
     BOUNDING_BOX_HELPER = 'wirebox'  #: Displays bounding box from two keyvalues
     #: Draws the movement of a player-sized bounding box from A to B.

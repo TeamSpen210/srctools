@@ -1,6 +1,7 @@
 
 @PointClass base(Base1, Base2, Base3) 
 	halfgridsnap
+	size(-16 -32 -64, 16 32 64)
 	size(-64 -48 0, 64 48 32)
 	color(128 255 0)
 	sphere(radius)
@@ -12,6 +13,8 @@
 	frustum(light_fov, light_near, light_far, bright, -1)
 	cylinder(24 48 96, targetname, start, start_size, target, end, end_size)
 	origin(centroid)
+	axis()
+	axis(hinge)
 	vecline(axis)
 	sidelist(decalled)
 	wirebox(mins, maxes)

@@ -10,18 +10,19 @@ from srctools.math import Vec, format_float, parse_vec_str
 
 
 __all__ = [
-    'HelperBBox', 'HelperBoundingBox', 'HelperBreakableSurf',
+    'HelperAxis', 'HelperBBox', 'HelperBoundingBox', 'HelperBreakableSurf',
     'HelperBrushSides', 'HelperCylinder', 'HelperDecal',
     'HelperEnvSprite', 'HelperFrustum', 'HelperHalfGridSnap',
     'HelperInherit', 'HelperInstance', 'HelperLight', 'HelperLightSpot',
     'HelperLine', 'HelperModel', 'HelperModelLight', 'HelperModelProp',
-    'HelperOrientedBBox', 'HelperOrigin', 'HelperOverlay',
+    'HelperOrientedBBox', 'HelperOrigin', 'HelperOverlay', 
     'HelperOverlayTransition', 'HelperRenderColor', 'HelperRope',
     'HelperSize', 'HelperSphere', 'HelperSprite',
     'HelperSweptPlayerHull', 'HelperTrack', 'HelperTypes',
     'HelperVecLine', 'HelperWorldText',
 
-    'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy', 'HelperExtCatapult',
+    'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy',
+    'HelperExtCatapult',
 ]
 
 
@@ -405,6 +406,12 @@ class HelperVecLine(_HelperOneOptional):
     """A variant of line() which draws a line to the entity."""
     TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.VECLINE
     _DEFAULT = 'origin'
+
+
+class HelperAxis(_HelperOneOptional):
+    """A helper  which draws a line between two points."""
+    TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.AXIS
+    _DEFAULT = 'axis'
 
 
 class HelperBrushSides(_HelperOneOptional):
