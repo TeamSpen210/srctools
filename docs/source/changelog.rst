@@ -11,6 +11,7 @@ Version (dev)
 
 * Make it clear that :class:`srctools.fgd.UnknownHelper` should not be relied on.
 * Switch FGD helpers to use integers for RGB colours.
+* Don't allow literal values for `frustum() <srctools.FGD.HelperFrustum>` helpers, this is not valid.
 * Treat ``ogg`` files as valid sounds in various places.
 * Consistently raise :class:`TypeError` if invalid types are sent to a :class:`~srctools.tokenizer.Tokenizer`.
 * Properly add ``base_plat_train`` class resource function and fix the ``item_teamflag``.

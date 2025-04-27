@@ -1,5 +1,5 @@
 """Implemenations of specific code for each FGD helper type."""
-from typing import ClassVar, Optional, Union
+from typing import ClassVar, Optional
 from typing_extensions import Self
 from collections.abc import Collection, Iterable, Iterator
 
@@ -265,21 +265,21 @@ class HelperFrustum(Helper):
     """Helper for env_projectedtexture visuals."""
     TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.FRUSTUM
 
-    fov: Union[str, float]
-    near_z: Union[str, float]
-    far_z: Union[str, float]
-    color: Union[str, tuple[float, float, float]]
-    pitch_scale: Union[str, float]
+    fov: str
+    near_z: str
+    far_z: str
+    color: str
+    pitch_scale: float = 1.0
 
     @classmethod
     def parse(cls, args: list[str]) -> Self:
         """Parse frustum(fov, near, far, color, pitch_scale)."""
         # These are the default values if not provided.
-        fov: Union[str, float] = '_fov'
-        nearz: Union[str, float] = '_nearplane'
-        farz: Union[str, float] = '_farplane'
-        color: Union[str, tuple[float, float, float]] = '_light'
-        pitch: Union[str, float] = 1.0
+        fov = '_fov'
+        nearz = '_nearplane'
+        farz = '_farplane'
+        color = '_light'
+        pitch = 1.0
 
         try:
             fov = args[0]
@@ -293,52 +293,21 @@ class HelperFrustum(Helper):
             if len(args) > 5:
                 raise ValueError(f'Expected at most 5 arguments, got {args!r}!')
 
-        # Try and parse everything, but if it fails ignore since they could
-        # be property names.
-        try:
-            fov = float(fov)
-        except ValueError:
-            pass
-        try:
-            nearz = float(nearz)
-        except ValueError:
-            pass
-        try:
-            farz = float(farz)
-        except ValueError:
-            pass
         try:
             pitch = float(pitch)
         except ValueError:
             pass
 
-        if isinstance(color, str):
-            try:
-                r, g, b = color.split()
-                color = (float(r), float(g), float(b))
-            except ValueError:
-                pass
-
         return cls(fov, nearz, farz, color, pitch)
 
     def export(self) -> list[str]:
         """Export back out frustrum() arguments."""
-
-        if isinstance(self.color, tuple):
-            color = '{:g} {:g} {:g}'.format(*self.color)
-        else:
-            color = self.color
-
-        def conv(x: 'Union[str, float]') -> str:
-            """Ensure the .0 is removed from the float forms. """
-            return x if isinstance(x, str) else format_float(x)
-
         return [
-            conv(self.fov),
-            conv(self.near_z),
-            conv(self.far_z),
-            color,
-            conv(self.pitch_scale),
+            self.fov,
+            self.near_z,
+            self.far_z,
+            self.color,
+            format_float(self.pitch_scale),
         ]
 
 
@@ -709,7 +678,7 @@ class HelperRope(Helper):
 
     TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.ENT_ROPE
 
-    name_kv: Optional[str]  # Extension in Portal: Revolution
+    name_kv: Optional[str] = None  # Extension in Portal: Revolution
 
     @classmethod
     def parse(cls, args: list[str]) -> Self:
