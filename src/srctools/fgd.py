@@ -495,24 +495,36 @@ def _parse_flags(
     first_value: str, vals: list[str], tags: TagsSet,
 ) -> SpawnFlags:
     """Parse a line into a flags array member."""
-    try:
-        spawnflag = int(first_value)
-    except ValueError:
-        raise tok.error(
-            'SpawnFlags must be integer values, not "{}" (in {})!',
-            first_value,
-            error_desc,
-        ) from None
-    try:
-        power = math.log2(spawnflag)
-    except ValueError:
-        power = 0.5  # Force the following code to raise
-    if power != round(power):
-        raise tok.error(
-            'SpawnFlags must be powers of two, not {} (in {})!',
-            spawnflag,
-            error_desc,
-        )
+    if first_value.startswith(("^", "2^")):
+        # Extension syntax - '2^4' == 16, '^0' == 1, etc.
+        try:
+            power = int(first_value.removeprefix('2').removeprefix('^'))
+        except ValueError:
+            raise tok.error(
+                'SpawnFlags must be integer values or (2^X), not "{}" (in {})!',
+                first_value,
+                error_desc,
+            ) from None
+        spawnflag = 2**power
+    else:
+        try:
+            spawnflag = int(first_value)
+        except ValueError:
+            raise tok.error(
+                'SpawnFlags must be integer values or (2^X), not "{}" (in {})!',
+                first_value,
+                error_desc,
+            ) from None
+        try:
+            power = math.log2(spawnflag)
+        except ValueError:
+            power = 0.5  # Force the following code to raise
+        if power != round(power):
+            raise tok.error(
+                'SpawnFlags must be powers of two, not {} (in {})!',
+                spawnflag,
+                error_desc,
+            )
     # Spawnflags can have a default, others may not.
     if len(vals) == 2:
         default = vals[1].strip() == '1'

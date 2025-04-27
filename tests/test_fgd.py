@@ -163,11 +163,12 @@ appliesto(tag1, tag2, !tag3)
     target(target_destination): "An ent"
     
     spawnflags(flags) : "Flags" = [
-        1 : "A" : 0
-        2 : "[2]  B" : 1
+        2^0 : "A" : 0
+        ^1 : "[2]  B" : 1
         4 : "[48] C" : 0
         8 : "D value" : 0 [old, !good]
         8 : "E" : 1 [new]
+        ^16 : "16bit" : 0
     ]
     
     input Trigger(void): "Trigger the entity."
@@ -238,6 +239,7 @@ appliesto(tag1, tag2, !tag3)
             (4, '[48] C', False, frozenset()),
             (8, 'D value', False, frozenset({'OLD', '!GOOD'})),
             (8, 'E', True, frozenset({'NEW'})),
+            (2**16, '16bit', False, frozenset()),
         ],
     )
 
