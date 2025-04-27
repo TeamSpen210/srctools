@@ -5,8 +5,9 @@ from collections.abc import Collection, Iterable, Iterator
 
 import attrs
 
+from srctools import conv_float
 from srctools.fgd import EntityDef, Helper, HelperTypes
-from srctools.math import Vec, format_float, parse_vec_str
+from srctools.math import Vec, format_float
 
 
 __all__ = [
@@ -26,14 +27,12 @@ __all__ = [
 ]
 
 
-def parse_color(text: str) -> tuple[int, int, int]:
-    """Parse an R G B colour."""
-    r, g, b = parse_vec_str(text, 255, 255, 255)
-    return (
-        max(0, min(255, round(r))),
-        max(0, min(255, round(g))),
-        max(0, min(255, round(b))),
-    )
+def parse_byte(text: str) -> int:
+    """Parse an single byte."""
+    try:
+        return max(0, min(255, int(text)))
+    except (TypeError, ValueError):
+        return 255
 
 
 @attrs.define
@@ -105,13 +104,13 @@ class HelperSize(Helper):
     @classmethod
     def parse(cls, args: list[str]) -> Self:
         """Parse size(x1 y1 z1, x2 y2 z2)."""
-        if len(args) > 2:
+        if len(args) not in (3, 6):
             raise ValueError(
-                'Expected 1 or 2 arguments, got ({})!'.format(', '.join(args))
+                'Expected 3 or 6 arguments, got ({})!'.format(', '.join(args))
             )
-        size_min = Vec.from_str(args[0])
-        if len(args) == 2:
-            size_max = Vec.from_str(args[1])
+        size_min = Vec(conv_float(args[0]), conv_float(args[1]), conv_float(args[2]))
+        if len(args) == 6:
+            size_max = Vec(conv_float(args[3]), conv_float(args[4]), conv_float(args[5]))
         else:
             # "min" is actually the dimensions.
             size_max = size_min / 2
@@ -156,15 +155,13 @@ class HelperRenderColor(Helper):
     def parse(cls, args: list[str]) -> Self:
         """Parse color(R G B)."""
         try:
-            [tint] = args
+            [r, g, b] = args
         except ValueError:
             raise ValueError(
-                f'Expected 1 argument, got ({", ".join(args)})!'
+                f'Expected 3 arguments, got ({", ".join(args)})!'
             ) from None
 
-        r, g, b = parse_color(tint)
-
-        return cls(r, g, b)
+        return cls(parse_byte(r), parse_byte(g), parse_byte(b))
 
     def export(self) -> list[str]:
         """Produce color(R G B)."""
@@ -184,14 +181,16 @@ class HelperSphere(Helper):
     def parse(cls, args: list[str]) -> Self:
         """Parse sphere(radius, r g b)."""
         arg_count = len(args)
-        if arg_count > 2:
-            raise ValueError(f'Expected 0-2 arguments, got ({", ".join(args)})!')
+        if arg_count not in (0, 1, 4):
+            raise ValueError(f'Expected 0, 1 or 4 arguments, got {args})!')
         r = g = b = 255
 
         if arg_count > 0:
             size_key = args[0]
-            if arg_count == 2:
-                r, g, b = parse_color(args[1])
+            if arg_count == 4:
+                r = parse_byte(args[1])
+                g = parse_byte(args[2])
+                b = parse_byte(args[3])
         else:
             size_key = 'radius'
 
@@ -230,19 +229,21 @@ class HelperLine(Helper):
     def parse(cls, args: list[str]) -> Self:
         """Parse line(r g b, start_key, start_value, end_key, end_value)."""
         arg_count = len(args)
-        if arg_count not in (3, 5):
-            raise ValueError(f'Expected 3 or 5 arguments, got {args!r}!')
+        if arg_count not in (5, 7):
+            raise ValueError(f'Expected 5 or 7 arguments, got {args!r}!')
 
-        r, g, b = parse_color(args[0])
-        start_key = args[1]
-        start_value = args[2]
+        r = parse_byte(args[0])
+        g = parse_byte(args[1])
+        b = parse_byte(args[2])
+        start_key = args[3]
+        start_value = args[4]
 
         end_key: Optional[str]
         end_value: Optional[str]
 
-        if arg_count == 5:
-            end_key = args[3]
-            end_value = args[4]
+        if arg_count == 7:
+            end_key = args[5]
+            end_value = args[6]
         else:
             end_key = end_value = None
 
@@ -326,21 +327,24 @@ class HelperCylinder(HelperLine):
     def parse(cls, args: list[str]) -> Self:
         """Parse cylinder(r g b, start key/value/radius, end key/value/radius)."""
         arg_count = len(args)
-        if arg_count not in (3, 4, 6, 7):
-            raise ValueError(f'Expected 3, 4, 6 or 7 arguments, got {args!r}!')
+        # Don't allow no keys (3), start key but no value (4), or end key but no value (7)
+        if arg_count not in (5, 6, 8, 9):
+            raise ValueError(f'Expected 5, 6, 8 or 9 arguments, got {args!r}!')
 
-        r, g, b = parse_color(args[0])
-        start_key = args[1]
-        start_value = args[2]
+        r = parse_byte(args[0])
+        g = parse_byte(args[1])
+        b = parse_byte(args[2])
+        start_key = args[3]
+        start_value = args[4]
 
         start_radius = end_key = end_value = end_radius = None
-        if arg_count > 3:
-            start_radius = args[3]
-            if arg_count >= 6:
-                end_key = args[4]
-                end_value = args[5]
-                if arg_count == 7:
-                    end_radius = args[6]
+        try:
+            start_radius = args[5]
+            end_key = args[6]
+            end_value = args[7]
+            end_radius = args[8]
+        except IndexError:
+            pass  # Use defaults.
 
         return cls(
             r, g, b,
@@ -448,7 +452,7 @@ class HelperSprite(Helper):
         if len(args) > 1:
             raise ValueError(f'Expected up to 1 argument, got {args!r}!')
         elif len(args) == 1:
-            return cls(args[0].strip('"'))
+            return cls(args[0])
         else:
             return cls(None)
 
@@ -522,7 +526,7 @@ class HelperModel(Helper):
         if len(args) > 1:
             raise ValueError(f'Expected up to 1 argument, got {args!r}!')
         elif len(args) == 1:
-            return cls(args[0].strip('"'))
+            return cls(args[0])
         else:
             return cls(None)
 

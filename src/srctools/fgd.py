@@ -1,6 +1,9 @@
 """Parse FGD files, used to describe Hammer entities."""
 from __future__ import annotations
-from typing import IO, TYPE_CHECKING, Any, ClassVar, Generic, Optional, TextIO, TypeVar, Union, cast
+from typing import (
+    IO, TYPE_CHECKING, Any, ClassVar, Generic, Optional, TextIO, TypeVar, Union,
+    cast, Self,
+)
 from typing_extensions import Protocol, TypeAlias, overload
 from collections import ChainMap, defaultdict
 from collections.abc import (
@@ -482,7 +485,7 @@ def _parse_colon_array(
 
         end_token, tok_value = tok()
         if end_token is Token.BRACK_OPEN:
-            val_tags = read_tags(tok)
+            val_tags = read_tags(tok, Token.BRACK_CLOSE)
         else:
             val_tags = frozenset()
             tok.push_back(end_token, tok_value)
@@ -562,7 +565,7 @@ def _parse_choices(
         )
 
 
-def read_tags(tok: BaseTokenizer) -> TagsSet:
+def read_tags(tok: BaseTokenizer, end_bracket: Token) -> TagsSet:
     """Parse a set of tags from the file.
 
     The open bracket was just read.
@@ -579,7 +582,7 @@ def read_tags(tok: BaseTokenizer) -> TagsSet:
             if prefix:
                 raise tok.error('Duplicate "+" operators!')
             prefix = '+'
-        elif token is Token.BRACK_CLOSE:
+        elif token is end_bracket:
             break
         elif token is Token.EOF:
             raise tok.error('Unclosed tags!')
@@ -948,7 +951,7 @@ class Helper:
     IS_EXTENSION: ClassVar[bool] = False  # true for our extensions to the format.
 
     @classmethod
-    def parse(cls: type[HelperT], args: list[str]) -> HelperT:
+    def parse(cls, args: list[str]) -> Self:
         """Parse this helper from the given arguments.
 
         The default implementation expects no arguments.
@@ -1155,15 +1158,15 @@ class KVDef(EntAttribute):
         """Parse a keyvalue definition."""
         is_readonly = show_in_report = had_colon = False
         # Next is either the value type parens, or a tags brackets.
-        val_token, raw_value_type = tok()
-        if val_token is Token.BRACK_OPEN:
-            tags = read_tags(tok)
-            val_token, raw_value_type = tok()
+        if tok.peek()[0] is Token.BRACK_OPEN:
+            tok()  # Skip bracket.
+            tags = read_tags(tok, Token.BRACK_CLOSE)
         else:
             tags = frozenset()
-        if val_token is not Token.PAREN_ARGS:
-            raise tok.error(val_token)
-        raw_value_type = raw_value_type.strip()
+
+        tok.expect(Token.PAREN_OPEN)
+        raw_value_type = tok.expect(Token.STRING)
+        tok.expect(Token.PAREN_CLOSE)
         if raw_value_type.startswith('*'):
             # Old format for specifying 'reportable' flag.
             show_in_report = True
@@ -1378,15 +1381,16 @@ class IODef(EntAttribute):
         name = tok.expect(Token.STRING)
 
         # Next is either the value type parens, or a tags brackets.
-        val_token, raw_value_type = tok()
-        if val_token is Token.BRACK_OPEN:
-            tags = read_tags(tok)
-            val_token, raw_value_type = tok()
+        if tok.peek()[0] is Token.BRACK_OPEN:
+            tok()
+            tags = read_tags(tok, Token.BRACK_CLOSE)
         else:
             tags = frozenset()
+        tok.expect(Token.PAREN_OPEN)
+        raw_value_type = tok.expect(Token.STRING)
+        tok.expect(Token.PAREN_CLOSE)
 
         val_typ: Union[ValueTypes, str]
-        raw_value_type = raw_value_type.strip()
         if raw_value_type == 'ehandle':
             # This is a duplicate (deprecated) name, but only for I/O.
             val_typ = ValueTypes.EHANDLE
@@ -1669,18 +1673,32 @@ class EntityDef:
                     tok.push_back(token, token_value)
                 continue
 
-            elif token is Token.PAREN_ARGS:
+            elif token is Token.PAREN_OPEN:
                 if help_type is None and help_type_cust is None:
                     raise tok.error('Args without helper type! ({!r})', token_value)
 
-                args = [
-                    arg.strip()
-                    for arg in
-                    token_value.split(',')
-                ]
-                # helper() produces [''], when we want []
-                if len(args) == 1 and args[0] == '':
-                    args.clear()
+                args = []
+
+                if help_type is HelperTypes.CUBE:
+                    # This is parsed directly in gdclass.cpp, and has a meaningful comma.
+                    args.append(tok.expect(Token.STRING))
+                    args.append(tok.expect(Token.STRING))
+                    args.append(tok.expect(Token.STRING))
+                    if tok.peek()[0] is Token.COMMA:
+                        tok.expect(Token.COMMA)
+                        args.append(tok.expect(Token.STRING))
+                        args.append(tok.expect(Token.STRING))
+                        args.append(tok.expect(Token.STRING))
+                    tok.expect(Token.PAREN_CLOSE)
+                else:
+                    for arg_tok, arg_val in tok:
+                        if arg_tok is Token.PAREN_CLOSE:
+                            break
+                        elif arg_tok is Token.STRING:
+                            args.append(arg_val)
+                        # Comma is actually irrelevant for all normal types other than size().
+                        elif arg_tok is not Token.COMMA:
+                            raise tok.error(arg_tok, arg_val)
 
                 if help_type_cust == 'aliasof':
                     # Extension, indicate that it's an alias. The args are then treated like base()
@@ -1708,9 +1726,9 @@ class EntityDef:
                         entity.helpers.append(HELPER_IMPL[help_type].parse(args))
                     except (TypeError, ValueError) as exc:
                         raise tok.error(
-                            'Invalid helper arguments for {}():\n',
+                            'Invalid helper arguments for {}({}):\n',
                             help_type.value,
-                            '\n'.join(map(str, exc.args)),
+                            args,
                         ) from exc
 
                 help_type = help_type_cust = None
@@ -1860,7 +1878,7 @@ class EntityDef:
                         tags = frozenset()
                         token, tok_val = tok()
                         if token is Token.BRACK_OPEN:
-                            tags = read_tags(tok)
+                            tags = read_tags(tok, Token.BRACK_CLOSE)
                         resources.append(Resource(filename, res_type, tags))
                     elif res_tok is Token.BRACK_CLOSE:
                         break
@@ -2605,6 +2623,7 @@ class FGD:
                 string_bracket=False,
                 colon_operator=True,
                 plus_operator=True,
+                string_parens=False,
             )
             for token, token_value in tokeniser:
                 # The only things at top-level would be bare strings, and empty lines.
@@ -2634,15 +2653,15 @@ class FGD:
 
                 elif token_value == '@mapsize':
                     # Max/min map size definition
-                    mapsize_args = tokeniser.expect(Token.PAREN_ARGS)
+                    tokeniser.expect(Token.PAREN_OPEN)
                     try:
-                        min_size, max_size = mapsize_args.split(',')
-                        self.map_size_min = int(min_size.strip())
-                        self.map_size_max = int(max_size.strip())
+                        self.map_size_min = int(tokeniser.expect(Token.STRING).strip())
+                        tokeniser.expect(Token.COMMA)
+                        self.map_size_max = int(tokeniser.expect(Token.STRING).strip())
+                        tokeniser.expect(Token.PAREN_CLOSE)
                     except ValueError:
                         raise tokeniser.error(
-                            'Invalid @MapSize: ({})',
-                            mapsize_args,
+                            'Invalid @MapSize definition, expected @MapSize(-65536, 65536)'
                         ) from None
                 elif token_value == '@materialexclusion':
                     # Material exclusion directories.
@@ -2652,8 +2671,8 @@ class FGD:
                     for tok, tok_value in tokeniser.skipping_newlines():
                         if tok is Token.BRACK_OPEN:
                             break
-                        elif tok is Token.PAREN_ARGS and tags is None:
-                            tags = validate_tags(tok_value.split(','), tokeniser.error)
+                        elif tok is Token.PAREN_OPEN and tags is None:
+                            tags = read_tags(tokeniser, Token.PAREN_CLOSE)
                         else:
                             raise tokeniser.error(tok)
 

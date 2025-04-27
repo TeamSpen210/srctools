@@ -457,16 +457,19 @@ def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture
     sphere(radii)
     sphere(radii, 128 192 64)
     line(240 180 50, targetname, target)
-    line(12 180 50, targetname, target, parentname, next)
+    line(12 180 50, targetname target, parentname, next)
     frustum()
     frustum(light_fov, light_near, light_far, bright, -1)
-    cylinder(24 48 96, targetname, start, start_size, target, end, end_size)
+    cylinder(24 48 96, targetname, start)
+    cylinder(24 48 96, targetname, start start_size)
+    cylinder(24 48 96, targetname, start start_size, target, end)
+    cylinder(24 48 96, targetname, start start_size, target, end, end_size)
     origin(centroid)
     axis()
     axis(hinge)
     vecline("axis")
     sidelist(decalled)
-    wirebox(mins, maxes)
+    wirebox(mins maxes)
     sweptplayerhull()
     obb(orient_mins, orient_maxes)
     = some_entity [ ]
@@ -486,6 +489,9 @@ def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture
         fgd_mod.HelperLine(12, 180, 50, "targetname", "target", "parentname", "next"),
         fgd_mod.HelperFrustum("_fov", "_nearplane", "_farplane", "_light", 1.0),
         fgd_mod.HelperFrustum("light_fov", "light_near", "light_far", "bright", -1.0),
+        fgd_mod.HelperCylinder(24, 48, 96, "targetname", "start"),
+        fgd_mod.HelperCylinder(24, 48, 96, "targetname", "start", start_radius="start_size"),
+        fgd_mod.HelperCylinder(24, 48, 96, "targetname", "start", "target", "end", "start_size"),
         fgd_mod.HelperCylinder(24, 48, 96, "targetname", "start", "target", "end", "start_size", "end_size"),
         fgd_mod.HelperOrigin("centroid"),
         fgd_mod.HelperAxis("axis"),
@@ -591,7 +597,7 @@ def test_parse_helpers_extension(py_c_token, file_regression: FileRegressionFixt
     assert ent.helpers == [
         fgd_mod.HelperExtAppliesTo(["tag1", "tag2", "!tag3"]),
         fgd_mod.HelperExtOrderBy(["a", "c", "b"]),
-        fgd_mod.UnknownHelper("unknown", ["a b", "c"]),  # XXX Incorrect
+        fgd_mod.UnknownHelper("unknown", ["a", "b", "c"]),
     ]
     assert fgd.auto_visgroups == {
         "some": fgd_mod.AutoVisgroup("some", "Auto", {"some_entity"}),
@@ -599,6 +605,35 @@ def test_parse_helpers_extension(py_c_token, file_regression: FileRegressionFixt
     }
 
     file_regression.check(fgd.export(), basename="parse_helpers_ext", extension='.fgd')
+
+
+def test_illegal_helpers_size(py_c_token) -> None:
+    """The size helper is special, and is parsed specially."""
+    fsys = VirtualFileSystem({
+        'no_args.fgd': f"""@PointClass
+        size() 
+        = illegal []
+        """,
+        'two_coords.fgd': f"""@PointClass
+        size(1 2) 
+        = illegal []
+        """,
+        'early_comma.fgd': f"""@PointClass
+        size(1, 2 3, 4 5 6) 
+        = illegal []
+        """,
+        'no_comma.fgd': f"""@PointClass
+        size(1 2 3 4 5 6) 
+        = illegal []
+        """,
+        'extra_coords.fgd': f"""@PointClass
+        size(1 2 3, 4 5 6, 7 8 9) 
+        = illegal []
+        """,
+    })
+    for file in fsys:
+        with pytest.raises(TokenSyntaxError):
+            FGD().parse_file(fsys, file)
 
 
 def test_snippet_desc(py_c_token) -> None:
