@@ -2743,21 +2743,19 @@ class FGD:
         specific entities, use :py:func:`EntityDef.engine_def()` instead to avoid needing to fetch
         all the entities.
         """
-        temp_FGD = FGD()
+        temp_fgd = FGD()
         databases = _load_engine_db()
 
-        if len(databases) == 1: # If there's only one there's no need to iterate again
+        if len(databases) == 1:  # If there's only one there's no need to iterate again
             return deepcopy(databases[0].get_fgd())
 
         for dbase in databases:
-            dbasefgd: FGD = dbase.get_fgd()
-            for classname_, ent_ in dbasefgd.entities.items():
+            for classname_, ent in dbase.get_fgd().entities.items():
+                # Prioritise early definitions
+                temp_fgd.entities.setdefault(classname_, ent)
 
-                if not classname_ in temp_FGD.entities.keys(): # Don't include duplicates
-                    temp_FGD.entities[classname_] = ent_
-        
-        temp_FGD.apply_bases()
-        return deepcopy(temp_FGD)
+        temp_fgd.apply_bases()
+        return deepcopy(temp_fgd)
 
     def __getitem__(self, classname: str) -> EntityDef:
         """Lookup entities by classname."""
