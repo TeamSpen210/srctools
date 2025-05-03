@@ -213,6 +213,9 @@ should be used to create each entry:
 Static Props
 ------------
 
+.. automethod:: BSP.static_prop_models
+    :for: model_name
+
 .. py:attribute:: BSP.props
     :type: list[StaticProp]
 

@@ -2875,7 +2875,7 @@ class BSP:
     def read_ent_data(self) -> VMF:
         """Deprecated function to parse the entdata lump.
 
-        Use BSP.ents directly.
+        Use :attr:`BSP.ents` directly.
         """
         return self._lmp_read_ents(self.get_lump(BSP_LUMPS.ENTITIES))
 
@@ -3001,9 +3001,21 @@ class BSP:
         return out.getvalue()
 
     def static_prop_models(self) -> Iterator[str]:
-        """Yield all model filenames used in static props."""
-        static_lump = BytesIO(self.get_game_lump(b'sprp'))
-        return self._read_static_props_models(static_lump)
+        """Yield all model filenames used in static props.
+
+        If props haven't been parsed yet, this can avoid parsing all the props themselves.
+        If they have, this will iterate those.
+        """
+        static_lump = self.get_game_lump(b'sprp')
+        if static_lump:
+            # Not parsed yet, read the array directly.
+            yield from self._read_static_props_models(BytesIO(static_lump))
+        else:  # Iterate props, yield unique models.
+            found = set()
+            for prop in self.props:
+                if prop.model not in found:
+                    found.add(prop.model)
+                    yield prop.model
 
     @staticmethod
     def _read_static_props_models(static_lump: BytesIO) -> Iterator[str]:

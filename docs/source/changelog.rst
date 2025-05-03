@@ -16,8 +16,9 @@ Version (dev)
 	* Don't allow literal values for `frustum() <srctools.FGD.HelperFrustum>` helpers, this is not valid.
 * Treat ``ogg`` files as valid sounds in various places.
 * Consistently raise :class:`TypeError` if invalid types are sent to a :class:`~srctools.tokenizer.Tokenizer`.
-* Properly add ``base_plat_train`` class resource function and fix the ``item_teamflag``.
+* Properly add ``base_plat_train`` class resource function and fix ``item_teamflag``.
 * :bee-pack-issue:`4299`: Fix sprites and decals not being detected properly for packing.
+* Fix `BSP.static_prop_models <srctools.bsp.BSP.static_prop_models` breaking if props were already parsed.
 * Make toplevel aliases like ``srctools.VPK`` lazy import.
 
 -------------
