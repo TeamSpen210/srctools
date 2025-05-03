@@ -58,7 +58,7 @@ Keyvalues with children can be indexed by their names, or by a
 
 Handling ``\\n``, ``\\t``, ``\\"``, and ``\\\\`` escape characters can be enabled.
 """
-from typing import Any, ClassVar, Final, Optional, Protocol, TypeVar, Union, cast
+from typing import Any, ClassVar, Final, Optional, Protocol, TypeVar, Union, cast, Self
 from typing_extensions import ContextManager, Literal, TypeAlias, deprecated, overload
 from collections.abc import Callable, Iterable, Iterator, Mapping
 import builtins  # Keyvalues.bool etc shadows these.
@@ -295,7 +295,8 @@ class Keyvalues:
         Usually names are treated as case-insensitive, so this makes it convenient to do comparisons.
         Assigning to this automatically updates both this and :py:attr:`real_name`.
 
-        :deprecated: 'Root' keyvalues have a name of :py:obj:`None`. This will be replaced by a blank string, use :py:meth:`is_root()` instead.
+        :deprecated: 'Root' keyvalues have a name of :py:obj:`None`.
+            This will be replaced by a blank string, use :py:meth:`is_root()` instead.
         """
         if self._folded_name is None:
             warnings.warn("The name of root keyvalues will change to a blank string in the future.", DeprecationWarning, 2)
@@ -317,7 +318,8 @@ class Keyvalues:
 
         Assigning to this automatically updates both this and :py:attr:`name`.
 
-        :deprecated: 'Root' keyvalues have a name of :py:obj:`None`. This will be replaced by a blank string, use :py:meth:`is_root()` instead.
+        :deprecated: 'Root' keyvalues have a name of :py:obj:`None`.
+            This will be replaced by a blank string, use :py:meth:`is_root()` instead.
         """
         if self._real_name is None:
             warnings.warn("The name of root keyvalues will change to a blank string in the future.", DeprecationWarning, 2)
@@ -1132,7 +1134,7 @@ class Keyvalues:
         else:
             return NotImplemented
 
-    def __iadd__(self, other: Iterable['Keyvalues']) -> 'Keyvalues':
+    def __iadd__(self, other: Iterable['Keyvalues']) -> Self:
         """Extend this keyvalue with the contents of another, or an iterable.
 
         Deprecated behaviour: This also accepts a non-root keyvalue, which will be appended
@@ -1435,7 +1437,9 @@ class _Builder:
 
     def __exit__(
         self,
-        exc_type: type[BaseException], exc_val: BaseException, exc_tb: types.TracebackType,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[types.TracebackType],
     ) -> None:
         """Ends the keyvalue block."""
         pass
@@ -1473,7 +1477,9 @@ class _BuilderElem:
 
     def __exit__(
         self,
-        exc_type: type[BaseException], exc_val: BaseException, exc_tb: types.TracebackType,
+        exc_type: Optional[type[BaseException]],
+        exc_val: Optional[BaseException],
+        exc_tb: Optional[types.TracebackType],
     ) -> None:
         """End a keyvalue block."""
         self._builder._parents.pop()

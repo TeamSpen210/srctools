@@ -182,11 +182,14 @@ EMPTY_CHECKSUM: Final[int] = checksum(b'')
 def find_or_insert(item_list: list[T], key_func: Callable[[T], Hashable] = id) -> Callable[[T], int]:
     """Create a function for inserting items in a list if not found.
 
-    This is used to build up a block of data, accessed by index.
-    If the provided argument to the callable is already in the list,
+    This reuses existing values inside the list to reduce duplication, or allow preserving order
+    from existing files. If the provided argument to the callable is already in the list,
     the index is returned. Otherwise, it is appended and the new index returned.
-    The key function is used to match existing items.
 
+    :param item_list: The list to insert into.
+    :param key_func: If provided, this returns a key used to match existing items.
+    :returns: A function which can be called with items. The returned index is the
+        location that value can be found at inside the list.
     """
     by_index: dict[Hashable, int] = {key_func(item): i for i, item in enumerate(item_list)}
 
@@ -205,7 +208,13 @@ def find_or_insert(item_list: list[T], key_func: Callable[[T], Hashable] = id) -
 def find_or_extend(item_list: list[T], key_func: Callable[[T], Hashable] = id) -> Callable[[list[T]], int]:
     """Create a function for positioning a sublist inside the larger list, adding it if required.
 
-    This is used to build up a block of data, where subsections of it are accessed.
+    This reuses existing values inside the list to reduce duplication, or allow preserving order
+    from existing files.
+
+    :param item_list: The list to insert into.
+    :param key_func: If provided, this returns a key used to match existing items.
+    :returns: A function which can be called with a list of items. The returned index is the
+        offset that the subsequence can be found at inside the list.
     """
     # We expect repeated items to be fairly uncommon, so we can skip to all
     # occurrences of the first index to speed up the search.

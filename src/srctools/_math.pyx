@@ -458,7 +458,7 @@ cdef object angle_compare(AngleBase self, object other_obj, int op):
 def parse_vec_str(object val, object x=0.0, object y=0.0, object z=0.0):
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
-    If the string is unparsable, this uses the defaults (x,y,z).
+    If the string is unparsable, this uses the defaults (x,y,z) (which don't have to be floats).
     The string can be surrounded with any of the (), {}, [], <> bracket
     types.
 
@@ -3350,7 +3350,7 @@ cdef class Angle(AngleBase):
         return AngleTransform.__new__(AngleTransform, self)
 
 
-def quickhull(vertexes: Iterable[Vec]) -> list[tuple[Vec, Vec, Vec]]:
+def quickhull(vertexes: Iterable[VecBase]) -> list[tuple[Vec, Vec, Vec]]:
     """Use the quickhull algorithm to construct a convex hull around the provided points."""
     cdef size_t v1, v2, v3, ind
     cdef vector[quickhull.Vector3[double]] values = vector[quickhull.Vector3[double]]()

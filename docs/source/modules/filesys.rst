@@ -29,6 +29,10 @@ srctools.filesys
 
 .. autoclass:: File()
 
+	.. autoattribute:: path
+
+	.. autoattribute:: sys
+
 	.. automethod:: open_bin
 
 	.. automethod:: open_str
@@ -65,6 +69,7 @@ The specific implementations of base ``FileSystem`` methods have been omitted.
 .. autoclass:: RawFileSystem
 
 	.. autoattribute:: constrain_path
+
 .. autoclass:: VirtualFileSystem
 
 	.. autoattribute:: bytes_encoding

@@ -32,7 +32,7 @@ import math
 
 __all__ = [
     'parse_vec_str', 'to_matrix', 'lerp', 'quickhull', 'format_float',
-    'Vec', 'FrozenVec', 'Vec_tuple', 'AnyVec',
+    'Vec', 'FrozenVec', 'Vec_tuple', 'AnyVec', 'VecUnion',
     'Angle', 'FrozenAngle', 'AnyAngle',
     'Matrix', 'FrozenMatrix', 'AnyMatrix',
 ]
@@ -66,13 +66,15 @@ def parse_vec_str(
 ) -> tuple[Union[T1, float], Union[T2, float], Union[T3, float]]:
     """Convert a string in the form ``(4 6 -4)`` into a set of floats.
 
-    If the string is unparsable or an invalid type, this uses the defaults ``x``, ``y``, ``z``.
-    The string can be surrounded by any of the ``()``, ``{}``, ``[]``, ``<>`` bracket types, which
+    If the string is unparsable or an invalid type, this uses the defaults :pycode:`(x, y, z)` (which don't have to be floats).
+    The string can be surrounded by any of the ``()``, ``{}``, ``[]`` or ``<>`` bracket types, which
     are simply ignored.
 
-    If the 'string' is already a :py:class:`VecBase` or :py:class:`AngleBase`, this will be passed through.
-    If you do want a specific class, use :py:meth:`VecBase.from_str`, :py:meth:`AngleBase.from_str`
-    or :py:meth:`MatrixBase.from_angstr`.
+    If the 'string' is already a `FrozenVec`/`Vec` or a `FrozenAngle`/`Angle`,
+    the component values will be extracted and returned. If you want to parse into one of these
+    classes, use :py:meth:`[Frozen]Vec.from_str() <VecBase.from_str>`,
+    :py:meth:`[Frozen]Angle.from_str() <AngleBase.from_str>`  or
+    :py:meth:`[Frozen]Matrix.from_angstr() <MatrixBase.from_angstr>`.
     """
     if isinstance(val, str):
         pass  # Fast path to skip the below code.
@@ -108,7 +110,12 @@ def parse_vec_str(
 def to_matrix(value: Union['AnyAngle', 'AnyMatrix', 'AnyVec', None]) -> 'Matrix | FrozenMatrix':
     """Convert various values to a rotation matrix.
 
-    :py:class:`Vec` will be treated as angles, and :external:py:data:`None` as the identity.
+    - Existing matrices will be returned unchanged.
+    - `None` is treated as the identity matrix.
+    - `Vec` will be treated as angles.
+
+    :returns: A `FrozenMatrix` only if the value is already a frozen matrix.
+     Otherwise, a new `Matrix` is returned.
     """
     if value is None:
         return Py_Matrix()
@@ -122,7 +129,7 @@ def to_matrix(value: Union['AnyAngle', 'AnyMatrix', 'AnyVec', None]) -> 'Matrix 
 
 
 def format_float(x: float, places: int = 6) -> str:
-    """Convert the specified float to a string, stripping off a .0 if it ends with that."""
+    """Convert the specified float to a string, stripping off a ``.0`` if it ends with that."""
     # Add zero to make -0 positive
     result = f'{x+0.0:.{places}f}'
     if '.' in result:
@@ -1433,7 +1440,7 @@ class Vec(VecBase):
 
     del _funcname, _op, _pretty
 
-    def __imatmul__(self, other: Union['AngleBase', 'MatrixBase']) -> 'Vec':
+    def __imatmul__(self, other: Union['AngleBase', 'MatrixBase']) -> Self:
         """We need to define this, so it's in-place."""
         if isinstance(other, MatrixBase):
             mat = other

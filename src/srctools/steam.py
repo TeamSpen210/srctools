@@ -9,6 +9,12 @@ import attrs
 from srctools.keyvalues import Keyvalues
 
 
+__all__ = [
+    'AppInfo', 'clear_caches', 'get_steam_install_path',
+    'get_libraries', 'find_all_apps', 'find_app'
+]
+
+
 REG_STEAM = "SOFTWARE\\WOW6432Node\\Valve\\Steam"
 # Known Steam install locations.
 _STEAM_LOCS = [

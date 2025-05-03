@@ -55,12 +55,18 @@ def pad_string(text: str, length: int) -> bytes:
 @attrs.define
 class Command:
     """A command to run."""
+    #: Either the path to the executable, or one of several special commands.
     exe: Union[str, SpecialCommand]
-    args: str
+    args: str  #: Parameters to pass to the executable or command.
 
+    #: Whether this command is checked and should run.
     enabled: bool = attrs.field(default=True, kw_only=True)
+    #: If non-None, the command should fail if this file doesn't exist after it runs.
     ensure_file: Optional[str] = attrs.field(default=None, kw_only=True)
+    #: Determines if the command should be executed directly, or captured in the 'run process'
+    #: window. Obsolete for Hammer versions with ``hammer_run_map_launcher.exe``.
     use_proc_win: bool = attrs.field(default=True, kw_only=True)
+    #: Indicates whether Hammer should wait for the command to finish before proceeding. Seems nonfunctional.
     no_wait: bool = attrs.field(default=False, kw_only=True)
 
     @classmethod

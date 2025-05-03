@@ -11,14 +11,19 @@ transforming the stream before the destination receives it.
 Once the tokenizer is created, either iterate over it or call the tokenizer to fetch the next
 token/value pair. One token of lookahead is supported, accessed by the
 :py:func:`BaseTokenizer.peek()` and  :py:func:`BaseTokenizer.push_back()` methods. They also track
-the current line number as data is read, letting you ``raise BaseTokenizer.error(...)`` to easily
+the current line number as data is read, letting you :pycode:`raise BaseTokenizer.error(...)` to easily
 produce an exception listing the relevant line number and filename.
 
-Character escapes match matches `utilbuffer.cpp <https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/tier1/utlbuffer.cpp#L57-L69>`_ in the SDK.
+Character escapes match matches `utlbuffer.cpp <utlbuffer_esc_>`_ in the SDK.
 Specifically, the following characters are escaped:
-``\\\\n``, ``\\\\t``, ``\\\\v``, ``\\\\b``, ``\\\\r``, ``\\\\f``, ``\\\\a``, `\\`, ``?``, ``'`` and ``"``.
+``\\\\n``, ``\\\\t``, ``\\\\v``, ``\\\\b``, ``\\\\r``, ``\\\\f``, ``\\\\a``, ``\\``, ``?``, ``'`` and ``"``.
 ``/`` and ``?`` are accepted as escapes, but not produced since they're unambiguous.
+
+.. _utlbuffer_esc: https://github.com/ValveSoftware/source-sdk-2013/blob/\
+0565403b153dfcde602f6f58d8f4d13483696a13/src/tier1/utlbuffer.cpp#L57-L69
 """
+import sys
+
 from typing import TYPE_CHECKING, Final, NoReturn, Optional, Union
 from typing_extensions import Self, TypeAlias, overload
 from collections.abc import Iterable, Iterator
@@ -245,15 +250,13 @@ class BaseTokenizer(abc.ABC):
         self.line_num = 1
 
     @overload
-    def error(self, __message: Token) -> TokenSyntaxError: ...
-
+    def error(self, message: Token, /) -> TokenSyntaxError: ...
     @overload
-    def error(self, __message: Token, __value: str) -> TokenSyntaxError: ...
-
+    def error(self, message: Token, value: str, /) -> TokenSyntaxError: ...
     @overload
-    def error(self, __message: str, *args: object) -> TokenSyntaxError: ...
+    def error(self, message: str, /, *args: object) -> TokenSyntaxError: ...
 
-    def error(self, message: Union[str, Token], *args: object) -> TokenSyntaxError:
+    def error(self, message: Union[str, Token], /, *args: object) -> TokenSyntaxError:
         """Raise a syntax error exception.
 
         This returns the :py:class:`TokenSyntaxError` instance, with

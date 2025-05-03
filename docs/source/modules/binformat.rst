@@ -74,6 +74,20 @@ Structure tools
 .. autofunction:: read_offset_array
 
 
+===============
+Array Insertion
+===============
+
+In files like BSPs, data is often stored in a large array, then other sections refer to specific
+indexes. These functions help in constructing such an array, while reusing entries to avoid
+unnecessary duplication. `find_or_insert` inserts a single item, while `find_or_extend` inserts
+a subsequence, returning the offset.
+
+.. autofunction:: find_or_insert[T](item_list: list[T], key_func: Callable[[T], Hashable] = id) -> Callable[[T], int]:
+
+.. autofunction:: find_or_extend[T](item_list: list[T], key_func: Callable[[T], Hashable] = id) -> Callable[[list[T]], int]:
+
+
 ============
 Checksumming
 ============

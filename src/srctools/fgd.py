@@ -1079,7 +1079,11 @@ class KVDef(EntAttribute):
     default: str = ''
     desc: str = ''
     val_list: Union[list[SpawnFlags], list[Choices], None] = None
+    #: Causes Hammer to prevent this keyvalue from being changed.
+    #: Doesn't force the value to the default though.
     readonly: bool = False
+    #: If set, this value is shown in the Entity Report list.
+    #: Usually applied to things like a sprite's material or a prop's model.
     reportable: bool = False
 
     @property

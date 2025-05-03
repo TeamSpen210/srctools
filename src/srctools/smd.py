@@ -20,7 +20,7 @@ __all__ = [
 
 class _BinaryFile(Protocol):
     """The methods on files we use."""
-    def write(self, __data: bytes) -> object:
+    def write(self, data: bytes, /) -> object:
         """Writes to the file."""
 
 

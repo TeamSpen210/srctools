@@ -446,7 +446,10 @@ _STATIC_PROP_VERSIONS: Mapping[tuple[int, int], StaticPropVersion] = {
 
 
 class StaticPropFlags(Flag):
-    """Bitflags specified for static props. These are actually split over two flag fields, but are merged here for simplicity."""
+    """Bitflags specified for static props.
+
+    These are actually split over two flag fields, but are merged here for simplicity.
+    """
     NONE = 0
 
     DOES_FADE = 0x01  # Is the fade distances set?

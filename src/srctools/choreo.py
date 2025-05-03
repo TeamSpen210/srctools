@@ -14,6 +14,16 @@ from srctools import binformat, conv_bool, conv_float, conv_int
 from srctools.tokenizer import BaseTokenizer, Token, escape_text
 
 
+__all__ = [
+    'CRC', 'checksum_filename',
+    'Entry', 'parse_scenes_image', 'save_scenes_image_sync',
+    'Scene', 'Actor', 'Channel',
+    'Interpolation', 'CurveType', 'EventType', 'EventFlags', 'CaptionType',
+    'ExpressionSample', 'Tag', 'TimingTag', 'AbsoluteTag', 'CurveEdge', 'Curve',
+    'FlexAnimTrack', 'Event', 'GestureEvent', 'LoopEvent', 'SpeakEvent',
+]
+
+
 CRC = NewType('CRC', int)
 ScenesImage: TypeAlias = dict[CRC, 'Entry']
 # Only known binary version.
@@ -258,7 +268,9 @@ class Tag:
     _FACTOR: ClassVar[float] = 255.0
     _MAX: ClassVar[int] = 255
 
+    #: The name for this location.
     name: str
+    #: Value for the tag. Ranges from 0-1, but is encoded into binary with 8 bits of precision.
     value: float = attrs.field(validator=[attrs.validators.ge(0.0), attrs.validators.le(1.0)])
 
     @classmethod
@@ -322,6 +334,7 @@ class TimingTag(Tag):
         """Helper to implement parse_text()."""
         locked = conv_bool(tokenizer.expect(Token.STRING, skip_newline=False))
         return cls(name, value, locked)
+
 
 class AbsoluteTag(Tag):
     """Absolute tags have an increased range and precision."""
