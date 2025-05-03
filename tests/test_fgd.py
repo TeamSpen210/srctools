@@ -459,7 +459,13 @@ def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture
     line(240 180 50, targetname, target)
     line(12 180 50, targetname target, parentname, next)
     frustum()
-    frustum(light_fov, light_near, light_far, bright, +6.78)
+    frustum(light_fov)
+    frustum(light_fov, light_near)
+    frustum(light_fov, 450, light_far)
+    frustum(97, light_near, light_far, bright)
+    frustum(light_fov, light_near, 3200, bright, +6.78)
+    frustum(light_fov, light_near, light_far, 128 64 0)
+    frustum(light_fov, light_near, light_far, 32, 96, 255, -2.5)
     cylinder(24 48 96, targetname, start)
     cylinder(24 48 96, targetname, start start_size)
     cylinder(24 48 96, targetname, start start_size, target, end)
@@ -488,7 +494,13 @@ def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture
         fgd_mod.HelperLine(240, 180, 50, "targetname", "target", None, None),
         fgd_mod.HelperLine(12, 180, 50, "targetname", "target", "parentname", "next"),
         fgd_mod.HelperFrustum("_fov", "_nearplane", "_farplane", "_light", 1.0),
-        fgd_mod.HelperFrustum("light_fov", "light_near", "light_far", "bright", 6.78),
+        fgd_mod.HelperFrustum("light_fov", "_nearplane", "_farplane", "_light", 1.0),
+        fgd_mod.HelperFrustum("light_fov", "light_near", "_farplane", "_light", 1.0),
+        fgd_mod.HelperFrustum("light_fov", 450, "light_far", "_light", 1.0),
+        fgd_mod.HelperFrustum(97, "light_near", "light_far", "bright", 1.0),
+        fgd_mod.HelperFrustum("light_fov", "light_near", 3200, "bright", 6.78),
+        fgd_mod.HelperFrustum("light_fov", "light_near", "light_far", (128, 64, 0), 1.0),
+        fgd_mod.HelperFrustum("light_fov", "light_near", "light_far", (32, 96, 255), -2.5),
         fgd_mod.HelperCylinder(24, 48, 96, "targetname", "start"),
         fgd_mod.HelperCylinder(24, 48, 96, "targetname", "start", start_radius="start_size"),
         fgd_mod.HelperCylinder(24, 48, 96, "targetname", "start", "target", "end", "start_size"),

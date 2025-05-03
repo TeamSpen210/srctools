@@ -1,5 +1,5 @@
 """Implemenations of specific code for each FGD helper type."""
-from typing import ClassVar, Optional
+from typing import ClassVar, Optional, Union
 from typing_extensions import Self
 from collections.abc import Collection, Iterable, Iterator
 
@@ -27,7 +27,7 @@ __all__ = [
 ]
 
 
-def parse_byte(text: str) -> int:
+def parse_byte(text: Union[int, str]) -> int:
     """Parse an single byte."""
     try:
         return max(0, min(255, int(text)))
@@ -263,39 +263,64 @@ class HelperLine(Helper):
 
 @attrs.define
 class HelperFrustum(Helper):
-    """Helper for env_projectedtexture visuals."""
+    """Helper for env_projectedtexture visuals.
+
+    As an extension, values can be literals as well as key names. This is only natively supported
+    by Vitamin Source, but HammerAddons will generate keyvalues to make this work.
+    """
     TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.FRUSTUM
 
-    fov: str
-    near_z: str
-    far_z: str
-    color: str
+    fov: Union[str, float]
+    near_z: Union[str, float]
+    far_z: Union[str, float]
+    color: Union[str, tuple[int, int, int]]
     pitch_scale: float = 1.0
 
     @classmethod
     def parse(cls, args: list[str]) -> Self:
         """Parse frustum(fov, near, far, color, pitch_scale)."""
         # These are the default values if not provided.
-        fov = '_fov'
-        nearz = '_nearplane'
-        farz = '_farplane'
-        color = '_light'
+        fov: Union[str, float] = '_fov'
+        nearz: Union[str, float] = '_nearplane'
+        farz: Union[str, float] = '_farplane'
+        color: Union[str, tuple[int, int, int]] = '_light'
         pitch = 1.0
 
+        # All values are optional.
+        # Colour can be 1 key or 3 literal, Fortunately this is unambiguous.
+        # (fov, near, far, color, pitch) == 1 - 5
+        # (fov, near, far, r, g, b) == 6
+        # (fov, near, far, r, g, b, pitch) == 7
         try:
             fov = args[0]
             nearz = args[1]
             farz = args[2]
-            color = args[3]
-            pitch = args[4]
         except IndexError:
             pass  # Stop once out of args.
         else:
-            if len(args) > 5:
-                raise ValueError(f'Expected at most 5 arguments, got {args!r}!')
+            # Handle colour/pitch.
+            count = len(args)
+            if count in (4, 5):
+                color = args[3]
+            if count in (6, 7):  # Literal colour.
+                color = parse_byte(args[3]), parse_byte(args[4]), parse_byte(args[5])
+            if count in (5, 7):  # We have pitch.
+                pitch = conv_float(args[-1], 1.0)
+            if count > 7:
+                raise ValueError(f'Expected 1-7 arguments, got {args!r}!')
 
+        # Try and parse everything else, but if it fails ignore since they could
+        # be keyvalue names.
         try:
-            pitch = float(pitch)
+            fov = float(fov)
+        except ValueError:
+            pass
+        try:
+            nearz = float(nearz)
+        except ValueError:
+            pass
+        try:
+            farz = float(farz)
         except ValueError:
             pass
 
@@ -303,13 +328,29 @@ class HelperFrustum(Helper):
 
     def export(self) -> list[str]:
         """Export back out frustrum() arguments."""
-        return [
-            self.fov,
-            self.near_z,
-            self.far_z,
-            self.color,
-            format_float(self.pitch_scale),
+        if isinstance(self.color, tuple):
+            color = '{:g} {:g} {:g}'.format(*self.color)
+        else:
+            color = self.color
+
+        def conv(x: 'Union[str, float]') -> str:
+            """Ensure the .0 is removed from the float forms. """
+            return x if isinstance(x, str) else format_float(x)
+
+        result = [
+            conv(self.fov),
+            conv(self.near_z),
+            conv(self.far_z),
+            color,
+            format_float(self.pitch_scale)
         ]
+        # Try and remove redundant defaults.
+        for default in ['1', '_light', '_farplane', '_nearplane', '_fov']:
+            if result[-1] == default:
+                result.pop()
+            else:
+                return result
+        return result
 
 
 @attrs.define
