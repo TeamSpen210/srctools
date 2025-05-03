@@ -93,10 +93,9 @@ class LoggerAdapter(_AdapterBase):
     """Fix loggers to use str.format().
 
     """
-    logger: logging.Logger
-    alias: Optional[str]
+    logger: logging.Logger  #: The logger this wraps.
+    alias: Optional[str]  #: If set, this is a replacement module name for log messages.
     def __init__(self, logger: logging.Logger, alias: Optional[str] = None) -> None:
-        # Alias is a replacement module name for log messages.
         self.alias = alias
         self.logger = logger
         logging.LoggerAdapter.__init__(self, logger, extra={})

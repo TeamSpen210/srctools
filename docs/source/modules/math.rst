@@ -63,6 +63,9 @@ Several public type aliases are provided for convenience.
 Vectors
 -------
 
+.. finality = Bases can't be typing.final, but subclassing shouldn't be permitted.
+
+
 .. autoclass:: VecBase()
 	:members:
 	:special-members:

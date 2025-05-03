@@ -1095,7 +1095,8 @@ def test_other_axes(frozen_thawed_vec) -> None:
         assert vec.other_axes('z') == (x, y)
         # Test some bad args.
         for invalid in bad_args:
-            with raises_keyerror: vec.other_axes(invalid)
+            with raises_keyerror:
+                vec.other_axes(invalid)
 
 
 def test_abs(frozen_thawed_vec) -> None:
@@ -1445,13 +1446,13 @@ def test_mut_copy(py_c_vec):
     assert orig is not cpy
     assert cpy_meth is not copy.copy(orig)
     assert orig == cpy
-    assert type(cpy) == Vec
+    assert type(cpy) is Vec
 
     dcpy = copy.deepcopy(orig)
 
     assert orig is not dcpy
     assert orig == dcpy
-    assert type(dcpy) == Vec
+    assert type(dcpy) is Vec
 
     frozen = FrozenVec(test_data)
     # Copying FrozenVec does nothing.
@@ -1471,7 +1472,7 @@ def test_pickle(frozen_thawed_vec):
 
     assert orig is not thaw
     assert orig == thaw
-    assert type(thaw) == Vec
+    assert type(thaw) is Vec
 
     # Ensure both produce the same pickle - so they can be interchanged.
     cy_pick = pickle.dumps(getattr(vec_mod, 'Cy_' + Vec.__name__)(test_data))

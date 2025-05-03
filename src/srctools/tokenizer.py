@@ -779,6 +779,7 @@ class IterTokenizer(BaseTokenizer):
     This is useful to pre-process a token stream before parsing it with other
     code.
     """
+    #: The underlying iterator which tokens are sourced from.
     source: Iterator[tuple[Token, str]]
 
     def __init__(

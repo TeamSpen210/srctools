@@ -282,14 +282,16 @@ class VTFFlags(Flag):
 class ResourceID(bytes, Enum):
     """For VTF format 7.3+, there is an extensible resource system.
 
-    These are the IDs defined by Valve, but any 4-byte ID may be used.
+    Any 4-byte ID may be used. These are known IDs, some from Valve and some from elsewhere.
     """
-    LOW_RES = b'\x01\0\0'  #: The low-res thumbnail. This is in a fixed position in earlier versions.
-    HIGH_RES = b'\x30\0\0'  # The main image. This is in a fixed position in earlier versions.
+    #: Valve ID. The low-res thumbnail. This is in a fixed position in earlier versions.
+    LOW_RES = b'\x01\0\0'
+    #: Valve ID. The main image. This is in a fixed position in earlier versions.
+    HIGH_RES = b'\x30\0\0'
 
-    #: Used for particle spritesheets, decoded into .sheet_info
+    #: Valve ID. Used for particle spritesheets, decoded into `~VTF.sheet_info`.
     PARTICLE_SHEET = b'\x10\0\0'
-    #: Cyclic Redundancy Checksum.
+    #: Defined by VTFLib, a Cyclic Redundancy Checksum.
     CRC = b'CRC'
 
     #: Allows forcing specific mipmaps to be used for 'medium' shader settings.
@@ -298,7 +300,7 @@ class ResourceID(bytes, Enum):
     #: 4 extra bytes of bitflags.
     EXTRA_FLAGS = b'TSO'
 
-    #: Block of keyvalues data.
+    #: Defined by VTFLib, an arbitrary block of keyvalues data.
     KEYVALUES = b'KVD'
 
 
@@ -618,6 +620,7 @@ class VTF:
     version: tuple[int, int]
     #: An average of the colors in the texture, used to tint light bounced off surfaces.
     reflectivity: Vec
+    #: Indicates how deep a heightmap/bumpmap ranges. Seemingly unused.
     bumpmap_scale: float
     #: In version 7.3+, arbitrary resources may be stored in a VTF. :py:class:`ResourceID` are
     #: defined by Valve, but any 4-byte ID may be used.
@@ -1089,7 +1092,7 @@ class TexCoord:
 
 class SheetSequence:
     """VTFs may contain a number of sequences using different parts of the image."""
-    MAX_COUNT = 64
+    MAX_COUNT = 64  #: Maximum possible number of sequences.
 
     def __init__(
         self,
