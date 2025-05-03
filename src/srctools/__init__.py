@@ -28,7 +28,7 @@ __all__ = [
 
     'FileSystem', 'FileSystemChain', 'get_filesystem',
 
-    'EmptyMapping', 'StringPath',
+    'AtomicWriter', 'EmptyMapping', 'StringPath',
 
     'FGD', 'VPK',
     'VTF',
