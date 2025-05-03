@@ -9,7 +9,7 @@ from array import ArrayType as Array
 from collections import defaultdict
 from collections.abc import (
     Callable, ItemsView, Iterable, Iterator, KeysView, Mapping, MutableMapping, Sequence,
-    Set, ValuesView,
+    Set as AbstractSet, ValuesView,
 )
 from enum import Enum, Flag
 from re import Match, Pattern
@@ -156,7 +156,7 @@ def conv_kv(val: ValidKVs) -> str:
         return conv_kv(val)
 
 
-class IDMan(Set[int]):
+class IDMan(AbstractSet[int]):
     """Allocate and manage a set of unique IDs.
 
     This implements some of MutableSet, but the adding methods cannot
@@ -1641,7 +1641,10 @@ class Solid:
 
     def __del__(self) -> None:
         """Forget this solid's ID when the object is destroyed."""
-        self.map.solid_id.discard(self.id)
+        try:
+            self.map.solid_id.discard(self.id)
+        except AttributeError:
+            pass  # Interpreter finalising?
 
     def remove(self) -> None:
         """Remove this brush from the map."""
@@ -2332,7 +2335,10 @@ class Side:
 
     def __del__(self) -> None:
         """Forget this side's ID when the object is destroyed."""
-        self.map.face_id.discard(self.id)
+        try:
+            self.map.face_id.discard(self.id)
+        except AttributeError:
+            pass  # Interpreter finalising?
 
     def __getitem__(self, pos: tuple[int, int]) -> DispVertex:
         """Return the displacement vertex at this position."""
@@ -3103,7 +3109,10 @@ class Entity(MutableMapping[str, str]):
 
     def __del__(self) -> None:
         """Forget this entity's ID when the object is destroyed."""
-        self.map.ent_id.discard(self.id)
+        try:
+            self.map.ent_id.discard(self.id)
+        except AttributeError:
+            pass  # Interpreter finalising?
 
     def get_bbox(self) -> tuple[Vec, Vec]:
         """Get two vectors representing the space this entity takes up."""
