@@ -2855,6 +2855,7 @@ class BSP:
         """A context manager to allow editing the packed content.
 
         When successfully exited, the zip will be rewritten to the BSP file.
+        Deprecated, use :attr:`BSP.pakfile` to access the cached archive instead.
         """
         pak_lump = self.lumps[BSP_LUMPS.PAKFILE]
         data_file = BytesIO(pak_lump.data)
@@ -2977,7 +2978,8 @@ class BSP:
     def write_ent_data(vmf: VMF, use_comma_sep: Optional[bool] = None, *, _show_dep: bool = True) -> bytes:
         """Generate the entity data lump.
 
-        :deprecated: Read and write :py:attr:`BSP.ents` instead.
+        Deprecated, read and write :py:attr:`BSP.ents` instead.
+
         :param vmf: This accepts a VMF file like that returned from read_ent_data().
             Brushes are ignored, so the VMF must use ``*xx`` model references.
         :param use_comma_sep: This is used to force using either commas, or ``0x1D`` in I/O.

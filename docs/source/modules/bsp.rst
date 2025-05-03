@@ -393,17 +393,6 @@ Miscellaneous
 .. automethod:: BSP.is_cordoned_heuristic
 
 
-Deprecated Functionality
-========================
-
-These methods have been replaced by others, and should not be used.
-
-.. automethod:: BSP.read_header
-
-.. automethod:: BSP.read_game_lumps
-
-.. automethod:: BSP.replace_lump
-
 .. Classes TODO:
     'DetailProp', 'DetailPropModel', 'DetailPropOrientation', 'DetailPropShape', 'DetailPropSprite',
     'LeafWaterInfo', 'Visibility',

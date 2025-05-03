@@ -5,6 +5,33 @@ Deprecations
 Several features and modules are deprecated, renamed to something else or removed to allow other features.
 
 
+srctools.bsp
+------------
+
+.. py:currentmodule:: srctools.bsp
+
+.. automethod:: BSP.read_header
+
+.. automethod:: BSP.read_game_lumps
+
+.. automethod:: BSP.replace_lump
+
+.. automethod:: BSP.read_ent_data
+
+.. automethod:: BSP.write_ent_data(vmf: VMF, use_comma_sep: bool = ...)
+
+.. automethod:: BSP.read_texture_names
+
+.. automethod:: BSP.packfile
+	:with: zipfile
+
+.. automethod:: BSP.static_props
+
+.. autoproperty:: VisTree.plane_norm
+
+.. autoproperty:: VisTree.plane_dist
+
+
 srctools.dmx
 ------------
 
