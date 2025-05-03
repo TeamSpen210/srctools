@@ -39,7 +39,7 @@ __all__ = [
     'BSP', 'Lump', 'GameLump',
     'StaticProp', 'StaticPropFlags',
     'DetailProp', 'DetailPropModel', 'DetailPropOrientation', 'DetailPropShape', 'DetailPropSprite',
-    'TexData', 'TexInfo',
+    'TexInfo',
     'Cubemap', 'Overlay',
     'VisTree', 'VisLeaf', 'VisLeafFlags', 'LeafWaterInfo',
     'Visibility',
@@ -622,7 +622,7 @@ class TexInfo:
 
     Overlays don't use the offset/shifts, setting them to ``(0, 0, 0)`` and ``-99999.0`` respectively.
 
-    TexInfo structures reference an additional TextData struct, containing texture size and reflectivity information.
+    TexInfo structures reference an additional `!TexData` struct, containing texture size and reflectivity information.
     This is managed automatically.
     """
     s_off: Vec
@@ -1113,8 +1113,8 @@ class StaticProp:
     min_fade: float = 0.0
     max_fade: float = 0.0
     #: This is the location used for non-vertex lighting, in world space. It defaults to the prop origin
-    #: (or ``$illumposition`` value), but can be changed by ``info_lighting`` entities. There is
-    #: no direct way to tell if this is custom or not.
+    #: (or ``$illumposition`` value), but can be changed by ``info_lighting`` entities. Since this
+    #: is always set to a valid value, there is no direct way to tell if this is custom or not.
     lighting: Vec = attrs.Factory(_staticprop_lighting_default, takes_self=True)
     fade_scale: float = -1.0
 

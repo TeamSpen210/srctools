@@ -185,7 +185,7 @@ Textures
 Textures (really materials, the name is a GoldSource leftover) are stored as `TexInfo` objects, which contain the material as well
 as S/T positioning, lightmap and other data. This allows brushes with matching data to be shared. Overlays also
 use texinfo, but ignore the S/T positioning. VBSP stores some data derived from the
-material's `$basetexture` in the BSP - its size and reflectivity. This means that creating `TexInfo`
+material's ``$basetexture`` in the BSP - its size and reflectivity. This means that creating `TexInfo`
 requires either providing this extra data manually, or supplying a
 :py:class:`~srctools.filesys.FileSystem` to automatically read this data from the material/texture files.
 
@@ -209,18 +209,17 @@ should be used to create each entry:
     :members:
     :undoc-members:
 
-
 Static Props
 ------------
-
-.. automethod:: BSP.static_prop_models
-    :for: model_name
 
 .. py:attribute:: BSP.props
     :type: list[StaticProp]
 
     ``prop_static`` entities are specially handled by VBSP, and stored in their own game lump (with ID ``sprp``).
     This lump has undergone significant changes in various games, so many attributes may do nothing.
+
+.. automethod:: BSP.static_prop_models
+    :for: model_name
 
 .. py:attribute:: BSP.static_prop_version
     :type: StaticPropVersion
