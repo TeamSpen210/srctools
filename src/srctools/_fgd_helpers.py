@@ -574,7 +574,7 @@ class HelperModel(Helper):
     def export(self) -> list[str]:
         """Produce the arguments for iconsprite()."""
         if self.model is not None:
-            return [self.model]
+            return [f'"{self.model}"']
         else:
             return []
 
@@ -660,40 +660,36 @@ class HelperLightSpot(Helper):
     @classmethod
     def parse(cls, args: list[str]) -> Self:
         """Parse lightcone(inner, outer, color, pitch_scale)."""
-        if len(args) >= 1:
+        inner_cone = '_inner_cone'
+        outer_cone = '_cone'
+        color = '_light'
+        pitch_scale = 1.0
+        try:
             inner_cone = args[0]
-        else:
-            inner_cone = '_inner_cone'
-        if len(args) >= 2:
             outer_cone = args[1]
-        else:
-            outer_cone = '_cone'
-        if len(args) >= 3:
             color = args[2]
-        else:
-            color = '_light'
-        if len(args) >= 4:
             pitch_scale = float(args[3])
+        except IndexError:
+            pass
         else:
-            pitch_scale = 1.0
+            if len(args) > 4:
+                raise ValueError(f'Expected 0-4 arguments, got {args!r}!')
 
         return cls(inner_cone, outer_cone, color, pitch_scale)
 
     def export(self) -> list[str]:
         """Produce the arguments for lightcone()."""
-        # If any parameter is different, all previous must be provided.
-        if self.pitch_scale != 1.0:
-            return [
-                self.inner, self.outer, self.color,
-                format(self.pitch_scale, 'g'),
-            ]
-        if self.color != '_light':
-            return [self.inner, self.outer, self.color]
-        if self.outer != '_cone':
-            return [self.inner, self.outer]
-        if self.inner != '_inner_cone':
-            return [self.inner]
-        return []
+        result = [
+            self.inner, self.outer, self.color,
+            format_float(self.pitch_scale),
+        ]
+        # Try and remove redundant defaults.
+        for default in ['1', '_light', '_cone', '_inner_cone']:
+            if result[-1] == default:
+                result.pop()
+            else:
+                return result
+        return result
 
 
 @attrs.define
