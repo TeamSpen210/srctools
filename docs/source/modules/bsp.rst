@@ -3,7 +3,7 @@ srctools.bsp
 ############
 
 .. module:: srctools.bsp
-	:synopsis: Reads and write compiled BSP maps.
+    :synopsis: Reads and write compiled BSP maps.
 
 The BSP module allows reading and writing compiled maps.
 Note that the file format is composed of a large number of individual "lumps", each independent from one another.
@@ -25,24 +25,24 @@ currently it is not possible to create one from scratch. Call ::py:meth:`BSP.sav
 
 .. py:class:: BSP
 
-	.. py:method:: __init__(filename: StringPath, version: Union[VERSIONS, GameVersion, None] = None)
+    .. py:method:: __init__(filename: StringPath, version: Union[VERSIONS, GameVersion, None] = None)
 
-		Create and load a BSP.
+        Create and load a BSP.
 
-		:param filename: The filename to read.
-		:param version: Specify the expected file version, causing an error if the BSP does not match.
+        :param filename: The filename to read.
+        :param version: Specify the expected file version, causing an error if the BSP does not match.
 
-	.. py:method:: read(self, expected_version: VERSIONS | GameVersion | None = None) -> None
+    .. py:method:: read(self, expected_version: VERSIONS | GameVersion | None = None) -> None
 
-		Reload the BSP file from disk.
+        Reload the BSP file from disk.
 
-		:param expected_version: Specify the expected file version, causing an error if the BSP does not match.
+        :param expected_version: Specify the expected file version, causing an error if the BSP does not match.
 
-	.. py:method:: save(self, filename: str | None = None) -> None:
+    .. py:method:: save(self, filename: str | None = None) -> None:
 
-		Write the BSP back into the given file.
+        Write the BSP back into the given file.
 
-		:param filename: If specified, overrides the originally read filename.
+        :param filename: If specified, overrides the originally read filename.
 
 
 Versions
@@ -57,14 +57,14 @@ A number of attributes are available describing the versions. Known versions are
 .. autoattribute:: BSP.map_revision
 
 .. autosrcenum:: VERSIONS
-	:members:
-	:undoc-members:
-	:member-order: bysource
+    :members:
+    :undoc-members:
+    :member-order: bysource
 
 .. autosrcenum:: GameVersion
-	:members:
-	:undoc-members:
-	:member-order: bysource
+    :members:
+    :undoc-members:
+    :member-order: bysource
 
 
 Lumps
@@ -84,46 +84,46 @@ In addition to using parsed objects, raw data for both lump types can be accesse
 
 .. py:attribute:: BSP.lumps
 
-	Maps a lump ID to the stored lump.
+    Maps a lump ID to the stored lump.
 
-	:type: dict[BSP_LUMPS, Lump]
+    :type: dict[BSP_LUMPS, Lump]
 
 .. py:attribute:: BSP.game_lumps
 
-	Maps a lump ID to the stored game lump. The key should be 4 characters long.
+    Maps a lump ID to the stored game lump. The key should be 4 characters long.
 
-	:type: dict[bytes, Lump]
+    :type: dict[bytes, Lump]
 
 .. automethod:: BSP.get_lump
 
 .. automethod:: BSP.get_game_lump
 
 .. autosrcenum:: BSP_LUMPS
-	:members:
-	:undoc-members:
-	:member-order: bysource
+    :members:
+    :undoc-members:
+    :member-order: bysource
 
 .. autoclass:: Lump
 
-	:members:
+    :members:
 
 .. autoclass:: GameLump
 
-	:members:
+    :members:
 
 
 Entity Lump
 -----------
 
 .. py:attribute:: BSP.ents
-	:type: ~srctools.vmf.VMF
+    :type: ~srctools.vmf.VMF
 
-	The entity lump stores all entities and their keyvalues. When parsed, this is exposed as a
-	:py:class:`srctools.vmf.VMF` object, since the entities function identically. However, all brushes
-	are stored elsewhere, so :py:attr:`~srctools.vmf.Entity.solids` attributes will all be blank and
-	are ignored. See the :py:attr:`BSP.bmodels` attribute to locate the compiled brush data for an entity.
+    The entity lump stores all entities and their keyvalues. When parsed, this is exposed as a
+    :py:class:`srctools.vmf.VMF` object, since the entities function identically. However, all brushes
+    are stored elsewhere, so :py:attr:`~srctools.vmf.Entity.solids` attributes will all be blank and
+    are ignored. See the :py:attr:`BSP.bmodels` attribute to locate the compiled brush data for an entity.
 
-	Aside from the entities, the rest of the VMF object is ignored.
+    Aside from the entities, the rest of the VMF object is ignored.
 
 .. py:attribute:: BSP.bmodels
     :type: ~weakref.WeakKeyDictionary[Entity, BModel]
@@ -170,13 +170,13 @@ Pakfile
 -------
 
 .. py:attribute:: BSP.pakfile
-	:type: zipfile.ZipFile
+    :type: zipfile.ZipFile
 
-	The pakfile is an internal archive containing resources packed into the BSP for the level to use.
-	By default, cubemaps are included here as well as patched brush materials VBSP generates for various
-	purposes. Any file can be stored here, but only the :py:attr:`zipfile.ZIP_STORED` (no compression) format is allowed.
+    The pakfile is an internal archive containing resources packed into the BSP for the level to use.
+    By default, cubemaps are included here as well as patched brush materials VBSP generates for various
+    purposes. Any file can be stored here, but only the :py:attr:`zipfile.ZIP_STORED` (no compression) format is allowed.
 
-	The returned zipfile wraps an :py:class:`io.BytesIO` object, and will be closed/finalised automatically. Do not close it yourself.
+    The returned zipfile wraps an :py:class:`io.BytesIO` object, and will be closed/finalised automatically. Do not close it yourself.
 
 
 Textures
@@ -190,9 +190,9 @@ requires either providing this extra data manually, or supplying a
 :py:class:`~srctools.filesys.FileSystem` to automatically read this data from the material/texture files.
 
 .. py:attribute:: BSP.textures
-	:type: list[str]
+    :type: list[str]
 
-	The raw list of materials used. Automatically appended to by ``texinfo``.
+    The raw list of materials used. Automatically appended to by ``texinfo``.
 
 .. py:attribute:: BSP.texinfo
     :type: list[TexInfo]
@@ -235,14 +235,41 @@ Static Props
     :undoc-members:
 
 .. autosrcenum:: StaticPropFlags
-	:members:
-	:undoc-members:
-	:member-order: bysource
+    :members:
+    :undoc-members:
+    :member-order: bysource
 
 .. autosrcenum:: StaticPropVersion
-	:members:
-	:undoc-members:
-	:member-order: bysource
+    :members:
+    :undoc-members:
+    :member-order: bysource
+
+Detail Props
+------------
+
+.. py:attribute:: BSP.detail_props
+    :type: list[DetailProp]
+
+    When compiling, VBSP places detail props onto all brushes, and stores them in their
+    own game lump (with ID ``dprp``). There are three types of prop - model, simple sprite,
+    and 'shape' (formed of multiple sprites in a particular pattern).
+
+.. autosrcenum:: DetailPropOrientation
+    :members:
+    :undoc-members:
+    :member-order: bysource
+
+.. autoclass:: DetailProp()
+    :members:
+    :undoc-members:
+
+.. autoclass:: DetailPropModel
+    :members:
+    :undoc-members:
+
+.. autoclass:: DetailPropSprite
+    :members:
+    :undoc-members:
 
 
 Cubemaps
@@ -269,10 +296,27 @@ Overlays
     :undoc-members:
 
 
+Visibility
+----------
+
+.. py:attribute:: BSP.visibility
+    :type: Visibility | None
+
+    If VVIS has run, this contains the computed visibility calculations between all leaves.
+
+.. autoclass:: Visibility
+    :members:
+
+.. automethod:: BSP.is_potentially_visible
+
+.. automethod:: BSP.set_potentially_visible
+
+
 Visleafs
 --------
 
-The visleaf structure is composed of a tree either of nodes or vis-leafs.
+The visleaf structure is composed of a tree either of nodes or vis-leafs. Note these are always
+calculated, even without VVIS - the tree is fundamental to the BSP structure.
 
 .. attribute:: BSP.visleafs
     :type: list[VisLeaf]
@@ -307,18 +351,24 @@ The visleaf structure is composed of a tree either of nodes or vis-leafs.
     .. automethod:: VisTree.iter_leafs
         :for: visleaf
 
-    .. autoattribute:: plane_norm
-
-    .. autoattribute:: plane_dist
-
 .. autoclass:: VisLeaf
     :members:
     :undoc-members:
 
 .. autosrcenum:: VisLeafFlags
-	:members:
-	:undoc-members:
-	:member-order: bysource
+    :members:
+    :undoc-members:
+    :member-order: bysource
+
+
+.. py:attribute:: BSP.water_leaf_info
+
+    For each water brush in the map, this structure stores some additional information.
+
+.. autoclass:: LeafWaterInfo
+    :members:
+    :undoc-members:
+
 
 Planes
 ------
@@ -328,13 +378,26 @@ Planes
     :type: list[Plane]
 
 .. autoclass:: Plane
-	:members:
-	:undoc-members:
+    :members:
+    :undoc-members:
 
 .. autosrcenum:: PlaneType
 
     .. automethod:: PlaneType.from_normal
 
+
+Brushes
+-------
+
+The brushes lump contains a copy of all the original brushes in the map. This is mainly used for
+collision.
+
+.. py:attribute:: BSP.brushes
+    :type: list[Brush]
+
+.. autoclass:: Brush
+
+.. autoclass:: BrushSide
 
 Faces
 -----
@@ -380,22 +443,15 @@ Faces
     :members:
     :undoc-members:
 
-
-.. Lumps TODO:
-    brushes: ParsedLump[list[Brush]] = ParsedLump(BSP_LUMPS.BRUSHES, BSP_LUMPS.BRUSHSIDES)
-    water_leaf_info: ParsedLump[list[LeafWaterInfo]] = ParsedLump(BSP_LUMPS.LEAFWATERDATA)
-    # This is None if VVIS has not been run.
-    visibility: ParsedLump[Optional[Visibility]] = ParsedLump(BSP_LUMPS.VISIBILITY)
-    # Game lumps
-    detail_props: ParsedLump[list['DetailProp']] = ParsedLump(LMP_ID_DETAIL_PROPS)
-
 Miscellaneous
 =============
 
 .. automethod:: BSP.is_cordoned_heuristic
 
 
-.. Classes TODO:
-    'DetailProp', 'DetailPropModel', 'DetailPropOrientation', 'DetailPropShape', 'DetailPropSprite',
-    'LeafWaterInfo', 'Visibility',
-    'Brush', 'BrushSide', 'BrushContents',
+.. py:type:: BrushContents
+    :canonical: srctools.consts.BSPContents
+
+    This enum specifies collision types for brushes. It is reimported in the BSP module for convenience.
+
+.. TODO: Where to put this alias in the file?

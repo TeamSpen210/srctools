@@ -498,9 +498,9 @@ class VisLeafFlags(Flag):
 
 class DetailPropOrientation(Enum):
     """The kind of orientation for detail props."""
-    NORMAL = 0
-    SCREEN_ALIGNED = 1
-    SCREEN_ALIGNED_VERTICAL = 2
+    NORMAL = 0  #: Does not rotate.
+    SCREEN_ALIGNED = 1  #: Rotates to face directly into the screen.
+    SCREEN_ALIGNED_VERTICAL = 2  # Rotates along the Z axis to face towards the camera.
 
 
 @attrs.define(eq=False, repr=False)
@@ -829,12 +829,17 @@ class DetailProp:
 
     This is a base class, use one of the subclasses only.
     """
+    #: World position of the prop.
     origin: Vec
+    # Initial angles, influenced by the `orientation`.
     angles: Angle
+    #: Determines if and how the prop is affected by the camera direction.
     orientation: DetailPropOrientation
+    # Index for the visleaf this was placed in.
     leaf: int
     lighting: tuple[int, int, int, int]
     _light_styles: tuple[int, int]  # TODO: generate List[int]
+    #: The amount that the prop can sway by. 255 is max sway, 0 is no movement.
     sway_amount: int
 
     def __attrs_pre_init__(self) -> None:
@@ -855,15 +860,22 @@ class DetailPropSprite(DetailProp):
     sprite_scale: float
     dims_upper_left: tuple[float, float]
     dims_lower_right: tuple[float, float]
+    #: :pycode:`(U, V)` coordinates for the upper-left corner of the sprite, in the detail material.
     texcoord_upper_left: tuple[float, float]
+    #: :pycode:`(U, V)` coordinates for the lower-right corner of the sprite, in the detail material.
     texcoord_lower_right: tuple[float, float]
 
 
 @attrs.define(eq=False)
 class DetailPropShape(DetailPropSprite):
     """A shape-type detail prop, rendered as a triangle or cross shape."""
+    #: If true, the prop is composed of two planes in a X shape. If false, it is composed
+    #: of three planes, in a triangle that slightly overlaps.
     is_cross: bool
+    #: For triangle shapes, the number of degrees to bend outwards. (0-255)
     shape_angle: int
+    #: For triangle shapes, how far each plane should be offset from the center. 0 is no offset,
+    #: 255 is the same as the overall width.
     shape_size: int
 
 
@@ -932,6 +944,9 @@ class BrushSide:
     plane: Plane
     texinfo: TexInfo
     _dispinfo: int  # TODO
+    #: If true, this is an artificial axial face, inserted so that all sides of the bounding box
+    #: surrounding the brush exists. This is necessary to allow for 'inflating' the brush for
+    #: efficient collision detection.
     is_bevel_plane: bool
     # The bevel member should be bool, but it has other bits set randomly.
     _unknown_bevel_bits: int = 0
@@ -1037,8 +1052,11 @@ class VisTree:
 @attrs.define(eq=False)
 class LeafWaterInfo:
     """Additional data about water volumes."""
+    #: The height of the water surface.
     surface_z: float
+    #: The lowest bottom in the water volume.
     min_z: float
+    #: The material used for the water surface.
     surface_texinfo: TexInfo
 
 
@@ -1049,7 +1067,9 @@ class Visibility:
     Visleafs each have a "cluster" ID. For every pair of cluster IDs, this indicates if the first
     can see the second, and whether they can hear each other.
     """
+    #: For each cluster, an array of bits indicating which leaf can see each other.
     potentially_visible: list[bytearray]
+    #: For each cluster, an array of bits indicating which leaf can hear each other.
     potentially_audible: list[bytearray]
 
 
@@ -1853,7 +1873,7 @@ class BSP:
         )
 
     def is_potentially_visible(self, leaf1: VisLeaf, leaf2: VisLeaf) -> tuple[bool, bool]:
-        """Check if the first leaf can potentially see and hear the second.
+        """Check if the first leaf can potentially see and hear the second, in that order.
 
         Always returns :obj:`True` if visibility data has not been computed (``self.visibility is None``).
         """
@@ -1873,10 +1893,13 @@ class BSP:
     ) -> None:
         """Override whether the first leaf can see/hear the second.
 
-        If either :obj:`bool` is :obj:`None` that value is left unaltered.
+        If either parameter is :obj:`None` that value is left unaltered.
+        Does nothing if :attr:`BSP.visibility` is None.
         """
         vis: Optional[Visibility] = self.visibility
-        if (visible is None and audible is None) or vis is None:
+        if vis is None:
+            return  # No data. TODO: Maybe init?
+        if visible is None and audible is None:
             return  # Nothing to do.
         byte_ind, bit_ind = divmod(leaf2.cluster_id, 8)
         bits = 1 << bit_ind
