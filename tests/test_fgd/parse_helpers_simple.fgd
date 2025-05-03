@@ -10,7 +10,7 @@
 	line(240 180 50, targetname, target)
 	line(12 180 50, targetname, target, parentname, next)
 	frustum(_fov, _nearplane, _farplane, _light, 1)
-	frustum(light_fov, light_near, light_far, bright, -1)
+	frustum(light_fov, light_near, light_far, bright, 6.78)
 	cylinder(24 48 96, targetname, start)
 	cylinder(24 48 96, targetname, start, start_size)
 	cylinder(24 48 96, targetname, start, start_size, target, end)

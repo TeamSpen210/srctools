@@ -1633,7 +1633,7 @@ class EntityDef:
     def parse(
         cls,
         fgd: FGD,
-        tok: BaseTokenizer,
+        tok: Tokenizer,
         ent_type: EntityTypes,
         eval_bases: bool = True,
         eval_extensions: bool = True,
@@ -1691,14 +1691,19 @@ class EntityDef:
                         args.append(tok.expect(Token.STRING))
                     tok.expect(Token.PAREN_CLOSE)
                 else:
-                    for arg_tok, arg_val in tok:
-                        if arg_tok is Token.PAREN_CLOSE:
-                            break
-                        elif arg_tok is Token.STRING:
-                            args.append(arg_val)
-                        # Comma is actually irrelevant for all normal types other than size().
-                        elif arg_tok is not Token.COMMA:
-                            raise tok.error(arg_tok, arg_val)
+                    # We need to allow + in args.
+                    try:
+                        tok.plus_operator = False
+                        for arg_tok, arg_val in tok:
+                            if arg_tok is Token.PAREN_CLOSE:
+                                break
+                            elif arg_tok is Token.STRING:
+                                args.append(arg_val)
+                            # Comma is actually irrelevant for all normal types other than size().
+                            elif arg_tok is not Token.COMMA:
+                                raise tok.error(arg_tok, arg_val)
+                    finally:
+                        tok.plus_operator = True
 
                 if help_type_cust == 'aliasof':
                     # Extension, indicate that it's an alias. The args are then treated like base()

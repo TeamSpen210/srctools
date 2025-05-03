@@ -447,7 +447,7 @@ def test_parse_kv_flags(py_c_token, code, is_readonly, is_report) -> None:
 
 def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture) -> None:
     """Test parsing simple helper types."""
-    fsys = VirtualFileSystem({'test.fgd': f"""@PointClass
+    fsys = VirtualFileSystem({'test.fgd': """@PointClass
     base(Base1, Base2, Base3)
     halfgridsnap // Special, no args
     size(32 64 128)
@@ -459,7 +459,7 @@ def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture
     line(240 180 50, targetname, target)
     line(12 180 50, targetname target, parentname, next)
     frustum()
-    frustum(light_fov, light_near, light_far, bright, -1)
+    frustum(light_fov, light_near, light_far, bright, +6.78)
     cylinder(24 48 96, targetname, start)
     cylinder(24 48 96, targetname, start start_size)
     cylinder(24 48 96, targetname, start start_size, target, end)
@@ -488,7 +488,7 @@ def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture
         fgd_mod.HelperLine(240, 180, 50, "targetname", "target", None, None),
         fgd_mod.HelperLine(12, 180, 50, "targetname", "target", "parentname", "next"),
         fgd_mod.HelperFrustum("_fov", "_nearplane", "_farplane", "_light", 1.0),
-        fgd_mod.HelperFrustum("light_fov", "light_near", "light_far", "bright", -1.0),
+        fgd_mod.HelperFrustum("light_fov", "light_near", "light_far", "bright", 6.78),
         fgd_mod.HelperCylinder(24, 48, 96, "targetname", "start"),
         fgd_mod.HelperCylinder(24, 48, 96, "targetname", "start", start_radius="start_size"),
         fgd_mod.HelperCylinder(24, 48, 96, "targetname", "start", "target", "end", "start_size"),
@@ -507,7 +507,7 @@ def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture
 
 def test_parse_helpers_icon(py_c_token, file_regression: FileRegressionFixture) -> None:
     """Test parsing sprite/model helper types."""
-    fsys = VirtualFileSystem({'test.fgd': f"""@PointClass
+    fsys = VirtualFileSystem({'test.fgd': """@PointClass
     sprite()
     sprite(editor/env_fire)
     iconsprite()
@@ -540,7 +540,7 @@ def test_parse_helpers_icon(py_c_token, file_regression: FileRegressionFixture) 
 
 def test_parse_helpers_special(py_c_token, file_regression: FileRegressionFixture) -> None:
     """Test parsing specialised helper types."""
-    fsys = VirtualFileSystem({'test.fgd': f"""@PointClass
+    fsys = VirtualFileSystem({'test.fgd': """@PointClass
     instance()
     decal()
     overlay()
@@ -580,11 +580,11 @@ def test_parse_helpers_special(py_c_token, file_regression: FileRegressionFixtur
 
 def test_parse_helpers_extension(py_c_token, file_regression: FileRegressionFixture) -> None:
     """Test parsing extra helper types."""
-    fsys = VirtualFileSystem({'test.fgd': f"""@PointClass
-    appliesto(tag1, tag2, !tag3)
+    fsys = VirtualFileSystem({'test.fgd': """@PointClass
+    appliesto(tag1, +tag2, -tag3, !tag4)
     orderby(a, c, b)
     autovis(Auto, some, group)
-    unknown(a b, c)
+    unknown(a+b, c  d 4+3-25, e)
     = some_entity [
         a(int) : "First"
         b(string) : "Third"
@@ -595,9 +595,9 @@ def test_parse_helpers_extension(py_c_token, file_regression: FileRegressionFixt
     fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False)
     ent = fgd['some_entity']
     assert ent.helpers == [
-        fgd_mod.HelperExtAppliesTo(["tag1", "tag2", "!tag3"]),
+        fgd_mod.HelperExtAppliesTo(["tag1", "+tag2", "-tag3", "!tag4"]),
         fgd_mod.HelperExtOrderBy(["a", "c", "b"]),
-        fgd_mod.UnknownHelper("unknown", ["a", "b", "c"]),
+        fgd_mod.UnknownHelper("unknown", ["a+b", "c", "d", "4+3-25", "e"]),
     ]
     assert fgd.auto_visgroups == {
         "some": fgd_mod.AutoVisgroup("some", "Auto", {"some_entity"}),
@@ -610,23 +610,23 @@ def test_parse_helpers_extension(py_c_token, file_regression: FileRegressionFixt
 def test_illegal_helpers_size(py_c_token) -> None:
     """The size helper is special, and is parsed specially."""
     fsys = VirtualFileSystem({
-        'no_args.fgd': f"""@PointClass
+        'no_args.fgd': """@PointClass
         size() 
         = illegal []
         """,
-        'two_coords.fgd': f"""@PointClass
+        'two_coords.fgd': """@PointClass
         size(1 2) 
         = illegal []
         """,
-        'early_comma.fgd': f"""@PointClass
+        'early_comma.fgd': """@PointClass
         size(1, 2 3, 4 5 6) 
         = illegal []
         """,
-        'no_comma.fgd': f"""@PointClass
+        'no_comma.fgd': """@PointClass
         size(1 2 3 4 5 6) 
         = illegal []
         """,
-        'extra_coords.fgd': f"""@PointClass
+        'extra_coords.fgd': """@PointClass
         size(1 2 3, 4 5 6, 7 8 9) 
         = illegal []
         """,
