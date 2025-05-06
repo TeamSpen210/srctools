@@ -2,5 +2,6 @@ srctools.fgd
 ------------
 
 .. automodule:: srctools.fgd
-	:synopsis: Reads and writes FGD entity definitions.
-	:members:
+    :synopsis: Reads and writes FGD entity definitions.
+    :members:
+    :undoc-members:

@@ -2,5 +2,6 @@ srctools.vmf
 ------------
 
 .. automodule:: srctools.vmf
-	:synopsis: Handles manipulation of VMF maps.
-	:members:
+    :synopsis: Handles manipulation of VMF maps.
+    :members:
+    :undoc-members:

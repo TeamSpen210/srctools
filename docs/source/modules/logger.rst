@@ -2,5 +2,6 @@ srctools.logger
 ---------------
 
 .. automodule:: srctools.logger
-	:synopsis: Wrappers around the logging module to add extra features.
-	:members:
+    :synopsis: Wrappers around the logging module to add extra features.
+    :members:
+    :undoc-members:

@@ -104,11 +104,9 @@ In addition to using parsed objects, raw data for both lump types can be accesse
     :member-order: bysource
 
 .. autoclass:: Lump
-
     :members:
 
 .. autoclass:: GameLump
-
     :members:
 
 
@@ -271,6 +269,10 @@ Detail Props
     :members:
     :undoc-members:
 
+.. autoclass:: DetailPropShape
+    :members:
+    :undoc-members:
+
 
 Cubemaps
 --------
@@ -396,8 +398,12 @@ collision.
     :type: list[Brush]
 
 .. autoclass:: Brush
+    :members:
+    :undoc-members:
 
 .. autoclass:: BrushSide
+    :members:
+    :undoc-members:
 
 Faces
 -----

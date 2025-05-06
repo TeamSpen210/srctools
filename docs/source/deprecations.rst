@@ -27,6 +27,8 @@ srctools.bsp
 
 .. automethod:: BSP.static_props
 
+.. automethod:: BSP.write_static_props
+
 .. autoproperty:: VisTree.plane_norm
 
 .. autoproperty:: VisTree.plane_dist
@@ -42,13 +44,11 @@ srctools.dmx
 	Call :py:meth:`srctools.dmx.StubElement.stub()` instead.
 
 .. py:class:: AngleTup
-	:no-index:
 	:canonical: srctools.math.FrozenAngle
 
 	Was a named tuple, use the frozen class instead.
 
 .. py:class:: Vec3
-	:no-index:
 	:canonical: srctools.math.FrozenVec
 
 	Was a named tuple, use the frozen class instead.

@@ -24,6 +24,7 @@ ALIASES = {
     'srctools.dmx.AngleTup': 'srctools.math.FrozenAngle',
     'srctools.dmx.Vec3': 'srctools.math.FrozenVec',
     'srctools.bsp.BrushContents': 'srctools.const.BSPContents',
+    'srctools.fgd.KeyValues': 'srctools.fgd.KVDef',
 }
 
 
