@@ -101,6 +101,39 @@ _FGD_TO_FILE = {
 
     KVTypes.STR_MODEL: FileType.MODEL,
     KVTypes.EXT_STR_TEXTURE: FileType.TEXTURE,
+
+    # These don't do anything, avoid checking the rest.
+    KVTypes.VOID: None,
+    KVTypes.CHOICES: None,
+    KVTypes.SPAWNFLAGS: None,
+    KVTypes.STRING: None,
+    KVTypes.BOOL: None,
+    KVTypes.INT: None,
+    KVTypes.FLOAT: None,
+    KVTypes.VEC: None,
+    KVTypes.ANGLES: None,
+    KVTypes.TARG_DEST: None,
+    KVTypes.TARG_DEST_CLASS: None,
+    KVTypes.TARG_SOURCE: None,
+    KVTypes.TARG_NPC_CLASS: None,
+    KVTypes.TARG_POINT_CLASS: None,
+    KVTypes.TARG_FILTER_NAME: None,
+    KVTypes.TARG_NODE_DEST: None,
+    KVTypes.TARG_NODE_SOURCE: None,
+    KVTypes.ANGLE_NEG_PITCH: None,
+    KVTypes.VEC_LINE: None,
+    KVTypes.VEC_ORIGIN: None,
+    KVTypes.VEC_AXIS: None,
+    KVTypes.COLOR_1: None,
+    KVTypes.COLOR_255: None,
+    KVTypes.SIDE_LIST: None,
+    KVTypes.INST_FILE: None,  # Don't need to pack instances.
+    KVTypes.INST_VAR_DEF: None,
+    KVTypes.INST_VAR_REP: None,
+    KVTypes.EXT_VEC_DIRECTION: None,
+    KVTypes.EXT_VEC_LOCAL: None,
+    KVTypes.EXT_ANGLE_PITCH: None,
+    KVTypes.EXT_ANGLES_LOCAL: None,
 }
 
 
@@ -964,8 +997,10 @@ class PackList:
                         self.pack_soundscript(value)
                     elif val_type is KVTypes.STR_PARTICLE:
                         self.pack_particle(value)
+                    # TODO: KVTypes.EXT_SOUNDSCAPE
                 else:
-                    self.pack_file(value, file_type)
+                    if file_type is not None:
+                        self.pack_file(value, file_type)
 
             # Handle resources that's coded into different entities with our internal database.
             for file_type, filename in ent_class.get_resources(res_ctx, ent=ent, on_error=LOGGER.warning):
