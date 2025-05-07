@@ -93,6 +93,16 @@ ANIM_EVENT_FOOTSTEP = {
 }
 ANIM_EVENT_PARTICLE = AnimEvents.AE_CL_CREATE_PARTICLE_EFFECT
 
+_FGD_TO_FILE = {
+    # Appears differently in Hammer etc, but all load mats.
+    KVTypes.STR_MATERIAL: FileType.MATERIAL,
+    KVTypes.STR_SPRITE: FileType.MATERIAL,
+    KVTypes.STR_DECAL: FileType.MATERIAL,
+
+    KVTypes.STR_MODEL: FileType.MODEL,
+    KVTypes.EXT_STR_TEXTURE: FileType.TEXTURE,
+}
+
 
 @deprecated(
     'Use EntityDef.engine_def() instead if possible, or FGD.engine_dbase() '
@@ -942,25 +952,20 @@ class PackList:
                 if not value:
                     continue
 
-                if (
-                    val_type is KVTypes.STR_MATERIAL
-                    or val_type is KVTypes.STR_SPRITE
-                    or val_type is KVTypes.STR_DECAL
-                ):  # Appears differently in Hammer etc, but all load mats.
-                    self.pack_file(value, FileType.MATERIAL)
-                elif val_type is KVTypes.STR_MODEL:
-                    self.pack_file(value, FileType.MODEL)
-                elif val_type is KVTypes.EXT_STR_TEXTURE:
-                    self.pack_file(value, FileType.TEXTURE)
-                elif val_type is KVTypes.STR_VSCRIPT:
-                    for script in value.split():
-                        self.pack_file('scripts/vscripts/' + script)
-                elif val_type is KVTypes.STR_VSCRIPT_SINGLE:
-                    self.pack_file('scripts/vscripts/' + value)
-                elif val_type is KVTypes.STR_SOUND:
-                    self.pack_soundscript(value)
-                elif val_type is KVTypes.STR_PARTICLE:
-                    self.pack_particle(value)
+                try:
+                    file_type = _FGD_TO_FILE[val_type]
+                except KeyError:
+                    if val_type is KVTypes.STR_VSCRIPT:
+                        for script in value.split():
+                            self.pack_file('scripts/vscripts/' + script)
+                    elif val_type is KVTypes.STR_VSCRIPT_SINGLE:
+                        self.pack_file('scripts/vscripts/' + value)
+                    elif val_type is KVTypes.STR_SOUND:
+                        self.pack_soundscript(value)
+                    elif val_type is KVTypes.STR_PARTICLE:
+                        self.pack_particle(value)
+                else:
+                    self.pack_file(value, file_type)
 
             # Handle resources that's coded into different entities with our internal database.
             for file_type, filename in ent_class.get_resources(res_ctx, ent=ent, on_error=LOGGER.warning):
