@@ -33,8 +33,8 @@ class SoundChars(enum.Flag):
     stream = enum.auto()
     user_vox = enum.auto()  #: Marks player voice chat data, shouldn't ever be used.
     sentence = enum.auto()  #: Dialog from the NPC sentence system.
-    dry_mix = enum.auto()  #:  DSP FX is bypassed for this sound.
-    doppler = enum.auto()  #:  Doppler encoded stereo wav: left wav (incoming) and right wav (outgoing).
+    dry_mix = enum.auto()  #: DSP FX is bypassed for this sound.
+    doppler = enum.auto()  #: Doppler encoded stereo wav: left wav (incoming) and right wav (outgoing).
     #: Stereo wav has direction cone: mix left wav (front facing)
     #: with right wav (rear facing) based on sound facing direction
     directional = enum.auto()

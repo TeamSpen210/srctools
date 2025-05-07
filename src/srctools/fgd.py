@@ -2,9 +2,9 @@
 from __future__ import annotations
 from typing import (
     IO, TYPE_CHECKING, Any, ClassVar, Generic, Optional, TextIO, TypeVar, Union,
-    cast, Self,
+    cast,
 )
-from typing_extensions import Protocol, TypeAlias, overload
+from typing_extensions import Protocol, TypeAlias, overload, Self
 from collections import ChainMap, defaultdict
 from collections.abc import (
     Callable, Collection, Container, Iterable, Iterator, Mapping, Sequence, Set as AbstractSet,
@@ -498,6 +498,7 @@ def _parse_flags(
     first_value: str, vals: list[str], tags: TagsSet,
 ) -> SpawnFlags:
     """Parse a line into a flags array member."""
+    power: float
     if first_value.startswith(("^", "2^")):
         # Extension syntax - '2^4' == 16, '^0' == 1, etc.
         try:

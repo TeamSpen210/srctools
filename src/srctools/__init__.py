@@ -194,6 +194,7 @@ def conv_bool(val: Union[str, bool, None], default: Union[ValT, bool] = False) -
         except KeyError:
             return default
 
+
 @overload
 def conv_float(val: Union[int, float, str]) -> float: ...
 @overload
@@ -318,6 +319,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
 
     # Also stricter than Mapping[Any, Any], since we NoReturn if not passed a default.
     __marker: Final[Any] = object()
+
     @overload
     def pop(self, key: Any, /) -> NoReturn: ...
     @overload

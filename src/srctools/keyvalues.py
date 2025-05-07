@@ -58,8 +58,8 @@ Keyvalues with children can be indexed by their names, or by a
 
 Handling ``\\n``, ``\\t``, ``\\"``, and ``\\\\`` escape characters can be enabled.
 """
-from typing import Any, ClassVar, Final, Optional, Protocol, TypeVar, Union, cast, Self
-from typing_extensions import ContextManager, Literal, TypeAlias, deprecated, overload
+from typing import Any, ClassVar, Final, Optional, Protocol, TypeVar, Union, cast
+from typing_extensions import ContextManager, Literal, TypeAlias, deprecated, overload, Self
 from collections.abc import Callable, Iterable, Iterator, Mapping
 import builtins  # Keyvalues.bool etc shadows these.
 import io

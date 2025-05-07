@@ -22,8 +22,6 @@ Specifically, the following characters are escaped:
 .. _utlbuffer_esc: https://github.com/ValveSoftware/source-sdk-2013/blob/\
 0565403b153dfcde602f6f58d8f4d13483696a13/src/tier1/utlbuffer.cpp#L57-L69
 """
-import sys
-
 from typing import TYPE_CHECKING, Final, NoReturn, Optional, Union
 from typing_extensions import Self, TypeAlias, overload
 from collections.abc import Iterable, Iterator

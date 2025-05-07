@@ -434,12 +434,11 @@ def env_shooter(ctx: ResourceCtx, ent: Entity) -> ResGen:
 @cls_func
 def env_smokestack(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """This tries using each numeric material that exists."""
-    mat_base = ent['smokematerial'].casefold().replace('\\', '/')
+    mat_base = ent['smokematerial'].casefold()
+    mat_base = mat_base.replace('\\', '/').removesuffix(".vmt")
     if not mat_base:
         return
 
-    if mat_base.endswith('.vmt'):
-        mat_base = mat_base[:-4]
     if not mat_base.startswith('materials/'):
         mat_base = 'materials/' + mat_base
 
