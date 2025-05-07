@@ -11,7 +11,7 @@
 
 @NpcClass base(Origin, Angles, MissingBase) 
 	sphere(radius, 255 128 64)
-	studio(models/editor/a_prop.mdl)
+	studio("models/editor/a_prop.mdl")
 	appliesto(-episodic)
 	extrahelper(1, 15, thirtytwo)
 	size(-16 -16 -16, 16 16 16)

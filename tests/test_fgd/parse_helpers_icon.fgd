@@ -5,11 +5,11 @@
 	iconsprite()
 	iconsprite("editor/env_blood")
 	studio()
-	studio(models/error.mdl)
+	studio("models/error.mdl")
 	studioprop()
-	studioprop(models/props/metal_box.mdl)
+	studioprop("models/props/metal_box.mdl")
 	lightprop()
-	lightprop(models/editor/spotlight.mdl)
+	lightprop("models/editor/spotlight.mdl")
 = some_entity
 	[
 	]
