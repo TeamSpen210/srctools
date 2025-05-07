@@ -19,6 +19,7 @@ Version (dev)
 * :bee-pack-issue:`4299`: Fix sprites and decals not being detected properly for packing.
 * Fix `BSP.static_prop_models <srctools.bsp.BSP.static_prop_models` breaking if props were already parsed.
 * Make toplevel aliases like ``srctools.VPK`` lazy import.
+* Add support for detecting sounds out of choreo scenes when packing.
 
 -------------
 Version 2.5.0

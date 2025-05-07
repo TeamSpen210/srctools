@@ -26,7 +26,11 @@ from srctools.keyvalues import KeyValError, Keyvalues, NoKeyError
 from srctools.mdl import MDL_EXTS_EXTRA, AnimEvents, Model
 from srctools.particles import FORMAT_NAME as PARTICLE_FORMAT_NAME, Particle
 from srctools.sndscript import SND_CHARS, Sound
-from srctools.tokenizer import TokenSyntaxError
+from srctools.tokenizer import TokenSyntaxError, Tokenizer
+from srctools.choreo import (
+    Scene as ChoreoScene, CRC, Entry as ChoreoEntry,
+    parse_scenes_image, checksum_filename,
+)
 from srctools.vmf import VMF, Entity
 from srctools.vmt import Material, VarType
 import srctools.logger
@@ -101,6 +105,7 @@ _FGD_TO_FILE = {
 
     KVTypes.STR_MODEL: FileType.MODEL,
     KVTypes.EXT_STR_TEXTURE: FileType.TEXTURE,
+    KVTypes.STR_SCENE: FileType.CHOREO,
 
     # These don't do anything, avoid checking the rest.
     KVTypes.VOID: None,
@@ -397,6 +402,7 @@ class PackList:
     _inject_files: dict[tuple[str, str, bytes], str]
     # Cache of the models used for breakable chunks.
     _break_chunks: Optional[dict[str, list[str]]]
+    choreo: dict[CRC, ChoreoEntry]
     # For each model, defines the skins the model uses. None means at least
     # one use is unknown, so all skins could potentially be used.
     skinsets: dict[str, Optional[set[int]]]
@@ -409,6 +415,7 @@ class PackList:
         self._files = {}
         self._inject_files = {}
         self._break_chunks = {}
+        self.choreo = {}
         self.skinsets = {}
 
     def __getitem__(self, path: str) -> PackFile:
@@ -477,9 +484,6 @@ class PackList:
         if data_type is FileType.PARTICLE:
             self.pack_particle(filename)
             return  # This packs the PCF and material if required.
-        if data_type is FileType.CHOREO:
-            # self.pack_choreo(filename)  # TODO: Choreo scene parsing
-            return
         if data_type is FileType.BREAKABLE_CHUNK:
             self.pack_breakable_chunk(filename)
             return  # Packs additional models.
@@ -820,6 +824,11 @@ class PackList:
 
         if cache_file is not None:
             self.particles.save_cache(cache_file)
+
+    def load_choreo_scenes(self) -> None:
+        """Load the scenes manifest."""
+        with self.fsys['scenes/scenes.image'].open_bin() as file:
+            self.choreo |= parse_scenes_image(file)
 
     @deprecated('Renamed to write_soundscript_manifest()')
     def write_manifest(self) -> None:
@@ -1186,6 +1195,8 @@ class PackList:
                                 self.pack_file(hdr_tex, optional=True)
                     elif file.type is FileType.VSCRIPT_SQUIRREL:
                         self._get_vscript_files(file)
+                    elif file.type is FileType.CHOREO:
+                        self._get_choreo_files(file)
                     elif file.type is FileType.WEAPON_SCRIPT:
                         # Black Mesa Source uses DMX files instead of KV1.
                         if file.filename.endswith('.dmx'):
@@ -1353,6 +1364,39 @@ class PackList:
                 LOGGER.warning("Can't read filename in VScript:", exc_info=True)
                 continue
             self.pack_file(filename, param_type, optional=file.optional)
+
+    def _get_choreo_files(self, file: PackFile) -> None:
+        """Find sound dependencies for choreo scenes."""
+        crc = checksum_filename(file.filename)
+        if file.data:
+            try:
+                scene = ChoreoScene.parse_text(Tokenizer(file.data.decode('utf8')))
+            except (TokenSyntaxError, UnicodeDecodeError) as exc:
+                LOGGER.warning(
+                    'Choreo scene "{}" cannot be parsed:\n{}',
+                    file.filename, exc,
+                )
+                return
+        else:
+            try:
+                entry = self.choreo[crc]
+            except KeyError:
+                try:
+                    with self.fsys[file.filename].open_str('utf8') as f:
+                        scene = ChoreoScene.parse_text(Tokenizer(f))
+                except (TokenSyntaxError, UnicodeDecodeError) as exc:
+                    LOGGER.warning(
+                        'Choreo scene "{}" cannot be parsed:\n{}',
+                        file.filename, exc,
+                    )
+                    return
+            else:  # Directly stored in the entry
+                for sound in entry.sounds:
+                    self.pack_soundscript(sound)
+                return
+
+        for sound in scene.used_sounds():
+            self.pack_soundscript(sound)
 
     def _get_weaponscript_kv1_files(self, file: PackFile) -> None:
         """Find any dependencies in a Keyvalues1 weapon script."""
