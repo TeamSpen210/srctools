@@ -1,13 +1,11 @@
 """Reads and writes VMF map files, providing various tools to make it easier to modify."""
-from typing import (
-    IO, TYPE_CHECKING, Any, Final, Optional, Protocol, TypeVar, Union, Generator, overload,
-)
+from typing import IO, TYPE_CHECKING, Any, Final, Optional, Protocol, TypeVar, Union, overload
 from typing_extensions import Literal, TypeAlias, deprecated
 from array import ArrayType as Array
 from collections import defaultdict
 from collections.abc import (
-    Callable, ItemsView, Iterable, Iterator, KeysView, Mapping, MutableMapping, Sequence,
-    Set as AbstractSet, ValuesView,
+    Callable, Generator, ItemsView, Iterable, Iterator, KeysView, Mapping, MutableMapping,
+    Sequence, Set as AbstractSet, ValuesView,
 )
 from enum import Enum, Flag
 from re import Match, Pattern
@@ -541,32 +539,39 @@ class VMF:
     # the whole map
     by_target: MutableMapping[Optional[str], CopySet['Entity']]
     by_class: MutableMapping[str, CopySet['Entity']]
+    #: The list of all entities in the map.
     entities: list['Entity']
+    #: The list of all world brushes in the map.
     brushes: list['Solid']
+    #: The list of all cameras defined in the map.
     cameras: list['Camera']
+    #: The list of all cordons defined in the map.
     cordons: list['Cordon']
     vis_tree: list['VisGroup']
     groups: dict[int, 'EntityGroup']
+    #: The ``worldspawn`` entity represents the world and stores all world brushes. This will
+    #: always exist. It is also present in the `entities` list.
     spawn: 'Entity'
 
-    is_prefab: bool
+    is_prefab: bool  #: Marks whether this map is a intended as a prefab.
     cordon_enabled: bool
-    map_ver: int
+    map_ver: int  #: The map version increments once whenever the map is saved in Hammer.
 
     format_ver: int
     hammer_ver: int
     hammer_build: int
 
     # Various Hammer settings
-    show_grid: bool
-    show_3d_grid: bool
-    snap_grid: bool
-    show_logic_grid: bool
-    grid_spacing: int
+    show_grid: bool  #: Whether Hammer has the grid enabled.
+    show_3d_grid: bool  #: Whether Hammer has the 3D grid enabled.
+    snap_grid: bool  #: Whether Hammer has grid snapping enabled.
+    show_logic_grid: bool  #: Whether Hammer has the incomplete logical grid enabled.
+    grid_spacing: int  #: The last grid size in Hammer.
     active_cam: int
     quickhide_count: int
-    # If None, these are omitted in the exported file.
+    #: Records the last state of the instance viewing mode. If `None`, no value is saved in the file.
     strata_instance_vis: Optional[StrataInstanceVisibility]
+    #: Records the current state of all 2D and 3D viewports. If `None`, no value is saved in the file.
     strata_viewports: Optional[list[Union[Strata2DViewport, Strata3DViewport]]]
 
     # Ignore our own deprecation helper function.
@@ -3178,7 +3183,7 @@ class EntityFixup(MutableMapping[str, str]):
     # for the type annotations.
     __slots__ = ['_fixup', '_matcher']
 
-    def __init__(self, fixup: Iterable[FixupValue] = ()) -> None:
+    def __init__(self, fixup: Union[Iterable[FixupValue], 'EntityFixup'] = ()) -> None:
         self._fixup: dict[str, FixupValue] = {}
         self._matcher: Optional[Pattern[str]] = None
         # In _fixup each variable is stored as a tuple of (var_name,
@@ -3188,6 +3193,8 @@ class EntityFixup(MutableMapping[str, str]):
         # Do a check to ensure all fixup values have valid indexes:
         used_indexes: set[int] = set()
         extra_vals: list[FixupValue] = []
+        if isinstance(fixup, EntityFixup):
+            fixup = fixup._fixup.values()
         for fix in fixup:
             if fix.id not in used_indexes:
                 used_indexes.add(fix.id)
@@ -3870,4 +3877,18 @@ class Output:
         return (
             f'{self.output} {target}{delim}{self.input}{delim}'
             f'{self.params}{delim}{self.delay}{delim}{self.times}'
+        )
+
+    def substitute_fixup(self, fixup: EntityFixup) -> 'Output':
+        """Substitute fixup values in all fields."""
+        return Output(
+            fixup.substitute(self.output),
+            fixup.substitute(self.target),
+            fixup.substitute(self.input),
+            fixup.substitute(self.params, allow_invert=True),
+            self.delay,
+            times=self.times,
+            inst_in=fixup.substitute(self.inst_in) if self.inst_in is not None else None,
+            inst_out=fixup.substitute(self.inst_out) if self.inst_out is not None else None,
+            comma_sep=self.comma_sep,
         )

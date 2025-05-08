@@ -131,10 +131,10 @@ Entities
 
 .. autoattribute:: VMF.entities
 .. autoattribute:: VMF.spawn
-.. automethod:: add_ent
-.. automethod:: remove_ent
-.. automethod:: add_ents
-.. automethod:: create_ent
+.. automethod:: VMF.add_ent
+.. automethod:: VMF.remove_ent
+.. automethod:: VMF.add_ents
+.. automethod:: VMF.create_ent
 
 .. autoclass:: Entity
 
