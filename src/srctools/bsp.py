@@ -540,7 +540,7 @@ class GameLump:
     #: this is automatically cleared.
     data: bytes = b''
 
-    ST: ClassVar[struct.Struct] = struct.Struct('<4s HH ii')
+    _STRUCT: ClassVar[struct.Struct] = struct.Struct('<4s HH ii')
 
     @property
     def is_compressed(self) -> bool:
@@ -1527,8 +1527,8 @@ class BSP:
                     glump_version,
                     file_off,
                     uncomp_size,
-                ) = GameLump.ST.unpack_from(game_lump.data, lump_offset)
-                lump_offset += GameLump.ST.size
+                ) = GameLump._STRUCT.unpack_from(game_lump.data, lump_offset)
+                lump_offset += GameLump._STRUCT.size
                 # The lump ID is backward..
                 game_lump_id = game_lump_id[::-1]
 
@@ -2918,79 +2918,79 @@ class BSP:
         with vmf.allow_duplicate_ids():
             for tok_typ, tok_value in tok:
                 if tok_typ is Token.BRACE_OPEN:
-                if cur_ent is not None:
-                    raise tok.error('2 levels of nesting after {} ents', len(vmf.entities))
-                # The first entity updates worldspawn.
-                if not seen_spawn:
-                    cur_ent = vmf.spawn
-                    seen_spawn = True
-                else:
-                    cur_ent = Entity(vmf)
-                continue
-            elif tok_typ is Token.BRACE_CLOSE:
+                    if cur_ent is not None:
+                        raise tok.error('2 levels of nesting after {} ents', len(vmf.entities))
+                    # The first entity updates worldspawn.
+                    if not seen_spawn:
+                        cur_ent = vmf.spawn
+                        seen_spawn = True
+                    else:
+                        cur_ent = Entity(vmf)
+                    continue
+                elif tok_typ is Token.BRACE_CLOSE:
+                    if cur_ent is None:
+                        raise tok.error('Too many closing brackets after {} ents!', len(vmf.entities))
+                    if cur_ent is vmf.spawn:
+                        if cur_ent['classname'] != 'worldspawn':
+                            raise tok.error('First entity must be worldspawn, not "{}"!', cur_ent["classname"])
+                    else:
+                        # The spawn ent is stored in the attribute, not in the ent list.
+                        vmf.add_ent(cur_ent)
+                    cur_ent = None
+                    continue
+                elif tok_typ is Token.NEWLINE:
+                    continue
+                elif tok_typ is Token.EOF:
+                    if cur_ent is not None:
+                        raise ValueError("Last entity didn't end!")
+                    return vmf
+                elif tok_typ is not Token.STRING:
+                    raise tok.error(tok_typ, tok_value)
+
+                # Null byte at end of lump.
+                if tok_value == '\x00':
+                    tok.expect(Token.EOF)  # If in the middle, raise error.
+                    if cur_ent is not None:
+                        raise ValueError("Last entity didn't end!")
+                    break
+
                 if cur_ent is None:
-                    raise tok.error('Too many closing brackets after {} ents!', len(vmf.entities))
-                if cur_ent is vmf.spawn:
-                    if cur_ent['classname'] != 'worldspawn':
-                        raise tok.error('First entity must be worldspawn, not "{}"!', cur_ent["classname"])
+                    raise tok.error("Keyvalue outside brackets: {}({!r})", tok_typ, tok_value)
+
+                # Line is of the form <"key" "val">, but handle escaped quotes
+                # in the value. Valve's parser doesn't allow that, but we might
+                # as well be better...
+                key = tok_value
+                value = tok.expect(Token.STRING)
+
+                # Now, we need to figure out if this is a keyvalue,
+                # or connection.
+                # If we're L4D+, this is easy - they use 0x1B as separator.
+                # Before, it's a comma which is common in keyvalues.
+                # Assume it's an output if it has exactly 4 commas, and the last two
+                # successfully parse as numbers.
+                if '\x1B' in value:
+                    # All outputs use the comma_sep, so we can ID them.
+                    try:
+                        cur_ent.add_out(Output.parse(Keyvalues(key, value)))
+                    except ValueError as exc:
+                        raise ValueError(f'Failed to parse output in {key!r} {value!r}') from exc
+                    if self.out_comma_sep is None:
+                        self.out_comma_sep = False
+                elif value.count(',') == 4:
+                    try:
+                        cur_ent.add_out(Output.parse(Keyvalues(key, value)))
+                    except ValueError:
+                        cur_ent[key] = value
+                    if self.out_comma_sep is None:
+                        self.out_comma_sep = True
                 else:
-                    # The spawn ent is stored in the attribute, not in the ent list.
-                    vmf.add_ent(cur_ent)
-                cur_ent = None
-                continue
-            elif tok_typ is Token.NEWLINE:
-                continue
-            elif tok_typ is Token.EOF:
-                if cur_ent is not None:
-                    raise ValueError("Last entity didn't end!")
-                return vmf
-            elif tok_typ is not Token.STRING:
-                raise tok.error(tok_typ, tok_value)
-
-            # Null byte at end of lump.
-            if tok_value == '\x00':
-                tok.expect(Token.EOF)  # If in the middle, raise error.
-                if cur_ent is not None:
-                    raise ValueError("Last entity didn't end!")
-                break
-
-            if cur_ent is None:
-                raise tok.error("Keyvalue outside brackets: {}({!r})", tok_typ, tok_value)
-
-            # Line is of the form <"key" "val">, but handle escaped quotes
-            # in the value. Valve's parser doesn't allow that, but we might
-            # as well be better...
-            key = tok_value
-            value = tok.expect(Token.STRING)
-
-            # Now, we need to figure out if this is a keyvalue,
-            # or connection.
-            # If we're L4D+, this is easy - they use 0x1B as separator.
-            # Before, it's a comma which is common in keyvalues.
-            # Assume it's an output if it has exactly 4 commas, and the last two
-            # successfully parse as numbers.
-            if '\x1B' in value:
-                # All outputs use the comma_sep, so we can ID them.
-                try:
-                    cur_ent.add_out(Output.parse(Keyvalues(key, value)))
-                except ValueError as exc:
-                    raise ValueError(f'Failed to parse output in {key!r} {value!r}') from exc
-                if self.out_comma_sep is None:
-                    self.out_comma_sep = False
-            elif value.count(',') == 4:
-                try:
-                    cur_ent.add_out(Output.parse(Keyvalues(key, value)))
-                except ValueError:
+                    # Normal keyvalue.
                     cur_ent[key] = value
-                if self.out_comma_sep is None:
-                    self.out_comma_sep = True
-            else:
-                # Normal keyvalue.
-                cur_ent[key] = value
 
-        # This keyvalue needs to be stored in the VMF object too.
-        # The one in the entity is ignored.
-        vmf.map_ver = conv_int(vmf.spawn['mapversion'], vmf.map_ver)
+            # This keyvalue needs to be stored in the VMF object too.
+            # The one in the entity is ignored.
+            vmf.map_ver = conv_int(vmf.spawn['mapversion'], vmf.map_ver)
 
         return vmf
 
