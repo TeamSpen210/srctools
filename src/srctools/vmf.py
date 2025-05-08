@@ -1,8 +1,4 @@
-""" VMF Library
-
-Wraps Keyvalues trees in a set of classes which smartly handle
-specifics of VMF files.
-"""
+"""Reads and writes VMF map files, providing various tools to make it easier to modify."""
 from typing import (
     IO, TYPE_CHECKING, Any, Final, Optional, Protocol, TypeVar, Union, Generator, overload,
 )
@@ -160,13 +156,10 @@ def conv_kv(val: ValidKVs) -> str:
 
 
 class IDMan(AbstractSet[int]):
-    """Allocate and manage a set of unique IDs.
-
-    This implements some of MutableSet, but the adding methods cannot
-    be used since the ID may need to change to ensure uniqueness.
-    """
+    """This class keeps track of IDs for a particular object type. It has no public constructor."""
     _used: set[int]
     _search_pos: int
+    #: Can be changed to disable the ID validation, allowing new objects to overlap existing ones.
     allow_duplicates: bool
 
     def __init__(self, allow_duplicates: bool = False) -> None:
@@ -763,7 +756,7 @@ class VMF:
     def allow_duplicate_ids(self) -> Generator[None, None, None]:
         """While inside this context manager, allow all IDs to have duplicates.
 
-        IDs are still tracked, so future IDs will not overlap these
+        IDs are still tracked, so future IDs will not overlap these.
         """
         managers = [
             self.solid_id, self.face_id, self.ent_id,
@@ -2872,7 +2865,7 @@ class Entity(MutableMapping[str, str]):
             yield from solid
 
     def add_out(self, *outputs: 'Output') -> None:
-        """Add the outputs to our list."""
+        """Convenience method to add outputs to this entity."""
         self.outputs.extend(outputs)
 
     def output_targets(self) -> set[str]:
