@@ -2915,8 +2915,9 @@ class BSP:
         # We have to use the tokenizer to handle newlines inside quotes.
         # Use surrogate-escape, to preserve bytes > 127 - VMFs don't have a clear encoding.
         tok = Tokenizer(ent_data.decode('ascii', 'surrogateescape'), allow_escapes=True)
-        for tok_typ, tok_value in tok:
-            if tok_typ is Token.BRACE_OPEN:
+        with vmf.allow_duplicate_ids():
+            for tok_typ, tok_value in tok:
+                if tok_typ is Token.BRACE_OPEN:
                 if cur_ent is not None:
                     raise tok.error('2 levels of nesting after {} ents', len(vmf.entities))
                 # The first entity updates worldspawn.

@@ -13,6 +13,7 @@ Version (dev)
 	* Spaces between arguments, not the commas are used to separate them. For most helpers commas are meaningless.
 	* Make it clear that :class:`srctools.fgd.UnknownHelper` should not be relied on.
 	* RGB colours now are ``0-255`` integers, not floats.
+* :src-issue:`38`: Preserve entity/node/brush/etc IDs when parsing VMFs and BSP entities.
 * Treat ``ogg`` files as valid sounds in various places.
 * Consistently raise :class:`TypeError` if invalid types are sent to a :class:`~srctools.tokenizer.Tokenizer`.
 * Properly add ``base_plat_train`` class resource function and fix ``item_teamflag``.

@@ -3,7 +3,9 @@
 Wraps Keyvalues trees in a set of classes which smartly handle
 specifics of VMF files.
 """
-from typing import IO, TYPE_CHECKING, Any, Final, Optional, Protocol, TypeVar, Union, overload
+from typing import (
+    IO, TYPE_CHECKING, Any, Final, Optional, Protocol, TypeVar, Union, Generator, overload,
+)
 from typing_extensions import Literal, TypeAlias, deprecated
 from array import ArrayType as Array
 from collections import defaultdict
@@ -20,6 +22,7 @@ import operator
 import re
 import struct
 import warnings
+import contextlib
 
 import attrs
 
@@ -163,38 +166,41 @@ class IDMan(AbstractSet[int]):
     be used since the ID may need to change to ensure uniqueness.
     """
     _used: set[int]
-    search_pos: int
+    _search_pos: int
+    allow_duplicates: bool
 
-    def __init__(self, existing: Iterable[int] = ()) -> None:
+    def __init__(self, allow_duplicates: bool = False) -> None:
         """Initialise the ID manager."""
         super().__init__()
-        self._used = set(existing)
+        self.allow_duplicates = allow_duplicates
+        self._used = set()
         # This is used to hint where we should start searching from.
         # IDs from 1:search_pos must have been used already.
         # search_pos and above may or may not have been used.
 
         # The ID space is usually pretty fragmented, so we will tend to
         # find blocks of unused IDs that we can instantly pass out.
-        self.search_pos = 1
+        # Valve just detects max(ids), then stores that.
+        self._search_pos = 1
 
     def clear(self) -> None:
         """Remove all IDs from the manager."""
         self._used = set()
-        self.search_pos = 1
+        self._search_pos = 1
 
     def get_id(self, desired: int = -1) -> int:
         """Get a valid ID."""
-        if desired > 0 and desired not in self._used:
+        if desired > 0 and (self.allow_duplicates or desired not in self._used):
             # The desired ID is available!
             self._used.add(desired)
             return desired
 
         # Check every ID in order to find a valid one.
-        poss_id = self.search_pos
+        poss_id = self._search_pos
         while True:
             if poss_id not in self:
                 self._used.add(poss_id)
-                self.search_pos = poss_id + 1
+                self._search_pos = poss_id + 1
                 return poss_id
             poss_id += 1
 
@@ -211,14 +217,14 @@ class IDMan(AbstractSet[int]):
     def discard(self, element: int) -> None:
         """Return the specified ID for others to use, or do nothing if already removed."""
         self._used.discard(element)
-        if element < self.search_pos:
-            self.search_pos = element
+        if element < self._search_pos:
+            self._search_pos = element
 
     def remove(self, element: int) -> None:
         """Return the specified ID for others to use."""
         self._used.remove(element)
-        if element < self.search_pos:
-            self.search_pos = element
+        if element < self._search_pos:
+            self._search_pos = element
 
 
 class NullIDMan(IDMan):
@@ -614,13 +620,12 @@ class VMF:
         :param quickhide_count: The number of quick-hidden objects.
         :param strata_inst_visibility: Strata Source stores the visibility of instances.
         """
-        id_man = NullIDMan if preserve_ids else IDMan
-        self.solid_id = id_man()  # All occupied solid ids
-        self.face_id = id_man()  # Ditto for faces
-        self.ent_id = id_man()  # Same for entities
-        self.group_id = id_man()  # Group IDs (not visgroups)
-        self.vis_id = id_man()  # VisGroup IDs
-        self.node_id = id_man()  # Nav node ent IDs.
+        self.solid_id = IDMan(preserve_ids)  # All occupied solid ids
+        self.face_id = IDMan(preserve_ids)  # Ditto for faces
+        self.ent_id = IDMan(preserve_ids)  # Same for entities
+        self.group_id = IDMan(preserve_ids)  # Group IDs (not visgroups)
+        self.vis_id = IDMan(preserve_ids)  # VisGroup IDs
+        self.node_id = IDMan(preserve_ids)  # Nav node ent IDs.
 
         # Allow quick searching for particular groups, without checking
         # the whole map
@@ -754,6 +759,28 @@ class VMF:
         self.vis_tree.append(vis)
         return vis
 
+    @contextlib.contextmanager
+    def allow_duplicate_ids(self) -> Generator[None, None, None]:
+        """While inside this context manager, allow all IDs to have duplicates.
+
+        IDs are still tracked, so future IDs will not overlap these
+        """
+        managers = [
+            self.solid_id, self.face_id, self.ent_id,
+            self.group_id, self.vis_id, self.node_id,
+        ]
+        existing = []
+        try:
+            for man in managers:
+                existing.append(man.allow_duplicates)
+                man.allow_duplicates = True
+            yield
+        finally:
+            # Since zip ends early, if this is somehow exited halfway through
+            # the first loop, we'll just revert what we changed.
+            for man, val in zip(managers, existing):
+                man.allow_duplicates = val
+
     @staticmethod
     def parse(tree: Union[Keyvalues, str], preserve_ids: bool = False) -> 'VMF':
         """Convert a property_parser tree into VMF classes.
@@ -807,41 +834,39 @@ class VMF:
         )
 
         map_obj.strata_viewports = _parse_strata_viewport(view_opt)
+        with map_obj.allow_duplicate_ids():
+            for vis in tree.find_all('visgroups', 'visgroup'):
+                map_obj.vis_tree.append(VisGroup.parse(map_obj, vis))
 
-        for vis in tree.find_all('visgroups', 'visgroup'):
-            map_obj.vis_tree.append(VisGroup.parse(map_obj, vis))
+            for c in cam_kv:
+                if c.name != 'activecamera':
+                    Camera.parse(map_obj, c)
 
-        for c in cam_kv:
-            if c.name != 'activecamera':
-                Camera.parse(map_obj, c)
+            for ent in cordons.find_all('cordon'):
+                Cordon.parse(map_obj, ent)
 
-        for ent in cordons.find_all('cordon'):
-            Cordon.parse(map_obj, ent)
+            map_spawn = tree.find_block('world', or_blank=True)
+            map_obj.spawn = worldspawn = Entity.parse(map_obj, map_spawn, _worldspawn=True)
+            # Ensure the correct classname, which adds to by_class as a side effect. It is possible
+            # to name worldspawn, kinda pointless though.
+            worldspawn['classname'] = 'worldspawn'
+            map_obj.by_target[worldspawn['targetname'].casefold() or None].add(worldspawn)
+            # Always a brush entity.
+            if worldspawn.solids is None:
+                worldspawn.solids = []
+            map_obj.brushes = worldspawn.solids
 
-        map_spawn = tree.find_block('world', or_blank=True)
-        map_obj.spawn = worldspawn = Entity.parse(map_obj, map_spawn, _worldspawn=True)
-        # Ensure the correct classname, which adds to by_class as a side effect. It is possible
-        # to name worldspawn, kinda pointless though.
-        worldspawn['classname'] = 'worldspawn'
-        map_obj.by_target[worldspawn['targetname'].casefold() or None].add(worldspawn)
-        # Always a brush entity.
-        if worldspawn.solids is None:
-            worldspawn.solids = []
-        map_obj.brushes = worldspawn.solids
+            for ent in tree.find_all('Entity'):
+                map_obj.add_ent(
+                    Entity.parse(map_obj, ent, False)  # hidden=False
+                )
 
-        for ent in tree.find_all('Entity'):
-            map_obj.add_ent(
-                Entity.parse(map_obj, ent, False)  # hidden=False
-            )
-
-        # find hidden entities
-        for hidden_ent in tree.find_all('hidden'):
-            for ent in hidden_ent:
+            # find hidden entities
+            for ent in tree.find_children('hidden'):
                 map_obj.add_ent(
                     Entity.parse(map_obj, ent, True)  # hidden=True
                 )
-
-        return map_obj
+            return map_obj
 
     @overload
     def export(
