@@ -130,6 +130,11 @@ Entities
 ========
 
 .. autoattribute:: VMF.entities
+.. autoattribute:: VMF.spawn
+.. automethod:: add_ent
+.. automethod:: remove_ent
+.. automethod:: add_ents
+.. automethod:: create_ent
 
 .. autoclass:: Entity
 
@@ -165,6 +170,7 @@ Outputs
 .. autoattribute:: Entity.outputs
 .. automethod:: Entity.add_out
 .. automethod:: Entity.output_targets
+.. automethod:: VMF.iter_inputs
 
 .. autoclass:: Output
 
@@ -223,6 +229,19 @@ and stored under a `fixup` attribute.
     Can be passed to fixups to attempt to preserve the index.
 
 
+Cordons
+=======
+
+.. autoattribute:: VMF.cordons
+
+.. autoclass:: Cordon
+
+    .. automethod:: parse
+    .. automethod:: export
+    .. automethod:: copy
+    .. automethod:: remove
+
+
 Strata Source Extensions
 ========================
 
@@ -254,25 +273,17 @@ Strata Source adds a few additional values to preserve vertices and store settin
     srctools.vmf.overlay_bounds
     srctools.vmf.make_overlay
     srctools.vmf.localise_overlay
-    srctools.vmf.VMF
-    srctools.vmf.VMF.add_ent
-    srctools.vmf.VMF.remove_ent
-    srctools.vmf.VMF.add_ents
-    srctools.vmf.VMF.create_ent
     srctools.vmf.VMF.create_visgroup
     srctools.vmf.VMF.iter_wbrushes
     srctools.vmf.VMF.iter_wfaces
     srctools.vmf.VMF.iter_ents
     srctools.vmf.VMF.iter_ents_tags
-    srctools.vmf.VMF.iter_inputs
     srctools.vmf.VMF.search
     srctools.vmf.VMF.by_target
     srctools.vmf.VMF.by_class
     srctools.vmf.VMF.cameras
-    srctools.vmf.VMF.cordons
     srctools.vmf.VMF.vis_tree
     srctools.vmf.VMF.groups
-    srctools.vmf.VMF.spawn
     srctools.vmf.VMF.active_cam
     srctools.vmf.VMF.quickhide_count
     srctools.vmf.Camera
@@ -287,11 +298,14 @@ Strata Source adds a few additional values to preserve vertices and store settin
     srctools.vmf.Camera.pos
     srctools.vmf.Camera.target
     srctools.vmf.Camera.map
-    srctools.vmf.Cordon
-    srctools.vmf.Cordon.parse
-    srctools.vmf.Cordon.export
-    srctools.vmf.Cordon.copy
-    srctools.vmf.Cordon.remove
+    srctools.vmf.EntityGroup
+    srctools.vmf.EntityGroup.parse
+    srctools.vmf.EntityGroup.copy
+    srctools.vmf.EntityGroup.export
+    srctools.vmf.EntityGroup.auto_shown
+    srctools.vmf.EntityGroup.color
+    srctools.vmf.EntityGroup.shown
+    srctools.vmf.EntityGroup.vmf
     srctools.vmf.VisGroup
     srctools.vmf.VisGroup.parse
     srctools.vmf.VisGroup.export
@@ -353,11 +367,3 @@ Strata Source adds a few additional values to preserve vertices and store settin
     srctools.vmf.Side.strata_points
     srctools.vmf.Side.uaxis
     srctools.vmf.Side.vaxis
-    srctools.vmf.EntityGroup
-    srctools.vmf.EntityGroup.parse
-    srctools.vmf.EntityGroup.copy
-    srctools.vmf.EntityGroup.export
-    srctools.vmf.EntityGroup.auto_shown
-    srctools.vmf.EntityGroup.color
-    srctools.vmf.EntityGroup.shown
-    srctools.vmf.EntityGroup.vmf
