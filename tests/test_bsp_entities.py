@@ -9,9 +9,7 @@ def test_read(datadir: Path) -> None:
     """Test reading entity lumps."""
     bsp = make_dummy()
     # Note: \n endings, null byte at the end.
-    with open(datadir / 'ent_lump.lmp', 'rb') as f:
-        # vmf: VMF = BSP.ents._read(bsp, f.read())
-        vmf = bsp._lmp_read_ents(f.read())
+    vmf = bsp._lmp_read_ents((datadir / 'ent_lump.lmp').read_bytes())
     assert vmf.map_ver == 3928
 
     assert vmf.spawn['world_mins'] == '-2048 -2048 0'

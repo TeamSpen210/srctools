@@ -1685,14 +1685,18 @@ class EntityDef:
 
                 if help_type is HelperTypes.CUBE:
                     # This is parsed directly in gdclass.cpp, and has a meaningful comma.
-                    args.append(tok.expect(Token.STRING))
-                    args.append(tok.expect(Token.STRING))
-                    args.append(tok.expect(Token.STRING))
+                    args += [
+                        tok.expect(Token.STRING),
+                        tok.expect(Token.STRING),
+                        tok.expect(Token.STRING)
+                    ]
                     if tok.peek()[0] is Token.COMMA:
                         tok.expect(Token.COMMA)
-                        args.append(tok.expect(Token.STRING))
-                        args.append(tok.expect(Token.STRING))
-                        args.append(tok.expect(Token.STRING))
+                        args += [
+                            tok.expect(Token.STRING),
+                            tok.expect(Token.STRING),
+                            tok.expect(Token.STRING)
+                        ]
                     tok.expect(Token.PAREN_CLOSE)
                 else:
                     # We need to allow + in args.
@@ -2149,7 +2153,7 @@ class EntityDef:
                         if isinstance(value, KVDef) and value.val_list:
                             # Filter the value list as well, then discard tags.
                             # Use slicing/negative index to preserve the same number of args
-                            value.val_list = [  # type: ignore
+                            value.val_list = [
                                 (*val, frozenset())
                                 for (*val, tag) in value.val_list
                                 if match_tags(tags, tag)

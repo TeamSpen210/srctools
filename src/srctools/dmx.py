@@ -1187,7 +1187,7 @@ class Attribute(_ValProps, Generic[ValueT]):
 
     copy = __copy__
 
-    def __deepcopy__(self, memodict: dict[int, Any]) -> 'Attribute[ValueT]':
+    def __deepcopy__(self, memodict: dict[builtins.int, Any]) -> 'Attribute[ValueT]':
         """Duplicate this attribute and all children."""
         return Attribute(self.name, self._typ, copy.deepcopy(self._value, memodict))
 
