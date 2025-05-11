@@ -500,7 +500,7 @@ class AttrMember(_ValProps):
             self.owner._value = convert
 
 
-class Attribute(Generic[ValueT], _ValProps):
+class Attribute(_ValProps, Generic[ValueT]):
     """A single attribute of an element.
 
     Attributes store either a single scalar value, or an array of multiple values of the same type.
@@ -1187,7 +1187,7 @@ class Attribute(Generic[ValueT], _ValProps):
 
     copy = __copy__
 
-    def __deepcopy__(self, memodict: Any = EmptyMapping) -> 'Attribute[ValueT]':
+    def __deepcopy__(self, memodict: dict[int, Any]) -> 'Attribute[ValueT]':
         """Duplicate this attribute and all children."""
         return Attribute(self.name, self._typ, copy.deepcopy(self._value, memodict))
 

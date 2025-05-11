@@ -1951,7 +1951,7 @@ cdef class FrozenVec(VecBase):
         """FrozenVec is immutable."""
         return self
 
-    def __deepcopy__(self, memodict=None):
+    def __deepcopy__(self, memodict, /):
         """FrozenVec is immutable."""
         return self
 
@@ -2068,7 +2068,7 @@ cdef class Vec(VecBase):
         """Create a duplicate of this vector."""
         return _vector_mut(self.val.x, self.val.y, self.val.z)
 
-    def __deepcopy__(self, memodict=None):
+    def __deepcopy__(self, memodict, /):
         """Create a duplicate of this vector."""
         return _vector_mut(self.val.x, self.val.y, self.val.z)
 
@@ -2771,7 +2771,7 @@ cdef class FrozenMatrix(MatrixBase):
         """Frozen matrices are immutable."""
         return self
 
-    def __deepcopy__(self, dict memodict=None) -> FrozenMatrix:
+    def __deepcopy__(self, memodict, /) -> FrozenMatrix:
         """Frozen matrices are immutable."""
         return self
 
@@ -2805,7 +2805,7 @@ cdef class Matrix(MatrixBase):
         memcpy(copy.mat, self.mat, sizeof(mat_t))
         return copy
 
-    def __deepcopy__(self, dict memodict=None) -> MatrixBase:
+    def __deepcopy__(self, memodict, /) -> MatrixBase:
         """Duplicate this matrix."""
         cdef Matrix copy = Matrix.__new__(Matrix)
         memcpy(copy.mat, self.mat, sizeof(mat_t))
@@ -2968,7 +2968,7 @@ cdef class AngleBase:
         """
         return _format_triple(b'%s %s %s', &self.val)
 
-    def __format__(self, format_spec: str) -> str:
+    def __format__(self, format_spec: str, /) -> str:
         """Control how the text is formatted."""
         return _format_vec_wspec(&self.val, format_spec)
 
@@ -3179,7 +3179,7 @@ cdef class FrozenAngle(AngleBase):
         """FrozenAngle is immutable."""
         return self
 
-    def __deepcopy__(self, memodict=None):
+    def __deepcopy__(self, memodict, /):
         """FrozenAngle is immutable."""
         return self
 
@@ -3217,7 +3217,7 @@ cdef class Angle(AngleBase):
         """Create a duplicate of this angle."""
         return _angle_mut(self.val.x, self.val.y, self.val.z)
 
-    def __deepcopy__(self, dict memodict=None) -> Angle:
+    def __deepcopy__(self, memodict, /) -> Angle:
         """Create a duplicate of this angle."""
         return _angle_mut(self.val.x, self.val.y, self.val.z)
 

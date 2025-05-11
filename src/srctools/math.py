@@ -1194,7 +1194,7 @@ class FrozenVec(VecBase):
         """FrozenVec is immutable."""
         return self
 
-    def __deepcopy__(self, memodict: Optional[dict[str, Any]] = None) -> 'FrozenVec':
+    def __deepcopy__(self, memodict: dict[int, Any]) -> 'FrozenVec':
         """FrozenVec is immutable."""
         return self
 
@@ -2155,7 +2155,7 @@ class FrozenMatrix(MatrixBase):
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: Optional[dict[str, Any]] = None) -> 'FrozenMatrix':
+    def __deepcopy__(self, memodict: dict[int, Any]) -> 'FrozenMatrix':
         """Frozen matrices are immutable."""
         return self
 
@@ -2221,7 +2221,7 @@ class Matrix(MatrixBase):
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: Optional[dict[str, Any]] = None) -> 'Matrix':
+    def __deepcopy__(self, memodict: dict[int, Any]) -> 'Matrix':
         """Duplicate this matrix."""
         rot = Py_Matrix.__new__(Py_Matrix)
 
@@ -2683,7 +2683,7 @@ class FrozenAngle(AngleBase):
         """FrozenAngle is immutable."""
         return self
 
-    def __deepcopy__(self, memodict: Optional[dict[str, Any]] = None) -> 'FrozenAngle':
+    def __deepcopy__(self, memodict: dict[int, Any]) -> 'FrozenAngle':
         """FrozenAngle is immutable."""
         return self
 
