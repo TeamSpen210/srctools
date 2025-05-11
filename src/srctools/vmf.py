@@ -1,4 +1,5 @@
 """Reads and writes VMF map files, providing various tools to make it easier to modify."""
+
 from typing import IO, TYPE_CHECKING, Any, Final, Optional, Protocol, TypeVar, Union, overload
 from typing_extensions import Literal, TypeAlias, deprecated
 from array import ArrayType as Array
@@ -11,12 +12,13 @@ from enum import Enum, Flag
 from re import Match, Pattern
 from sys import intern
 import builtins
+import contextlib
 import io
 import operator
 import re
+import string
 import struct
 import warnings
-import contextlib
 
 import attrs
 
@@ -115,7 +117,7 @@ class TriangleTag(Flag):
     FLAT = BUILDABLE
 
 
-def conv_kv(val: ValidKVs) -> str:
+def conv_kv(val: 'ValidKVs') -> str:
     """Convert a type into a string matching Valve's syntax.
 
     The following types are allowed:
@@ -129,7 +131,7 @@ def conv_kv(val: ValidKVs) -> str:
       Uses the standard ``1 2 3`` form.
     * [:py:class:`Frozen<srctools.math.FrozenMatrix>`] :py:class:`Matrix <srctools.math.Matrix>`:
       Converted to the corresponding angle.
-    * Any enum: Allowed if the value is itself convertable.
+    * Any enum: The ``value`` attribute is extracted and recursively converted.
     """
     if type(val) is str:
         # Can return unchanged. We need to make sure to unwrap subclasses.
@@ -352,9 +354,9 @@ class StrataInstanceVisibility(Enum):
 
 @attrs.frozen
 class PrismFace:
-    """Return value for VMF.make_prism().
+    """Return value for `VMF.make_prism()` and `VMF.make_hollow()`.
 
-    This can be inded with an axis-aligned :py:class:`~srctools.Vec` or 3-tuple normal to fetch a side.
+    This can be indexed with an axis-aligned :py:class:`~srctools.Vec` or 3-tuple normal to fetch a side.
     """
     solid: 'Solid'  #: The generated brush.
     top: 'Side'  #: The ``+z`` side of the brush.
@@ -735,7 +737,7 @@ class VMF:
                 else:
                     item['nodeid'] = str(self.node_id.get_id(node_id))
 
-    def create_ent(self, classname: str, **kargs: ValidKVs) -> 'Entity':
+    def create_ent(self, classname: str, **kargs: 'ValidKVs') -> 'Entity':
         """Convenience method to allow creating point entities.
 
         This constructs an entity, adds it to the map, and then returns
@@ -781,8 +783,7 @@ class VMF:
 
     @staticmethod
     def parse(tree: Union[Keyvalues, str], preserve_ids: bool = False) -> 'VMF':
-        """Convert a property_parser tree into VMF classes.
-        """
+        """Convert a keyvalues tree into VMF classes."""
         if not isinstance(tree, Keyvalues):
             # if not a tree, try to read the file
             with open(tree, encoding='cp1251') as file:
@@ -1027,10 +1028,11 @@ class VMF:
                     yield ent
 
     def iter_inputs(self, name: str) -> Iterator['Output']:
-        """Loop through all Outputs which target the named entity.
+        """Loop through all :class:`Outputs <srctools.vmf.Output>` which target the named entity.
 
-        - Allows using * at beginning/end
+        ``*`` can be used at the beginning or end of the name for a wildcard search.
         """
+        name = name.casefold()
         wild_start = name[:1] == '*'
         wild_end = name[-1:] == '*'
         if wild_start:
@@ -1039,19 +1041,20 @@ class VMF:
             name = name[:-1]
         for ent in self.entities:
             for out in ent.outputs:
+                targ = out.target.casefold()
                 if wild_start:
                     if wild_end:
-                        if name in out.target:  # blah-target-blah
+                        if name in targ:  # blah-target-blah
                             yield out
                     else:
-                        if out.target.endswith(name):  # target-blah
+                        if targ.endswith(name):  # target-blah
                             yield out
                 else:
                     if wild_end:
-                        if out.target.startswith(name):  # blah-target
+                        if targ.startswith(name):  # blah-target
                             yield out
                     else:
-                        if out.target == name:  # target
+                        if targ == name:  # target
                             yield out
 
     def search(self, name: str) -> Iterator['Entity']:
@@ -1890,6 +1893,8 @@ class Side:
     vaxis: UVAxis
     strata_points: Optional[list[Vec]]
 
+    #: The number of subdivisions for a displacement, ranging from 0-4.
+    #: If zero, the brush is not a displacement and the other values are ignored.
     disp_power: DispPower
     disp_pos: Optional[Vec]
     disp_elevation: float
@@ -2470,9 +2475,9 @@ class Side:
 
     @deprecated('This is useless and will be removed.', category=DeprecationWarning)
     def plane_desc(self) -> str:
-        """Return a string which describes this face.
+        """Returns all the plane coordinates concatenated together.
 
-         This is for use in texture randomisation.
+         This is pretty useless, and will be removed in the future.
          """
         return self.planes[0].join(' ') + self.planes[1].join(' ') + self.planes[2].join(' ')
 
@@ -2501,8 +2506,8 @@ class Side:
         scale = _FloatSetter()
         offset = _FloatSetter()
     else:
-        scale = property(fset=_scale_setter, doc='Set both scale attributes easily.')
-        offset = property(fset=_offset_setter, doc='Set both offset attributes easily.')
+        scale = property(fset=_scale_setter, doc='When set, modifies both the U and V axes.')
+        offset = property(fset=_offset_setter, doc='When set, modifies both the U and V axes.')
     del _scale_setter, _offset_setter
 
 
@@ -2570,7 +2575,7 @@ class Entity(MutableMapping[str, str]):
     def __init__(
         self,
         vmf_file: VMF,
-        keys: Mapping[str, ValidKVs] = EmptyMapping,
+        keys: Mapping[str, 'ValidKVs'] = EmptyMapping,
         fixup: Iterable['FixupValue'] = (),
         ent_id: int = -1,
         outputs: Iterable['Output'] = (),
@@ -2622,7 +2627,7 @@ class Entity(MutableMapping[str, str]):
             return self._keys
 
         @keys.setter
-        def keys(self, value: dict[str, ValidKVs]) -> None:
+        def keys(self, value: dict[str, 'ValidKVs']) -> None:
             """Deprecated method to replace all keys."""
             warnings.warn('This is private, call .clear_keys() and update().', DeprecationWarning, stacklevel=2)
             self.clear_keys()
@@ -2900,7 +2905,7 @@ class Entity(MutableMapping[str, str]):
         else:
             orig_name = unnamed_prefix
 
-        base_name = orig_name.rstrip('0123456789')
+        base_name = orig_name.rstrip(string.digits)
 
         if self.map.by_target[base_name]:
             # Check every index in order.
@@ -2986,7 +2991,7 @@ class Entity(MutableMapping[str, str]):
     def __setitem__(
         self,
         key: str,
-        val: ValidKVs,
+        val: 'ValidKVs',
     ) -> None:
         """Allow using [] syntax to save a keyvalue.
 
@@ -3172,11 +3177,11 @@ class EntityFixup(MutableMapping[str, str]):
     """A specialised mapping which keeps track of the variable indexes.
 
     This treats variable names case-insensitively, and optionally allows
-    writing variables with $ signs in front. The case of the first assigned
+    writing variables with ``$`` signs in front. The case of the first assigned
     name for each key is preserved.
 
-    Additionally, lookups never fail - returning '' instead. Pass in a non-string
-    default or use `in` to distinguish.
+    Additionally, lookups never fail - returning ``""`` instead. Pass in a non-string
+    default or use :pycode:`in` to distinguish.
     """
 
     # Because of the int(), bool(), float() methods, we need to use builtins.*
@@ -3212,7 +3217,7 @@ class EntityFixup(MutableMapping[str, str]):
     def get(self, var: str, default: Union[str, T]) -> Union[str, T]: ...
 
     def get(self, var: str, default: Union[str, T] = '') -> Union[str, T]:
-        """Get the value of an instance $replace variable.
+        """Get the value of an instance ``$replace`` variable.
 
         If not found, the default will be returned (an empty string).
         """
@@ -3234,7 +3239,7 @@ class EntityFixup(MutableMapping[str, str]):
         fix._fixup = self._fixup.copy()
         return fix
 
-    def __deepcopy__(self, memodict: Optional[dict[int, Any]] = None) -> 'EntityFixup':
+    def __deepcopy__(self, memodict: dict[int, Any]) -> 'EntityFixup':
         fix = EntityFixup.__new__(EntityFixup)
         fix._matcher = self._matcher
         fix._fixup = self._fixup.copy()
@@ -3251,7 +3256,7 @@ class EntityFixup(MutableMapping[str, str]):
         }
 
     def clear(self) -> None:
-        """Wipe all the $fixup values."""
+        """Wipe all the ``$fixup`` values."""
         self._fixup.clear()
         self._matcher = None
 
@@ -3262,7 +3267,7 @@ class EntityFixup(MutableMapping[str, str]):
     def setdefault(self, var: str, /, default: ValidKV_T) -> Union[str, ValidKV_T]: ...
 
     def setdefault(self, var: str, /, default: Union[ValidKV_T, str] = '') -> Union[str, ValidKV_T]:
-        """Return $key, but if not present set it to the default and return that."""
+        """Return ``$key``, but if not present set it to the default and return that."""
         if var[0] == '$':
             var = var[1:]
         folded_var = var.casefold()
@@ -3283,9 +3288,9 @@ class EntityFixup(MutableMapping[str, str]):
     def __getitem__(self, key: tuple[str, T]) -> Union[str, T]: ...
 
     def __getitem__(self, key: Union[tuple[str, T], str]) -> Union[str, T]:
-        """Retrieve keys via fixup[key] or fixup[key, default].
+        """Retrieve keys via :pycode:`fixup[key]` or :pycode:`fixup[key, default]`.
 
-        See EntityFixup.get().
+        See :meth:`EntityFixup.get()`.
         """
         if isinstance(key, tuple):
             return self.get(key[0], default=key[1])
@@ -3300,8 +3305,8 @@ class EntityFixup(MutableMapping[str, str]):
             return var.casefold() in self._fixup
         return False
 
-    def __setitem__(self, var: str, val: ValidKVs) -> None:
-        """Set the value of an instance $replace variable."""
+    def __setitem__(self, var: str, val: 'ValidKVs') -> None:
+        """Set the value of an instance :var:`$replace` variable."""
         if var[0] == '$':
             var = var[1:]
 
@@ -3326,7 +3331,7 @@ class EntityFixup(MutableMapping[str, str]):
             self._matcher = None
 
     def __delitem__(self, var: str) -> None:
-        """Delete a instance $replace variable."""
+        """Delete a instance :var:`$replace` variable."""
         if var[0] == '$':
             var = var[1:]
         var = intern(var.casefold())
@@ -3381,15 +3386,15 @@ class EntityFixup(MutableMapping[str, str]):
         """Substitute the fixup variables into the provided string.
 
         Variables are found based on the defined values, so constructions such as
-        val$varval are valid (with no delimiter indicating the end of variables).
-        Longer matches are preferred. If the name after $ is not found at all,
-        a KeyError is raised, or if default is provided it is substituted.
+        :samp:`val{$var}val` are valid (with no delimiter indicating the end of variables).
+        Longer matches are preferred. If a match is not found, the characters ``a-z``, ``0-9`` and
+        ``_`` are detected as variables, and substituted with a default.
 
-        Any key is valid if defined in the instance, but only a-z, 0-9 and _ is
-        detected for the default functionality.
-
-        If allow_invert is enabled, a variable can additionally be specified
-        like !$var to cause it to be inverted when substituted.
+        :param text: The source text to substitue into.
+        :param default: If set, unrecognised fixups are set to this value. If not, `KeyError` is raised.
+        :param allow_invert: If enabled, a variable can additionally be specified
+            like :var`!$var` to cause it to be inverted when substituted.
+            Valid booleans are the same as those parsed by `srctools.conv_bool`.
         """
         if '$' not in text:  # Early out, cannot substitute.
             return text
@@ -3433,7 +3438,7 @@ class EntityFixup(MutableMapping[str, str]):
     def int(self, key: str, def_: Union[builtins.int, T] = 0) -> Union[builtins.int, T]:
         """Return the value of an integer key.
 
-        Equivalent to int(fixup[key]), but with a default value if missing or
+        Equivalent to :pycode:`int(fixup[key])`, but with a default value if missing or
         invalid.
         """
         try:
@@ -3444,7 +3449,7 @@ class EntityFixup(MutableMapping[str, str]):
     def float(self, key: str, def_: Union[builtins.float, T] = 0.0) -> Union[builtins.float, T]:
         """Return the value of an integer key.
 
-        Equivalent to float(fixup[key]), but with a default value if missing or
+        Equivalent to :pycode:`float(fixup[key])`, but with a default value if missing or
         invalid.
         """
         try:
@@ -3455,8 +3460,7 @@ class EntityFixup(MutableMapping[str, str]):
     def bool(self, key: str, def_: Union[builtins.bool, T] = False) -> Union[builtins.bool, T]:
         """Return a fixup interpreted as a boolean.
 
-        The value may be case-insensitively 'true', 'false', '1', '0', 'T',
-        'F', 'y', 'n', 'yes', or 'no'.
+        Valid values are the same as `srctools.conv_bool`.
         """
         try:
             return BOOL_LOOKUP[self.get(key).casefold()]
@@ -3619,7 +3623,7 @@ class Output:
         out: str,
         targ: Union[Entity, str],
         inp: str,
-        param: ValidKVs = '',
+        param: 'ValidKVs' = '',
         delay: float = 0.0,
         *,
         times: int = -1,
@@ -3692,7 +3696,7 @@ class Output:
     def combine(cls, first: 'Output', second: 'Output') -> 'Output':
         """Combine two outputs into a merged form.
 
-        This is suitable for combining a Trigger and OnTriggered pair into one,
+        This is suitable for combining a ``Trigger`` and ``OnTrigger`` pair into one,
         or similar values.
         """
         return cls(
@@ -3711,11 +3715,14 @@ class Output:
 
     @staticmethod
     def parse_name(name: str) -> tuple[Optional[str], str]:
-        """Extract the instance name from values of the form:
+        """Extract the instance name from values of the form::
 
-        'instance:local_name;Command'
-        This then returns a local_name, command tuple.
-        If not of this form, the first value will be None.
+            instance:local_name;Command
+
+        This then returns a :pycode:`local_name, command` tuple.
+        If not of this form, the first value will be `None`.
+
+        :raises ValueError: If the command part is missing. This will crash VBSP if it tries to parse.
         """
         if name.casefold().startswith('instance:'):
             try:

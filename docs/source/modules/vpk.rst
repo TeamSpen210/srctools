@@ -126,7 +126,7 @@ Alternatively, call these methods to do both at once.
 
 .. automethod:: VPK.add_folder
 
-You can also do ``del vpk['some/filename']` to remove a file.
+You can also do :pycode:`del vpk['some/filename']` to remove a file.
 
 Miscellaneous
 =============

@@ -5,8 +5,8 @@ srctools.vmf
     :synopsis: Reads and writes VMF maps.
 
 
-Core VMFs
-=========
+Core Functionality
+==================
 
 .. autoclass:: VMF
 
@@ -26,8 +26,25 @@ Core VMFs
     .. autoattribute:: show_logic_grid
     .. autoattribute:: grid_spacing
 
+Common behaviours
+=================
+
+Automatic conversion
+++++++++++++++++++++
+VMFs store string values in several locations, which are commonly treated as other data types,
+parsed as necessary. To make this easier to deal with, several data types are automatically converted
+when passed to relevant functions.
+
+.. py:type:: ValidKVs
+
+    Parameters with this type automatically convert values to a string.
+
+.. autofunction:: conv_kv
+
+Locations with automatic conversion include entity values, instance fixups, and output parameters.
+
 ID management
-=============
++++++++++++++
 The VMF class records IDs used by brushes, faces, entities, groups, visgroups and AI nodes. When
 creating new objects, they will automatically get assigned a new ID. IDs are 'owned' while the
 relevant object is alive - removing them from the VMF will still keep it reserved.
@@ -70,8 +87,29 @@ Brushes
     :undoc-members:
 
 .. autoclass:: Side
-    :members:
-    :undoc-members:
+
+    .. autoattribute:: planes
+    .. autoattribute:: mat
+    .. autoattribute:: smooth
+    .. autoattribute:: ham_rot
+    .. autoattribute:: lightmap
+    .. autoattribute:: uaxis
+    .. autoattribute:: vaxis
+
+    .. autoproperty:: scale
+    .. autoproperty:: offset
+
+    .. automethod:: parse
+    .. automethod:: export
+    .. automethod:: from_plane
+    .. automethod:: copy
+    .. automethod:: get_bbox
+    .. automethod:: get_origin
+    .. automethod:: translate
+    .. automethod:: localise
+    .. automethod:: normal
+
+    .. todo: srctools.vmf.Side.map
 
 .. autoclass:: UVAxis
 
@@ -105,12 +143,24 @@ Creation
     .. autoattribute:: bottom
     .. autoattribute:: solid
 
-
-
 Displacements
 +++++++++++++
 
-.. todo: Move side.disp* here.
+Brush faces converted to displacements add a number of additional properties to the face.
+
+.. autoattribute:: Side.disp_power
+.. autoproperty:: Side.is_disp
+.. autoattribute:: Side.disp_size
+.. autoattribute:: Side.disp_allowed_vert
+.. autoattribute:: Side.disp_elevation
+.. autoattribute:: Side.disp_flags
+.. autoattribute:: Side.disp_pos
+
+.. automethod:: Side.disp_get_tri_verts
+
+.. autoclass:: Vec4
+    :members:
+    :undoc-members:
 
 .. autosrcenum:: DispFlag
     :members:
@@ -171,6 +221,7 @@ Outputs
 .. automethod:: Entity.add_out
 .. automethod:: Entity.output_targets
 .. automethod:: VMF.iter_inputs
+    :for: output
 
 .. autoclass:: Output
 
@@ -180,10 +231,12 @@ Outputs
     .. autoattribute:: params
     .. autoattribute:: delay
     .. autoattribute:: times
-    .. autoattribute:: only_once
+    .. autoproperty:: only_once
     .. autoattribute:: comma_sep
     .. autoattribute:: inst_in
     .. autoattribute:: inst_out
+
+    ---------------
 
     .. automethod:: parse
     .. automethod:: export
@@ -203,8 +256,8 @@ Instances
 +++++++++
 
 ``func_instance`` entities can have fixup variables defined on them, which are stored in a number
-of ``replaceXX` keys. To avoid having to deal with the details, these are automatically parsed
-and stored under a `fixup` attribute.
+of :samp:`replace{01}` keys. To avoid having to deal with the details, these are automatically parsed
+and stored under a `fixup <Entity.fixup>` attribute.
 
 .. autoattribute:: Entity.fixup
 
@@ -228,6 +281,25 @@ and stored under a `fixup` attribute.
     Opaque value storing a key/value pair plus the index.
     Can be passed to fixups to attempt to preserve the index.
 
+Finding Entities
+++++++++++++++++
+
+Several features are provided to help locate entities in a similar way to the game.
+
+.. attribute:: VMF.by_class
+    :type: MutableMapping[str, AbstractSet[str]]
+
+.. attribute:: VMF.target
+    :type: MutableMapping[str, AbstractSet[str]]
+
+.. automethod:: VMF.search
+    :for: entity
+
+.. automethod:: VMF.iter_ents
+    :for: entity
+
+.. automethod:: VMF.iter_ents_tags
+    :for: entity
 
 Cordons
 =======
@@ -246,6 +318,8 @@ Strata Source Extensions
 ========================
 
 Strata Source adds a few additional values to preserve vertices and store settings.
+
+.. autoattribute:: Side.strata_points
 
 .. autoattribute:: VMF.strata_viewports
 
@@ -267,8 +341,6 @@ Strata Source adds a few additional values to preserve vertices and store settin
 .. extra
     srctools.vmf.CURRENT_HAMMER_BUILD
     srctools.vmf.CURRENT_HAMMER_VERSION
-    srctools.vmf.conv_kv
-    srctools.vmf.ValidKVs
     srctools.vmf.Axis
     srctools.vmf.overlay_bounds
     srctools.vmf.make_overlay
@@ -276,11 +348,6 @@ Strata Source adds a few additional values to preserve vertices and store settin
     srctools.vmf.VMF.create_visgroup
     srctools.vmf.VMF.iter_wbrushes
     srctools.vmf.VMF.iter_wfaces
-    srctools.vmf.VMF.iter_ents
-    srctools.vmf.VMF.iter_ents_tags
-    srctools.vmf.VMF.search
-    srctools.vmf.VMF.by_target
-    srctools.vmf.VMF.by_class
     srctools.vmf.VMF.cameras
     srctools.vmf.VMF.vis_tree
     srctools.vmf.VMF.groups
@@ -337,33 +404,3 @@ Strata Source adds a few additional values to preserve vertices and store settin
     srctools.vmf.Solid.vis_auto_shown
     srctools.vmf.Solid.vis_shown
     srctools.vmf.Solid.visgroup_ids
-    srctools.vmf.Side
-    srctools.vmf.Side.is_disp
-    srctools.vmf.Side.disp_size
-    srctools.vmf.Side.parse
-    srctools.vmf.Side.from_plane
-    srctools.vmf.Side.copy
-    srctools.vmf.Side.export
-    srctools.vmf.Side.get_bbox
-    srctools.vmf.Side.get_origin
-    srctools.vmf.Side.translate
-    srctools.vmf.Side.localise
-    srctools.vmf.Side.disp_get_tri_verts
-    srctools.vmf.Side.plane_desc
-    srctools.vmf.Side.normal
-    srctools.vmf.Side.scale
-    srctools.vmf.Side.offset
-    srctools.vmf.Side.disp_allowed_vert
-    srctools.vmf.Side.disp_elevation
-    srctools.vmf.Side.disp_flags
-    srctools.vmf.Side.disp_pos
-    srctools.vmf.Side.disp_power
-    srctools.vmf.Side.ham_rot
-    srctools.vmf.Side.lightmap
-    srctools.vmf.Side.map
-    srctools.vmf.Side.mat
-    srctools.vmf.Side.planes
-    srctools.vmf.Side.smooth
-    srctools.vmf.Side.strata_points
-    srctools.vmf.Side.uaxis
-    srctools.vmf.Side.vaxis

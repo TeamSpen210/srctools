@@ -161,3 +161,10 @@ Deprecated original name of :py:class:`srctools.math.to_matrix`.
 	:canonical: srctools.math.lerp
 
 Deprecated original name of :py:class:`srctools.math.lerp`.
+
+srctools.vmf
+------------
+
+.. py:currentmodule:: srctools.vmf
+
+.. automethod:: Side.plane_desc
