@@ -71,6 +71,10 @@ intersphinx_mapping = {
 autodoc_typehints_format = 'short'
 autodoc_member_order = 'bysource'
 
+autodoc_type_aliases = {
+    "ValidKVs": "ValidKVs",
+}
+
 
 extlinks = {
     'gh-user': ('https://github.com/%s', '@%s'),
@@ -103,8 +107,30 @@ from enum_class import EnumDocumenter, EnumMemberDocumenter
 from missing_refs import on_missing_reference
 
 
+# https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html#event-autodoc-process-signature
+def autodoc_process_signature(
+    app: Sphinx,
+    what: str,
+    name: str,
+    obj: object,
+    options: object,
+    signature: str,
+    return_annotation: str,
+) -> tuple[str, str]:
+    """Modify found signatures to fix various issues."""
+    if signature is not None:
+        signature = signature.replace("TypeAliasForwardRef('ValidKVs')", "ValidKVs")
+        if 'EmptyMapping' not in name:
+            # Make `= EmptyMapping` look like `= ...`, but not in the class' own docs.
+            # That way users don't need to know about the singleton when reading other modules.
+            signature = signature.replace('srctools.EmptyMapping', '...')
+
+    return signature, return_annotation
+
+
 def setup(app: Sphinx) -> None:
     """Perform modifications."""
     app.add_autodocumenter(EnumDocumenter)
     app.add_autodocumenter(EnumMemberDocumenter)
+    app.connect("autodoc-process-signature", autodoc_process_signature)
     app.connect('missing-reference', on_missing_reference, -10)
