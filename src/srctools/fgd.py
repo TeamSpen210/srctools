@@ -11,7 +11,6 @@ from collections.abc import (
 )
 from copy import deepcopy
 from enum import Enum
-from importlib_resources import files
 from pathlib import Path, PurePosixPath
 import builtins  # type shadowed.
 import io
@@ -314,7 +313,7 @@ def add_engine_database(path: Path) -> None:
 def _load_engine_db() -> list[_EngineDBProto]:
     """Load the builtin database if required.
 
-    This returns the resolved ``_ENGINE_DB`` value, allowing callers to avoid the ``None`` check.
+    This returns the resolved ``_ENGINE_DB`` value, allowing callers to avoid the `None` check.
     """
     # It's pretty expensive to parse, so keep the original privately,
     # returning a deep-copy.
@@ -322,9 +321,9 @@ def _load_engine_db() -> list[_EngineDBProto]:
     if _ENGINE_DB is None:
         _ENGINE_DB = []
         from ._engine_db import unserialise
+        from importlib.resources import files
 
-        # On 3.8, importlib_resources doesn't have the right stubs.
-        with cast(Any, files(srctools) / 'fgd.lzma').open('rb') as f:
+        with (files(srctools) / 'fgd.lzma').open('rb') as f:
             _ENGINE_DB.append(unserialise(f))
         
     return _ENGINE_DB
@@ -1129,7 +1128,7 @@ class KVDef(EntAttribute):
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: Optional[dict[int, Any]] = None) -> KVDef:
+    def __deepcopy__(self, memodict: dict[int, Any]) -> KVDef:
         return KVDef(
             self.name,
             self._type,
@@ -1372,7 +1371,7 @@ class IODef(EntAttribute):
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: Optional[dict[int, Any]] = None) -> IODef:
+    def __deepcopy__(self, memodict: dict[int, Any]) -> IODef:
         return IODef(self.name, self._type, self.desc)
 
     @classmethod
@@ -1957,7 +1956,7 @@ class EntityDef:
         else:
             return f'<Entity {self.classname}>'
 
-    def __deepcopy__(self, memodict: Optional[dict[int, Any]] = None) -> EntityDef:
+    def __deepcopy__(self, memodict: dict[int, Any]) -> EntityDef:
         """Handle copying ourselves, to eliminate lookups when not required."""
         copy = EntityDef.__new__(EntityDef)
         copy.type = self.type
@@ -2149,10 +2148,11 @@ class EntityDef:
                         category[key] = {frozenset(): value}
                         if isinstance(value, KVDef) and value.val_list:
                             # Filter the value list as well, then discard tags.
+                            # Use slicing/negative index to preserve the same number of args
                             value.val_list = [  # type: ignore
-                                val[:-1] + (frozenset(), )
-                                for val in value.val_list
-                                if match_tags(tags, val[-1])
+                                (*val, frozenset())
+                                for (*val, tag) in value.val_list
+                                if match_tags(tags, tag)
                             ]
                         break
                 else:

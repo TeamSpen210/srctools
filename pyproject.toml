@@ -1,9 +1,8 @@
 [build-system]
 requires = [
-	"meson >= 1.2.1",
-	"meson-python >= 0.17.1",
-	"wheel >= 0.37.0",
-	"cython >= 3.0.0",
+	"meson >= 1.8.0",
+	"meson-python == 0.18.0",
+	"cython >= 3.1.1",
 	]
 build-backend = "mesonpy"
 
@@ -38,20 +37,14 @@ classifiers = [
 	"Topic :: Scientific/Engineering :: Mathematics",
 ]
 dependencies=[
-	"attrs >= 21.2.0",
+	"attrs >= 22.2.0",
 	"typing_extensions >= 4.12.0",
-	"importlib_resources >= 5.8.0",
 	"exceptiongroup >= 1.2.0; python_version < '3.11'",
 	"useful_types >= 0.1.0"
 ]
 [optional-dependencies]
 # VTF support.
 wx = ["wxPython"]
-test = [
-	"pytest",
-	"pytest-datadir",
-	"pytest-regressions",
-]
 
 
 [project.scripts]
@@ -130,7 +123,7 @@ enable_error_code = [
 [tool.isort]
 sections=["FUTURE", "TYPING", "FRAMEWORK", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
 known_framework = []
-extra_standard_library = ["importlib_resources"]
+extra_standard_library = []
 known_typing = ["typing", "typing_extensions"]
 no_lines_before = ["TYPING", "FRAMEWORK", "STDLIB"]
 multi_line_output = 5 # hanging grid grouped
@@ -150,7 +143,7 @@ line-length = 127
 
 [tool.ruff.lint]
 select = [
-	"UP", "F", "C4", "ANN", "B", "PIE", "RUF",
+	"UP", "F", "C4", "ANN", "B", "PIE", "RUF", "PYI", "FURB",
 	"PLC", "PLE", "PLW",  # Pylint.
 
 	"TC005",  # Empty type-checking block.
@@ -161,6 +154,9 @@ allowed-confusables = [
 	"×",  # Multiplication sign
 ]
 extend-ignore = [
+	"E201", "E202", "E203", "E221", "E222", "E241", # Allow extra whitespace.
+	"E226",  # Allow 4*6 + 8
+	"E402",  # Allow module level import later in the file.
 	# Allow *-imports.
 	"F403",
 	# name may be undefined, or defined from star imports: module
@@ -177,6 +173,14 @@ extend-ignore = [
 	"PLW0603",  # Allow use of global statement.
 	"PLW2901",  # Allow redefining loop var inside the loop.
 
+	"PYI041",
+
+	# Reburb
+	"FURB154",  # Repeated globals doesn't work if exceeding line limit
+	"FURB189",  # Allow subclassing builtins
+	"FURB122",  # Deliberately using file.write() to avoid requring writelines() methods.
+	"FURB152",
+
 	# Ruff:
 	"RUF100", # Sometimes use # noqa for other linters
 	"RUF022", # All not sorted
@@ -188,10 +192,6 @@ extend-ignore = [
 	"B007",
 	# Stacklevel parameter required for warnings.warn() - doesn't detect positional args.
 	"B028",
-
-	# Pycodestyle, when out of preview:
-	"E221",  # Allow multiple spaces before operators if we want to align
-	"E226",  # Allow no spaces like "1+1", sometimes useful to indicate precedence
 
 	# Flake8-pie:
 	# Prefer to use pass in empty functions, even if docstring is present
