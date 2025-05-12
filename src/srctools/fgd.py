@@ -2153,7 +2153,7 @@ class EntityDef:
                         if isinstance(value, KVDef) and value.val_list:
                             # Filter the value list as well, then discard tags.
                             # Use slicing/negative index to preserve the same number of args
-                            value.val_list = [
+                            value.val_list = [  # pyright: ignore
                                 (*val, frozenset())
                                 for (*val, tag) in value.val_list
                                 if match_tags(tags, tag)
