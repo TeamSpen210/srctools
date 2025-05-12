@@ -4,7 +4,7 @@ srctools.choreo
 .. module:: srctools.choreo
     :synopsis: Reads and writes choreographed scenes, in binary, text and ``scenes.image`` format.
 
-Text format is the `.vcd` format saved by Faceposer, and includes a number of additional attributes to save the editor configuration.
+Text format is the :file:`.vcd` format saved by Faceposer, and includes a number of additional attributes to save the editor configuration.
 Binary format is contained in the ``scenes.image`` file, only storing the data required to actually play the scene.
 
 Note that scenes from ``scenes.image`` are not named - they are looked up by a hash/checksum of the ``VCD`` filename, so the filenames must already be known to identify an entry.

@@ -93,7 +93,7 @@ Implementing Custom FileSystems
 ===============================
 Custom filesystems can be implemented by subclassing :py:class`FileSystem`. File objects store a
 "data" value, which is private to the filesystem implementation, and can hold things like a
-file-info object. Specify it as the `_FileDataT` typevar.
+file-info object. Specify it as the `!_FileDataT` typevar.
 These are the methods that should be overridden:
 
 * :py:meth:`FileSystem.walk_folder`

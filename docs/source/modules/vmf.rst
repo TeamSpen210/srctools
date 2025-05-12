@@ -75,16 +75,33 @@ Brushes
 =======
 
 .. autoattribute:: VMF.brushes
-
 .. automethod:: VMF.add_brush
-
 .. automethod:: VMF.add_brushes
-
 .. automethod:: VMF.remove_brush
 
 .. autoclass:: Solid
-    :members:
-    :undoc-members:
+
+    .. autoattribute:: editor_color
+    .. autoattribute:: group_id
+    .. autoattribute:: hidden
+    .. autoattribute:: sides
+    .. autoattribute:: vis_auto_shown
+    .. autoattribute:: vis_shown
+    .. autoattribute:: visgroup_ids
+    .. autoattribute:: is_cordon
+
+    .. automethod:: parse
+    .. automethod:: export
+    .. automethod:: copy
+    .. automethod:: remove
+    .. automethod:: get_bbox
+    .. automethod:: get_origin
+    .. automethod:: translate
+    .. automethod:: localise
+    .. automethod:: point_inside
+
+.. todo srctools.vmf.Solid.map
+
 
 .. autoclass:: Side
 
@@ -384,23 +401,3 @@ Strata Source adds a few additional values to preserve vertices and store settin
     srctools.vmf.VisGroup.color
     srctools.vmf.VisGroup.name
     srctools.vmf.VisGroup.vmf
-    srctools.vmf.Solid
-    srctools.vmf.Solid.copy
-    srctools.vmf.Solid.parse
-    srctools.vmf.Solid.export
-    srctools.vmf.Solid.remove
-    srctools.vmf.Solid.get_bbox
-    srctools.vmf.Solid.get_origin
-    srctools.vmf.Solid.translate
-    srctools.vmf.Solid.localise
-    srctools.vmf.Solid.point_inside
-    srctools.vmf.Solid.cordon_solid
-    srctools.vmf.Solid.editor_color
-    srctools.vmf.Solid.group_id
-    srctools.vmf.Solid.hidden
-    srctools.vmf.Solid.is_cordon
-    srctools.vmf.Solid.map
-    srctools.vmf.Solid.sides
-    srctools.vmf.Solid.vis_auto_shown
-    srctools.vmf.Solid.vis_shown
-    srctools.vmf.Solid.visgroup_ids

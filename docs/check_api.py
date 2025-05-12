@@ -95,10 +95,13 @@ def main() -> int:
 
     for mod in search_modules():
         print('Module:', mod.__name__)
+        show = False  # (mod.__name__ == 'srctools.vmf')
         for name in find_api(mod):
             api.add(name)
             if name not in documented:
                 missing.add(name)
+            if show:
+                print(name)
         if not hasattr(mod, '__all__'):
             print(f'No {mod.__name__}.__all__!')
 

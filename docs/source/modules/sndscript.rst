@@ -28,7 +28,7 @@ Several options have a number of predefined names.
 
 .. py:data:: VOL_NORM
 
-	Volumes have only one value available, which produces a full volume (`1.0`).
+	Volumes have only one value available, which produces a full volume (:pycode:`1.0`).
 
 
 Sound

@@ -18,7 +18,7 @@ Version (dev)
 * Consistently raise :class:`TypeError` if invalid types are sent to a :class:`~srctools.tokenizer.Tokenizer`.
 * Properly add ``base_plat_train`` class resource function and fix ``item_teamflag``.
 * :bee-pack-issue:`4299`: Fix sprites and decals not being detected properly for packing.
-* Fix `BSP.static_prop_models <srctools.bsp.BSP.static_prop_models` breaking if props were already parsed.
+* Fix `BSP.static_prop_models() <srctools.bsp.BSP.static_prop_models>` breaking if props were already parsed.
 * Make toplevel aliases like ``srctools.VPK`` lazy import.
 * Add support for detecting sounds out of choreo scenes when packing.
 
