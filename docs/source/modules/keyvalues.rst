@@ -57,13 +57,7 @@ To read and write keyvalues files, use :py:meth:`~Keyvalues.parse` and :py:meth:
 		kv.serialise(write_file)
 
 .. automethod:: Keyvalues.parse
-
-.. method:: Keyvalues.serialise(*, indent: str='\t', indent_braces: bool=True, start_indent: str='') -> str
-	:no-index:
-.. automethod:: Keyvalues.serialise(file: io.TextIOBase, /, *, indent: str='\t', indent_braces: bool=True, start_indent: str='') -> None
-
-.. py:function:: Keyvalues.serialize()
-	:no-typesetting:
+.. automethod:: Keyvalues.serialise
 
 :py:meth:`~Keyvalues.serialise` is also available with the spelling :py:meth:`~Keyvalues.serialize`.
 
