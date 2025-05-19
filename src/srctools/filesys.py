@@ -26,7 +26,7 @@ To mount a :py:class:`~srctools.bsp.BSP` file, use ``ZipFileSystem(bsp.pakfile)`
 """
 from typing import Any, BinaryIO, Final, Generic, Optional, TextIO, Union, cast
 from typing_extensions import Self, TypeVar, deprecated
-from collections.abc import Iterator, Mapping
+from collections.abc import Iterator, Mapping, Callable
 from zipfile import ZipFile, ZipInfo
 import io
 import os
@@ -164,15 +164,31 @@ class FileSystem(Generic[_FileDataT]):
     def _check_open(self) -> None:
         """:deprecated: filesystems are always valid."""
 
-    def read_kv1(self, path: Union[str, File[Self]], encoding: str = 'utf8') -> Keyvalues:
-        """Read a Keyvalues1 file from the filesystem.
+    def read_kv1(
+        self,
+        path: Union[str, File[Self]],
+        encoding: str = 'utf8',
+        *,
+        newline_keys: bool = False,
+        newline_values: bool = True,
+        periodic_callback: Optional[Callable[[], object]] = None,
+        allow_escapes: bool = True,
+        single_line: bool = False,
+    ) -> Keyvalues:
+        """Read a `Keyvalues1 <srctools.keyvalues.Keyvalues>` file from the filesystem.
 
         This handles opening and closing files.
+        Keyword parameters are passed to the `~srctools.keyvalues.Keyvalues.parse` function.
         """
         with self.open_str(path, encoding) as file:
             return Keyvalues.parse(
                 file,
                 f'{self.path}:{path.path if isinstance(path, File) else path}',
+                newline_keys=newline_keys,
+                newline_values=newline_values,
+                periodic_callback=periodic_callback,
+                allow_escapes=allow_escapes,
+                single_line=single_line,
             )
 
     @deprecated('Use FileSystem.read_kv1() instead.')
