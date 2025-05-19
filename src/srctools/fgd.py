@@ -319,13 +319,13 @@ def _load_engine_db() -> list[_EngineDBProto]:
     # returning a deep-copy.
     global _ENGINE_DB
     if _ENGINE_DB is None:
-        _ENGINE_DB = []
         from ._engine_db import unserialise
         from importlib.resources import files
 
         with (files(srctools) / 'fgd.lzma').open('rb') as f:
-            _ENGINE_DB.append(unserialise(f))
-        
+            # Assign after, so if it fails to parse every call will repeat the failure.
+            _ENGINE_DB = [unserialise(f)]
+
     return _ENGINE_DB
 
 

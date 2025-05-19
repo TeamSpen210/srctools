@@ -790,7 +790,7 @@ def unserialise(file: IO[bytes]) -> _EngineDBProto:
     [format_version, block_count] = _fmt_header.unpack(file.read(_fmt_header.size))
 
     if format_version != BIN_FORMAT_VERSION:
-        raise TypeError(f'Unknown format version "{format_version}"!')
+        raise TypeError(f'Unknown format version {format_version}, expected {BIN_FORMAT_VERSION}!')
 
     block_classnames: list[list[str]] = []
     ent_map: dict[str, Union[EntityDef, int]] = {}
