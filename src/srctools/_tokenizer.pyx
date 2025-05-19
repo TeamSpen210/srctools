@@ -408,6 +408,7 @@ cdef class Tokenizer(BaseTokenizer):
     # We then cache the UTF8 pointer inside that, and use char_index to iterate.
     cdef object cur_chunk
     cdef object chunk_iter
+    cdef object _periodic_callback
     cdef Py_ssize_t char_index # Position inside cur_chunk
     cdef const uchar *chunk_buf
     cdef Py_ssize_t chunk_size
@@ -434,6 +435,7 @@ cdef class Tokenizer(BaseTokenizer):
         object filename=None,
         error=None,
         *,
+        object periodic_callback = None,
         bint string_bracket: bool = False,
         bint string_parens: bool = True,
         bint allow_escapes: bool = True,
@@ -482,6 +484,11 @@ cdef class Tokenizer(BaseTokenizer):
             else:
                 flags.file_input = True
 
+        if periodic_callback is None or callable(periodic_callback):
+            self._periodic_callback = periodic_callback
+        else:
+            raise TypeError(f"periodic_callback must be a callable or None, got {periodic_callback!r}")
+
         # We initially add one, so it'll be 0 next.
         self.char_index = -1
         self.buf_reset()
@@ -508,6 +515,17 @@ cdef class Tokenizer(BaseTokenizer):
             self.char_index -= 2
         elif self._next_char()[0] != 0xbf:
             self.char_index -= 3
+
+    @property
+    def periodic_callback(self):
+        """If set, is called periodically when parsing lines. Useful to abort parsing operations."""
+        return self._periodic_callback
+
+    @periodic_callback.setter
+    def periodic_callback(self, callback):
+        if callback is None or callable(callback):
+            self._periodic_callback = callback
+        raise TypeError(f"periodic_callback must be a callable or None, got {callback!r}")
 
     @property
     def string_bracket(self) -> bool:
@@ -676,6 +694,12 @@ cdef class Tokenizer(BaseTokenizer):
         """Compute the next token."""
         return self.next_token()
 
+    cdef _inc_line_number(self):
+        """Increment the line number count."""
+        self.line_num += 1
+        if self._periodic_callback is not None and self.line_num % 10 == 0:
+            self._periodic_callback()
+
     cdef next_token(self):
         """Return the next token, value pair - this is the C version."""
         cdef:
@@ -710,7 +734,7 @@ cdef class Tokenizer(BaseTokenizer):
 
             # Handle newlines, converting \r and \r\n to \n.
             if next_char == b'\r':
-                self.line_num += 1
+                self._inc_line_number()
                 self.flags.last_was_cr = True
                 return NEWLINE_TUP
             elif next_char == b'\n':
@@ -718,7 +742,7 @@ cdef class Tokenizer(BaseTokenizer):
                 if self.flags.last_was_cr:
                     self.flags.last_was_cr = False
                     continue
-                self.line_num += 1
+                self._inc_line_number()
                 return NEWLINE_TUP
             else:
                 self.flags.last_was_cr = False
@@ -743,7 +767,7 @@ cdef class Tokenizer(BaseTokenizer):
                                     f'(starting on line {start_line})!',
                                 )
                             if next_char == b'\n':
-                                self.line_num += 1
+                                self._inc_line_number()
                                 if save_comments:
                                     self.buf_add_char(next_char)
                             elif next_char == b'*':
@@ -804,7 +828,7 @@ cdef class Tokenizer(BaseTokenizer):
                     if next_char == b'"':
                         return STRING, self.buf_get_text()
                     elif next_char == b'\r':
-                        self.line_num += 1
+                        self._inc_line_number()
                         last_was_cr = True
                         self.buf_add_char(b'\n')
                         continue
@@ -812,7 +836,7 @@ cdef class Tokenizer(BaseTokenizer):
                         if last_was_cr:
                             last_was_cr = False
                             continue
-                        self.line_num += 1
+                        self._inc_line_number()
                     else:
                         last_was_cr = False
 
@@ -896,7 +920,7 @@ cdef class Tokenizer(BaseTokenizer):
                     elif next_char == b')':
                         return PAREN_ARGS, self.buf_get_text()
                     elif next_char == b'\n':
-                        self.line_num += 1
+                        self._inc_line_number()
                     self.buf_add_char(next_char)
 
             elif next_char == b')':

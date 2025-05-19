@@ -367,6 +367,7 @@ class Keyvalues:
         flags: Mapping[str, bool] = EmptyMapping,
         newline_keys: bool = False,
         newline_values: bool = True,
+        periodic_callback: Optional[Callable[[], object]] = None,
         allow_escapes: bool = True,
         single_line: bool = False,
         single_block: bool = False,
@@ -387,6 +388,8 @@ class Keyvalues:
           roots. Importantly this will exit after hitting this brace, allowing it to be called in
           the middle of parsing a larger document.
         :param flags: This should be a mapping for additional ``[flag]`` suffixes to accept.
+        :param periodic_callback: If set, this function will be called periodically after every
+          few lines, to allow aborting parsing.
         :param allow_escapes: This allows choosing if ``\\t`` or similar escapes are parsed.
         :param single_line: If this is set, allow multiple keyvalues to be on the same line.
           This means unterminated strings will be caught late (if at all), but it allows parsing
@@ -432,6 +435,7 @@ class Keyvalues:
                 KeyValError,
                 string_bracket=True,
                 allow_escapes=allow_escapes,
+                periodic_callback=periodic_callback,
             )
 
         # A pseudo-enum to track whether we expect a block next.

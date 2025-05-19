@@ -1,6 +1,6 @@
 """Test the keyvalues module."""
-from typing import Union
 from collections.abc import Generator
+from unittest.mock import Mock
 import itertools
 import sys
 
@@ -310,6 +310,14 @@ def test_lineno() -> None:
     assert raises.value.key == 'MissingKey'
     assert raises.value.line_num == 5
     assert raises.value.filename is None
+
+
+def test_periodic_callback(py_c_token: type[Tokenizer]) -> None:
+    """Test the periodic callback function. The specific delay is not specified."""
+    cb = Mock()
+    Keyvalues.parse(parse_test, periodic_callback=cb)
+    # Check the number of calls hasn't changed, number is arbitrary.
+    assert len(cb.mock_calls) == 8
 
 
 def test_single_block(py_c_token: type[Tokenizer]) -> None:
@@ -737,7 +745,7 @@ def test_edit() -> None:
     """Check functionality of Keyvalues.edit()"""
     test_prop = Keyvalues('Name', 'Value')
 
-    def check(prop: Keyvalues, name: str, value: Union[str, list[str]]) -> None:
+    def check(prop: Keyvalues, name: str, value: str | list[str]) -> None:
         """Check the property was edited, and has the given value."""
         nonlocal test_prop
         assert prop is test_prop

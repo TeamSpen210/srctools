@@ -24,7 +24,7 @@ Specifically, the following characters are escaped:
 """
 from typing import TYPE_CHECKING, Final, NoReturn, Optional, Union
 from typing_extensions import Self, TypeAlias, overload
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Callable
 from enum import Enum
 from os import fspath as _conv_path
 import abc
@@ -416,6 +416,11 @@ class Tokenizer(BaseTokenizer):
     _cur_chunk: str
     _char_index: int
 
+    periodic_callback: Optional[Callable[[], object]]
+    """If set, is called periodically after a few lines are parsed. 
+    Useful to abort parsing operations from external factors.
+    """
+
     string_bracket: bool
     """If set, `[bracket]` blocks are parsed as a single string-like block. \
     If disabled these are parsed as :py:const:`~Token.BRACK_OPEN`, :py:const:`~Token.STRING` \
@@ -446,6 +451,7 @@ class Tokenizer(BaseTokenizer):
         filename: Optional[StringPath] = None,
         error: type[TokenSyntaxError] = TokenSyntaxError,
         *,
+        periodic_callback: Optional[Callable[[], object]] = None,
         string_bracket: bool = False,
         string_parens: bool = True,
         allow_escapes: bool = True,
@@ -478,6 +484,7 @@ class Tokenizer(BaseTokenizer):
             self._chunk_iter = iter(data)
         self._char_index = -1
 
+        self.periodic_callback = periodic_callback
         self.string_bracket = bool(string_bracket)
         self.string_parens = bool(string_parens)
         self.allow_escapes = bool(allow_escapes)
@@ -510,6 +517,12 @@ class Tokenizer(BaseTokenizer):
             # Out of characters after empty chunks
             return None
 
+    def _inc_line_number(self) -> None:
+        """Increment the line number count."""
+        self.line_num += 1
+        if self.periodic_callback is not None and self.line_num % 10 == 0:
+            self.periodic_callback()
+
     def _get_token(self) -> tuple[Token, str]:
         """Return the next token, value pair."""
         value_chars: list[str]
@@ -525,14 +538,14 @@ class Tokenizer(BaseTokenizer):
             # Handle newlines, converting \r and \r\n to \n.
             if next_char == '\r':
                 self._last_was_cr = True
-                self.line_num += 1
+                self._inc_line_number()
                 return Token.NEWLINE, '\n'
             elif next_char == '\n':
                 # Consume the \n in \r\n.
                 if self._last_was_cr:
                     self._last_was_cr = False
                     continue
-                self.line_num += 1
+                self._inc_line_number()
                 return Token.NEWLINE, '\n'
             else:
                 self._last_was_cr = False
@@ -583,7 +596,7 @@ class Tokenizer(BaseTokenizer):
                     if next_char == ')':
                         return Token.PAREN_ARGS, ''.join(value_chars)
                     elif next_char == '\n':
-                        self.line_num += 1
+                        self._inc_line_number()
                     elif next_char == '(':
                         raise self.error('Cannot nest () brackets!')
                     elif next_char is None:
@@ -658,6 +671,7 @@ class Tokenizer(BaseTokenizer):
 
             else:
                 raise self.error('Unexpected character "{}"!', next_char)
+        raise AssertionError("Infinite loop")
 
     def _handle_comment(self) -> Optional[tuple[Token, str]]:
         """Handle a comment. The last character read was the initial slash."""
@@ -677,7 +691,7 @@ class Tokenizer(BaseTokenizer):
                             comment_start,
                         )
                     elif next_char == '\n':
-                        self.line_num += 1
+                        self._inc_line_number()
                         if comment_buf is not None:
                             comment_buf.append(next_char)
                     elif next_char == '*':
@@ -736,7 +750,7 @@ class Tokenizer(BaseTokenizer):
             if next_char == '"':
                 return Token.STRING, ''.join(value_chars)
             elif next_char == '\r':
-                self.line_num += 1
+                self._inc_line_number()
                 last_was_cr = True
                 value_chars.append('\n')
                 continue
@@ -744,7 +758,7 @@ class Tokenizer(BaseTokenizer):
                 if last_was_cr:
                     last_was_cr = False
                     continue
-                self.line_num += 1
+                self._inc_line_number()
             else:
                 last_was_cr = False
 
@@ -769,6 +783,7 @@ class Tokenizer(BaseTokenizer):
                 raise self.error('Unterminated string!')
             else:
                 value_chars.append(next_char)
+        raise AssertionError("Infinite loop")
 
 
 class IterTokenizer(BaseTokenizer):

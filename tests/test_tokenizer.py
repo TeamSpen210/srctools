@@ -1,6 +1,7 @@
 from typing import Any, Union, cast
 from collections.abc import Callable, Iterable, Iterator
 from itertools import tee, zip_longest
+from unittest.mock import Mock
 import codecs
 import platform
 
@@ -496,6 +497,17 @@ def test_tok_filename(py_c_token: type[Tokenizer]) -> None:
     assert isinstance(tok.filename, str)
 
     assert Tokenizer('file', b'binary/filename\xE3\x00.txt').filename == 'binary/filename\\xe3\\x00.txt'
+
+
+def test_periodic_callback(py_c_token: type[Tokenizer]) -> None:
+    """Test the periodic callback function. The specific delay is not specified."""
+    cb = Mock()
+    tok = Tokenizer('x\nx\r\n' * 25, periodic_callback=cb)
+    assert list(tok) == [
+        (Token.STRING, 'x'),
+        (Token.NEWLINE, '\n'),
+    ] * 50
+    assert len(cb.mock_calls) == 5
 
 
 @pytest.mark.parametrize('parm, default', [
