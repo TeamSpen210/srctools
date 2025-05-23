@@ -1599,10 +1599,6 @@ class _EntityView(Generic[T]):
         return len(seen)
 
 
-# Fix a bug in some typing versions - slots can't be used with generics.
-del _EntityView.__slots__
-
-
 @attrs.define(slots=False, eq=False, repr=False)
 class EntityDef:
     """A definition for an entity."""
