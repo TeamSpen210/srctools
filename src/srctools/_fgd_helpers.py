@@ -6,7 +6,7 @@ from collections.abc import Collection, Iterable, Iterator
 import attrs
 
 from srctools import conv_float
-from srctools.fgd import EntityDef, Helper, HelperTypes
+from srctools.fgd import EntityDef, Helper, HelperTypes, TagsSet
 from srctools.math import Vec, format_float
 
 
@@ -35,6 +35,11 @@ def parse_byte(text: Union[int, str]) -> int:
         return 255
 
 
+def repr_float(value: object) -> str:
+    """Strip .0 from floats, but keep everything else."""
+    return format_float(value) if isinstance(value, float) else repr(value)
+
+
 @attrs.define
 class _HelperOneOptional(Helper):
     """Utility base class for a helper with one optional parameter."""
@@ -42,7 +47,7 @@ class _HelperOneOptional(Helper):
     key: str
 
     @classmethod
-    def parse(cls, args: list[str]) -> Self:
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
         """Parse a single optional keyl."""
         if len(args) > 1:
             raise ValueError(
@@ -52,7 +57,7 @@ class _HelperOneOptional(Helper):
             key = args[0].strip('"')
         else:
             key = cls._DEFAULT
-        return cls(key)
+        return cls(key, tags=tags)
 
     def export(self) -> list[str]:
         """Export the helper.
@@ -94,7 +99,8 @@ class HelperSize(Helper):
     bbox_min: Vec
     bbox_max: Vec
 
-    def __init__(self, point1: Vec, point2: Vec) -> None:
+    def __init__(self, point1: Vec, point2: Vec, tags: TagsSet = frozenset()) -> None:
+        super().__init__(tags=tags)
         self.bbox_min, self.bbox_max = Vec.bbox(point1, point2)
 
     def overrides(self) -> Collection[HelperTypes]:
@@ -102,7 +108,7 @@ class HelperSize(Helper):
         return [HelperTypes.CUBE]
 
     @classmethod
-    def parse(cls, args: list[str]) -> Self:
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
         """Parse size(x1 y1 z1, x2 y2 z2)."""
         if len(args) not in (3, 6):
             raise ValueError(
@@ -116,7 +122,7 @@ class HelperSize(Helper):
             size_max = size_min / 2
             size_min = -size_max
 
-        return cls(size_min, size_max)
+        return cls(size_min, size_max, tags)
 
     def export(self) -> list[str]:
         """Produce (x1 y1 z1, x2 y2 z2)."""
@@ -152,7 +158,7 @@ class HelperRenderColor(Helper):
         return [HelperTypes.TINT]
 
     @classmethod
-    def parse(cls, args: list[str]) -> Self:
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
         """Parse color(R G B)."""
         try:
             [r, g, b] = args
@@ -161,7 +167,7 @@ class HelperRenderColor(Helper):
                 f'Expected 3 arguments, got ({", ".join(args)})!'
             ) from None
 
-        return cls(parse_byte(r), parse_byte(g), parse_byte(b))
+        return cls(parse_byte(r), parse_byte(g), parse_byte(b), tags=tags)
 
     def export(self) -> list[str]:
         """Produce color(R G B)."""
@@ -178,7 +184,7 @@ class HelperSphere(Helper):
     size_key: str
 
     @classmethod
-    def parse(cls, args: list[str]) -> Self:
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
         """Parse sphere(radius, r g b)."""
         arg_count = len(args)
         if arg_count not in (0, 1, 4):
@@ -194,7 +200,7 @@ class HelperSphere(Helper):
         else:
             size_key = 'radius'
 
-        return cls(r, g, b, size_key)
+        return cls(r, g, b, size_key, tags=tags)
 
     def export(self) -> list[str]:
         """Export the helper."""
@@ -226,7 +232,7 @@ class HelperLine(Helper):
     end_value: Optional[str] = None
 
     @classmethod
-    def parse(cls, args: list[str]) -> Self:
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
         """Parse line(r g b, start_key, start_value, end_key, end_value)."""
         arg_count = len(args)
         if arg_count not in (5, 7):
@@ -247,7 +253,7 @@ class HelperLine(Helper):
         else:
             end_key = end_value = None
 
-        return cls(r, g, b, start_key, start_value, end_key, end_value)
+        return cls(r, g, b, start_key, start_value, end_key, end_value, tags=tags)
 
     def export(self) -> list[str]:
         """Produce the correct line() arguments."""
@@ -270,14 +276,14 @@ class HelperFrustum(Helper):
     """
     TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.FRUSTUM
 
-    fov: Union[str, float]
-    near_z: Union[str, float]
-    far_z: Union[str, float]
+    fov: Union[str, float] = attrs.field(repr=repr_float)
+    near_z: Union[str, float] = attrs.field(repr=repr_float)
+    far_z: Union[str, float] = attrs.field(repr=repr_float)
     color: Union[str, tuple[int, int, int]]
     pitch_scale: float = 1.0
 
     @classmethod
-    def parse(cls, args: list[str]) -> Self:
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
         """Parse frustum(fov, near, far, color, pitch_scale)."""
         # These are the default values if not provided.
         fov: Union[str, float] = '_fov'
@@ -324,7 +330,7 @@ class HelperFrustum(Helper):
         except ValueError:
             pass
 
-        return cls(fov, nearz, farz, color, pitch)
+        return cls(fov, nearz, farz, color, pitch, tags=tags)
 
     def export(self) -> list[str]:
         """Export back out frustrum() arguments."""
@@ -365,7 +371,7 @@ class HelperCylinder(HelperLine):
     end_radius: Optional[str] = None
 
     @classmethod
-    def parse(cls, args: list[str]) -> Self:
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
         """Parse cylinder(r g b, start key/value/radius, end key/value/radius)."""
         arg_count = len(args)
         # Don't allow no keys (3), start key but no value (4), or end key but no value (7)
@@ -392,6 +398,7 @@ class HelperCylinder(HelperLine):
             start_key, start_value,
             end_key, end_value,
             start_radius, end_radius,
+            tags=tags,
         )
 
     def export(self) -> list[str]:
@@ -443,14 +450,14 @@ class HelperBoundingBox(Helper):
     max: str
 
     @classmethod
-    def parse(cls, args: list[str]) -> Self:
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
         """Parse wirebox(min, max)"""
         try:
             [key_min, key_max] = args
         except ValueError:
             raise ValueError(f'Expected 2 arguments, got {args!r}!') from None
 
-        return cls(key_min, key_max)
+        return cls(key_min, key_max, tags=tags)
 
     def export(self) -> list[str]:
         """Produce the wirebox(min, max) arguments."""
@@ -488,14 +495,14 @@ class HelperSprite(Helper):
             return [HelperTypes.CUBE, HelperTypes.SPRITE, HelperTypes.ENT_SPRITE]
 
     @classmethod
-    def parse(cls, args: list[str]) -> Self:
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
         """Parse iconsprite(mat)."""
         if len(args) > 1:
             raise ValueError(f'Expected up to 1 argument, got {args!r}!')
         elif len(args) == 1:
-            return cls(args[0])
+            return cls(args[0], tags=tags)
         else:
-            return cls(None)
+            return cls(None, tags=tags)
 
     def export(self) -> list[str]:
         """Produce the arguments for iconsprite()."""
@@ -562,14 +569,14 @@ class HelperModel(Helper):
             return [HelperTypes.CUBE, HelperTypes.MODEL, HelperTypes.MODEL_NEG_PITCH, HelperTypes.MODEL_PROP]
 
     @classmethod
-    def parse(cls, args: list[str]) -> Self:
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
         """Parse iconsprite(mat)."""
         if len(args) > 1:
             raise ValueError(f'Expected up to 1 argument, got {args!r}!')
         elif len(args) == 1:
-            return cls(args[0])
+            return cls(args[0], tags=tags)
         else:
-            return cls(None)
+            return cls(None, tags=tags)
 
     def export(self) -> list[str]:
         """Produce the arguments for iconsprite()."""
@@ -658,7 +665,7 @@ class HelperLightSpot(Helper):
     pitch_scale: float
 
     @classmethod
-    def parse(cls, args: list[str]) -> Self:
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
         """Parse lightcone(inner, outer, color, pitch_scale)."""
         inner_cone = '_inner_cone'
         outer_cone = '_cone'
@@ -675,7 +682,7 @@ class HelperLightSpot(Helper):
             if len(args) > 4:
                 raise ValueError(f'Expected 0-4 arguments, got {args!r}!')
 
-        return cls(inner_cone, outer_cone, color, pitch_scale)
+        return cls(inner_cone, outer_cone, color, pitch_scale, tags=tags)
 
     def export(self) -> list[str]:
         """Produce the arguments for lightcone()."""
@@ -702,11 +709,11 @@ class HelperLightSpotBlackMesa(Helper):
     color_kv: str
 
     @classmethod
-    def parse(cls, args: list[str]) -> Self:
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
         """Parse newlightcone(theta, phi, lightcolor)."""
         if len(args) != 3:
             raise ValueError(f'Expected 3 arguments, got {args!r}!')
-        return cls(args[0], args[1], args[2])
+        return cls(args[0], args[1], args[2], tags=tags)
 
     def export(self) -> list[str]:
         """Produce the arguments for iconsprite()."""
@@ -722,13 +729,13 @@ class HelperRope(Helper):
     name_kv: Optional[str] = None  # Extension in Portal: Revolution
 
     @classmethod
-    def parse(cls, args: list[str]) -> Self:
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
         """Parse keyframe(name)."""
         if len(args) > 1:
             raise ValueError(f'Expected up to one argument, got {args!r}!')
         if len(args) == 0:
-            return cls(None)
-        return cls(args[0])
+            return cls(None, tags=tags)
+        return cls(args[0], tags=tags)
 
     def export(self) -> list[str]:
         """Produce the arguments for keyframe()."""
@@ -763,16 +770,18 @@ class HelperExtAppliesTo(Helper):
     TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.EXT_APPLIES_TO
     IS_EXTENSION: ClassVar[bool] = True
 
-    tags: list[str] = attrs.Factory(list)
+    applies: list[str] = attrs.Factory(list)
 
     @classmethod
-    def parse(cls, args: list[str]) -> Self:
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
         """Parse appliesto(tag1, tag2)."""
+        if tags:
+            raise ValueError('Cannot have tags on appliesto() helper.')
         return cls(args)
 
     def export(self) -> list[str]:
         """Produce the arguments for appliesto()."""
-        return self.tags
+        return self.applies
 
 
 @attrs.define
@@ -784,9 +793,11 @@ class HelperExtOrderBy(Helper):
     order: list[str] = attrs.Factory(list)
 
     @classmethod
-    def parse(cls, args: list[str]) -> Self:
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
         """Parse orderby(key1, key2)."""
-        return cls(args)
+        if tags:
+            raise ValueError('Cannot have tags on orderby() helper.')
+        return cls(args, tags=frozenset())
 
     def export(self) -> list[str]:
         """Produce the arguments for orderby()."""
@@ -804,13 +815,16 @@ class HelperExtAutoVisgroups(Helper):
     path: list[str] = attrs.Factory(list)
 
     @classmethod
-    def parse(cls, args: list[str]) -> Self:
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
         """Parse autovis(group1, group2)."""
+        if tags:
+            raise ValueError('Cannot have tags on autovis() helper.')
+
         if len(args) > 0 and args[0].casefold() != 'auto':
             args.insert(0, 'Auto')
         if len(args) < 2:
             raise ValueError(f'Expected 2 or more arguments, got {args!r}!')
-        return cls(args)
+        return cls(args, tags=frozenset())
 
     def export(self) -> list[str]:
         """Produce the arguments for autovis()."""

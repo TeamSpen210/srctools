@@ -1,18 +1,18 @@
 
 @PointClass 
-	instance()
-	decal()
-	overlay()
-	overlay_transition()
-	light()
-	lightcone()
+	instance[+D]()
+	decal[+D]()
+	overlay[+D]()
+	overlay_transition[+D]()
+	light[+D]()
+	lightcone[+D]()
 	lightcone(inner, outer, color, -1.5)
-	keyframe()
-	keyframe(revo_key)
-	animator()
-	quadbounds()
-	worldtext()
-	catapult()
+	keyframe[+D]()
+	keyframe[+D](revo_key)
+	animator[+D]()
+	quadbounds[+D]()
+	worldtext[+D]()
+	catapult[+D]()
 = some_entity
 	[
 	]

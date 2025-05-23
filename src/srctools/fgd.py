@@ -938,6 +938,7 @@ class Resource:
         return cls(filename, FileType.WEAPON_SCRIPT, tags)
 
 
+@attrs.define(eq=True, repr=False, hash=False)
 class Helper:
     """Base class for representing helper() commands in the header of an entity.
 
@@ -950,8 +951,10 @@ class Helper:
     TYPE: ClassVar[Optional[HelperTypes]] = None
     IS_EXTENSION: ClassVar[bool] = False  # true for our extensions to the format.
 
+    tags: TagsSet = attrs.field(kw_only=True, default=frozenset())
+
     @classmethod
-    def parse(cls, args: list[str]) -> Self:
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
         """Parse this helper from the given arguments.
 
         The default implementation expects no arguments.
@@ -959,7 +962,7 @@ class Helper:
         if args:
             name = cls.TYPE.name if cls.TYPE is not None else cls.__name__
             raise ValueError(f'No arguments accepted by {name}()!')
-        return cls()
+        return cls(tags=tags)
 
     def export(self) -> list[str]:
         """Produce the argument text to recreate this helper type."""
@@ -980,20 +983,8 @@ class Helper:
 
     __hash__ = None  # type: ignore[assignment]
 
-    def __eq__(self, other: object) -> bool:
-        """Define equality as all attributes matching, and only matching types."""
-        if not isinstance(other, Helper):
-            return NotImplemented
-        return self.TYPE is other.TYPE and vars(self) == vars(other)
-
-    def __ne__(self, other: object) -> bool:
-        """Define equality as all attributes matching, and only matching types."""
-        if not isinstance(other, Helper):
-            return NotImplemented
-        return self.TYPE is not other.TYPE or vars(self) != vars(other)
-
     def __repr__(self) -> str:
-        return f'{self.__class__.__name__}()'
+        return f'{self.__class__.__name__}(tags={self.tags!r})'
 
 
 @attrs.define
@@ -1674,6 +1665,7 @@ class EntityDef:
         ext_autovisgroups: list[list[str]] = []
         help_type: Optional[HelperTypes] = None
         help_type_cust: Optional[str] = None
+        help_tags: Optional[TagsSet] = None
         for token, token_value in tok:
             if token is Token.NEWLINE:
                 continue
@@ -1686,16 +1678,25 @@ class EntityDef:
                 else:
                     # No arguments for the previous helper, add it in.
                     try:
-                        entity.helpers.append(HELPER_IMPL[help_type].parse([]))
+                        entity.helpers.append(HELPER_IMPL[help_type].parse(
+                            [], help_tags or frozenset(),
+                        ))
                     except ValueError as exc:
                         raise tok.error(
-                            'Invalid helper arguments for {}()',
-                            help_type.value
+                            'Invalid helper arguments for {}{}()',
+                            help_type.value,
+                            f'[{" ".join(help_tags)}]' if help_tags else '',
                         ) from exc
-                    help_type = None
+                    help_type = help_tags = None
                     # Then repeat this token so it's parsed.
                     tok.push_back(token, token_value)
                 continue
+            elif token is Token.BRACK_OPEN:
+                if help_type is None and help_type_cust is None:
+                    raise tok.error('Tags specified without helper type')
+                if help_tags is not None:
+                    raise tok.error('Duplicate helper tags')
+                help_tags = read_tags(tok, Token.BRACK_CLOSE)
 
             elif token is Token.PAREN_OPEN:
                 if help_type is None and help_type_cust is None:
@@ -1740,7 +1741,7 @@ class EntityDef:
                     entity.is_alias = True
 
                 if help_type_cust is not None:
-                    entity.helpers.append(UnknownHelper(help_type_cust, args))
+                    entity.helpers.append(UnknownHelper(help_type_cust, args, tags=help_tags or frozenset()))
                 elif help_type is None:
                     raise tok.error('help_type not set?')
                 elif help_type is HelperTypes.INHERIT:
@@ -1756,15 +1757,18 @@ class EntityDef:
                     ext_autovisgroups.append(args)
                 else:
                     try:
-                        entity.helpers.append(HELPER_IMPL[help_type].parse(args))
+                        entity.helpers.append(HELPER_IMPL[help_type].parse(
+                            args, help_tags or frozenset(),
+                        ))
                     except (TypeError, ValueError) as exc:
                         raise tok.error(
-                            'Invalid helper arguments for {}({}):\n',
+                            'Invalid helper arguments for {}{}({}):\n',
                             help_type.value,
+                            f'[{" ".join(help_tags)}]' if help_tags else '',
                             args,
                         ) from exc
 
-                help_type = help_type_cust = None
+                help_type = help_type_cust = help_tags = None
 
             elif token is Token.EQUALS:
                 break
@@ -1776,16 +1780,17 @@ class EntityDef:
         # We were waiting for arguments for the previous helper.
         # We need to add with none.
         if help_type_cust is not None:
-            entity.helpers.append(UnknownHelper(help_type_cust, []))
+            entity.helpers.append(UnknownHelper(help_type_cust, [], tags=help_tags or frozenset()))
         elif help_type:
             if help_type is HelperTypes.EXT_AUTO_VISGROUP or help_type is HelperTypes.INHERIT:
                 raise tok.error('{}() requires at least one argument!', help_type.value)
             try:
-                entity.helpers.append(HELPER_IMPL[help_type].parse([]))
+                entity.helpers.append(HELPER_IMPL[help_type].parse([], help_tags or frozenset()))
             except ValueError as exc:
                 raise tok.error(
-                    'Invalid helper arguments for {}()',
-                    help_type.value
+                    'Invalid helper arguments for {}{}()',
+                    help_type.value,
+                    f'[{" ".join(help_tags)}]' if help_tags else '',
                 ) from exc
 
         entity.classname = tok.expect(Token.STRING).strip()
@@ -2044,19 +2049,19 @@ class EntityDef:
             [self.resources, self.is_alias] = resources
 
     @overload
-    def get_helpers(self, typ: builtins.type[HelperT]) -> Iterator[HelperT]: ...
+    def get_helpers(self, typ: builtins.type[HelperT], tags: TagsSet = ...) -> Iterator[HelperT]: ...
     @overload
-    def get_helpers(self, typ: str) -> Iterator[UnknownHelper]: ...
+    def get_helpers(self, typ: str, tags: TagsSet = ...) -> Iterator[UnknownHelper]: ...
 
-    def get_helpers(self, typ: Union[builtins.type[HelperT], str]) -> Iterator[Helper]:
-        """Find all helpers with this specific type."""
+    def get_helpers(self, typ: Union[builtins.type[HelperT], str], tags: TagsSet = frozenset()) -> Iterator[Helper]:
+        """Find all helpers with this specific type and tags."""
         if isinstance(typ, str):
             for helper in self.helpers:
-                if isinstance(helper, UnknownHelper) and helper.name == typ:
+                if isinstance(helper, UnknownHelper) and helper.name == typ and match_tags(tags, helper.tags):
                     yield helper
         else:
             for helper in self.helpers:
-                if helper.TYPE == typ.TYPE:
+                if helper.TYPE == typ.TYPE and match_tags(tags, helper.tags):
                     yield helper
 
     def get_resources(
@@ -2206,6 +2211,7 @@ class EntityDef:
 
         for helper in self.helpers:
             args = helper.export()
+            help_tags = f'[{", ".join(sorted(helper.tags))}]' if custom_syntax and helper.tags else ''
             if isinstance(helper, HelperExtOrderBy):
                 # Even if custom syntax is off, still apply this helper.
                 kv_order_list += [arg.casefold() for arg in args]
@@ -2213,11 +2219,11 @@ class EntityDef:
                 continue
             if isinstance(helper, HelperHalfGridSnap):
                 # Special case, no args.
-                file.write('\n\thalfgridsnap')
+                file.write(f'\n\thalfgridsnap{help_tags}')
             elif isinstance(helper, UnknownHelper):
-                file.write(f'\n\t{helper.name}({", ".join(args)})')
+                file.write(f'\n\t{helper.name}{help_tags}({", ".join(args)})')
             elif helper.TYPE is not None:
-                file.write(f'\n\t{helper.TYPE.value}({", ".join(args)})')
+                file.write(f'\n\t{helper.TYPE.value}{help_tags}({", ".join(args)})')
             else:
                 raise TypeError(f'Helper {helper!r} has no TYPE attr?')
 

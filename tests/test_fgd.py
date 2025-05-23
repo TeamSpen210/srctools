@@ -149,8 +149,8 @@ def test_entity_parse(py_c_token) -> None:
 @PointClass base(Base1, Base2, Base3) 
 base(Base4, base_5)
 sphere(radii) 
-unknown(a, b, c)
-line(240 180 50, targetname, target)
+unknown[+a, -b](a, b, c)
+line[+b](240 180 50, targetname, target)
 autovis(Auto, some, group)
 halfgridsnap // Special, no args
 appliesto(tag1, tag2, !tag3)
@@ -201,8 +201,8 @@ appliesto(tag1, tag2, !tag3)
 
     assert ent.helpers == [
         HelperSphere(255, 255, 255, 'radii'),
-        UnknownHelper('unknown', ['a', 'b', 'c']),
-        HelperLine(240, 180, 50, 'targetname', 'target'),
+        UnknownHelper('unknown', ['a', 'b', 'c'], tags=frozenset({'+A', '-B'})),
+        HelperLine(240, 180, 50, 'targetname', 'target', tags=frozenset({'+B'})),
         HelperHalfGridSnap(),
         HelperExtAppliesTo(['tag1', 'tag2', '!tag3'])
     ]
@@ -464,15 +464,15 @@ def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture
     base(Base1, Base2, Base3)
     halfgridsnap // Special, no args
     size(32 64 128)
-    size(-64 -48 0, 64 48 32)
-    color(128 255 0)
+    size[+A](-64 -48 0, 64 48 32)
+    color[+A](128 255 0)
     sphere()
-    sphere(radii)
-    sphere(radii, 128 192 64)
+    sphere[+A](radii)
+    sphere[+A](radii, 128 192 64)
     line(240 180 50, targetname, target)
-    line(12 180 50, targetname target, parentname, next)
+    line[+A](12 180 50, targetname target, parentname, next)
     frustum()
-    frustum(light_fov)
+    frustum[+A](light_fov)
     frustum(light_fov, light_near)
     frustum(light_fov, 450, light_far)
     frustum(97, light_near, light_far, bright)
@@ -483,31 +483,33 @@ def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture
     cylinder(24 48 96, targetname, start start_size)
     cylinder(24 48 96, targetname, start start_size, target, end)
     cylinder(24 48 96, targetname, start start_size, target, end, end_size)
-    origin(centroid)
-    axis()
-    axis(hinge)
-    vecline("axis")
-    sidelist(decalled)
-    wirebox(mins maxes)
-    sweptplayerhull()
-    obb(orient_mins, orient_maxes)
+    origin[+A](centroid)
+    axis  // No args, no tags in mid
+    axis[+A](hinge)
+    vecline[+A]("axis")
+    sidelist[+A](decalled)
+    wirebox[+A](mins maxes)
+    sweptplayerhull[+A]()
+    obb[+A](orient_mins, orient_maxes)
+    sphere  // No args, no tags at end
     = some_entity [ ]
     """})
     fgd = FGD()
     fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False)
     ent = fgd['some_entity']
+    tags = frozenset({'+A'})
     assert ent.helpers == [
         fgd_mod.HelperHalfGridSnap(),
         fgd_mod.HelperSize(Vec(-16, -32, -64), Vec(16, 32, 64)),
-        fgd_mod.HelperSize(Vec(-64, -48, 0), Vec(64, 48, 32)),
-        fgd_mod.HelperRenderColor(128, 255, 0),
+        fgd_mod.HelperSize(Vec(-64, -48, 0), Vec(64, 48, 32), tags=tags),
+        fgd_mod.HelperRenderColor(128, 255, 0, tags=tags),
         fgd_mod.HelperSphere(255, 255, 255, "radius"),
-        fgd_mod.HelperSphere(255, 255, 255, "radii"),
-        fgd_mod.HelperSphere(128, 192, 64, "radii"),
+        fgd_mod.HelperSphere(255, 255, 255, "radii", tags=tags),
+        fgd_mod.HelperSphere(128, 192, 64, "radii", tags=tags),
         fgd_mod.HelperLine(240, 180, 50, "targetname", "target", None, None),
-        fgd_mod.HelperLine(12, 180, 50, "targetname", "target", "parentname", "next"),
+        fgd_mod.HelperLine(12, 180, 50, "targetname", "target", "parentname", "next", tags=tags),
         fgd_mod.HelperFrustum("_fov", "_nearplane", "_farplane", "_light", 1.0),
-        fgd_mod.HelperFrustum("light_fov", "_nearplane", "_farplane", "_light", 1.0),
+        fgd_mod.HelperFrustum("light_fov", "_nearplane", "_farplane", "_light", 1.0, tags=tags),
         fgd_mod.HelperFrustum("light_fov", "light_near", "_farplane", "_light", 1.0),
         fgd_mod.HelperFrustum("light_fov", 450, "light_far", "_light", 1.0),
         fgd_mod.HelperFrustum(97, "light_near", "light_far", "bright", 1.0),
@@ -518,14 +520,15 @@ def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture
         fgd_mod.HelperCylinder(24, 48, 96, "targetname", "start", start_radius="start_size"),
         fgd_mod.HelperCylinder(24, 48, 96, "targetname", "start", "target", "end", "start_size"),
         fgd_mod.HelperCylinder(24, 48, 96, "targetname", "start", "target", "end", "start_size", "end_size"),
-        fgd_mod.HelperOrigin("centroid"),
+        fgd_mod.HelperOrigin("centroid", tags=tags),
         fgd_mod.HelperAxis("axis"),
-        fgd_mod.HelperAxis("hinge"),
-        fgd_mod.HelperVecLine("axis"),
-        fgd_mod.HelperBrushSides("decalled"),
-        fgd_mod.HelperBoundingBox("mins", "maxes"),
-        fgd_mod.HelperSweptPlayerHull(),
-        fgd_mod.HelperOrientedBBox("orient_mins", "orient_maxes"),
+        fgd_mod.HelperAxis("hinge", tags=tags),
+        fgd_mod.HelperVecLine("axis", tags=tags),
+        fgd_mod.HelperBrushSides("decalled", tags=tags),
+        fgd_mod.HelperBoundingBox("mins", "maxes", tags=tags),
+        fgd_mod.HelperSweptPlayerHull(tags=tags),
+        fgd_mod.HelperOrientedBBox("orient_mins", "orient_maxes", tags=tags),
+        fgd_mod.HelperSphere(255, 255, 255, "radius"),
     ]
     file_regression.check(fgd.export(), basename="parse_helpers_simple", extension='.fgd')
 
@@ -533,32 +536,34 @@ def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture
 def test_parse_helpers_icon(py_c_token, file_regression: FileRegressionFixture) -> None:
     """Test parsing sprite/model helper types."""
     fsys = VirtualFileSystem({'test.fgd': """@PointClass
-    sprite()
-    sprite(editor/env_fire)
-    iconsprite()
-    iconsprite("editor/env_blood")
-    studio()
-    studio(models/error.mdl)
-    studioprop()
-    studioprop("models/props/metal_box.mdl")
-    lightprop()
-    lightprop("models/editor/spotlight.mdl")
+    sprite[+B]()
+    sprite[+C](editor/env_fire)
+    iconsprite[+B]()
+    iconsprite[+C]("editor/env_blood")
+    studio[+B]  // No args in the middle
+    studio[+C](models/error.mdl)
+    studioprop[+B]()
+    studioprop[+C]("models/props/metal_box.mdl")
+    lightprop[+C]("models/editor/spotlight.mdl")
+    lightprop[+B]  // No args but tags at the end.
     = some_entity [ ]
     """})
     fgd = FGD()
     fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False)
     ent = fgd['some_entity']
+    tag_b = frozenset({'+B'})
+    tag_c = frozenset({'+C'})
     assert ent.helpers == [
-        fgd_mod.HelperEnvSprite(None),
-        fgd_mod.HelperEnvSprite("editor/env_fire"),
-        fgd_mod.HelperSprite(None),
-        fgd_mod.HelperSprite("editor/env_blood"),
-        fgd_mod.HelperModel(None),
-        fgd_mod.HelperModel("models/error.mdl"),
-        fgd_mod.HelperModelProp(None),
-        fgd_mod.HelperModelProp("models/props/metal_box.mdl"),
-        fgd_mod.HelperModelLight(None),
-        fgd_mod.HelperModelLight("models/editor/spotlight.mdl"),
+        fgd_mod.HelperEnvSprite(None, tags=tag_b),
+        fgd_mod.HelperEnvSprite("editor/env_fire", tags=tag_c),
+        fgd_mod.HelperSprite(None, tags=tag_b),
+        fgd_mod.HelperSprite("editor/env_blood", tags=tag_c),
+        fgd_mod.HelperModel(None, tags=tag_b),
+        fgd_mod.HelperModel("models/error.mdl", tags=tag_c),
+        fgd_mod.HelperModelProp(None, tags=tag_b),
+        fgd_mod.HelperModelProp("models/props/metal_box.mdl", tags=tag_c),
+        fgd_mod.HelperModelLight("models/editor/spotlight.mdl", tags=tag_c),
+        fgd_mod.HelperModelLight(None, tags=tag_b),
     ]
     file_regression.check(fgd.export(), basename="parse_helpers_icon", extension='.fgd')
 
@@ -566,38 +571,39 @@ def test_parse_helpers_icon(py_c_token, file_regression: FileRegressionFixture) 
 def test_parse_helpers_special(py_c_token, file_regression: FileRegressionFixture) -> None:
     """Test parsing specialised helper types."""
     fsys = VirtualFileSystem({'test.fgd': """@PointClass
-    instance()
-    decal()
-    overlay()
-    overlay_transition()
-    light()
-    lightcone()
+    instance[+D]()
+    decal[+D]()
+    overlay[+D]()
+    overlay_transition[+D]()
+    light[+D]()
+    lightcone[+D]()
     lightcone(inner, outer, color, -1.5) 
-    keyframe()
-    keyframe(revo_key)
-    animator()
-    quadbounds()
-    worldtext()
-    catapult()
+    keyframe[+D]()
+    keyframe[+D](revo_key)
+    animator[+D]()
+    quadbounds[+D]()
+    worldtext[+D]()
+    catapult[+D]()
     = some_entity [ ]
     """})
     fgd = FGD()
     fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False)
     ent = fgd['some_entity']
+    tag_c = frozenset({'+D'})
     assert ent.helpers == [
-        fgd_mod.HelperInstance(),
-        fgd_mod.HelperDecal(),
-        fgd_mod.HelperOverlay(),
-        fgd_mod.HelperOverlayTransition(),
-        fgd_mod.HelperLight(),
-        fgd_mod.HelperLightSpot("_inner_cone", "_cone", "_light", 1.0),
+        fgd_mod.HelperInstance(tags=tag_c),
+        fgd_mod.HelperDecal(tags=tag_c),
+        fgd_mod.HelperOverlay(tags=tag_c),
+        fgd_mod.HelperOverlayTransition(tags=tag_c),
+        fgd_mod.HelperLight(tags=tag_c),
+        fgd_mod.HelperLightSpot("_inner_cone", "_cone", "_light", 1.0, tags=tag_c),
         fgd_mod.HelperLightSpot("inner", "outer", "color", -1.5),
-        fgd_mod.HelperRope(None),
-        fgd_mod.HelperRope("revo_key"),
-        fgd_mod.HelperTrack(),
-        fgd_mod.HelperBreakableSurf(),
-        fgd_mod.HelperWorldText(),
-        fgd_mod.HelperExtCatapult(),
+        fgd_mod.HelperRope(None, tags=tag_c),
+        fgd_mod.HelperRope("revo_key", tags=tag_c),
+        fgd_mod.HelperTrack(tags=tag_c),
+        fgd_mod.HelperBreakableSurf(tags=tag_c),
+        fgd_mod.HelperWorldText(tags=tag_c),
+        fgd_mod.HelperExtCatapult(tags=tag_c),
     ]
 
     file_regression.check(fgd.export(), basename="parse_helpers_special", extension='.fgd')
@@ -609,7 +615,7 @@ def test_parse_helpers_extension(py_c_token, file_regression: FileRegressionFixt
     appliesto(tag1, +tag2, -tag3, !tag4)
     orderby(a, c, b)
     autovis(Auto, some, group)
-    unknown(a+b, c  d 4+3-25, e)
+    unknown[-E](a+b, c  d 4+3-25, e)
     = some_entity [
         a(int) : "First"
         b(string) : "Third"
@@ -622,7 +628,7 @@ def test_parse_helpers_extension(py_c_token, file_regression: FileRegressionFixt
     assert ent.helpers == [
         fgd_mod.HelperExtAppliesTo(["tag1", "+tag2", "-tag3", "!tag4"]),
         fgd_mod.HelperExtOrderBy(["a", "c", "b"]),
-        fgd_mod.UnknownHelper("unknown", ["a+b", "c", "d", "4+3-25", "e"]),
+        fgd_mod.UnknownHelper("unknown", ["a+b", "c", "d", "4+3-25", "e"], tags=frozenset({'-E'})),
     ]
     assert fgd.auto_visgroups == {
         "some": fgd_mod.AutoVisgroup("some", "Auto", {"some_entity"}),
@@ -653,6 +659,35 @@ def test_illegal_helpers_size(py_c_token) -> None:
         """,
         'extra_coords.fgd': """@PointClass
         size(1 2 3, 4 5 6, 7 8 9) 
+        = illegal []
+        """,
+    })
+    for file in fsys:
+        with pytest.raises(TokenSyntaxError):
+            FGD().parse_file(fsys, file)
+
+
+def test_illegal_helpers_tags(py_c_token) -> None:
+    """Most extension helpers don't allow tags."""
+    fsys = VirtualFileSystem({
+        'early_tag.fgd': """@PointClass
+        [a, b]sphere()
+        = illegal []
+        """,
+        'double_tag.fgd': """@PointClass
+        sphere[a][b]()
+        = illegal []
+        """,
+        'appliesto.fgd': """@PointClass
+        appliesto[a](tag1, +tag2, -tag3, !tag4)
+        = illegal []
+        """,
+        'orderby.fgd': """@PointClass
+        orderby[b](a, c, b)
+        = illegal []
+        """,
+        'autovis.fgd': """@PointClass
+        autovis[c](Auto, some, group)
         = illegal []
         """,
     })

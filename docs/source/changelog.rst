@@ -2,18 +2,22 @@ Changelog
 =========
 
 .. contents::
-	:local:
-	:backlinks: none
+    :local:
+    :backlinks: none
 
 -------------
 Version (dev)
 -------------
 
 * Rewrite FGD 'helper' parsing to more closely match the actual parser.
-	* Spaces between arguments, not the commas are used to separate them. For most helpers commas are meaningless.
-	* Make it clear that :class:`srctools.fgd.UnknownHelper` should not be relied on.
-	* RGB colours now are ``0-255`` integers, not floats.
-* Add extension ``editor``(-only) flag to FGD keyvalue definitions.
+    * Spaces between arguments, not the commas are used to separate them. For most helpers commas are meaningless.
+    * Make it clear that :class:`srctools.fgd.UnknownHelper` should not be relied on -
+      expect proper implementation to be added in future versions.
+    * RGB colours now are ``0-255`` integers, not floats.
+    * Helpers now all support tags, except for some extension helpers.
+    * Backward-incompatible change - renamed `HelperAppliesTo.tag <srctools.fgd.HelperAppliesTo.applies>`
+      to ``.applies``.
+* Add extension ``editor`` (-only) flag to FGD keyvalue definitions.
 * :src-issue:`38`: Preserve entity/node/brush/etc IDs when parsing VMFs and BSP entities.
 * Treat ``ogg`` files as valid sounds in various places.
 * Consistently raise :class:`TypeError` if invalid types are sent to a :class:`~srctools.tokenizer.Tokenizer`.

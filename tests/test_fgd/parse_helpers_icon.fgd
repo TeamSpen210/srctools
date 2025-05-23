@@ -1,15 +1,15 @@
 
 @PointClass 
-	sprite()
-	sprite("editor/env_fire")
-	iconsprite()
-	iconsprite("editor/env_blood")
-	studio()
-	studio("models/error.mdl")
-	studioprop()
-	studioprop("models/props/metal_box.mdl")
-	lightprop()
-	lightprop("models/editor/spotlight.mdl")
+	sprite[+B]()
+	sprite[+C]("editor/env_fire")
+	iconsprite[+B]()
+	iconsprite[+C]("editor/env_blood")
+	studio[+B]()
+	studio[+C]("models/error.mdl")
+	studioprop[+B]()
+	studioprop[+C]("models/props/metal_box.mdl")
+	lightprop[+C]("models/editor/spotlight.mdl")
+	lightprop[+B]()
 = some_entity
 	[
 	]

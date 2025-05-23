@@ -20,7 +20,7 @@
 @PointClass 
 	appliesto(tag1, +tag2, -tag3, !tag4)
 	orderby(a, c, b)
-	unknown(a+b, c, d, 4+3-25, e)
+	unknown[-E](a+b, c, d, 4+3-25, e)
 = some_entity
 	[
 	a(integer) : "First"
