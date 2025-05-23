@@ -749,8 +749,58 @@ def test_item_item_crate() -> None:
     )
 
 
+# Lots of sounds loaded by item_teamflag.
+TEAMFLAG_SND = [
+    'Announcer.SD_Event_CappedBlu',
+    'Announcer.SD_Event_CappedRed',
+    'Announcer.SD_Event_FlagNags',
+    'Announcer.SD_Event_FlagReturned',
+    'Announcer.SD_Event_OurTeamDroppedFlag',
+    'Announcer.SD_Event_OurTeamHasFlag',
+    'Announcer.SD_Event_TheirTeamDroppedFlag',
+    'Announcer.SD_Event_TheirTeamHasFlag',
+    'Announcer.SD_FlagReturned',
+    'Announcer.SD_OurTeamCapped',
+    'Announcer.SD_OurTeamDroppedFlag',
+    'Announcer.SD_OurTeamHasFlag',
+    'Announcer.SD_TheirTeamCapped',
+    'Announcer.SD_TheirTeamDroppedFlag',
+    'Announcer.SD_TheirTeamHasFlag',
+    'AttackDefend.Captured',
+    'CaptureFlag.FlagSpawn',
+    'CaptureFlag.TeamCapturedExcited',
+    'MVM.AttackDefend.EnemyReturned',
+    'Invade.FlagReturned',
+    'Invade.TeamStolen',
+    'Resource.FlagSpawn',
+
+    # Many are SomeTeam.SomeAction, avoid writing out. Special cases above.
+    *[
+        f'{team}.{action}'
+        for team in ['AttackDefend', 'CaptureFlag', 'RD']
+        for action in ['TeamReturned', 'EnemyReturned', 'TeamStolen']
+    ],
+    *[
+        f'{team}.{action}'
+        for team in ['AttackDefend', 'CaptureFlag', 'Invade', 'RD']
+        for action in ['TeamCaptured', 'TeamDropped']
+    ],
+    *[
+        f'{team}.{action}'
+        for team in ['AttackDefend', 'CaptureFlag', 'Invade', 'MVM.AttackDefend', 'RD']
+        for action in ['EnemyCaptured', 'EnemyDropped', 'EnemyStolen']
+    ],
+]
+
+
 def test_item_teamflag() -> None:
+    res_common = [
+        Resource.mdl('models/flag/briefcase.mdl'),
+        Resource.part('player_intel_papertrail'),
+        *map(Resource.snd, TEAMFLAG_SND)
+    ]
     check_entity(
+        *res_common,
         Resource.mat('materials/vgui/flags/my_flag_red.vmt'),
         Resource.mat('materials/vgui/flags/my_flag_blue.vmt'),
         Resource.mat('materials/effects/trail/the_trail_red.vmt'),
@@ -761,6 +811,7 @@ def test_item_teamflag() -> None:
     )
     # Test putting in parent folders.
     check_entity(
+        *res_common,
         Resource.mat('materials/not_vgui/my_flag_red.vmt'),
         Resource.mat('materials/not_vgui/my_flag_blue.vmt'),
         Resource.mat('materials/non_effects/the_trail_red.vmt'),
@@ -771,6 +822,7 @@ def test_item_teamflag() -> None:
     )
     # Test missing KVs -> defaults.
     check_entity(
+        *res_common,
         Resource.mat('materials/hud/objectives_flagpanel_carried_red.vmt'),
         Resource.mat('materials/hud/objectives_flagpanel_carried_blue.vmt'),
         Resource.mat('materials/effects/flagtrail_red.vmt'),

@@ -1085,6 +1085,8 @@ class KVDef(EntAttribute):
     #: If set, this value is shown in the Entity Report list.
     #: Usually applied to things like a sprite's material or a prop's model.
     reportable: bool = False
+    #: Extension, marks keyvalues which are only used to preview things in Hammer.
+    editor_only: bool = False
 
     @property
     def choices_list(self) -> list[Choices]:
@@ -1124,6 +1126,7 @@ class KVDef(EntAttribute):
             self.val_list.copy() if self.val_list else None,
             self.readonly,
             self.reportable,
+            self.editor_only,
         )
 
     __copy__ = copy
@@ -1138,6 +1141,7 @@ class KVDef(EntAttribute):
             self.val_list.copy() if self.val_list else None,
             self.readonly,
             self.reportable,
+            self.editor_only,
         )
 
     def known_options(self) -> Iterator[str]:
@@ -1160,7 +1164,7 @@ class KVDef(EntAttribute):
         ignore_unknown_valuetype: bool = False,
     ) -> tuple[TagsSet, KVDef]:
         """Parse a keyvalue definition."""
-        is_readonly = show_in_report = had_colon = False
+        is_readonly = show_in_report = editor_only = had_colon = legacy_report = False
         # Next is either the value type parens, or a tags brackets.
         if tok.peek()[0] is Token.BRACK_OPEN:
             tok()  # Skip bracket.
@@ -1173,7 +1177,8 @@ class KVDef(EntAttribute):
         tok.expect(Token.PAREN_CLOSE)
         if raw_value_type.startswith('*'):
             # Old format for specifying 'reportable' flag.
-            show_in_report = True
+            # Valve does allow both forms simultaneously.
+            legacy_report = True
             raw_value_type = raw_value_type[1:]
 
         val_typ: Union[ValueTypes, str]
@@ -1187,16 +1192,28 @@ class KVDef(EntAttribute):
             else:
                 raise tok.error(msg) from None
 
-        # Look for the 'readonly' and 'report' flags, in that order.
+        # Look for the 'readonly', 'report' and 'editor' flags.
+        # Valve requires 'readonly report' in that order, but we'll allow any order.
         next_token, key_flag = tok()
-        if next_token is Token.STRING and key_flag.casefold() == 'readonly':
-            is_readonly = True
-            # Fetch next in case it has both.
+        while next_token is Token.STRING:
+            key_flag_fold = key_flag.casefold()
+            if key_flag_fold == 'readonly':
+                if is_readonly:
+                    raise tok.error('Duplicate "readonly" flag!')
+                is_readonly = True
+            elif key_flag_fold == 'report':
+                if show_in_report:
+                    raise tok.error('Duplicate "report" flag!')
+                show_in_report = True
+            elif key_flag_fold == 'editor':
+                if editor_only:
+                    raise tok.error('Duplicate "editor" flag!')
+                editor_only = True
+            else:
+                raise tok.error(next_token, key_flag)
             next_token, key_flag = tok()
-        if next_token is Token.STRING and key_flag.casefold() == 'report':
-            show_in_report = True
-            # Fetch for the rest of the checks.
-            next_token, key_flag = tok()
+        show_in_report |= legacy_report
+
         has_equal: Optional[Token] = None
         kv_vals: Optional[list[str]] = None
         if next_token is Token.COLON:
@@ -1211,7 +1228,7 @@ class KVDef(EntAttribute):
             kv_vals = []
             has_equal = next_token
         else:
-            raise tok.error(next_token)
+            raise tok.error(next_token, key_flag)
         if kv_vals is None:
             kv_vals = _read_colon_list(tok, had_colon, 2, fgd.snippet_desc)
             has_equal, _ = tok()
@@ -1267,6 +1284,7 @@ class KVDef(EntAttribute):
             val_list=val_list,
             readonly=is_readonly,
             reportable=show_in_report,
+            editor_only=editor_only,
         )
 
     def export(
@@ -1285,9 +1303,11 @@ class KVDef(EntAttribute):
         else:
             file.write(f'({self._type}) ')
 
+        if self.editor_only:
+            file.write('editor')
+        # Note Valve requires this order if both are present.
         if self.readonly:
             file.write('readonly ')
-
         if self.reportable:
             file.write('report ')
 

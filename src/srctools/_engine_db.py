@@ -28,6 +28,7 @@ from .fgd import _EngineDBProto, _EntityView  # isort: split # noqa
 __all__ = ['serialise', 'unserialise']
 
 _fmt_8bit: Final = Struct('<B')
+_fmt_dbl_8bit: Final = Struct('<BB')
 _fmt_16bit: Final = Struct('<H')
 _fmt_32bit: Final = Struct('<I')
 _fmt_double: Final = Struct('<d')
@@ -37,7 +38,7 @@ _fmt_block_pos: Final = Struct('<IH')
 
 
 # Version number for the format.
-BIN_FORMAT_VERSION: Final = 9
+BIN_FORMAT_VERSION: Final = 10
 TAG_EMPTY: Final[frozenset[str]] = frozenset()  # This is a singleton.
 # Soft limit on the number of bytes for each block, needs tuning.
 MAX_BLOCK_SIZE: Final = 2048
@@ -151,12 +152,16 @@ assert set(FILE_TYPE_ORDER) == set(FileType), \
     "Missing file types: " + repr(set(FileType) - set(FILE_TYPE_ORDER))
 
 # Can only store this many in the bytes.
-assert len(VALUE_TYPE_ORDER) < 127, "Too many values."
+assert len(VALUE_TYPE_ORDER) < 256, "Too many values."
 assert len(FILE_TYPE_ORDER) < 127, "Too many file types."
 
 VALUE_TYPE_INDEX = {val: ind for (ind, val) in enumerate(VALUE_TYPE_ORDER)}
 FILE_TYPE_INDEX = {val: ind for (ind, val) in enumerate(FILE_TYPE_ORDER)}
 ENTITY_FLAG_2_TYPE = {flag: kind for (kind, flag) in ENTITY_TYPE_2_FLAG.items()}
+
+KV_FLAG_READONLY = 0b001
+KV_FLAG_EDITOR = 0b010
+KV_FLAG_REPORT = 0b100
 
 
 def make_lookup(file: IO[bytes], inv_list: list[str]) -> Callable[[], str]:
@@ -349,17 +354,19 @@ def kv_serialise(kvdef: KVDef, file: IO[bytes], str_dict: BinStrSerialise) -> No
     """Write keyvalues to the binary file."""
     file.write(str_dict(kvdef.name))
     file.write(str_dict(kvdef.disp_name))
-    value_type = VALUE_TYPE_INDEX[kvdef.type]
-    # Use the high bit to store this inside here as well.
-    if kvdef.readonly:
-        value_type |= 128
-    file.write(_fmt_8bit.pack(value_type))
+    file.write(_fmt_dbl_8bit.pack(
+        VALUE_TYPE_INDEX[kvdef.type],
+
+        KV_FLAG_REPORT * kvdef.reportable |
+        KV_FLAG_EDITOR * kvdef.editor_only |
+        KV_FLAG_READONLY * kvdef.readonly
+    ))
 
     # Spawnflags have integer names and defaults,
     # choices has string values and no default.
     if kvdef.type is ValueTypes.SPAWNFLAGS:
         file.write(_fmt_8bit.pack(len(kvdef.flags_list)))
-        # spawnflags go up to at least 1<<23.
+        # spawnflags are a 32-bit int in-game, 64 in Hammer. So 128 is more than sufficient.
         for mask, name, default, tags in kvdef.flags_list:
             if tags:
                 raise ValueError('Cannot use tags!')
@@ -373,7 +380,7 @@ def kv_serialise(kvdef: KVDef, file: IO[bytes], str_dict: BinStrSerialise) -> No
             file.write(str_dict(name))
         return  # Spawnflags doesn't need to write a default.
 
-    file.write(str_dict(kvdef.default or ''))
+    file.write(str_dict(kvdef.default))
 
     if kvdef.type is ValueTypes.CHOICES:
         raise ValueError('CHOICES may not be used for keyvalues!')
@@ -386,9 +393,8 @@ def kv_unserialise(
     """Recover a KeyValue from a binary file."""
     name = from_dict()
     disp_name = from_dict()
-    [value_ind] = file.read(1)
-    readonly = value_ind & 128 != 0
-    value_type = VALUE_TYPE_ORDER[value_ind & 127]
+    [value_ind, kv_flags] = file.read(2)
+    value_type = VALUE_TYPE_ORDER[value_ind]
 
     val_list: Optional[list[tuple[int, str, bool, frozenset[str]]]]
 
@@ -417,8 +423,9 @@ def kv_unserialise(
     kv.default = default
     kv.desc = ''
     kv.val_list = val_list
-    kv.readonly = readonly
-    kv.reportable = False
+    kv.readonly = KV_FLAG_READONLY & kv_flags != 0
+    kv.reportable = KV_FLAG_REPORT & kv_flags != 0
+    kv.editor_only = KV_FLAG_EDITOR & kv_flags != 0
     return kv
 
 
@@ -747,10 +754,7 @@ def serialise(fgd: FGD, file: IO[bytes]) -> None:
     # Finally, we can serialise the file.
 
     # Start of file - format version, FGD min/max, number of entities.
-    file.write(b'FGD' + _fmt_header.pack(
-        BIN_FORMAT_VERSION,
-        len(blocks),
-    ))
+    file.write(b'FGD' + _fmt_header.pack(BIN_FORMAT_VERSION, len(blocks)))
 
     deferred = DeferredWrites(file)
     for block_ents, block_stringdb in blocks:

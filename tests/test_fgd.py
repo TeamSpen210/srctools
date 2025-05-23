@@ -418,18 +418,30 @@ def test_entity_ignore_unknown_valuetype(py_c_token) -> None:
     assert out.custom_type == 'int1024'
 
 
-@pytest.mark.parametrize('code, is_readonly, is_report', [
-    ('(int): "None"', False, False),
-    ('(int) readonly: "Readonly"', True, False),
-    ('(*int): "Old Report"', False, True),
-    ('(int) report: "New Report"', False, True),
-    ('(*int) readonly: "Both old-style"', True, True),
-    ('(int) readonly report: "Both new-style"', True, True),
-    # 'report readonly' is not allowed.
-    ('(*int) report: "Redundant"', False, True),
-    ('(*int) readonly report: "Redundant + readonly"', True, True),
+@pytest.mark.parametrize('code, is_readonly, is_report, editor_only', [
+    ('(int): "None"', False, False, False),
+    ('(int) readonly: "Readonly"', True, False, False),
+    ('(*int): "Old Report"', False, True, False),
+    ('(int) report: "New Report"', False, True, False),
+    ('(*int) readonly: "Both old-style"', True, True, False),
+    ('(int) readonly report: "Both new-style"', True, True, False),
+    ('(*int) report: "Redundant"', False, True, False),
+    ('(*int) readonly report: "Redundant + readonly"', True, True, False),
+    # Following aren't allowed by Valve.
+    ('(int) report readonly: "Extension - reverse order "', True, True, False),
+    ('(int) editor: "Editor only"', False, False, True),
+    ('(int) editor report: "Editor + report"', False, True, True),
+    ('(int) report editor: "Editor + report"', False, True, True),
+    ('(*int) editor: "Editor + report"', False, True, True),
+    ('(int) editor readonly: "Editor + Readonly"', True, False, True),
+    ('(int) readonly editor: "Editor + Readonly"', True, False, True),
+    ('(int) editor report readonly: "All"', True, True, True),
+    ('(int) readonly editor report: "All"', True, True, True),
 ])
-def test_parse_kv_flags(py_c_token, code, is_readonly, is_report) -> None:
+def test_parse_kv_flags(
+    py_c_token, code: str,
+    is_readonly: bool, is_report: bool, editor_only: bool,
+) -> None:
     """Test the readonly and reportable flags can be set."""
     fsys = VirtualFileSystem({'test.fgd': f"""
     @PointClass = ent
@@ -443,6 +455,7 @@ def test_parse_kv_flags(py_c_token, code, is_readonly, is_report) -> None:
 
     assert kv.readonly is is_readonly, kv
     assert kv.reportable is is_report, kv
+    assert kv.editor_only is editor_only, kv
 
 
 def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture) -> None:
