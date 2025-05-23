@@ -4,6 +4,10 @@
 		[
 		"some_entity"
 		]
+	"Spaced Parent"
+		[
+		"some_entity"
+		]
 	"some"
 		[
 		"some_entity"
@@ -12,6 +16,13 @@
 @AutoVisgroup = "some"
 	[
 	"group"
+		[
+		"some_entity"
+		]
+	]
+@AutoVisgroup = "Spaced Parent"
+	[
+	"spaced cHIld"
 		[
 		"some_entity"
 		]

@@ -1719,6 +1719,22 @@ class EntityDef:
                             tok.expect(Token.STRING)
                         ]
                     tok.expect(Token.PAREN_CLOSE)
+                elif help_type is HelperTypes.EXT_AUTO_VISGROUP:
+                    # Parse specially to handle commas.
+                    partial_vis: list[str] = []
+                    for arg_tok, arg_val in tok:
+                        if arg_tok is Token.PAREN_CLOSE:
+                            if partial_vis:
+                                args.append(' '.join(partial_vis))
+                            break
+                        elif arg_tok is Token.STRING:
+                            partial_vis.append(arg_val)
+                        elif arg_tok is Token.COMMA:
+                            if partial_vis:
+                                args.append(' '.join(partial_vis))
+                            partial_vis.clear()
+                        else:
+                            raise tok.error(arg_tok, arg_val)
                 else:
                     # We need to allow + in args.
                     try:

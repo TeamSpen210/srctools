@@ -615,6 +615,7 @@ def test_parse_helpers_extension(py_c_token, file_regression: FileRegressionFixt
     appliesto(tag1, +tag2, -tag3, !tag4)
     orderby(a, c, b)
     autovis(Auto, some, group)
+    autovis(Spaced Parent, spaced cHIld)
     unknown[-E](a+b, c  d 4+3-25, e)
     = some_entity [
         a(int) : "First"
@@ -633,6 +634,8 @@ def test_parse_helpers_extension(py_c_token, file_regression: FileRegressionFixt
     assert fgd.auto_visgroups == {
         "some": fgd_mod.AutoVisgroup("some", "Auto", {"some_entity"}),
         "group": fgd_mod.AutoVisgroup("group", "some", {"some_entity"}),
+        "spaced parent": fgd_mod.AutoVisgroup("Spaced Parent", "Auto", {"some_entity"}),
+        "spaced child": fgd_mod.AutoVisgroup("spaced cHIld", "Spaced Parent", {"some_entity"}),
     }
 
     file_regression.check(fgd.export(), basename="parse_helpers_ext", extension='.fgd')
