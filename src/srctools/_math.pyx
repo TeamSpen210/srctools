@@ -142,14 +142,14 @@ cdef inline object _make_tuple(object x, object y, object z):
             return tuple_new(Vec_tuple, tup)
 
 
-cdef inline double norm_ang(double val) except? NAN:
+cdef inline double norm_ang(double val) noexcept nogil:
     """Normalise an angle to 0-360."""
     # We have to double-modulus because -1e-14 % 360.0 = 360.0.
     val = val % 360.0 % 360.0
     return val
 
 
-cdef Py_ssize_t trim_float(char *buf, Py_ssize_t size) except -1:
+cdef Py_ssize_t trim_float(char *buf, Py_ssize_t size) noexcept:
     """Strip a .0 from the end of a float."""
     while size > 1 and buf[size - 1] == b'0':
         buf[size - 1] = 0
@@ -291,15 +291,15 @@ cdef AngleBase pick_ang_type(type left, type right):
         return <AngleBase>Angle.__new__(Angle)
 
 
-cdef bint vec_check(obj) except -1:
+cdef bint vec_check(obj) noexcept:
     # Check if this is a vector instance.
     return type(obj) is Vec or type(obj) is FrozenVec
 
-cdef bint angle_check(obj) except -1:
+cdef bint angle_check(obj) noexcept:
     # Check if this is an angle instance.
     return type(obj) is Angle or type(obj) is FrozenAngle
 
-cdef bint mat_check(obj) except -1:
+cdef bint mat_check(obj) noexcept:
     # Check if this is a matrix instance.
     return type(obj) is Matrix or type(obj) is FrozenMatrix
 
