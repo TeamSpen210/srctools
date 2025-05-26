@@ -124,7 +124,7 @@ def test_conv_int(func) -> None:
         assert func(st_obj) == 0
         for default in def_vals:
             # Check all default values pass through unchanged
-            assert func(st_obj, default) is default, repr(st_obj)  # type: ignore
+            assert func(st_obj, default) is default, repr(st_obj)
 
 
 @pytest.mark.parametrize(
@@ -177,7 +177,7 @@ def test_EmptyMapping() -> None:
     marker = object()
     
     # It should be possible to 'construct' an instance..
-    assert EmptyMapping() is EmptyMapping  # type: ignore
+    assert EmptyMapping() is EmptyMapping
 
     # Must be passable to dict()
     assert dict(EmptyMapping) == {}

@@ -525,7 +525,7 @@ deduce_type_tests: list[tuple[Any, ValueType, Any]] = [
     (b'test', ValueType.BIN, b'test'),
 
     (Color(25, 48, 255, 255), ValueType.COLOR, Color(25, 48, 255, 255)),
-    (Color(25.0, 48.2, 255.4, 255.9), ValueType.COLOR, Color(25, 48, 255, 255)),  # type: ignore
+    (Color(25.0, 48.2, 255.4, 255.9), ValueType.COLOR, Color(25, 48, 255, 255)),
 
     (Vec2(1, 4.0), ValueType.VEC2, Vec2(1.0, 4.0)),
     (Vec(1.8, 4.0, 8), ValueType.VEC3, FrozenVec(1.8, 4.0, 8.0)),

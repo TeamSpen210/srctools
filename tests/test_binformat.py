@@ -11,7 +11,7 @@ from srctools import binformat
 def test_find_or_insert(original: list[int], item: int, index: int) -> None:
     """Test the find-or-insert helper function correctly inserts values."""
     array = original.copy()
-    finder = binformat.find_or_insert(array, lambda x: -x)
+    finder = binformat.find_or_insert(array, lambda x: x * 3)
     assert finder(item) == index
     assert finder(item) == index  # Doesn't repeat.
     assert array[index] == item  # And put it in that spot.
