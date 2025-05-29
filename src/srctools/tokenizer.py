@@ -9,8 +9,8 @@ iterable of strings and actually parses it into tokens, while :py:class:`IterTok
 transforming the stream before the destination receives it.
 
 Once the tokenizer is created, either iterate over it or call the tokenizer to fetch the next
-token/value pair. One token of lookahead is supported, accessed by the
-:py:func:`BaseTokenizer.peek()` and  :py:func:`BaseTokenizer.push_back()` methods. They also track
+token/value pair. Lookahead is supported, accessed by the
+:py:func:`BaseTokenizer.peek()` and  :py:func:`BaseTokenizer.push_back()` methods. Tokenizers also track
 the current line number as data is read, letting you :pycode:`raise BaseTokenizer.error(...)` to easily
 produce an exception listing the relevant line number and filename.
 
@@ -41,7 +41,10 @@ __all__ = [
 
 
 def format_exc_fileinfo(msg: str, file: Optional[StringPath], line_num: Optional[int]) -> str:
-    """If a line number or file is provided, include those in the error message."""
+    """If a line number or file is provided, include those in the error message.
+
+    This is the logic for the `str() <str>` form of :class:`TokenSyntaxError`.
+    """
     if file is None and line_num is None:
         return msg
     parts = [msg]
@@ -422,12 +425,12 @@ class Tokenizer(BaseTokenizer):
     """
 
     string_bracket: bool
-    """If set, `[bracket]` blocks are parsed as a single string-like block. \
+    """If set, ``[bracket]`` blocks are parsed as a single string-like block. \
     If disabled these are parsed as :py:const:`~Token.BRACK_OPEN`, :py:const:`~Token.STRING` \
     then :py:const:`~Token.BRACK_CLOSE`.
     """
     string_parens: bool
-    """If set, `(bracket)` blocks are parsed as a single string-like block. \
+    """If set, ``(bracket)`` blocks are parsed as a single string-like block. \
     If disabled these are parsed as :py:const:`~Token.PAREN_OPEN`, :py:const:`~Token.STRING` \
     then :py:const:`~Token.PAREN_CLOSE`.
     """
@@ -826,12 +829,13 @@ def escape_text(text: str, multiline: bool=False) -> str:
     r"""Escape special characters and backslashes, so tokenising reproduces them.
 
     This matches utilbuffer.cpp in the SDK.
-    The following characters are escaped: \t, \v, \b, \r, \f, \a, \, ', ".
-    / and ? are accepted as escapes, but not produced since they're unambiguous.
-    In addition, \n is escaped only if `multiline` is false.
+    The following characters are escaped: ``\t``, ``\v``, ``\b``, ``\r``, ``\f``,
+    ``\a``, ``\``, ``'``, ``"``.
+    ``/`` and ``?`` are accepted as escapes, but not produced since they're unambiguous.
+    In addition, ``\n`` is escaped only if ``multiline`` is false.
 
     :parameter text: The text to escape.
-    :parameter multiline: If set, allow `\\n` unchanged.
+    :parameter multiline: If set, allow ``\n`` unchanged.
     """
     return (ESCAPE_MULTILINE_RE if multiline else ESCAPE_RE).sub(_escape_matcher, text)
 

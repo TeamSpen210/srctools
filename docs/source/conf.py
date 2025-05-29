@@ -124,6 +124,13 @@ def autodoc_process_signature(
             # Make `= EmptyMapping` look like `= ...`, but not in the class' own docs.
             # That way users don't need to know about the singleton when reading other modules.
             signature = signature.replace('srctools.EmptyMapping', '...')
+        if name in {'srctools.tokenizer.Tokenizer', 'srctools.tokenizer.IterTokenizer'}:
+            # These constructors default to TokenSyntaxError, but the <> in the class repr breaks
+            # the sig. Remove that.
+            signature = signature.replace(
+                "<class 'srctools.tokenizer.TokenSyntaxError'>",
+                'TokenSyntaxError',
+            )
 
     return signature, return_annotation
 
