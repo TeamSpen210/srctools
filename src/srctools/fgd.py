@@ -244,8 +244,7 @@ class HelperTypes(Enum):
     HALF_GRID_SNAP = 'halfgridsnap'
 
     # Simple helpers
-    CUBE = 'size'  #: Sets size of purple cube
-    BBOX = 'bbox'  #: Sets bounding box of entity
+    CUBE = 'size'  #: Sets bounding box of entity, exposed as the size of purple cube
     TINT = 'color'
     SPHERE = 'sphere'
     LINE = 'line'
@@ -291,6 +290,8 @@ class HelperTypes(Enum):
     #: Convenience only used in parsing, adds @AutoVisgroup parents for the
     #: current entity. 'Auto' is implied at the start.
     EXT_AUTO_VISGROUP = 'autovis'
+
+    BBOX = 'bbox'  #: Deprecated, doesn't exist.
 
     # Additionally, aliasof(base) is used to indicate this is an alternate classname for a
     # single base.

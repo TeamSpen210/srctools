@@ -1,6 +1,6 @@
 """Implemenations of specific code for each FGD helper type."""
 from typing import ClassVar, Optional, Union
-from typing_extensions import Self
+from typing_extensions import Self, deprecated
 from collections.abc import Collection, Iterable, Iterator
 
 import attrs
@@ -132,9 +132,10 @@ class HelperSize(Helper):
         ]
 
 
+@deprecated("Does not exist, use HelperSize = size() instead.")
 @attrs.define
 class HelperBBox(HelperSize):
-    """Helper implementation for bbox()."""
+    """Deprecated, implementation for the non-existent bbox() type. Use size() instead."""
     TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.BBOX
 
 

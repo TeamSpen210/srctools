@@ -15,6 +15,7 @@ Version (dev)
       expect proper implementation to be added in future versions.
     * RGB colours now are ``0-255`` integers, not floats.
     * Helpers now all support tags, except for some extension helpers.
+    * Deprecate ``bbox()`` helper, this doesn't actually exist.
     * Backward-incompatible change - renamed `HelperAppliesTo.tag <srctools.fgd.HelperAppliesTo.applies>`
       to ``.applies``.
 * Add extension ``editor`` (-only) flag to FGD keyvalue definitions.
