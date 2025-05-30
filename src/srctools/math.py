@@ -2330,14 +2330,14 @@ class AngleBase:
 
     @classmethod
     @overload
-    def with_axes(cls, axis1: str, val1: Union[float, 'AngleBase']) -> Self: ...
+    def with_axes(cls, axis1: str, val1: Union[Numeric, 'AngleBase']) -> Self: ...
 
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[float, 'AngleBase'],
-        axis2: str, val2: Union[float, 'AngleBase'],
+        axis1: str, val1: Union[Numeric, 'AngleBase'],
+        axis2: str, val2: Union[Numeric, 'AngleBase'],
     ) -> Self:
         ...
 
@@ -2345,17 +2345,17 @@ class AngleBase:
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[float, 'AngleBase'],
-        axis2: str, val2: Union[float, 'AngleBase'],
-        axis3: str, val3: Union[float, 'AngleBase'],
+        axis1: str, val1: Union[Numeric, 'AngleBase'],
+        axis2: str, val2: Union[Numeric, 'AngleBase'],
+        axis3: str, val3: Union[Numeric, 'AngleBase'],
     ) -> Self:
         ...
 
     @classmethod
     def with_axes(
         cls,
-        *args: Union[str, float, 'AngleBase'],
-        **kwargs: Union[str, float, 'AngleBase'],
+        *args: Union[str, Numeric, 'AngleBase'],
+        **kwargs: Union[str, Numeric, 'AngleBase'],
     ) -> Self:
         """Create an Angle, given a number of axes and corresponding values.
 
@@ -2597,34 +2597,34 @@ class FrozenAngle(AngleBase):
 
     @classmethod
     @overload
-    def with_axes(cls, axis1: str, val1: Union[float, AngleBase]) -> 'FrozenAngle': ...
+    def with_axes(cls, axis1: str, val1: Union[Numeric, AngleBase]) -> 'FrozenAngle': ...
 
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[float, AngleBase],
-        axis2: str, val2: Union[float, AngleBase],
+        axis1: str, val1: Union[Numeric, AngleBase],
+        axis2: str, val2: Union[Numeric, AngleBase],
     ) -> 'FrozenAngle': ...
 
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[float, AngleBase],
-        axis2: str, val2: Union[float, AngleBase],
-        axis3: str, val3: Union[float, AngleBase],
+        axis1: str, val1: Union[Numeric, AngleBase],
+        axis2: str, val2: Union[Numeric, AngleBase],
+        axis3: str, val3: Union[Numeric, AngleBase],
     ) -> 'FrozenAngle': ...
 
     @classmethod
     def with_axes(
         cls,
         axis1: str,
-        val1: Union[float, AngleBase],
+        val1: Union[Numeric, AngleBase],
         axis2: Optional[str] = None,
-        val2: Union[float, AngleBase] = 0.0,
+        val2: Union[Numeric, AngleBase] = 0.0,
         axis3: Optional[str] = None,
-        val3: Union[float, AngleBase] = 0.0,
+        val3: Union[Numeric, AngleBase] = 0.0,
     ) -> 'FrozenAngle':
         """Create an Angle, given a number of axes and corresponding values.
 
@@ -2802,15 +2802,15 @@ class Angle(AngleBase):
 
     @classmethod
     @overload
-    def with_axes(cls, axis1: str, val1: Union[float, AngleBase]) -> 'Angle':
+    def with_axes(cls, axis1: str, val1: Union[Numeric, AngleBase]) -> 'Angle':
         ...
 
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[float, AngleBase],
-        axis2: str, val2: Union[float, AngleBase],
+        axis1: str, val1: Union[Numeric, AngleBase],
+        axis2: str, val2: Union[Numeric, AngleBase],
     ) -> 'Angle':
         ...
 
@@ -2818,9 +2818,9 @@ class Angle(AngleBase):
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[float, AngleBase],
-        axis2: str, val2: Union[float, AngleBase],
-        axis3: str, val3: Union[float, AngleBase],
+        axis1: str, val1: Union[Numeric, AngleBase],
+        axis2: str, val2: Union[Numeric, AngleBase],
+        axis3: str, val3: Union[Numeric, AngleBase],
     ) -> 'Angle':
         ...
 
@@ -2828,11 +2828,11 @@ class Angle(AngleBase):
     def with_axes(
         cls,
         axis1: str,
-        val1: Union[float, AngleBase],
+        val1: Union[Numeric, AngleBase],
         axis2: Optional[str] = None,
-        val2: Union[float, AngleBase] = 0.0,
+        val2: Union[Numeric, AngleBase] = 0.0,
         axis3: Optional[str] = None,
-        val3: Union[float, AngleBase] = 0.0,
+        val3: Union[Numeric, AngleBase] = 0.0,
     ) -> 'Angle':
         """Create an Angle, given a number of axes and corresponding values.
 
