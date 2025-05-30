@@ -256,7 +256,10 @@ def test_parse_vec_passthrough(py_c_vec):
 def test_with_axes(frozen_thawed_vec: VecClass) -> None:
     """Test the with_axes() constructor."""
     Vec = frozen_thawed_vec
-    for axis, u, v in ['xyz', 'yxz', 'zxy']:
+    axis: Literal['x', 'y', 'z']
+    u: Literal['x', 'y', 'z']
+    v: Literal['x', 'y', 'z']
+    for axis, u, v in [('x', 'y', 'z'), ('y', 'x', 'z'), ('z', 'x', 'y')]:
         for num in VALID_ZERONUMS:
             vec = Vec.with_axes(axis, num)
             assert vec[axis] == num
@@ -938,7 +941,7 @@ def test_vector_mult_fail(frozen_thawed_vec, name, func):
         raise AssertionError(f'Expected TypError from vec {name} vec') from exc
 
 
-def test_order(py_c_vec) -> None:
+def test_order(py_c_vec: PyCVec) -> None:
     """Test ordering operations (>, <, <=, >=, ==)."""
     Vec = vec_mod.Vec
     FrozenVec = vec_mod.FrozenVec
@@ -970,7 +973,7 @@ def test_order(py_c_vec) -> None:
         (op.gt, cmp_gt),
     ]
 
-    def test(x1, y1, z1, x2, y2, z2):
+    def test(x1: float, y1: float, z1: float, x2: float, y2: float, z2: float) -> None:
         """Check a Vec pair for incorrect comparisons."""
         vec1 = Vec(x1, y1, z1)
         vec2 = Vec(x2, y2, z2)

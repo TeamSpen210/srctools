@@ -1,7 +1,7 @@
 """Test functionality in srctools.__init__."""
-from collections.abc import Callable
+from typing import Any, Union
 
-from typing import Any
+from collections.abc import Callable, KeysView, ItemsView
 from pathlib import Path
 
 from dirty_equals import IsList
@@ -273,7 +273,7 @@ def test_EmptyMapping_items() -> None:
     [EmptyMapping.keys(), EmptyMapping.items()],
     ids=['keys', 'items'],
 )
-def test_EmptyMapping_set_ops(view) -> None:
+def test_EmptyMapping_set_ops(view: Union[KeysView[Any], ItemsView[Any, Any]]) -> None:
     """Test EmptyMapping.keys() and items() support set ops."""
     empty: set[object] = set()
     # Ensure it's valid as an items() tuple.

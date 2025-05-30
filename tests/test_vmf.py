@@ -331,21 +331,21 @@ def test_fixup_containment() -> None:
     assert '$test' in ent.fixup.keys()
     assert 'fAlSe' in ent.fixup.keys()
     assert '' not in ent.fixup.keys()
-    assert ValueError not in ent.fixup.keys()
+    assert ValueError not in ent.fixup.keys()  # type: ignore[comparison-overlap]
 
     assert '1' in ent.fixup.values()
     assert '45.75' in ent.fixup.values()
     assert '' not in ent.fixup.values()
     assert 'false' not in ent.fixup.values()
-    assert ValueError not in ent.fixup.values()
+    assert ValueError not in ent.fixup.values()  # type: ignore[comparison-overlap]
 
     assert ('$true', '1') in ent.fixup.items()
     assert ('VaLuE', '45.75') in ent.fixup.items()
     assert ('$true', '0') not in ent.fixup.items()
-    assert ('FaLse', object) not in ent.fixup.items()
+    assert ('FaLse', object) not in ent.fixup.items()  # type: ignore[comparison-overlap]
     assert ('', 'test') not in ent.fixup.items()
-    assert ('false', ) not in ent.fixup.items()
-    assert ValueError not in ent.fixup.items()
+    assert ('false', ) not in ent.fixup.items()  # type: ignore[comparison-overlap]
+    assert ValueError not in ent.fixup.items()  # type: ignore[comparison-overlap]
 
 
 def test_fixup_substitution() -> None:

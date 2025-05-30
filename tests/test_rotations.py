@@ -6,6 +6,8 @@ import math
 import pytest
 
 from helpers import *
+from srctools import math as vec_mod
+from srctools.math import AnyAngle, VecUnion
 
 
 class RotationData(NamedTuple):
@@ -266,7 +268,7 @@ def test_axis_angle(
     Matrix = frozen_thawed_matrix
     Angle = frozen_thawed_angle
 
-    def test(axis, equiv_ang):
+    def test(axis: VecUnion, equiv_ang: AnyAngle) -> None:
         for ang in range(0, 360, 15):
             assert_rot(Matrix.axis_angle(axis, ang), Matrix.from_angle(ang * equiv_ang), f'{axis} * {ang} != {equiv_ang}')
             # Inverse axis = reversed rotation.
@@ -285,7 +287,7 @@ def test_matrix_hash(py_c_vec: PyCVec) -> None:
 
 
 def old_mat_mul(
-    self,
+    self: vec_mod.Vec,
     a: float, b: float, c: float,
     d: float, e: float, f: float,
     g: float, h: float, i: float,
@@ -302,7 +304,7 @@ def old_mat_mul(
 
 
 def old_rotate(
-    self,
+    self: vec_mod.Vec,
     pitch: float = 0.0,
     yaw: float = 0.0,
     roll: float = 0.0

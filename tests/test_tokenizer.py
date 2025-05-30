@@ -1,5 +1,6 @@
-from typing import Any, Union, cast
-from collections.abc import Callable, Iterable, Iterator
+from typing import Any, Union, cast, TypedDict, Literal
+
+from collections.abc import Callable, Iterable, Iterator, Sequence
 from itertools import tee, zip_longest
 from unittest.mock import Mock
 import codecs
@@ -27,7 +28,7 @@ ESCAPE_ENCODED = r"\n \t \v \b \r \f \a \\ \' " + r'\"'
 
 # The correct result of parsing prop_parse_test.
 # Either the token, or token + value (which must be correct).
-prop_parse_tokens = [
+prop_parse_tokens: list[Union[Token, tuple[Token, str]]] = [
     T.NEWLINE,
     T.NEWLINE,
     T.NEWLINE,
@@ -120,7 +121,7 @@ noprop_parse_test = """
 { ]]{ }}}[[ {{] = "test" "ing" == vaLUE= 4 6
 """
 
-noprop_parse_tokens = [
+noprop_parse_tokens: list[Union[Token, tuple[Token, str]]] = [
     T.NEWLINE,
     (T.DIRECTIVE, "letter_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz"), T.NEWLINE,
     # Test all control characters are valid.
@@ -135,6 +136,15 @@ noprop_parse_tokens = [
     T.EQUALS, T.EQUALS, (T.STRING, "vaLUE"), T.EQUALS, (T.STRING, "4"), (T.STRING, "6"), T.NEWLINE
 ]
 
+
+class TokenizerKW(TypedDict, total=False):
+    """KW arguments for tokenizers."""
+    string_bracket: bool
+    allow_escapes: bool
+    allow_star_comments: bool
+    preserve_comments: bool
+    colon_operator: bool
+    plus_operator: bool
 
 if Cy_Tokenizer is not Py_Tokenizer:
     parms = [Cy_Tokenizer, Py_Tokenizer]
@@ -156,7 +166,7 @@ del parms, ids
 
 def check_tokens(
     tokenizer: Iterable[tuple[Token, str]],  # Iterable so a list can be passed to check.
-    tokens: Iterable[Union[Token, tuple[Token, str]]],
+    tokens: Sequence[Union[Token, tuple[Token, str]]],
 ) -> None:
     """Check the tokenizer produces the given tokens.
 
@@ -518,15 +528,28 @@ def test_periodic_callback(py_c_token: type[Tokenizer]) -> None:
     ('colon_operator', False),
     ('plus_operator', False),
 ])
-def test_obj_config(py_c_token: type[Tokenizer], parm: str, default: bool) -> None:
+def test_obj_config(
+    py_c_token: type[Tokenizer],
+    parm: Literal[
+        'string_bracket', 'allow_escapes', 'allow_star_comments',
+        'preserve_comments', 'colon_operator', 'plus_operator'
+    ],
+    default: bool,
+) -> None:
     """Test getting and setting configuration attributes."""
     Tokenizer = py_c_token
+    args: TokenizerKW = {}
 
     assert getattr(Tokenizer(''), parm) is default
-    assert getattr(Tokenizer('', **{parm: True}), parm) is True
-    assert getattr(Tokenizer('', **{parm: False}), parm) is False
-    assert getattr(Tokenizer('', **{parm: 1}), parm) is True
-    assert getattr(Tokenizer('', **{parm: []}), parm) is False
+    args[parm] = True
+    assert getattr(Tokenizer('', **args), parm) is True
+    args[parm] = False
+    assert getattr(Tokenizer('', **args), parm) is False
+    # Type checkers disallow non-bools, but we'll convert.
+    args[parm] = cast(bool, 1)
+    assert getattr(Tokenizer('', **args), parm) is True
+    args[parm] = cast(bool, [])
+    assert getattr(Tokenizer('', **args), parm) is False
 
     tok = Tokenizer('')
     setattr(tok, parm, False)
@@ -651,10 +674,16 @@ def test_parens(py_c_token: type[Tokenizer]) -> None:
     (':', Token.COLON, 'colon_operator'),
     ('+', Token.PLUS, 'plus_operator'),
 ], ids=['colon', 'plus'])
-def test_conditional_op(py_c_token: type[Tokenizer], op: str, option: str, tok: Token) -> None:
+def test_conditional_op(
+    py_c_token: type[Tokenizer], op: str,
+    option: Literal['colon_operator', 'plus_operator'],
+    tok: Token,
+) -> None:
     """Test : and + can be detected as a string or operator depending on the option."""
-    disabled = {option: False}
-    enabled = {option: True}
+    disabled: TokenizerKW = {}
+    enabled: TokenizerKW = {}
+    disabled[option] = False
+    enabled[option] = True
 
     # Explicit string, unaffected.
     check_tokens(py_c_token(f'"test{op}call"', **disabled), [
@@ -1041,7 +1070,7 @@ def test_block_iter(py_c_token: type[Tokenizer]) -> None:
 def test_subclass_base(Tok: type[BaseTokenizer]) -> None:
     """Test subclassing of the base tokenizer."""
     class Sub(Tok):  # type: ignore  # Non-literal base class.
-        def __init__(self, tok: Iterator[Union[Token, tuple[Token, str]]]) -> None:
+        def __init__(self, tok: Iterable[Union[Token, tuple[Token, str]]]) -> None:
             super().__init__('filename', TokenSyntaxError)
             self.__tokens = iter(tok)
 

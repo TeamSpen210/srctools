@@ -1,5 +1,5 @@
 """Test the datamodel exchange implementation."""
-from typing import Any, cast
+from typing import Any, cast, Optional, Literal
 from collections.abc import Callable
 from io import BytesIO
 from pathlib import Path
@@ -8,6 +8,7 @@ import array
 import collections
 
 from dirty_equals import IsFloat, IsInt
+from pytest_regressions.file_regression import FileRegressionFixture
 import pytest
 
 from helpers import *
@@ -25,7 +26,7 @@ def assert_tree(tree1: Element, tree2: Element) -> None:
     return _assert_tree_elem(tree1.name, tree1, tree2, set())
 
 
-def export(elem: Element, version: str, unicode: str = 'ascii') -> bytes:
+def export(elem: Element, version: str, unicode: Literal['ascii', 'format', 'silent'] = 'ascii') -> bytes:
     """Export a element and return the result, doing both text/binary in one for parameterisation."""
     buf = BytesIO()
     if version.startswith('binary_'):
@@ -40,7 +41,11 @@ EXPORT_VALS = [
 ]
 
 
-def _assert_tree_elem(path: str, tree1: Element, tree2: Element, checked: set[UUID]) -> None:
+def _assert_tree_elem(
+    path: str,
+    tree1: Optional[Element], tree2: Optional[Element],
+    checked: set[UUID],
+) -> None:
     """Checks two elements are the same."""
     if tree1 is None or tree2 is None:
         # Old code stored none for NULL elements
@@ -63,11 +68,11 @@ def _assert_tree_elem(path: str, tree1: Element, tree2: Element, checked: set[UU
         try:
             attr1 = tree1[key]
         except KeyError:
-            return pytest.fail(f'{attr_path}: {key} not in LHS')
+            pytest.fail(f'{attr_path}: {key} not in LHS')
         try:
             attr2 = tree2[key]
         except KeyError:
-            return pytest.fail(f'{attr_path}: {key} not in RHS')
+            pytest.fail(f'{attr_path}: {key} not in RHS')
 
         if attr1.type is not attr2.type:
             pytest.fail(f'{attr_path}: type {attr1.type} != {attr2.type}')
@@ -379,7 +384,7 @@ def test_attr_extend() -> None:
     assert arr[2].val_float == 3.0
 
     # Test a pure iterator
-    arr.extend(x for x in [1.3, 4.2, '8.9'])
+    arr.extend(x for x in (1.3, 4.2, '8.9'))
     assert len(arr) == 6
     assert arr[0].val_float == 1.0
     assert arr[1].val_float == 2.0
@@ -432,7 +437,10 @@ def test_attr_extend() -> None:
         '0.0 0.0 0.0 1.0',
     ),
 ])
-def test_binary_text_conversion(typ: ValueType, attr: str, value, binary: bytes, text: str) -> None:
+def test_binary_text_conversion(
+    typ: ValueType, attr: str, value: Any,
+    binary: bytes, text: str,
+) -> None:
     """Test the required binary and text conversions."""
     assert TYPE_CONVERT[typ, ValueType.BINARY](value) == binary
     assert TYPE_CONVERT[ValueType.BINARY, typ](binary) == value
@@ -493,7 +501,7 @@ def test_binary_text_conversion(typ: ValueType, attr: str, value, binary: bytes,
 def test_attr_array_constructor(typ: ValueType, iterable: list[Any], expected: list[Any]) -> None:
     """Test constructing an array attribute."""
     expected_type = type(expected[0])
-    attr = Attribute.array('some_array', typ, iterable)
+    attr = Attribute.array('some_array', typ, iterable)  # type: ignore  # Non-literal type.
     assert attr.is_array
     assert len(attr) == len(expected)
     for i, (actual, expect) in enumerate(zip(attr._value, expected)):
@@ -589,9 +597,9 @@ def test_deduce_type_adv() -> None:
     """Test specific overrides and behaviour."""
     # Print means any successful result ends up in the console.
     with pytest.raises(TypeError):  # Other types.
-        print(deduce_type(...))
+        print(deduce_type(...))  # type: ignore
     with pytest.raises(TypeError):
-        print(deduce_type([...]))
+        print(deduce_type([...]))  # type: ignore
 
     # Empty result.
     with pytest.raises(TypeError):
@@ -941,7 +949,10 @@ def test_ext_roundtrip_unicode(version: str) -> None:
 
 
 @pytest.mark.parametrize('version', EXPORT_VALS)
-def test_export_regression(version: str, datadir: Path, file_regression) -> None:
+def test_export_regression(
+    version: str,
+    datadir: Path, file_regression: FileRegressionFixture,
+) -> None:
     """Test regressions in the export results."""
     with (datadir / 'binary_v5.dmx').open('rb') as f:
         root, fmt_name, fmt_version = Element.parse(f)

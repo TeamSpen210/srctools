@@ -1,9 +1,11 @@
 """Tests for the BSP static props lump."""
+from pytest_regressions.file_regression import FileRegressionFixture
 import pytest
 
 from srctools.math import Angle, Vec
 from srctools.bsp import (
-    BrushContents, StaticProp, StaticPropFlags, StaticPropVersion, VisLeaf, VisLeafFlags,
+    BrushContents, StaticProp, StaticPropFlags, StaticPropVersion, VisLeaf, VisLeafFlags, VisTree,
+    Plane,
 )
 from test_bsp import make_dummy
 
@@ -12,7 +14,7 @@ from test_bsp import make_dummy
     vers for vers in StaticPropVersion
     if vers.name not in ('DEFAULT', 'UNKNOWN')
 ], ids=lambda ver: ver.name.lower())
-def test_export(file_regression, version: StaticPropVersion) -> None:
+def test_export(file_regression: FileRegressionFixture, version: StaticPropVersion) -> None:
     """Test each prop version is exported the same way."""
     bsp = make_dummy()
     # Dummy visleaf, we don't really care.
@@ -27,7 +29,15 @@ def test_export(file_regression, version: StaticPropVersion) -> None:
         brushes=[],
         water_id=-1,
     )
-    bsp.nodes = [visleaf]
+    bsp.nodes = [VisTree(
+        Plane(Vec(0, 0, 1), 0),
+        mins=Vec(-32, -32, -32),
+        maxes=Vec(32, 32, 32),
+        faces=[],
+        area_ind=0,
+        child_neg=visleaf,
+        child_pos=visleaf,
+    )]
 
     bsp.static_prop_version = version
     bsp.props = [StaticProp(
