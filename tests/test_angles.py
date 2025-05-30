@@ -36,7 +36,7 @@ def test_construction(frozen_thawed_angle: AngleClass) -> None:
         assert_ang(Angle([pit, yaw, rol]), pit, yaw, rol, type=Angle)
 
 
-def test_copy(py_c_vec) -> None:
+def test_copy(py_c_vec: PyCVec) -> None:
     """Test calling Angle() on an existing vec merely copies."""
     Angle = vec_mod.Angle
     FrozenAngle = vec_mod.FrozenAngle
@@ -172,9 +172,9 @@ def test_thaw_freezing(py_c_vec: PyCVec) -> None:
     FrozenAngle = vec_mod.FrozenAngle
     # Other way around is not provided.
     with pytest.raises(AttributeError):
-        Angle.thaw()  # noqa
+        Angle.thaw()  # type: ignore
     with pytest.raises(AttributeError):
-        FrozenAngle.freeze()  # noqa
+        FrozenAngle.freeze()  # type: ignore
 
     for p, y, r in iter_vec(VALID_ZERONUMS):
         mut = Angle(p, y, r)
@@ -206,14 +206,14 @@ def test_angle_hash(py_c_vec: PyCVec) -> None:
 @pytest.mark.parametrize('axis, index, u, v, u_ax, v_ax', [
     ('pitch', 0, 'yaw', 'roll', 1, 2), ('yaw', 1, 'pitch', 'roll', 0, 2), ('roll', 2, 'pitch', 'yaw', 0, 1),
 ], ids=['pitch', 'yaw', 'roll'])
-def test_attrs(py_c_vec, axis: str, index: int, u: str, v: str, u_ax: int, v_ax: int) -> None:
+def test_attrs(py_c_vec: PyCVec, axis: str, index: int, u: str, v: str, u_ax: int, v_ax: int) -> None:
     """Test the pitch/yaw/roll attributes and item access."""
     Angle = vec_mod.Angle
     ang = Angle()
     # Should be constant.
     assert len(ang) == 3
 
-    def check(targ: float, other: float):
+    def check(targ: float, other: float) -> None:
         """Check all the indexes are correct."""
         assert math.isclose(getattr(ang, axis), targ), f'ang.{axis} != {targ}, other: {other}'
         assert math.isclose(getattr(ang, u), other), f'ang.{u} != {other}, targ={targ}'
@@ -275,7 +275,7 @@ def test_rev_iteration(py_c_vec: PyCVec, frozen_thawed_angle: AngleClass) -> Non
         next(it)
 
 
-def test_multiply(frozen_thawed_angle: AngleClass):
+def test_multiply(frozen_thawed_angle: AngleClass) -> None:
     """Test multiplying angles to scale them."""
     Angle = frozen_thawed_angle
 
@@ -302,21 +302,21 @@ def test_multiply(frozen_thawed_angle: AngleClass):
 
             # Check forward and reverse fails.
             try:
-                targ * obj  # noqa
+                targ * obj  # type: ignore
             except TypeError:
                 pass
             else:
                 pytest.fail('Angle * scalar succeeded.')
 
             try:
-                obj * targ  # noqa
+                obj * targ  # type: ignore
             except TypeError:
                 pass
             else:
                 pytest.fail('scalar * Angle succeeded.')
 
             try:
-                targ *= obj  # noqa
+                targ *= obj  # type: ignore
             except TypeError:
                 pass
             else:
@@ -352,7 +352,7 @@ def test_multiply(frozen_thawed_angle: AngleClass):
                 )
 
 
-def test_equality(py_c_vec, frozen_thawed_angle: AngleClass) -> None:
+def test_equality(py_c_vec: PyCVec, frozen_thawed_angle: AngleClass) -> None:
     """Test equality checks on Angles."""
     Angle = frozen_thawed_angle
 
@@ -391,7 +391,7 @@ def test_equality(py_c_vec, frozen_thawed_angle: AngleClass) -> None:
         test(num, 0.0, 5.0 + num, num + 360.0, 0.0, num - 355.0)
 
 
-def test_copy_mod(py_c_vec) -> None:
+def test_copy_mod(py_c_vec: PyCVec) -> None:
     """Test copying Angles and FrozenAngles."""
     Angle = vec_mod.Angle
     FrozenAngle = vec_mod.FrozenAngle

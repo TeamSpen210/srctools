@@ -80,7 +80,7 @@ def assert_ang(
     msg: object = '',
     tol: float = EPSILON,
     type: Optional[type] = None,
-):
+) -> None:
     """Asserts that an Angle is equal to the provided angles."""
     # Don't show in pytest tracebacks.
     __tracebackhide__ = True
@@ -192,7 +192,7 @@ else:
 
 
 @pytest.fixture(params=parms)
-def py_c_vec(request) -> Generator[None, None, None]:
+def py_c_vec(request: pytest.FixtureRequest) -> Generator[None, None, None]:
     """Run the test twice, for the Python and C versions."""
     originals = [getattr(vec_mod, name) for name in ATTRIBUTES]
     prefix = request.param[:2] + '_'  # Python -> Py_
@@ -214,18 +214,18 @@ def parameterize_cython(param: str, py_vers: object, cy_vers: object):
 
 
 @pytest.fixture(params=['Vec', 'FrozenVec'])
-def frozen_thawed_vec(py_c_vec, request) -> VecClass:
+def frozen_thawed_vec(py_c_vec: PyCVec, request: pytest.FixtureRequest) -> VecClass:
     """Support testing both mutable and immutable vectors."""
     return getattr(vec_mod, request.param)
 
 
 @pytest.fixture(params=['Angle', 'FrozenAngle'])
-def frozen_thawed_angle(py_c_vec, request) -> AngleClass:
+def frozen_thawed_angle(py_c_vec: PyCVec, request: pytest.FixtureRequest) -> AngleClass:
     """Support testing both mutable and immutable angles."""
     return getattr(vec_mod, request.param)
 
 
 @pytest.fixture(params=['Matrix', 'FrozenMatrix'])
-def frozen_thawed_matrix(py_c_vec, request) -> MatrixClass:
+def frozen_thawed_matrix(py_c_vec: PyCVec, request: pytest.FixtureRequest) -> MatrixClass:
     """Support testing both mutable and immutable matrices."""
     return getattr(vec_mod, request.param)

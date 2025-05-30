@@ -33,12 +33,12 @@ else:
 @pytest.fixture(params=parms, ids=ids)
 def py_c_token(request: Any) -> Generator[None, None, None]:
     """Run the test twice, for the Python and C versions of Tokenizer."""
-    orig_tok = fgd_mod.Tokenizer
+    orig_tok = fgd_mod.Tokenizer  # type: ignore[attr-defined]
     try:
-        fgd_mod.Tokenizer = request.param
+        fgd_mod.Tokenizer = request.param  # type: ignore[attr-defined]
         yield None
     finally:
-        fgd_mod.Tokenizer = orig_tok
+        fgd_mod.Tokenizer = orig_tok  # type: ignore[attr-defined]
 
 
 @pytest.mark.parametrize('name1', ['alpha', 'beta', 'gamma'])
@@ -142,7 +142,7 @@ def test_entity_lookup_io() -> None:
     assert ent.out['onTrIgger', ('pass', )].type is ValueTypes.STRING
 
 
-def test_entity_parse(py_c_token) -> None:
+def test_entity_parse(py_c_token: None) -> None:
     """Verify parsing an entity produces the correct results."""
     fsys = VirtualFileSystem({'test.fgd': """
 
@@ -234,7 +234,7 @@ appliesto(tag1, tag2, !tag3)
         ValueTypes.SPAWNFLAGS,
         'Flags',
         val_list=[
-            (1, 'A', False, frozenset()),
+            (1, 'A', False, frozenset[str]()),
             (2, 'B', True, frozenset()),
             (4, '[48] C', False, frozenset()),
             (8, 'D value', False, frozenset({'OLD', '!GOOD'})),
@@ -250,7 +250,7 @@ appliesto(tag1, tag2, !tag3)
         '0',
         'Blahdy blah. Another line.',
         val_list=[
-            ('0', 'First', frozenset()),
+            ('0', 'First', frozenset[str]()),
             ('1', 'Second', frozenset({'NEW'})),
             ('1', 'Old second', frozenset({'-OLD'})),
             ('2', 'Third', frozenset()),
@@ -277,7 +277,7 @@ appliesto(tag1, tag2, !tag3)
     assert fgd['multiline'].desc == 'Another description with the plus at the start'
 
 
-def test_entity_extend(py_c_token) -> None:
+def test_entity_extend(py_c_token: None) -> None:
     """Verify handling ExtendClass."""
     fsys = VirtualFileSystem({'test.fgd': """
 
@@ -360,7 +360,7 @@ unknown(a, b, c)
     )
 
 
-def test_entity_ignore_unknown_valuetype(py_c_token) -> None:
+def test_entity_ignore_unknown_valuetype(py_c_token: None) -> None:
     """Verify handling unknown ValueTypes."""
     fsys = VirtualFileSystem({'test.fgd': """
 
@@ -439,7 +439,7 @@ def test_entity_ignore_unknown_valuetype(py_c_token) -> None:
     ('(int) readonly editor report: "All"', True, True, True),
 ])
 def test_parse_kv_flags(
-    py_c_token, code: str,
+    py_c_token: None, code: str,
     is_readonly: bool, is_report: bool, editor_only: bool,
 ) -> None:
     """Test the readonly and reportable flags can be set."""
@@ -458,7 +458,7 @@ def test_parse_kv_flags(
     assert kv.editor_only is editor_only, kv
 
 
-def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture) -> None:
+def test_parse_helpers_simple(py_c_token: None, file_regression: FileRegressionFixture) -> None:
     """Test parsing simple helper types."""
     fsys = VirtualFileSystem({'test.fgd': """@PointClass
     base(Base1, Base2, Base3)
@@ -533,7 +533,7 @@ def test_parse_helpers_simple(py_c_token, file_regression: FileRegressionFixture
     file_regression.check(fgd.export(), basename="parse_helpers_simple", extension='.fgd')
 
 
-def test_parse_helpers_icon(py_c_token, file_regression: FileRegressionFixture) -> None:
+def test_parse_helpers_icon(py_c_token: None, file_regression: FileRegressionFixture) -> None:
     """Test parsing sprite/model helper types."""
     fsys = VirtualFileSystem({'test.fgd': """@PointClass
     sprite[+B]()
@@ -568,7 +568,7 @@ def test_parse_helpers_icon(py_c_token, file_regression: FileRegressionFixture) 
     file_regression.check(fgd.export(), basename="parse_helpers_icon", extension='.fgd')
 
 
-def test_parse_helpers_special(py_c_token, file_regression: FileRegressionFixture) -> None:
+def test_parse_helpers_special(py_c_token: None, file_regression: FileRegressionFixture) -> None:
     """Test parsing specialised helper types."""
     fsys = VirtualFileSystem({'test.fgd': """@PointClass
     instance[+D]()
@@ -609,7 +609,7 @@ def test_parse_helpers_special(py_c_token, file_regression: FileRegressionFixtur
     file_regression.check(fgd.export(), basename="parse_helpers_special", extension='.fgd')
 
 
-def test_parse_helpers_extension(py_c_token, file_regression: FileRegressionFixture) -> None:
+def test_parse_helpers_extension(py_c_token: None, file_regression: FileRegressionFixture) -> None:
     """Test parsing extra helper types."""
     fsys = VirtualFileSystem({'test.fgd': """@PointClass
     appliesto(tag1, +tag2, -tag3, !tag4)
@@ -641,7 +641,7 @@ def test_parse_helpers_extension(py_c_token, file_regression: FileRegressionFixt
     file_regression.check(fgd.export(), basename="parse_helpers_ext", extension='.fgd')
 
 
-def test_illegal_helpers_size(py_c_token) -> None:
+def test_illegal_helpers_size(py_c_token: None) -> None:
     """The size helper is special, and is parsed specially."""
     fsys = VirtualFileSystem({
         'no_args.fgd': """@PointClass
@@ -670,7 +670,7 @@ def test_illegal_helpers_size(py_c_token) -> None:
             FGD().parse_file(fsys, file)
 
 
-def test_illegal_helpers_tags(py_c_token) -> None:
+def test_illegal_helpers_tags(py_c_token: None) -> None:
     """Most extension helpers don't allow tags."""
     fsys = VirtualFileSystem({
         'early_tag.fgd': """@PointClass
@@ -699,7 +699,7 @@ def test_illegal_helpers_tags(py_c_token) -> None:
             FGD().parse_file(fsys, file)
 
 
-def test_snippet_desc(py_c_token) -> None:
+def test_snippet_desc(py_c_token: None) -> None:
     """Test snippet descriptions."""
     fgd = FGD()
     fsys = VirtualFileSystem({
@@ -759,7 +759,7 @@ def test_snippet_desc(py_c_token) -> None:
     )
 
 
-def test_snippet_choices(py_c_token) -> None:
+def test_snippet_choices(py_c_token: None) -> None:
     """Test parsing snippet choices."""
     fgd = FGD()
     fsys = VirtualFileSystem({'snippets.fgd': """\
@@ -777,7 +777,7 @@ def test_snippet_choices(py_c_token) -> None:
     fgd.parse_file(fsys, fsys['snippets.fgd'])
     choices = [
         ('-1', 'EOF', frozenset({'+SRCTOOLS'})),
-        ('0', 'No', frozenset()),
+        ('0', 'No', frozenset[str]()),
         ('1', 'Yes', frozenset()),
     ]
     assert fgd.snippet_choices == {
@@ -797,7 +797,7 @@ def test_snippet_choices(py_c_token) -> None:
     assert kv.val_list is not snip.value
 
 
-def test_snippet_spawnflags(py_c_token) -> None:
+def test_snippet_spawnflags(py_c_token: None) -> None:
     """Test parsing snippet spawnflags."""
     fgd = FGD()
     fsys = VirtualFileSystem({'snippets.fgd': """\
@@ -841,7 +841,7 @@ def test_snippet_spawnflags(py_c_token) -> None:
         type=ValueTypes.SPAWNFLAGS,
         val_list=[
             *spawnflags,
-            (16, "Special Stuff", True, frozenset()),
+            (16, "Special Stuff", True, frozenset[str]()),
         ]
     )
     # It shouldn't be a shared list!
@@ -849,7 +849,7 @@ def test_snippet_spawnflags(py_c_token) -> None:
     assert kv.val_list is not snip.value
 
 
-def test_snippet_keyvalues(py_c_token) -> None:
+def test_snippet_keyvalues(py_c_token: None) -> None:
     """Test parsing snippet keyvalues."""
     fgd = FGD()
     fsys = VirtualFileSystem({'snippets.fgd': """\
@@ -878,22 +878,22 @@ def test_snippet_keyvalues(py_c_token) -> None:
                 default='0',
                 desc='Start it.',
                 val_list=[
-                    ('0', 'Yes', frozenset()),
-                    ('1', 'No', frozenset()),
+                    ('0', 'Yes', frozenset[str]()),
+                    ('1', 'No', frozenset[str]()),
                 ]
             ))
         )],
         'kvblock': [
             Snippet(
                 'KVBlock', 'snippets.fgd', 8,
-                (frozenset(), KVDef(
+                (frozenset[str](), KVDef(
                     'start_open', ValueTypes.BOOL,
                     disp_name="Start Open", default='1'
                 ))
             ),
             Snippet(
                 'KVBlock', 'snippets.fgd', 9,
-                (frozenset(), KVDef(
+                (frozenset[str](), KVDef(
                     'height', ValueTypes.INT,
                     disp_name="Height", default='48'
                 ))
@@ -908,7 +908,7 @@ def test_snippet_keyvalues(py_c_token) -> None:
     assert ent_kv.val_list is not snip_kv.val_list
 
 
-def test_snippet_io(py_c_token) -> None:
+def test_snippet_io(py_c_token: None) -> None:
     """Test parsing snippet i/o."""
     fgd = FGD()
     fsys = VirtualFileSystem({'snippets.fgd': """\
@@ -954,7 +954,7 @@ def test_snippet_io(py_c_token) -> None:
     assert ent_out is not snip_out, 'Shared!'
 
 
-def test_snippet_no_dup(py_c_token) -> None:
+def test_snippet_no_dup(py_c_token: None) -> None:
     """Test duplicating snippets is not allowed."""
     fgd = FGD()
     fsys = VirtualFileSystem({
@@ -978,13 +978,13 @@ def test_snippet_no_dup(py_c_token) -> None:
         'inpblock': [
             Snippet(
                 'InpBlock', 'snip_1.fgd', 2,
-                (frozenset(), IODef(
+                (frozenset[str](), IODef(
                     'FirstInput', ValueTypes.VOID,
                     "Does something."
                 ))
             ), Snippet(
                 'InpBlock', 'snip_1.fgd', 5,
-                (frozenset(), IODef(
+                (frozenset[str](), IODef(
                     'SecondInput', ValueTypes.VOID,
                     "I/O appends to existing."
                 ))
@@ -1035,7 +1035,7 @@ spawnflags(flags) = [
 
 
 @pytest.mark.parametrize('filename', PARSE_EOF)
-def test_parse_eof(py_c_token, filename: str) -> None:
+def test_parse_eof(py_c_token: None, filename: str) -> None:
     """Test missing the ending bracket correctly causes errors."""
     fgd = FGD()
     fsys = VirtualFileSystem(PARSE_EOF)
@@ -1062,13 +1062,13 @@ def test_export_regressions(file_regression: FileRegressionFixture, custom_synta
         'angles': base_angles,
         'npc_test': ent,
     }
-    base_origin.keyvalues['origin'] = {frozenset(): KVDef(
+    base_origin.keyvalues['origin'] = {frozenset[str](): KVDef(
         'origin',
         ValueTypes.VEC_ORIGIN,
         'Origin',
         '0 0 0',
     )}
-    base_angles.keyvalues['angles'] = {frozenset(): KVDef(
+    base_angles.keyvalues['angles'] = {frozenset[str](): KVDef(
         'angles',
         ValueTypes.ANGLES,
         'Angles (Pitch Yaw Roll)',
@@ -1076,7 +1076,7 @@ def test_export_regressions(file_regression: FileRegressionFixture, custom_synta
     )}
 
     ent.helpers = [
-        HelperSphere(255.0, 128.0, 64.0, 'radius'),
+        HelperSphere(255, 128, 64, 'radius'),
         HelperModel('models/editor/a_prop.mdl'),
         HelperExtAppliesTo(['-episodic']),
         UnknownHelper('extrahelper', ['1', '15', 'thirtytwo']),
@@ -1085,7 +1085,7 @@ def test_export_regressions(file_regression: FileRegressionFixture, custom_synta
     ent.desc = 'Entity description, extending beyond 1000 characters: ' + ', '.join(map(str, range(500))) + '. Done!'
     # Only newlines can be escaped in the original parser.
     ent.desc += '\n escapes: tab=\t, newline=\n, "quoted", bell=\a'
-    ent.keyvalues['test_kv'] = {frozenset(): KVDef(
+    ent.keyvalues['test_kv'] = {frozenset[str](): KVDef(
         'test_kv',
         ValueTypes.COLOR_255,
         'A test keyvalue',
@@ -1101,12 +1101,12 @@ def test_export_regressions(file_regression: FileRegressionFixture, custom_synta
     )}
 
     # The two special types with value lists.
-    ent.keyvalues['spawnflags'] = {frozenset(): KVDef(
+    ent.keyvalues['spawnflags'] = {frozenset[str](): KVDef(
         'spawnflags',
         ValueTypes.SPAWNFLAGS,
         'Flags',
         val_list=[
-            (1, 'A', False, frozenset()),
+            (1, 'A', False, frozenset[str]()),
             (2, 'B', True, frozenset()),
             (4, 'C', False, frozenset()),
             (8, 'D value', False, frozenset({'OLD', '!GOOD'})),
@@ -1114,12 +1114,12 @@ def test_export_regressions(file_regression: FileRegressionFixture, custom_synta
         ],
     )}
 
-    ent.keyvalues['multichoice'] = {frozenset(): KVDef(
+    ent.keyvalues['multichoice'] = {frozenset[str](): KVDef(
         'multichoice',
         ValueTypes.CHOICES,
         'Multiple Choice',
         val_list=[
-            ('-1', 'Loss', frozenset()),
+            ('-1', 'Loss', frozenset[str]()),
             ('0', 'Draw', frozenset()),
             ('1', 'Win', frozenset()),
             ('bad', 'Very Bad', frozenset({'NEW'})),
@@ -1207,7 +1207,7 @@ def test_export_spawnflag_label(file_regression: FileRegressionFixture, label: b
         ValueTypes.SPAWNFLAGS,
         'Flags',
         val_list=[
-            (1, 'A', False, frozenset()),
+            (1, 'A', False, frozenset[str]()),
             (2, 'B', True, frozenset()),
             (4, 'C', False, frozenset()),
             (8, 'D', False, frozenset()),

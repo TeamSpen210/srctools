@@ -1,4 +1,6 @@
 """Test functionality in srctools.__init__."""
+from collections.abc import Callable
+
 from typing import Any
 from pathlib import Path
 
@@ -108,14 +110,14 @@ def test_bool_as_int() -> None:
     [_py_conv_int, _cy_conv_int],
     ids=['Python', 'Cython'],
 )
-def test_conv_int(func) -> None:
+def test_conv_int(func: Callable[..., int]) -> None:
     """Test srctools.conv_int()."""
     for st_int, result in ints:
         assert func(st_int) == result, st_int
 
     # Check that float values fail
     marker = object()
-    for st_float, result in floats:
+    for st_float, _ in floats:
         if isinstance(st_float, str):  # We don't want to check float-rounding
             assert func(st_float, marker) is marker, repr(st_float)
 
@@ -132,7 +134,7 @@ def test_conv_int(func) -> None:
     [_py_conv_bool, _cy_conv_bool],
     ids=['Python', 'Cython'],
 )
-def test_conv_bool(func) -> None:
+def test_conv_bool(func: Callable[..., bool]) -> None:
     """Test srctools.conv_bool()."""
     for val in true_strings:
         assert func(val) is True
@@ -144,12 +146,12 @@ def test_conv_bool(func) -> None:
     assert func(False) is False
 
     # None passes through the default
-    for val in non_bools:
+    for bad_val in non_bools:
         # Check default value.
-        assert func(val) is False
+        assert func(bad_val) is False
         # Check all default values pass through unchanged
         for default in def_vals:
-            assert func(val, default) is default
+            assert func(bad_val, default) is default
 
 
 @pytest.mark.parametrize(
@@ -157,7 +159,7 @@ def test_conv_bool(func) -> None:
     [_py_conv_float, _cy_conv_float],
     ids=['Python', 'Cython'],
 )
-def test_conv_float(func) -> None:
+def test_conv_float(func: Callable[..., float]) -> None:
     """Test srctools.conv_float()."""
     # Float should convert integers too
     for string, result in ints:
@@ -222,7 +224,7 @@ def test_EmptyMapping() -> None:
     # Can't give more than one mapping as a positional argument,
     # though.
     with pytest.raises(TypeError):
-        EmptyMapping.update({3: 4}, {1: 2})
+        EmptyMapping.update({3: 4}, {1: 2})  # type: ignore
 
     # Check it's registered in ABCs.
     from collections import abc
@@ -401,7 +403,7 @@ def test_alias_math() -> None:
     """Test the lazy srctools.Vec_tuple alias."""
     from srctools.math import Vec_tuple
     with pytest.deprecated_call():
-        assert srctools.Vec_tuple is Vec_tuple
+        assert srctools.Vec_tuple is Vec_tuple  # type: ignore[attr-defined]
     # This isn't put in the dict, we want a warning each time.
 
 

@@ -33,7 +33,7 @@ def compare_img(obtained_fname: Path, expected_fname: Path) -> None:
 
 # noinspection PyProtectedMember
 @pytest.fixture(params=["cython", "python"], ids=str.title)
-def cy_py_format_funcs(request) -> Generator[str, None, None]:
+def cy_py_format_funcs(request: pytest.FixtureRequest) -> Generator[str, None, None]:
     """Test against either the Cython or Python functions."""
     orig = vtf_mod._format_funcs
     kind: str = request.param

@@ -112,7 +112,7 @@ def test_kv_sides() -> None:
     inst = instancing.Instance('test_inst', '', Vec(), Matrix())
     vmf = VMF()
     # Pretend we had collapsed brushes with these values.
-    cast(dict, inst.face_ids).update({45: 68, 12: 12, 85: 92, 86: 93})
+    inst.face_ids.update({45: 68, 12: 12, 85: 92, 86: 93})
 
     # Invalid ints and missing keys are ignored.
     assert inst.fixup_key(vmf, [], ValueTypes.SIDE_LIST, '45 ardvark 6 12') == '12 68'

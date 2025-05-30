@@ -69,26 +69,26 @@ def test_matrix_no_iteration(py_c_vec: PyCVec) -> None:
     """Test that Matrix cannot be iterated, as this is rather useless."""
     Matrix = vec_mod.Matrix
     with pytest.raises(TypeError):
-        iter(Matrix())
+        iter(Matrix())  # type: ignore
     with pytest.raises(TypeError):
-        list(Matrix())
+        list(Matrix())  # type: ignore
 
 
 def text_invalid_from_angle(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass) -> None:
     """Test invalid parameters passed to Matrix.from_angle()."""
     Matrix = frozen_thawed_matrix
     with pytest.raises(TypeError):
-        Matrix.from_angle()
+        Matrix.from_angle()  # type: ignore
     with pytest.raises(TypeError):
-        Matrix.from_angle(45.0)
+        Matrix.from_angle(45.0)  # type: ignore
     with pytest.raises(TypeError):
-        Matrix.from_angle(45.0, 30.0)
+        Matrix.from_angle(45.0, 30.0)  # type: ignore
     with pytest.raises(TypeError):
-        Matrix.from_angle(roll=30.0)
+        Matrix.from_angle(roll=30.0)  # type: ignore
     with pytest.raises(TypeError):
-        Matrix.from_angle(yaw=30.0)
+        Matrix.from_angle(yaw=30.0)  # type: ignore
     with pytest.raises(TypeError):
-        Matrix.from_angle(pitch=30.0, roll=12.5)
+        Matrix.from_angle(pitch=30.0, roll=12.5)  # type: ignore
 
 
 def test_copy(py_c_vec: PyCVec) -> None:
@@ -178,9 +178,9 @@ def test_thaw_freezing(py_c_vec: PyCVec) -> None:
     Angle = vec_mod.Angle
     # Other way around is not provided.
     with pytest.raises(AttributeError):
-        Matrix.thaw()  # noqa
+        Matrix.thaw()  # type: ignore
     with pytest.raises(AttributeError):
-        FrozenMatrix.freeze()  # noqa
+        FrozenMatrix.freeze()  # type: ignore
 
     ang = Angle(12.5, 34.3, -15.8)
     mut = Matrix.from_angle(ang)
@@ -204,9 +204,9 @@ def test_invalid_setitem(py_c_vec: PyCVec) -> None:
     mat[0, 2] = fractions.Fraction(1, 2)
     assert mat[0, 2] == IsFloat(exactly=0.5)
     with pytest.raises(TypeError):
-        mat[2, 0] = '1'
+        mat[2, 0] = '1'  # type: ignore
     with pytest.raises(TypeError):
-        mat[2, 0] = [1, 2, 3]
+        mat[2, 0] = [1, 2, 3]  # type: ignore
 
 
 def test_inverse_known(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass) -> None:
@@ -318,7 +318,7 @@ def test_from_basis_x(
     ang2 = mat.to_angle()
     roundtrip = Matrix.from_angle(ang2)
     assert_rot(mat, roundtrip, type=Matrix)
-    assert_ang(ang, *ang2, type=Angle)
+    assert_ang(ang, ang2.pitch, ang2.yaw, ang2.roll, type=Angle)
 
 
 @pytest.mark.parametrize('direction', DIRECTIONS, ids=DIRECTION_IDS)
@@ -340,7 +340,7 @@ def test_from_basis_y(
     ang2 = mat.to_angle()
     roundtrip = Matrix.from_angle(ang2)
     assert_rot(mat, roundtrip, type=Matrix)
-    assert_ang(ang, *ang2, type=Angle)
+    assert_ang(ang, ang2.pitch, ang2.yaw, ang2.roll, type=Angle)
 
 
 @pytest.mark.parametrize('direction', DIRECTIONS, ids=DIRECTION_IDS)
@@ -361,4 +361,4 @@ def test_from_basis_z(
     ang2 = mat.to_angle()
     roundtrip = Matrix.from_angle(ang2)
     assert_rot(mat, roundtrip, type=Matrix)
-    assert_ang(ang, *ang2, type=Angle)
+    assert_ang(ang, ang2.pitch, ang2.yaw, ang2.roll, type=Angle)

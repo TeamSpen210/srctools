@@ -30,12 +30,12 @@ else:
 @pytest.fixture(params=parms, ids=ids)
 def py_c_token(request) -> Generator[type[Tokenizer], None, None]:
     """Run the test twice, for the Python and C versions of Tokenizer."""
-    orig_tok = kv_mod.Tokenizer, kv_mod.BaseTokenizer
+    orig_tok = kv_mod.Tokenizer, kv_mod.BaseTokenizer  # type: ignore[attr-defined]
     try:
-        kv_mod.Tokenizer, kv_mod.BaseTokenizer = request.param
+        kv_mod.Tokenizer, kv_mod.BaseTokenizer = request.param  # type: ignore[attr-defined]
         yield request.param[0]
     finally:
-        kv_mod.Tokenizer, kv_mod.BaseTokenizer = orig_tok
+        kv_mod.Tokenizer, kv_mod.BaseTokenizer = orig_tok  # type: ignore[attr-defined]
 
 
 def assert_tree(first: Keyvalues, second: Keyvalues, path: str = '') -> None:
@@ -825,7 +825,7 @@ def test_blockfuncs_fail_on_leaf() -> None:
     with pytest.raises(LeafKeyvalueError):
         leaf.ensure_exists('blah')
     with pytest.raises(LeafKeyvalueError):
-        leaf.set_key(("blah", "another"), 45)
+        leaf.set_key(("blah", "another"), 45)  # type: ignore
     with pytest.raises(LeafKeyvalueError):
         leaf.merge_children()
 

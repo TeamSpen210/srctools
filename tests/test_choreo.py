@@ -177,7 +177,7 @@ def test_save_binary(datadir: Path, file_regression: FileRegressionFixture) -> N
     with open(datadir / 'sample.vcd', encoding='utf8') as f:
         scene = Scene.parse_text(Tokenizer(f))
 
-    pool = []
+    pool: list[str] = []
 
     def pool_func(value: str) -> int:
         """Simulate the string pool."""

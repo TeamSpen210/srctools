@@ -941,7 +941,7 @@ def test_illegal_values_file(py_c_token: type[Tokenizer], value: object, match: 
             """Cython version tries to call read()."""
             return next(data, "")
 
-        def __iter__(self):
+        def __iter__(self) -> Iterator[object]:
             """Python implementation iterates."""
             return self
 
@@ -1040,8 +1040,8 @@ def test_block_iter(py_c_token: type[Tokenizer]) -> None:
 )
 def test_subclass_base(Tok: type[BaseTokenizer]) -> None:
     """Test subclassing of the base tokenizer."""
-    class Sub(Tok):
-        def __init__(self, tok):
+    class Sub(Tok):  # type: ignore  # Non-literal base class.
+        def __init__(self, tok: Iterator[Union[Token, tuple[Token, str]]]) -> None:
             super().__init__('filename', TokenSyntaxError)
             self.__tokens = iter(tok)
 
@@ -1055,10 +1055,10 @@ def test_subclass_base(Tok: type[BaseTokenizer]) -> None:
             else:
                 return tok, TOK_VALS[tok]
 
-    check_tokens(Sub(noprop_parse_tokens), noprop_parse_tokens)
+    check_tokens(Sub(noprop_parse_tokens), noprop_parse_tokens)  # type: ignore[no-untyped-call]
 
     # Do some peeks, pushbacks, etc to check they work.
-    tok = Sub(prop_parse_tokens)
+    tok = Sub(prop_parse_tokens)  # type: ignore[no-untyped-call]
     it = iter(tok)
     assert next(it) == (Token.NEWLINE, '\n')
     assert next(tok.skipping_newlines()) == (Token.STRING, 'Root1')
