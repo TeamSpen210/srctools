@@ -25,6 +25,7 @@ faces if possible.
 Alternatively, polygons can be converted to SMD triangles for preview.
 
 .. automethod:: Polygon.to_smd_tris
+    :for: triangle
 
 Operations
 ==========
@@ -39,6 +40,9 @@ API
 .. autoclass:: Geometry
 
     .. autoattribute:: polys
+    .. automethod:: Geometry.raw_carve
+    .. automethod:: Geometry.raw_clip
+    .. automethod:: Geometry.unshare_faces
 
 .. autoclass:: Polygon
 

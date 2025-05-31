@@ -2,9 +2,11 @@
 
 See `polylib.cpp <https://github.com/ValveSoftware/source-sdk-2013/blob/0565403b153dfcde602f6f58d8f4d13483696a13/src/utils/common/polylib.cpp>`_ for some of the algorithms.
 """
+
 from typing import Optional
 
 from collections.abc import Iterable, Iterator, MutableMapping
+from collections import defaultdict
 
 import attrs
 
@@ -61,22 +63,52 @@ class Geometry:
         yield from self.polys
 
     def rebuild(self, vmf: vmf_mod.VMF, mat: str) -> vmf_mod.Solid:
-        """Rebuild faces and the brush for this geometry."""
+        """Rebuild faces and the brush for this geometry.
+
+        :param vmf: The VMF faces will be added to.
+        :param mat: If faces were newly created, assign this material to the created face.
+        """
         return vmf_mod.Solid(vmf, -1, [
             poly.build_face(vmf, mat)
             for poly in self.polys
         ])
 
-    def clip(
-        self, plane: Plane,
-        side_mapping: MutableMapping[int, int] = EmptyMapping,
-    ) -> tuple[Optional['Geometry'], Optional['Geometry']]:
-        """Clip this geometry by the specified plane.
+    @classmethod
+    def unshare_faces(cls, geo: Iterable['Geometry']) -> dict[int, list[int]]:
+        """If faces are reused, duplicate the VMF side to make each unique.
 
-        :returns: (front, back) tuple. The two brushes are `self` and `None` if entirely on one
-            side, otherwise this copies faces and returns two solids.
-        :param side_mapping: If provided, this will be set to have original -> new side IDs, if copying is
-            required.
+        This makes geometry cut by `raw_clip()`/`raw_carve()` valid to use again.
+
+        :returns: Mapping from side IDs to any copies made.
+        """
+        # Copy faces only if used by both. If only used by one, preserve it.
+        used = set()
+        ids = defaultdict(list)
+        for brush in geo:
+            for poly in brush.polys:
+                if poly.original is None:
+                    continue
+                if poly.original in used:
+                    old_id = poly.original.id
+                    poly.original = poly.original.copy()
+                    ids[old_id].append(poly.original.id)
+                else:
+                    used.add(poly.original)
+        return dict(ids)
+
+    def raw_clip(
+        self,
+        plane: Plane,
+    ) -> tuple[Optional['Geometry'], Optional['Geometry']]:
+        """Clip this geometry by the specified plane, without modifying faces.
+
+        New polygons will have their face set to `None`, and duplicated polygons will share faces.
+        This is not valid, but allows post-processing to track sides precisely.
+        The non-raw version calls `unshare_faces()` afterwards.
+
+        :param plane: The plane to clip along.
+        :returns: :pycode:`(front, back)` tuple. The two brushes are `self <typing.Self>` and
+            `None` if entirely on one side, otherwise this copies faces and returns two solids.
         """
         front_verts = back_verts = 0
         for poly in self.polys:
@@ -91,7 +123,7 @@ class Geometry:
         elif back_verts and not front_verts:
             return (self, None)
         front = self
-        # Make a copy of each poly, but share faces for now.
+        # Make a copy of each poly, but share faces.
         back = Geometry([
             Polygon(poly.original, list(poly.vertices), poly.plane)
             for poly in self.polys
@@ -106,22 +138,18 @@ class Geometry:
             poly for poly in back.polys
             if poly._recalculate(back.polys)
         ]
-        # Now, copy faces only if used by both. If only used by one, preserve it.
-        front_used = set()
-        for poly in front.polys:
-            if poly.original is not None:
-                front_used.add(poly.original)
-        for poly in back.polys:
-            if poly.original is not None and poly.original in front_used:
-                poly.original = poly.original.copy(side_mapping=side_mapping)
         return front, back
 
     @classmethod
-    def carve(cls, target: Iterable['Geometry'], subtract: 'Geometry') -> list['Geometry']:
-        """Carve a set of brushes by another.
+    def raw_carve(cls, target: Iterable['Geometry'], subtract: 'Geometry') -> list['Geometry']:
+        """Carve a set of brushes by another, without modifying faces.
+
+        New polygons will have their face set to `None`, and duplicated polygons will share faces.
+        This is not valid, but allows post-processing to track sides precisely.
+        The non-raw version calls `unshare_faces()` afterwards.
 
         :param target: Brushes to carve.
-        :param subtract: Brush to cut into the others. If you want multiple, call carve() again.
+        :param subtract: Brush to cut into the others. If you want multiple, call `!raw_carve()` again.
         :returns: Result brushes. Brushes are omitted if fully carved, or may have been split.
         """
         # Sort planes to prefer axial splits first.
@@ -132,7 +160,7 @@ class Geometry:
         for splitter in planes:
             next_todo = []
             for brush in todo:
-                front, back = brush.clip(splitter.plane)
+                front, back = brush.raw_clip(splitter.plane)
                 # Anything in front is outside the subtract brush, so it must be kept.
                 if front is not None:
                     result.append(front)
@@ -141,6 +169,31 @@ class Geometry:
                     next_todo.append(back)
             todo = next_todo
         # Any brushes that were 'back' for all planes are inside = should be removed.
+        return result
+
+    def clip(self, plane: Plane) -> tuple[Optional['Geometry'], Optional['Geometry']]:
+        """Clip this geometry by the specified plane, creating a valid brush.
+
+        If polygons are used in both brushes, they will be copied.
+
+        :param plane: The plane to clip along.
+        :returns: :pycode:`(front, back)` tuple. The two brushes are `self <typing.Self>` and
+            `None` if entirely on one side, otherwise this copies faces and returns two solids.
+        """
+        tup = self.raw_clip(plane)
+        self.unshare_faces(filter(None, tup))
+        return tup
+
+    @classmethod
+    def carve(cls, target: Iterable['Geometry'], subtract: 'Geometry') -> list['Geometry']:
+        """Carve a set of brushes by another.
+
+        :param target: Brushes to carve.
+        :param subtract: Brush to cut into the others. If you want multiple, call `!carve()` again.
+        :returns: Result brushes. Brushes are omitted if fully carved, or may have been split.
+        """
+        result = cls.carve(target, subtract)
+        cls.unshare_faces(result)
         return result
 
 
@@ -222,7 +275,7 @@ class Polygon:
         face = self.original
         if face is None:
             return
-        norm = self.norm
+        norm = self.plane.normal
         u = face.uaxis.vec() * face.uaxis.scale
         v = face.vaxis.vec() * face.vaxis.scale
         points = [
