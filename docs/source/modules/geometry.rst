@@ -1,0 +1,49 @@
+srctools.geometry
+------------------------
+
+.. module:: srctools.geometry
+    :synopsis: Calculates vertices for brushes, then performs operations on them.
+
+In VMF files, brushes are defined solely by the direction of each face, and do not explicitly
+specify vertices. This makes manipulation and checks against them difficult. This module calculates
+the vertices of a brush, and provides the logic for operations like clipping and carving.
+
+Conversion
+==========
+
+First, call `~Geometry.from_brush` to convert a `~srctools.vmf.Solid` into a calculated geometry
+object.
+
+.. automethod:: Geometry.from_brush
+
+These are composed of `Polygon` objects, which each wrap a `~srctools.vmf.Side` object. After
+performing operations, call `Geometry.rebuild` to remake the `~srctools.vmf.Solid` objects, reusing
+faces if possible.
+
+.. automethod:: Geometry.rebuild
+
+Alternatively, polygons can be converted to SMD triangles for preview.
+
+.. automethod:: Polygon.to_smd_tris
+
+Operations
+==========
+
+.. automethod:: Geometry.carve
+.. automethod:: Geometry.clip
+
+
+API
+===
+
+.. autoclass:: Geometry
+
+    .. autoattribute:: polys
+
+.. autoclass:: Polygon
+
+    .. autoattribute:: original
+    .. autoattribute:: vertices
+    .. autoattribute:: plane
+
+    .. automethod:: build_face

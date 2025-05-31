@@ -1,4 +1,4 @@
-"""Implements tools for manipulating geometry.
+"""Implements tools for manipulating brush geometry.
 
 See `polylib.cpp <https://github.com/ValveSoftware/source-sdk-2013/blob/0565403b153dfcde602f6f58d8f4d13483696a13/src/utils/common/polylib.cpp>`_ for some of the algorithms.
 """
@@ -11,6 +11,12 @@ import attrs
 from srctools import EmptyMapping, FrozenVec, Matrix, VMF, Vec
 from srctools import vmf as vmf_mod, smd
 from srctools.bsp import Plane, PlaneType
+
+
+__all__ = [
+    'Geometry', 'Polygon',
+    'Plane',  # Re-export
+]
 
 
 MAX_PLANE = [
@@ -35,6 +41,7 @@ PLANE_PRIORITY = {
 @attrs.define(eq=False)
 class Geometry:
     """A group of faces with vertices calculated for geometry operations."""
+    #: Faces making up this brush solid.
     polys: list['Polygon']
 
     @classmethod
@@ -66,9 +73,10 @@ class Geometry:
     ) -> tuple[Optional['Geometry'], Optional['Geometry']]:
         """Clip this geometry by the specified plane.
 
-        Returns self/None if entirely on one side, otherwise copies the geo and returns two solids.
-        If provided, side_mapping will be set to have original -> new side IDs, if copying is
-        required.
+        :returns: (front, back) tuple. The two brushes are `self` and `None` if entirely on one
+            side, otherwise this copies faces and returns two solids.
+        :param side_mapping: If provided, this will be set to have original -> new side IDs, if copying is
+            required.
         """
         front_verts = back_verts = 0
         for poly in self.polys:
@@ -110,7 +118,12 @@ class Geometry:
 
     @classmethod
     def carve(cls, target: Iterable['Geometry'], subtract: 'Geometry') -> list['Geometry']:
-        """Carve a set of brushes by another."""
+        """Carve a set of brushes by another.
+
+        :param target: Brushes to carve.
+        :param subtract: Brush to cut into the others. If you want multiple, call carve() again.
+        :returns: Result brushes. Brushes are omitted if fully carved, or may have been split.
+        """
         # Sort planes to prefer axial splits first.
         planes = sorted(subtract.polys, key=lambda poly: PLANE_PRIORITY[poly.plane.type])
 
@@ -134,19 +147,12 @@ class Geometry:
 @attrs.define(eq=False)
 class Polygon:
     """A face, including the associated vertices."""
+    #: The brush side this was constructed from, or None if this was created fresh.
     original: Optional[vmf_mod.Side]
+    #: Vertex loop around this polygon. The start point is not specified.
     vertices: list[FrozenVec]
+    #: The plane this face is pointing along.
     plane: Plane
-
-    @property
-    def norm(self) -> Vec:
-        """Make it easier to access the plane normal."""
-        return self.plane.normal
-
-    @property
-    def plane_dist(self) -> float:
-        """Make it easier to access the plane distance."""
-        return self.plane.dist
 
     def build_face(self, vmf: VMF, mat: str) -> vmf_mod.Side:
         """Apply the polygon to the face. If the face is not present, create it.
@@ -209,7 +215,10 @@ class Polygon:
         self.vertices = new_verts
 
     def to_smd_tris(self, links: list[tuple[smd.Bone, float]]) -> Iterator[smd.Triangle]:
-        """Convert to SMD triangles."""
+        """Convert to SMD triangles. UVs are not fully correct yet.
+
+        :param links: The bone weights to use.
+        """
         face = self.original
         if face is None:
             return
