@@ -22,9 +22,9 @@ __all__ = [
 
 
 MAX_PLANE = [
-    FrozenVec(-100_000, -100_000),
-    FrozenVec(100_000, -100_000),
     FrozenVec(100_000, 100_000),
+    FrozenVec(100_000, -100_000),
+    FrozenVec(-100_000, -100_000),
     FrozenVec(-100_000, 100_000),
 ]
 # Determine the order to split brushes when carving.
