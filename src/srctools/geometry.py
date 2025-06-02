@@ -2,15 +2,16 @@
 
 See `polylib.cpp <https://github.com/ValveSoftware/source-sdk-2013/blob/0565403b153dfcde602f6f58d8f4d13483696a13/src/utils/common/polylib.cpp>`_ for some of the algorithms.
 """
-
 from typing import Optional
 
-from collections.abc import Iterable, Iterator, MutableMapping
+from collections.abc import Iterable, Iterator
 from collections import defaultdict
+import itertools
+import math
 
 import attrs
 
-from srctools import EmptyMapping, FrozenVec, Matrix, VMF, Vec
+from srctools import FrozenVec, Matrix, VMF, Vec
 from srctools import vmf as vmf_mod, smd
 from srctools.bsp import Plane, PlaneType
 
@@ -60,7 +61,7 @@ class Geometry:
         ])
 
     def __iter__(self) -> Iterator['Polygon']:
-        yield from self.polys
+        return iter(self.polys)
 
     def rebuild(self, vmf: vmf_mod.VMF, mat: str) -> vmf_mod.Solid:
         """Rebuild faces and the brush for this geometry.
@@ -195,6 +196,70 @@ class Geometry:
         result = cls.carve(target, subtract)
         cls.unshare_faces(result)
         return result
+
+    def _behind_plane(self, plane: Plane) -> bool:
+        """Check if this brush is entirely behind a plane (or coplanar)."""
+        for poly in self:
+            for vert in poly.vertices:
+                off = plane.normal.dot(vert) - plane.dist
+                if off > 1e-6:
+                    return False
+        return True
+
+    def merge(self, other: 'Geometry') -> Optional['Geometry']:
+        """Merge two brushes together, undoing a clip operation.
+
+        This locates faces which fully overlap each other, then removes them, checking the result
+        would remain convex. If no result is found, returns `None`. If a result is returned, the
+        original faces are shared.
+
+        Coplanar faces in the first brush are prioritised over the second brush.
+        """
+        # Loop all combinations of faces, look for faces which overlap, then remove them.
+        for face_a, face_b in itertools.product(self, other):
+            vert_count = len(face_b.vertices)
+            if (
+                len(face_a.vertices) != vert_count
+                or Vec.dot(face_a.plane.normal, face_b.plane.normal) > -0.99
+                or abs(face_a.plane.dist + face_b.plane.dist) > 1e-6
+            ):  # These faces are not aligned, or don't have the same vert count.
+                continue
+            # Now match up the edge loops. Each is reversed compared to the other.
+            for i, vert_a in enumerate(face_a.vertices):
+                if all(
+                    (vert_b - face_a.vertices[(i - j) % vert_count]).mag_sq() < 1e-6**2
+                    for j, vert_b in enumerate(face_b.vertices)
+                ):
+                    break
+            else:
+                continue  # No loop.
+            # Found overlapping faces. Check we'd be convex.
+            if self._behind_plane(face_b.plane) and other._behind_plane(face_a.plane):
+                # We've found a result! Discard the two clip brushes, plus any second brush
+                # faces which are coplanar with the first brush.
+                planes = []
+                polys = []
+                for poly in self:
+                    if poly is not face_a:
+                        planes.append(poly.plane)
+                        polys.append(poly)
+                for poly in other.polys:
+                    if poly is face_b or any(
+                        plane.normal.dot(poly.plane.normal) > 0.99
+                        and math.isclose(plane.dist, poly.plane.dist)
+                        for plane in planes
+                    ):
+                        continue  # Already present.
+                    polys.append(poly)
+                return Geometry([
+                    poly
+                    for poly in polys
+                    if poly._recalculate(polys)
+                ])
+            else:
+                # We touch but would be concave. Can't have a valid merge elsewhere.
+                return None
+        return None
 
 
 @attrs.define(eq=False)

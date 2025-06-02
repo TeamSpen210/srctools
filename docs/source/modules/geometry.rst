@@ -32,6 +32,7 @@ Operations
 
 .. automethod:: Geometry.carve
 .. automethod:: Geometry.clip
+.. automethod:: Geometry.merge
 
 
 API
