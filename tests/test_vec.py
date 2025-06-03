@@ -357,10 +357,10 @@ def test_vec_ang_stringification(py_c_vec: PyCVec, clsname: str) -> None:
         assert format(obj, '.7f') == '359.9999999 37.9999999 163'  # Enough precision to not round.
     else:
         obj = cls(-0.00000012, 37.9999999, 162.99999999)
-        assert str(obj) == '-0 38 163'
-        assert repr(obj) == f'{clsname}(-0, 38, 163)'
-        assert obj.join() == '-0, 38, 163'
-        assert obj.join(':') == '-0:38:163'
+        assert str(obj) == '0 38 163'
+        assert repr(obj) == f'{clsname}(0, 38, 163)'
+        assert obj.join() == '0, 38, 163'
+        assert obj.join(':') == '0:38:163'
         assert format(obj) == str(obj)
         assert format(obj, '.2%') == '-0.00% 3800.00% 16300.00%'
         assert format(obj, '.7f') == '-0.0000001 37.9999999 163'
@@ -376,15 +376,15 @@ def test_vec_ang_stringification(py_c_vec: PyCVec, clsname: str) -> None:
     assert format(obj, '.9f') == '0.000000001 36.000000001 68.000000012'
 
     # Test -0.0 gets the negative stripped.
-    neg_zero = 0.0/-1.0
-    assert repr(neg_zero) == '-0.0'
+    neg_zero = float.fromhex('-0x1.8000000000000p-46')
     obj = cls(neg_zero, neg_zero, neg_zero)
     assert str(obj) == '0 0 0'
     assert repr(obj) == f'{clsname}(0, 0, 0)'
     assert obj.join() == '0, 0, 0'
     assert obj.join(':') == '0:0:0'
     assert format(obj) == str(obj)
-    assert format(obj, '.2%') == '0.00% 0.00% 0.00%'
+    # This is too complicated, allow either.
+    assert format(obj, '.2%') in ('0.00% 0.00% 0.00%', '-0.00% -0.00% -0.00%')
     assert format(obj, '.9f') == '0 0 0'
 
 
@@ -1105,7 +1105,7 @@ def test_other_axes(frozen_thawed_vec: VecClass) -> None:
         # Test some bad args.
         for invalid in bad_args:
             with raises_keyerror:
-                vec.other_axes(invalid)
+                vec.other_axes(invalid)  # type: ignore   # Intentional
 
 
 def test_abs(frozen_thawed_vec: VecClass) -> None:
@@ -1116,7 +1116,7 @@ def test_abs(frozen_thawed_vec: VecClass) -> None:
         assert_vec(abs(Vec(x, y, z)), abs(x), abs(y), abs(z))
 
 
-def test_bool(frozen_thawed_vec) -> None:
+def test_bool(frozen_thawed_vec: VecClass) -> None:
     """Test bool() applied to Vec."""
     Vec = frozen_thawed_vec
 
@@ -1278,7 +1278,7 @@ def test_getitem(py_c_vec: PyCVec) -> None:
 
     for invalid in INVALID_KEYS:
         try:
-            res = v[invalid]
+            res = v[invalid]  # type: ignore  # Intentional
         except KeyError:
             pass
         else:

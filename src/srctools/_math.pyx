@@ -157,6 +157,10 @@ cdef Py_ssize_t trim_float(char *buf, Py_ssize_t size) noexcept:
     if size > 1 and buf[size - 1] == b'.':
         buf[size - 1] = 0
         size -= 1
+    if buf[0] == b'-' and buf[1] == b'0' and buf[2] == 0:
+        buf[0] = b'0'
+        buf[1] = 0
+        return 1
     return size
 
 

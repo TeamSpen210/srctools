@@ -130,11 +130,11 @@ def to_matrix(value: Union['AnyAngle', 'AnyMatrix', 'AnyVec', None]) -> 'Matrix 
 
 def format_float(x: float, places: int = 6) -> str:
     """Convert the specified float to a string, stripping off a ``.0`` if it ends with that."""
-    # Add zero to make -0 positive
-    result = f'{x+0.0:.{places}f}'
+    result = f'{x:.{places}f}'
     if '.' in result:
         result = result.rstrip('0').rstrip('.')
-    return result
+    # Rarely, values very close to 0 can become '-0'.
+    return '0' if result == '-0' else result
 
 
 def _coerce_float(value: Union[float, SupportsFloat, SupportsIndex]) -> float:
@@ -917,7 +917,7 @@ class VecBase:
 
         This strips off the ``.0`` if no decimal portion exists.
         """
-        return f'{format_float(self._x)}{delim}{format_float(self._y)}{delim}{format_float(self._z)}'
+        return f'{Py_format_float(self._x)}{delim}{Py_format_float(self._y)}{delim}{Py_format_float(self._z)}'
 
     def __str__(self) -> str:
         """Return the values, separated by spaces.
@@ -925,7 +925,7 @@ class VecBase:
         This is the main format in Valve's file formats.
         This strips off the ``.0`` if no decimal portion exists.
         """
-        return f'{format_float(self._x)} {format_float(self._y)} {format_float(self._z)}'
+        return f'{Py_format_float(self._x)} {Py_format_float(self._y)} {Py_format_float(self._z)}'
 
     def __format__(self, format_spec: str) -> str:
         """Control how the text is formatted.
@@ -935,17 +935,23 @@ class VecBase:
         if not format_spec:
             return str(self)
 
-        x = format(self._x + 0.0, format_spec)
+        x = format(self._x, format_spec)
         if '.' in x:
             x = x.rstrip('0').rstrip('.')
+        if x == '-0':
+            x = '0'
 
-        y = format(self._y + 0.0, format_spec)
+        y = format(self._y, format_spec)
         if '.' in y:
             y = y.rstrip('0').rstrip('.')
+        if y == '-0':
+            y = '0'
 
-        z = format(self._z + 0.0, format_spec)
+        z = format(self._z, format_spec)
         if '.' in z:
             z = z.rstrip('0').rstrip('.')
+        if z == '-0':
+            z = '0'
         return f'{x} {y} {z}'
 
     def __iter__(self) -> Iterator[float]:
@@ -1200,7 +1206,7 @@ class FrozenVec(VecBase):
 
     def __repr__(self) -> str:
         """Code required to reproduce this vector."""
-        return f"FrozenVec({format_float(self._x)}, {format_float(self._y)}, {format_float(self._z)})"
+        return f"FrozenVec({Py_format_float(self._x)}, {Py_format_float(self._y)}, {Py_format_float(self._z)})"
 
     def __reduce__(self) -> tuple[Callable[[float, float, float], 'FrozenVec'], Tuple3]:
         """Pickling support.
@@ -1383,7 +1389,7 @@ class Vec(VecBase):
 
     def __repr__(self) -> str:
         """Code required to reproduce this vector."""
-        return f"Vec({format_float(self._x)}, {format_float(self._y)}, {format_float(self._z)})"
+        return f"Vec({Py_format_float(self._x)}, {Py_format_float(self._y)}, {Py_format_float(self._z)})"
 
     def freeze(self) -> FrozenVec:
         """Return an immutable version of this vector."""
@@ -2376,7 +2382,7 @@ class AngleBase:
 
         This strips off the .0 if no decimal portion exists.
         """
-        return f'{format_float(self._pitch)}{delim}{format_float(self._yaw)}{delim}{format_float(self._roll)}'
+        return f'{Py_format_float(self._pitch)}{delim}{Py_format_float(self._yaw)}{delim}{Py_format_float(self._roll)}'
 
     def __str__(self) -> str:
         """Return the values, separated by spaces.
@@ -2385,7 +2391,7 @@ class AngleBase:
         vectors.
         This strips off the .0 if no decimal portion exists.
         """
-        return f"{format_float(self._pitch)} {format_float(self._yaw)} {format_float(self._roll)}"
+        return f"{Py_format_float(self._pitch)} {Py_format_float(self._yaw)} {Py_format_float(self._roll)}"
 
     def __format__(self, format_spec: str) -> str:
         """Control how the text is formatted."""
@@ -2688,7 +2694,7 @@ class FrozenAngle(AngleBase):
         return self
 
     def __repr__(self) -> str:
-        return f"FrozenAngle({format_float(self._pitch)}, {format_float(self._yaw)}, {format_float(self._roll)})"
+        return f"FrozenAngle({Py_format_float(self._pitch)}, {Py_format_float(self._yaw)}, {Py_format_float(self._roll)})"
 
 
 @final
@@ -2798,7 +2804,7 @@ class Angle(AngleBase):
         self._roll = float(roll) % 360 % 360
 
     def __repr__(self) -> str:
-        return f'Angle({format_float(self._pitch)}, {format_float(self._yaw)}, {format_float(self._roll)})'
+        return f'Angle({Py_format_float(self._pitch)}, {Py_format_float(self._yaw)}, {Py_format_float(self._roll)})'
 
     @classmethod
     @overload
@@ -3009,6 +3015,7 @@ _mk = _mk_vec
 # A little dance to preserve both the Cython and Python versions,
 # and choose an appropriate unprefixed version. Static analysis then
 # also assumes all three are the Python version.
+# These are mainly for testing.
 
 Cy_Vec = Vec
 Py_Vec = Vec
@@ -3034,6 +3041,8 @@ Cy_to_matrix = to_matrix
 Py_to_matrix = to_matrix
 Cy_lerp = lerp
 Py_lerp = lerp
+Py_format_float = format_float
+Cy_format_float = format_float
 
 # Do it this way, so static analysis ignores this.
 if not TYPE_CHECKING:
