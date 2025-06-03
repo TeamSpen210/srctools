@@ -23,7 +23,7 @@ AXES = {
 @pytest.mark.parametrize("axis", AXES, ids=AXES.get)
 def test_cube_clipping(axis: FrozenVec, file_regression: FileRegressionFixture) -> None:
     """Test clipping a cube in many different directions."""
-    vmf = VMF()
+    vmf = VMF(preserve_ids=True)  # So GC differences don't affect output.
     for i, dist in enumerate((-128, -32, 0, 32, 128)):
         brush = Geometry.from_brush(vmf.make_prism(
             Vec(-64, -64, -64), Vec(64, 64, 64),
@@ -55,7 +55,7 @@ def test_carve(datadir: Path, file_regression: FileRegressionFixture) -> None:
     We read a VMF, then for each ent subtract toolsclip from the rest.
     """
     with open(datadir / 'carve_tests.vmf') as f:
-        vmf = VMF.parse(Keyvalues.parse(f))
+        vmf = VMF.parse(Keyvalues.parse(f), preserve_ids=True)
     for ent in sorted(vmf.by_class['func_brush'], key=lambda ent: ent['targetname']):
         ent.remove()
         carvers = [
@@ -88,7 +88,7 @@ def test_merge(file_regression: FileRegressionFixture) -> None:
     We swap materials a few times to make visualisation easier. skip is brush A, clip is brush B,
     and hint is the clip plane.
     """
-    vmf = VMF()
+    vmf = VMF(preserve_ids=True)
     cube_template = vmf.make_prism(
         Vec(-64, -64, -64), Vec(64, 64, 64), 'tools/toolsskip',
     ).solid
