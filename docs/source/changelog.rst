@@ -18,6 +18,7 @@ Version (dev)
     * Deprecate ``bbox()`` helper, this doesn't actually exist.
     * Backward-incompatible change - renamed `HelperAppliesTo.tag <srctools.fgd.HelperAppliesTo.applies>`
       to ``.applies``.
+* Add :mod:`srctools.geometry`, which implements clipping and carving brushes.
 * Add extension ``editor`` (-only) flag to FGD keyvalue definitions.
 * :src-issue:`38`: Preserve entity/node/brush/etc IDs when parsing VMFs and BSP entities.
 * Treat ``ogg`` files as valid sounds in various places.
