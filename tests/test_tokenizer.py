@@ -1,4 +1,5 @@
-from typing import Any, Union, cast, TypeAlias, TypedDict, Literal
+from typing import Any, Union, cast, TypedDict, Literal
+from typing_extensions import TypeAlias
 
 from collections.abc import Callable, Iterable, Iterator
 from itertools import tee, zip_longest
