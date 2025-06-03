@@ -52,7 +52,7 @@ class Geometry:
         """Convert a VMF brush into a set of polygons with vertices computed."""
         polys = []
         for side in brush:
-            norm = side.normal()
+            norm = -side.normal()
             polys.append(Polygon(side, [], Plane(norm, Vec.dot(side.planes[0], norm))))
 
         return Geometry([
@@ -115,9 +115,9 @@ class Geometry:
         for poly in self.polys:
             for vert in poly.vertices:
                 off = plane.normal.dot(vert) - plane.dist
-                if off > 1e-6:
+                if off < -1e-6:
                     front_verts += 1
-                elif off < -1e-6:
+                elif off > 1e-6:
                     back_verts += 1
         if front_verts and not back_verts:
             return (None, self)
@@ -193,7 +193,7 @@ class Geometry:
         :param subtract: Brush to cut into the others. If you want multiple, call `!carve()` again.
         :returns: Result brushes. Brushes are omitted if fully carved, or may have been split.
         """
-        result = cls.carve(target, subtract)
+        result = cls.raw_carve(target, subtract)
         cls.unshare_faces(result)
         return result
 
@@ -202,7 +202,7 @@ class Geometry:
         for poly in self:
             for vert in poly.vertices:
                 off = plane.normal.dot(vert) - plane.dist
-                if off > 1e-6:
+                if off < -1e-6:
                     return False
         return True
 
@@ -287,17 +287,17 @@ class Polygon:
                 [
                     vert + orient.left(16),
                     vert,
-                    vert + orient.up(-16),
+                    vert + orient.up(16),
                 ],
                 mat=mat,
             )
             self.original.reset_uv()
-        elif Vec.dot(self.plane.normal, self.original.normal()) < 0.99:
+        elif Vec.dot(self.plane.normal, -self.original.normal()) < 0.99:
             # Not aligned, recalculate.
             self.original.planes = [
                 self.vertices[0].thaw(),
                 self.vertices[1].thaw(),
-                Vec.cross(self.plane.normal, self.vertices[1] - self.vertices[0])
+                Vec.cross(-self.plane.normal, self.vertices[1] - self.vertices[0])
             ]
             self.original.reset_uv()
         return self.original
@@ -321,7 +321,7 @@ class Polygon:
         count = len(self.vertices)
         for i, vert in enumerate(self.vertices):
             off = plane.normal.dot(vert) - plane.dist
-            if off > -1e-6:  # On safe side.
+            if off < 1e-6:  # On safe side.
                 new_verts.append(vert)
                 continue
             mid = plane.intersect_line(self.vertices[(i - 1) % count], vert)
