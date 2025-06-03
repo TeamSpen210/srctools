@@ -55,7 +55,7 @@ def test_carve(datadir: Path, file_regression: FileRegressionFixture) -> None:
     """
     with open(datadir / 'carve_tests.vmf') as f:
         vmf = VMF.parse(Keyvalues.parse(f))
-    for ent in list(vmf.by_class['func_brush']):
+    for ent in sorted(vmf.by_class['func_brush'], key=lambda ent: ent['targetname']):
         ent.remove()
         carvers = [
             brush for brush in ent.solids if
