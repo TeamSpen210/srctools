@@ -20,10 +20,20 @@ AXES = {
 }
 
 
+def reset_ids(vmf: VMF) -> None:
+    """To prevent GC timing from affecting IDs, reset all of them."""
+    for ent in vmf.entities:
+        ent.id = 1
+        for brush in ent.solids:
+            brush.id = 1
+            for side in brush.sides:
+                side.id = 1
+
+
 @pytest.mark.parametrize("axis", AXES, ids=AXES.get)
 def test_cube_clipping(axis: FrozenVec, file_regression: FileRegressionFixture) -> None:
     """Test clipping a cube in many different directions."""
-    vmf = VMF(preserve_ids=True)  # So GC differences don't affect output.
+    vmf = VMF()
     for i, dist in enumerate((-128, -32, 0, 32, 128)):
         brush = Geometry.from_brush(vmf.make_prism(
             Vec(-64, -64, -64), Vec(64, 64, 64),
@@ -42,6 +52,7 @@ def test_cube_clipping(axis: FrozenVec, file_regression: FileRegressionFixture) 
             solid.localise(offset)
             vmf.create_ent('func_brush', targetname=f'{name}_back').solids.append(solid)
 
+    reset_ids(vmf)
     file_regression.check(
         vmf.export(),
         basename=f'cube_clip_{AXES[axis]}',
@@ -55,7 +66,7 @@ def test_carve(datadir: Path, file_regression: FileRegressionFixture) -> None:
     We read a VMF, then for each ent subtract toolsclip from the rest.
     """
     with open(datadir / 'carve_tests.vmf') as f:
-        vmf = VMF.parse(Keyvalues.parse(f), preserve_ids=True)
+        vmf = VMF.parse(Keyvalues.parse(f))
     for ent in sorted(vmf.by_class['func_brush'], key=lambda ent: ent['targetname']):
         ent.remove()
         carvers = [
@@ -79,6 +90,7 @@ def test_carve(datadir: Path, file_regression: FileRegressionFixture) -> None:
         else:
             vmf.create_ent('info_null', targetname=ent['targetname'])
 
+    reset_ids(vmf)
     file_regression.check(vmf.export(), extension='.vmf')
 
 
@@ -88,7 +100,7 @@ def test_merge(file_regression: FileRegressionFixture) -> None:
     We swap materials a few times to make visualisation easier. skip is brush A, clip is brush B,
     and hint is the clip plane.
     """
-    vmf = VMF(preserve_ids=True)
+    vmf = VMF()
     cube_template = vmf.make_prism(
         Vec(-64, -64, -64), Vec(64, 64, 64), 'tools/toolsskip',
     ).solid
@@ -133,4 +145,5 @@ def test_merge(file_regression: FileRegressionFixture) -> None:
         for brush in ent.solids:
             brush.localise(offset)
 
+    reset_ids(vmf)
     file_regression.check(vmf.export(), extension='.vmf')
