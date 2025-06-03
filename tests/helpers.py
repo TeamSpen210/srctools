@@ -1,5 +1,5 @@
 """Helpers for performing tests."""
-from typing import Optional, TypeVar, Union
+from typing import Optional, TypeVar, Union, Protocol
 from typing_extensions import TypeAlias
 from collections.abc import Callable, Generator, Iterable, Iterator
 import builtins
@@ -190,6 +190,13 @@ if Py_Vec is Cy_Vec:
 else:
     parms = ['Python', 'Cython']
 
+CallT = TypeVar('CallT', bound=Callable[..., None])
+
+
+class Deco(Protocol):
+    def __call__(self, func: CallT) -> CallT:
+        ...
+
 
 @pytest.fixture(params=parms)
 def py_c_vec(request: pytest.FixtureRequest) -> Generator[None, None, None]:
@@ -205,7 +212,7 @@ def py_c_vec(request: pytest.FixtureRequest) -> Generator[None, None, None]:
             setattr(vec_mod, name, orig)
 
 
-def parameterize_cython(param: str, py_vers: object, cy_vers: object):
+def parameterize_cython(param: str, py_vers: object, cy_vers: object) -> Deco:
     """If the Cython version is available, parameterize the test function."""
     if py_vers is cy_vers:
         return pytest.mark.parametrize(param, [py_vers], ids=['Python'])

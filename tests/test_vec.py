@@ -1,4 +1,6 @@
 """Test the Vector object."""
+from collections.abc import Callable
+
 from typing import Union
 from typing_extensions import Literal, TypeAlias
 from fractions import Fraction
@@ -16,7 +18,7 @@ import pytest
 
 from helpers import *
 from srctools import math as vec_mod
-from srctools.math import Vec_tuple
+from srctools.math import Vec_tuple, VecUnion
 
 
 try:
@@ -51,7 +53,7 @@ def test_matching_apis(cls: str) -> None:
 
 
 @pytest.mark.parametrize('cls_name', ['AngleBase', 'VecBase', 'MatrixBase'])
-def test_noconstruct_base(py_c_vec, cls_name: str) -> None:
+def test_noconstruct_base(py_c_vec: PyCVec, cls_name: str) -> None:
     """Test the internal base classes cannot be instantiated."""
     cls = getattr(vec_mod, cls_name)
     with pytest.raises(TypeError):
@@ -59,7 +61,7 @@ def test_noconstruct_base(py_c_vec, cls_name: str) -> None:
 
 
 @parameterize_cython('lerp_func', vec_mod.Py_lerp, vec_mod.Cy_lerp)
-def test_scalar_lerp(lerp_func) -> None:
+def test_scalar_lerp(lerp_func: Callable[[float, float, float, float, float], float]) -> None:
     """Test the lerp function."""
     assert lerp_func(-4.0, -4.0, 10, 50.0, 80.0) == pytest.approx(50.0)
     assert lerp_func(10.0, -4.0, 10, 50.0, 80.0) == pytest.approx(80.0)
@@ -72,7 +74,7 @@ def test_scalar_lerp(lerp_func) -> None:
         lerp_func(30.0, 45.0, 45.0, 80, 90)  # In is equal
 
 
-def test_construction(py_c_vec, frozen_thawed_vec):
+def test_construction(py_c_vec: PyCVec, frozen_thawed_vec: VecClass) -> None:
     """Check various parts of the constructor.
 
     This tests Vec(), Vec.from_str() and parse_vec_str().
@@ -93,7 +95,7 @@ def test_construction(py_c_vec, frozen_thawed_vec):
         assert_vec(Vec([x, y, z]), x, y, z)
 
 
-def test_vec_copying(py_c_vec):
+def test_vec_copying(py_c_vec: PyCVec) -> None:
     """Test calling Vec() on an existing vec merely copies."""
     Vec = vec_mod.Vec
     FrozenVec = vec_mod.FrozenVec
@@ -125,7 +127,7 @@ def test_vec_copying(py_c_vec):
             assert FrozenVec(fv) is fv
 
 
-def test_vec_from_str(py_c_vec, frozen_thawed_vec: VecClass) -> None:
+def test_vec_from_str(py_c_vec: PyCVec, frozen_thawed_vec: VecClass) -> None:
     """Test the functionality of Vec.from_str() and parse_vec_str()."""
     parse_vec_str = vec_mod.parse_vec_str
     Vec = frozen_thawed_vec
@@ -183,7 +185,7 @@ def test_vec_as_tuple(frozen_thawed_vec: VecClass) -> None:
         assert tup.z == z
 
 
-def test_from_str_fails(py_c_vec, frozen_thawed_vec: VecClass) -> None:
+def test_from_str_fails(py_c_vec: PyCVec, frozen_thawed_vec: VecClass) -> None:
     """Check failures in Vec.from_str()"""
     # Note - does not pass defaults through unchanged, they're converted to floats!
     parse_vec_str = vec_mod.parse_vec_str
@@ -204,15 +206,15 @@ def test_from_str_fails(py_c_vec, frozen_thawed_vec: VecClass) -> None:
         assert val == Vec.from_str('34.5 38.4 -23 -38', z=val).z
 
 
-def test_thaw_freezing(py_c_vec: PyCVec):
+def test_thaw_freezing(py_c_vec: PyCVec) -> None:
     """Test methods to convert between frozen <> mutable."""
     Vec = vec_mod.Vec
     FrozenVec = vec_mod.FrozenVec
     # Other way around is not provided.
     with pytest.raises(AttributeError):
-        Vec.thaw()
+        Vec().thaw()  # type: ignore  # Intentional
     with pytest.raises(AttributeError):
-        FrozenVec.freeze()
+        FrozenVec().freeze()  # type: ignore  # Intentional
 
     for x, y, z in iter_vec(VALID_ZERONUMS):
         mut = Vec(x, y, z)
@@ -235,7 +237,7 @@ def test_thaw_freezing(py_c_vec: PyCVec):
     '[0.4 2.5 3.9]',
     '[   0.4 2.5 3.9 ]',
 ])
-def test_spaced_parsing(py_c_vec, value):
+def test_spaced_parsing(py_c_vec: PyCVec, value: str) -> None:
     """Test various edge cases regarding parsing."""
     parse_vec_str = vec_mod.parse_vec_str
     x, y, z = parse_vec_str(value, 1, 2, 3)
@@ -244,7 +246,7 @@ def test_spaced_parsing(py_c_vec, value):
     assert z == 3.9
 
 
-def test_parse_vec_passthrough(py_c_vec):
+def test_parse_vec_passthrough(py_c_vec: PyCVec) -> None:
     """Test that non-floats can be given to parse_vec_str()."""
     parse_vec_str = vec_mod.parse_vec_str
     obj1, obj2, obj3 = object(), object(), object()
@@ -303,7 +305,7 @@ def test_with_axes_conv(frozen_thawed_vec: VecClass) -> None:
 
 
 @pytest.mark.parametrize('clsname', ['Vec', 'FrozenVec', 'Angle', 'FrozenAngle'])
-def test_vec_ang_stringification(py_c_vec, clsname: str) -> None:
+def test_vec_ang_stringification(py_c_vec: PyCVec, clsname: str) -> None:
     """Test string methods for both angles and vectors."""
     cls: Union[VecClass, AngleClass] = getattr(vec_mod, clsname)
     # Test:
@@ -697,7 +699,7 @@ def test_vec_props(frozen_thawed_vec: VecClass, axis: str, index: int, u: str, v
             assert vec[v] == other, (vec, targ, other)
 
 
-def test_vec_to_vec(frozen_thawed_vec: VecClass):
+def test_vec_to_vec(frozen_thawed_vec: VecClass) -> None:
     """Check that Vec() +/- Vec() does the correct thing.
 
     For +, -, two Vectors apply the operations to all values.
@@ -710,7 +712,7 @@ def test_vec_to_vec(frozen_thawed_vec: VecClass):
         ('-', op.sub, op.isub),
     ]
 
-    def test(x1, y1, z1, x2, y2, z2):
+    def test(x1: float, y1: float, z1: float, x2: float, y2: float, z2: float) -> None:
         """Check a Vec pair for addition and subtraction."""
         vec1 = Vec(x1, y1, z1)
         vec2 = Vec(x2, y2, z2)
@@ -824,7 +826,7 @@ def test_vec_to_vec(frozen_thawed_vec: VecClass):
 
 
 @pytest.mark.parametrize('op_func', [op.add, op.sub])
-def test_vec_to_vec_types(py_c_vec: PyCVec, op_func) -> None:
+def test_vec_to_vec_types(py_c_vec: PyCVec, op_func: Callable[[VecUnion, VecUnion], VecUnion]) -> None:
     """Verify the correct types are returned when using differing types."""
     Vec = vec_mod.Vec
     FrozenVec = vec_mod.FrozenVec
@@ -835,7 +837,7 @@ def test_vec_to_vec_types(py_c_vec: PyCVec, op_func) -> None:
     assert type(op_func(FrozenVec(1, 2, 3), FrozenVec(1, 2, 3))) is FrozenVec
 
 
-def test_scalar_zero(py_c_vec: PyCVec):
+def test_scalar_zero(py_c_vec: PyCVec) -> None:
     """Check zero behaviour with division ops."""
     Vec = vec_mod.Vec
     for x, y, z in iter_vec(VALID_NUMS):
@@ -881,7 +883,7 @@ def test_scalar_zero(py_c_vec: PyCVec):
             vec %= 0.0
 
 
-def test_divmod_vec_scalar(frozen_thawed_vec):
+def test_divmod_vec_scalar(frozen_thawed_vec: VecClass) -> None:
     """Test divmod(vec, scalar)."""
     Vec = frozen_thawed_vec
 
@@ -892,7 +894,7 @@ def test_divmod_vec_scalar(frozen_thawed_vec):
             assert_vec(mod, x % num, y % num, z % num, type=Vec)
 
 
-def test_divmod_scalar_vec(frozen_thawed_vec):
+def test_divmod_scalar_vec(frozen_thawed_vec: VecClass) -> None:
     """Test divmod(scalar, vec)."""
     Vec = frozen_thawed_vec
 
@@ -914,7 +916,11 @@ def test_divmod_scalar_vec(frozen_thawed_vec):
     ('%=', op.imod),
     ('divmod', divmod),
 ])
-def test_vector_mult_fail(frozen_thawed_vec, name, func):
+def test_vector_mult_fail(
+    frozen_thawed_vec: VecClass,
+    name: str,
+    func: Callable[[VecUnion, VecUnion], object],
+) -> None:
     """Test *, /, //, %, divmod always fails between vectors."""
     Vec = frozen_thawed_vec
 
@@ -1019,7 +1025,7 @@ def test_order(py_c_vec: PyCVec) -> None:
                         pytest.fail(f'{op_func}, {float_func}, {num}, {num2}')
 
 
-def test_binop_fail(frozen_thawed_vec) -> None:
+def test_binop_fail(frozen_thawed_vec: VecClass) -> None:
     """Test binary operations with invalid operands."""
     Vec = frozen_thawed_vec
 
@@ -1047,7 +1053,7 @@ def test_binop_fail(frozen_thawed_vec) -> None:
             pytest.raises(TypeError, operation, fail_object, vec)
 
 
-def test_axis(frozen_thawed_vec) -> None:
+def test_axis(frozen_thawed_vec: VecClass) -> None:
     """Test the Vec.axis() function."""
     Vec = frozen_thawed_vec
     handler = pytest.raises(ValueError, match='not an on-axis vector')
@@ -1086,7 +1092,7 @@ def test_axis(frozen_thawed_vec) -> None:
         Vec().axis()
 
 
-def test_other_axes(frozen_thawed_vec) -> None:
+def test_other_axes(frozen_thawed_vec: VecClass) -> None:
     """Test Vec.other_axes()."""
     Vec = frozen_thawed_vec
 
@@ -1102,7 +1108,7 @@ def test_other_axes(frozen_thawed_vec) -> None:
                 vec.other_axes(invalid)
 
 
-def test_abs(frozen_thawed_vec) -> None:
+def test_abs(frozen_thawed_vec: VecClass) -> None:
     """Test the function of abs(Vec)."""
     Vec = frozen_thawed_vec
 
@@ -1128,7 +1134,7 @@ def test_bool(frozen_thawed_vec) -> None:
         assert Vec(val, val, val)
 
 
-def test_hash(py_c_vec) -> None:
+def test_hash(py_c_vec: PyCVec) -> None:
     """Test hashing and dict key use for FrozenVec."""
     FrozenVec = vec_mod.FrozenVec
     Vec = vec_mod.Vec
@@ -1148,7 +1154,7 @@ def test_hash(py_c_vec) -> None:
     assert test_dict[Vec(12.8, -2.3, 12).freeze()] == 'b'
 
 
-def test_iter_line(frozen_thawed_vec) -> None:
+def test_iter_line(frozen_thawed_vec: VecClass) -> None:
     """Test Vec.iter_line()"""
     Vec = frozen_thawed_vec
     for pos, x in zip(Vec(4, 5.82, -6.35).iter_line(Vec(10, 5.82, -6.35), 1), range(4, 11)):
@@ -1159,7 +1165,7 @@ def test_iter_line(frozen_thawed_vec) -> None:
         assert_vec(pos, 3.78, 12.98, z + 0.35, type=Vec)
 
 
-def test_iter_grid(frozen_thawed_vec):
+def test_iter_grid(frozen_thawed_vec: VecClass) -> None:
     """Test Vec.iter_grid()."""
     Vec = frozen_thawed_vec
     it = Vec.iter_grid(Vec(35, 59.99999, 90), Vec(40, 70, 110.001), 5)
@@ -1229,7 +1235,7 @@ INVALID_KEYS = [
 ]
 
 
-def test_getitem(py_c_vec):
+def test_getitem(py_c_vec: PyCVec) -> None:
     """Test vec[x] with various args."""
     Vec = vec_mod.Vec
     v = Vec(1.5, 3.5, -8.7)
@@ -1279,7 +1285,7 @@ def test_getitem(py_c_vec):
             pytest.fail(f"Key succeeded: {invalid!r} -> {res!r}")
 
 
-def test_setitem(py_c_vec) -> None:
+def test_setitem(py_c_vec: PyCVec) -> None:
     """Test vec[x]=y with various args."""
     Vec = vec_mod.Vec
 
@@ -1309,7 +1315,7 @@ def test_setitem(py_c_vec) -> None:
     assert_vec(vec, 0, 0, 0, 'Invalid number was stored!')
 
 
-def test_vec_constants(frozen_thawed_vec) -> None:
+def test_vec_constants(frozen_thawed_vec: VecClass) -> None:
     """Check some of the constants assigned to Vec."""
     Vec = frozen_thawed_vec
 
@@ -1378,7 +1384,7 @@ ROUND_VALS = [
 ]
 
 
-def test_round(frozen_thawed_vec):
+def test_round(frozen_thawed_vec: VecClass) -> None:
     """Test round(Vec)."""
     Vec = frozen_thawed_vec
 
@@ -1404,7 +1410,7 @@ MINMAX_VALUES = [
 MINMAX_VALUES += [(b, a) for a, b in MINMAX_VALUES]
 
 
-def test_minmax(py_c_vec):
+def test_minmax(py_c_vec: PyCVec) -> None:
     """Test Vec.min() and Vec.max()."""
     Vec = vec_mod.Vec
 
@@ -1429,7 +1435,7 @@ def test_minmax(py_c_vec):
             assert vec_a[axis] == max_val, (a, b, axis, max_val)
 
 
-def test_mut_copy(py_c_vec):
+def test_mut_copy(py_c_vec: PyCVec) -> None:
     """Test copying Vectors."""
     Vec = vec_mod.Vec
     FrozenVec = vec_mod.FrozenVec
@@ -1464,7 +1470,7 @@ def test_mut_copy(py_c_vec):
     assert frozen is copy.deepcopy(frozen)
 
 
-def test_pickle(frozen_thawed_vec):
+def test_pickle(frozen_thawed_vec: VecClass) -> None:
     """Test pickling and unpickling Vectors."""
     Vec = frozen_thawed_vec
 
@@ -1490,19 +1496,19 @@ def test_bbox(frozen_thawed_vec: VecClass) -> None:
 
     # No arguments
     with raises_typeerror:
-        Vec.bbox()
+        Vec.bbox()  # type: ignore  # Intentional
 
     # Non-iterable
     with raises_typeerror:
-        Vec.bbox(None)
+        Vec.bbox(None)  # type: ignore  # Intentional
 
     # Starting with non-vector.
     with raises_typeerror:
-        Vec.bbox(None, Vec())
+        Vec.bbox(None, Vec())  # type: ignore  # Intentional
 
     # Containing non-vector.
     with raises_typeerror:
-        Vec.bbox(Vec(), None)
+        Vec.bbox(Vec(), None)  # type: ignore  # Intentional
 
     # Empty iterable.
     with pytest.raises(ValueError, match=re.compile(r'empty', re.IGNORECASE)):
@@ -1510,13 +1516,13 @@ def test_bbox(frozen_thawed_vec: VecClass) -> None:
 
     # Iterable starting with non-vector.
     with raises_typeerror:
-        Vec.bbox([None])
+        Vec.bbox([None])  # type: ignore  # Intentional
 
     # Iterable containing non-vector.
     with raises_typeerror:
-        Vec.bbox([Vec(), None])
+        Vec.bbox([Vec(), None])  # type: ignore  # Intentional
 
-    def test(*values):
+    def test(*values: VecUnion) -> None:
         """Test these values work."""
         min_x = min(v.x for v in values)
         min_y = min(v.y for v in values)
@@ -1544,7 +1550,7 @@ def test_bbox(frozen_thawed_vec: VecClass) -> None:
 
 
 # noinspection PyDeprecation
-def test_vmf_rotation(datadir: Path, py_c_vec: PyCVec):
+def test_vmf_rotation(datadir: Path, py_c_vec: PyCVec) -> None:
     """Complex test.
 
     Use a compiled map to check the functionality of Vec.rotate().
@@ -1579,7 +1585,7 @@ def test_vmf_rotation(datadir: Path, py_c_vec: PyCVec):
             assert_vec(Vec(local_vec).rotate(*angles), x, y, z, msg, tol=1e-3, type=Vec)
 
 
-def test_cross_product_axes(frozen_thawed_vec: VecClass):
+def test_cross_product_axes(frozen_thawed_vec: VecClass) -> None:
     """Check all the cross product identities."""
     Vec = frozen_thawed_vec
 
@@ -1591,7 +1597,7 @@ def test_cross_product_axes(frozen_thawed_vec: VecClass):
     assert_vec(Vec.cross(Vec(z=1), Vec(y=1)), -1, 0, 0)
 
 
-def test_cross_types(py_c_vec) -> None:
+def test_cross_types(py_c_vec: PyCVec) -> None:
     """Test mixing types gives the right classes."""
     Vec = vec_mod.Vec
     FrozenVec = vec_mod.FrozenVec

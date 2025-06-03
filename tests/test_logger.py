@@ -1,5 +1,8 @@
 """Test the logging system."""
 from logging import Logger, getLogger as stdlib_getlogger
+
+from pytest_regressions.file_regression import FileRegressionFixture
+import pytest
 import sys
 
 
@@ -10,7 +13,11 @@ def function(logger: Logger) -> None:
     logger.info('Finishing.')
 
 
-def test_logging_output(capsys, file_regression, monkeypatch) -> None:
+def test_logging_output(
+    capsys: pytest.CaptureFixture,
+    file_regression: FileRegressionFixture,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """Test the output of logging to the console."""
     from srctools.logger import context, get_logger, init_logging
 

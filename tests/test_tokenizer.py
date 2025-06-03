@@ -1,6 +1,6 @@
-from typing import Any, Union, cast, TypedDict, Literal
+from typing import Any, Union, cast, TypeAlias, TypedDict, Literal
 
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Iterable, Iterator
 from itertools import tee, zip_longest
 from unittest.mock import Mock
 import codecs
@@ -26,9 +26,11 @@ IS_CPYTHON = platform.python_implementation() == 'CPython'
 ESCAPE_CHARS = "\n \t \v \b \r \f \a \\ \' \""
 ESCAPE_ENCODED = r"\n \t \v \b \r \f \a \\ \' " + r'\"'
 
+TokenList: TypeAlias = list[Union[Token, tuple[Token, str]]]
+
 # The correct result of parsing prop_parse_test.
 # Either the token, or token + value (which must be correct).
-prop_parse_tokens: list[Union[Token, tuple[Token, str]]] = [
+prop_parse_tokens: TokenList = [
     T.NEWLINE,
     T.NEWLINE,
     T.NEWLINE,
@@ -121,7 +123,7 @@ noprop_parse_test = """
 { ]]{ }}}[[ {{] = "test" "ing" == vaLUE= 4 6
 """
 
-noprop_parse_tokens: list[Union[Token, tuple[Token, str]]] = [
+noprop_parse_tokens: TokenList = [
     T.NEWLINE,
     (T.DIRECTIVE, "letter_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz"), T.NEWLINE,
     # Test all control characters are valid.
@@ -166,7 +168,7 @@ del parms, ids
 
 def check_tokens(
     tokenizer: Iterable[tuple[Token, str]],  # Iterable so a list can be passed to check.
-    tokens: Sequence[Union[Token, tuple[Token, str]]],
+    tokens: TokenList,
 ) -> None:
     """Check the tokenizer produces the given tokens.
 
@@ -408,7 +410,7 @@ def test_bom(py_c_token: type[Tokenizer]) -> None:
     }
 '''.replace('__', bom)  # Check the BOM can be inside the contents.
 
-    tokens = [
+    tokens: TokenList = [
         (T.STRING, "blah"), T.NEWLINE,
         T.BRACE_OPEN, T.NEWLINE,
         (T.STRING, "tes" + bom + "t "), (T.STRING, "2"), T.NEWLINE,
@@ -442,7 +444,7 @@ def test_bom(py_c_token: type[Tokenizer]) -> None:
 
 def test_universal_newlines(py_c_token: type[Tokenizer]) -> None:
     r"""Test that \r characters are replaced by \n, even in direct strings."""
-    tokens = [
+    tokens: TokenList = [
         (Token.STRING, 'Line'),
         (Token.STRING, 'one\ntwo'),
         Token.NEWLINE,
@@ -917,7 +919,7 @@ def test_tok_error_messages(py_c_token: type[Tokenizer], token: Token) -> None:
     assert tok.error(token) == TokenSyntaxError(fmt.replace('%', ''), 'fname', 23)
     assert tok.error(token, 'the value') == TokenSyntaxError(fmt.replace('%', 'the value'), 'fname', 23)
     with pytest.raises(TypeError):
-        tok.error(token, 'val1', 'val2')
+        tok.error(token, 'val1', 'val2')  # type: ignore # Intentionally invalid
 
 
 def test_unicode_error_wrapping(py_c_token: type[Tokenizer]) -> None:
@@ -938,7 +940,7 @@ def test_unicode_error_wrapping(py_c_token: type[Tokenizer]) -> None:
 def test_early_binary_arg(py_c_token: type[Tokenizer]) -> None:
     """Test that passing bytes values is caught before looping."""
     with pytest.raises(TypeError, match=r'^Cannot parse binary data! Decode'):
-        py_c_token(b'test')
+        py_c_token(b'test')  # type: ignore # Intentionally invalid
 
 
 ILLEGAL_VALS = [
@@ -949,7 +951,7 @@ ILLEGAL_VALS = [
 
 
 @pytest.mark.parametrize('value, match', ILLEGAL_VALS)
-def test_illegal_values_iter(py_c_token: type[Tokenizer], value: object, match: str) -> None:
+def test_illegal_values_iter(py_c_token: type[Tokenizer], value: Any, match: str) -> None:
     """Test that passing various invalid values are disallowed."""
     res = []
     with pytest.raises(TypeError, match=match):
@@ -960,7 +962,7 @@ def test_illegal_values_iter(py_c_token: type[Tokenizer], value: object, match: 
 
 
 @pytest.mark.parametrize('value, match', ILLEGAL_VALS)
-def test_illegal_values_file(py_c_token: type[Tokenizer], value: object, match: str) -> None:
+def test_illegal_values_file(py_c_token: type[Tokenizer], value: Any, match: str) -> None:
     """Test that passing various invalid values are disallowed."""
     data = iter([", ", "= ", value, ":"])
 
@@ -1084,10 +1086,10 @@ def test_subclass_base(Tok: type[BaseTokenizer]) -> None:
             else:
                 return tok, TOK_VALS[tok]
 
-    check_tokens(Sub(noprop_parse_tokens), noprop_parse_tokens)  # type: ignore[no-untyped-call]
+    check_tokens(Sub(noprop_parse_tokens), noprop_parse_tokens)
 
     # Do some peeks, pushbacks, etc to check they work.
-    tok = Sub(prop_parse_tokens)  # type: ignore[no-untyped-call]
+    tok = Sub(prop_parse_tokens)
     it = iter(tok)
     assert next(it) == (Token.NEWLINE, '\n')
     assert next(tok.skipping_newlines()) == (Token.STRING, 'Root1')

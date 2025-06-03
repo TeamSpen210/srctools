@@ -28,7 +28,7 @@ else:
 
 
 @pytest.fixture(params=parms, ids=ids)
-def py_c_token(request) -> Generator[type[Tokenizer], None, None]:
+def py_c_token(request: pytest.FixtureRequest) -> Generator[type[Tokenizer], None, None]:
     """Run the test twice, for the Python and C versions of Tokenizer."""
     orig_tok = kv_mod.Tokenizer, kv_mod.BaseTokenizer  # type: ignore[attr-defined]
     try:
