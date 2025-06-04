@@ -168,39 +168,38 @@ class Vec_tuple(NamedTuple):
     z: float
 
 
-if TYPE_CHECKING:
-    class _InvAxis(Protocol):
-        """Dummy class to type-check Vec.INV_AXIS"""
-        @overload
-        def __getitem__(self, item: Literal['x']) -> tuple[Literal['y'], Literal['z']]: ...
-        @overload
-        def __getitem__(self, item: Literal['y']) -> tuple[Literal['x'], Literal['z']]: ...
-        @overload
-        def __getitem__(self, item: Literal['z']) -> tuple[Literal['x'], Literal['y']]: ...
+class _InvAxis(Protocol):
+    """Dummy class to type-check Vec.INV_AXIS"""
+    def __len__(self) -> Literal[9]: ...
+    @overload
+    def __getitem__(self, item: Literal['x']) -> tuple[Literal['y'], Literal['z']]: ...
+    @overload
+    def __getitem__(self, item: Literal['y']) -> tuple[Literal['x'], Literal['z']]: ...
+    @overload
+    def __getitem__(self, item: Literal['z']) -> tuple[Literal['x'], Literal['y']]: ...
 
-        @overload
-        def __getitem__(self, item: tuple[Literal['y'], Literal['z']]) -> Literal['x']: ...
-        @overload
-        def __getitem__(self, item: tuple[Literal['z'], Literal['y']]) -> Literal['x']: ...
+    @overload
+    def __getitem__(self, item: tuple[Literal['y'], Literal['z']]) -> Literal['x']: ...
+    @overload
+    def __getitem__(self, item: tuple[Literal['z'], Literal['y']]) -> Literal['x']: ...
 
-        @overload
-        def __getitem__(self, item: tuple[Literal['x'], Literal['z']]) -> Literal['y']: ...
-        @overload
-        def __getitem__(self, item: tuple[Literal['z'], Literal['x']]) -> Literal['y']: ...
+    @overload
+    def __getitem__(self, item: tuple[Literal['x'], Literal['z']]) -> Literal['y']: ...
+    @overload
+    def __getitem__(self, item: tuple[Literal['z'], Literal['x']]) -> Literal['y']: ...
 
-        @overload
-        def __getitem__(self, item: tuple[Literal['x'], Literal['y']]) -> Literal['z']: ...
-        @overload
-        def __getitem__(self, item: tuple[Literal['y'], Literal['x']]) -> Literal['z']: ...
+    @overload
+    def __getitem__(self, item: tuple[Literal['x'], Literal['y']]) -> Literal['z']: ...
+    @overload
+    def __getitem__(self, item: tuple[Literal['y'], Literal['x']]) -> Literal['z']: ...
 
-        @overload
-        def __getitem__(self, item: str) -> tuple[str, str]: ...
-        @overload
-        def __getitem__(self, item: tuple[str, str]) -> str: ...
+    @overload
+    def __getitem__(self, item: str) -> tuple[str, str]: ...
+    @overload
+    def __getitem__(self, item: tuple[str, str]) -> str: ...
 
-        def __getitem__(self, item: Union[tuple[str, str], str]) -> Union[tuple[str, str], str]: ...
-else:
-    globals()['_InvAxis'] = None
+    def __getitem__(self, item: Union[tuple[str, str], str]) -> Union[tuple[str, str], str]: ...
+
 
 # Use template code to reduce duplication in the various magic number methods.
 
@@ -463,36 +462,36 @@ class VecBase:
     def bbox(cls, point: Iterable['VecBase'], /) -> tuple[Self, Self]: ...
     @classmethod
     @overload
-    def bbox(cls, /, *points: 'VecBase') -> tuple[Self, Self]: ...
+    def bbox(cls, point: 'VecBase', /, *points: 'VecBase') -> tuple[Self, Self]: ...
 
     @classmethod
-    def bbox(cls, /, *points: Union[Iterable['VecBase'], 'VecBase']) -> tuple[Self, Self]:
+    # Should be *points: *tuple[Iterable[VecBase]] | *tuple[VecBase, ...], but can't unpack union.
+    # Assign to the correct type in func body.
+    def bbox(cls, /, *points_arg: Any) -> tuple[Self, Self]:
         """Compute the bounding box for a set of points.
 
         Pass either several Vecs, or an iterable of Vecs.
         Returns a ``(min, max)`` :external:py:class:`tuple`.
         """
+        points: Union[tuple[Iterable[VecBase]], tuple[VecBase, ...]] = points_arg
+        points_iter: Iterator[VecBase]
         # Allow passing a single iterable, but also handle a single Vec.
         # The error messages match those produced by `min`/`max`.
-        first: VecBase
-        point_coll: Iterable[VecBase]
+        if len(points) == 0:
+            raise TypeError('Vec.bbox() expected at least 1 argument, got 0.')
         if len(points) == 1 and not isinstance(points[0], VecBase):
+            points_iter = iter(points[0])
             try:
-                [[first, *point_coll]] = points  # type: ignore # len() can't narrow
-            except ValueError:
-                raise ValueError('Vec.bbox() arg is an empty sequence') from None
+                first = next(points_iter)
+            except StopIteration:
+                raise TypeError('Vec.bbox() arg is an empty sequence') from None
         else:
-            try:
-                first, *point_coll = points  # type: ignore # len() can't narrow
-            except ValueError:
-                raise TypeError(
-                    'Vec.bbox() expected at '
-                    'least 1 argument, got 0.'
-                ) from None
+            points_iter = iter(points)
+            first = next(points_iter)
 
         bbox_min: Py_Vec = Py_Vec(first)
         bbox_max = bbox_min.copy()
-        for point in point_coll:
+        for point in points_iter:
             bbox_min.min(point)
             bbox_max.max(point)
         if cls is Py_FrozenVec:

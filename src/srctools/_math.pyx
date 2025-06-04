@@ -6,6 +6,7 @@ from cpython.mem cimport PyMem_Free, PyMem_Malloc
 from cpython.object cimport Py_EQ, Py_GE, Py_GT, Py_LE, Py_LT, Py_NE, PyObject, PyTypeObject
 from cpython.ref cimport Py_INCREF
 from cpython.unicode cimport PyUnicode_AsUTF8AndSize
+from cpython.iterator cimport PyIter_Next
 from libc cimport math
 from libc.math cimport M_PI, NAN, cos, isnan, llround, sin, tan
 from libc.stdint cimport uint16_t, uint32_t, uint_fast8_t
@@ -1217,35 +1218,35 @@ cdef class VecBase:
             try:
                 first = next(points_iter)
             except StopIteration:
-                raise ValueError('Empty iterator!') from None
+                raise ValueError('Vec.bbox() arg is an empty sequence') from None
 
             conv_vec(&bbox_min.val, first, scalar=False)
             bbox_max.val = bbox_min.val
 
-            try:
-                while True:
+            while True:
+                try:
                     point = next(points_iter)
-                    conv_vec(&vec, point, scalar=False)
+                except StopIteration:
+                    break
+                conv_vec(&vec, point, scalar=False)
 
-                    if bbox_max.val.x < vec.x:
-                        bbox_max.val.x = vec.x
+                if bbox_max.val.x < vec.x:
+                    bbox_max.val.x = vec.x
 
-                    if bbox_max.val.y < vec.y:
-                        bbox_max.val.y = vec.y
+                if bbox_max.val.y < vec.y:
+                    bbox_max.val.y = vec.y
 
-                    if bbox_max.val.z < vec.z:
-                        bbox_max.val.z = vec.z
+                if bbox_max.val.z < vec.z:
+                    bbox_max.val.z = vec.z
 
-                    if bbox_min.val.x > vec.x:
-                        bbox_min.val.x = vec.x
+                if bbox_min.val.x > vec.x:
+                    bbox_min.val.x = vec.x
 
-                    if bbox_min.val.y > vec.y:
-                        bbox_min.val.y = vec.y
+                if bbox_min.val.y > vec.y:
+                    bbox_min.val.y = vec.y
 
-                    if bbox_min.val.z > vec.z:
-                        bbox_min.val.z = vec.z
-            except StopIteration:
-                pass
+                if bbox_min.val.z > vec.z:
+                    bbox_min.val.z = vec.z
         elif len(points) == 0:
             raise TypeError(
                 'Vec.bbox() expected at '
