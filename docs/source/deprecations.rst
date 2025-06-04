@@ -29,8 +29,6 @@ srctools.bsp
 
 .. automethod:: BSP.write_static_props
 
-.. autoproperty:: Solid.cordon_solid
-
 .. autoproperty:: VisTree.plane_norm
 
 .. autoproperty:: VisTree.plane_dist
@@ -170,3 +168,5 @@ srctools.vmf
 .. py:currentmodule:: srctools.vmf
 
 .. automethod:: Side.plane_desc
+
+.. autoproperty:: Solid.cordon_solid
