@@ -2,6 +2,7 @@ from typing import Any, Union, cast, TypedDict, Literal
 from typing_extensions import TypeAlias
 
 from collections.abc import Callable, Iterable, Iterator
+from enum import Enum
 from itertools import tee, zip_longest
 from unittest.mock import Mock
 import codecs
@@ -162,9 +163,14 @@ else:
 @pytest.fixture(params=parms, ids=ids)
 def py_c_token(request: Any) -> type[Tokenizer]:
     """Run the test twice, for the Python and C versions."""
-    return request.param
+    return request.param  # type: ignore[no-any-return]
 
 del parms, ids
+
+
+class Sentinel(Enum):
+    """Needs to be an enum to allow narrowing."""
+    VALUE = ''
 
 
 def check_tokens(
@@ -178,18 +184,17 @@ def check_tokens(
     # Don't show in pytest tracebacks.
     __tracebackhide__ = True
 
-    sentinel = object()
     tokenizer_iter, tokenizer_backup = tee(tokenizer, 2)
     tok_test_iter = iter(tokens)
-    for i, (token, comp_token) in enumerate(zip_longest(tokenizer_iter, tok_test_iter, fillvalue=sentinel), start=1):
+    for i, (token, comp_token) in enumerate(zip_longest(tokenizer_iter, tok_test_iter, fillvalue=Sentinel.VALUE), start=1):
         # Check if either is too short - we need zip_longest() for that.
-        if token is sentinel:
-            pytest.fail(
+        if token is Sentinel.VALUE:
+            raise pytest.fail(
                 f'{i}: Tokenizer ended early - needed {[comp_token, *tok_test_iter]}, '
                 f'got {list(tokenizer_backup)}!'
             )
-        if comp_token is sentinel:
-            pytest.fail(f'{i}: Tokenizer had too many values - extra = {[token, *tokenizer_iter]}!')
+        if comp_token is Sentinel.VALUE:
+            raise pytest.fail(f'{i}: Tokenizer had too many values - extra = {[token, *tokenizer_iter]}!')
         assert len(token) == 2
         assert isinstance(token, tuple)
         if isinstance(comp_token, tuple):

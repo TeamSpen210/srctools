@@ -92,8 +92,9 @@ def test_plane_type_invalidation() -> None:
     """Planes have a type field which will be lazily recalculated."""
     plane = Plane(Vec(1, 0, 0), 32)
     assert plane.type is PlaneType.X
+    # Mypy doesn't know the assignment invalidates narrowing.
     plane.normal = Vec(0, 1, 0)
-    assert plane.type is PlaneType.Y
+    assert plane.type is PlaneType.Y  # type: ignore[comparison-overlap]
     plane.type = PlaneType.ANY_Z
     assert plane.type is PlaneType.ANY_Z
     plane.normal = Vec(0, -0.9, 0.1)

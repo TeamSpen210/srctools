@@ -32,7 +32,7 @@ __all__ = [
     'Py_Matrix', 'Py_FrozenMatrix', 'Cy_Matrix', 'Cy_FrozenMatrix', 
     'Py_parse_vec_str', 'Cy_parse_vec_str',
     'VecClass', 'AngleClass', 'MatrixClass',
-    'assert_vec', 'assert_ang', 'assert_rot',
+    'assert_vec', 'assert_vec_vec', 'assert_ang', 'assert_rot',
     'frozen_thawed_vec', 'frozen_thawed_angle', 'frozen_thawed_matrix',
 ]
 
@@ -153,6 +153,18 @@ def assert_vec(
     pytest.fail(new_msg)
 
 
+def assert_vec_vec(
+    vec: vec_mod.VecBase,
+    desired: vec_mod.VecBase,
+    msg: object = '',
+    tol: float = EPSILON,
+    type: Optional[type] = None,
+) -> None:
+    """Assert one vec is equal to the expected one."""
+    __tracebackhide__ = True
+    assert_vec(vec, desired.x, desired.y, desired.z, msg, tol, type)
+
+
 def assert_rot(
     rot: vec_mod.MatrixBase, exp_rot: vec_mod.MatrixBase,
     msg: object = '', type: Optional[type] = None,
@@ -194,7 +206,7 @@ CallT = TypeVar('CallT', bound=Callable[..., None])
 
 
 class Deco(Protocol):
-    def __call__(self, func: CallT) -> CallT:
+    def __call__(self, func: CallT, /) -> CallT:
         ...
 
 
@@ -223,16 +235,16 @@ def parameterize_cython(param: str, py_vers: object, cy_vers: object) -> Deco:
 @pytest.fixture(params=['Vec', 'FrozenVec'])
 def frozen_thawed_vec(py_c_vec: PyCVec, request: pytest.FixtureRequest) -> VecClass:
     """Support testing both mutable and immutable vectors."""
-    return getattr(vec_mod, request.param)
+    return getattr(vec_mod, request.param)  # type: ignore[no-any-return]
 
 
 @pytest.fixture(params=['Angle', 'FrozenAngle'])
 def frozen_thawed_angle(py_c_vec: PyCVec, request: pytest.FixtureRequest) -> AngleClass:
     """Support testing both mutable and immutable angles."""
-    return getattr(vec_mod, request.param)
+    return getattr(vec_mod, request.param)  # type: ignore[no-any-return]
 
 
 @pytest.fixture(params=['Matrix', 'FrozenMatrix'])
 def frozen_thawed_matrix(py_c_vec: PyCVec, request: pytest.FixtureRequest) -> MatrixClass:
     """Support testing both mutable and immutable matrices."""
-    return getattr(vec_mod, request.param)
+    return getattr(vec_mod, request.param)  # type: ignore[no-any-return]

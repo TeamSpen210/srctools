@@ -134,7 +134,7 @@ def test_load_header_only(
         vtf = VTF.read(f, header_only=True)
         assert vtf.format is fmt
     # Check loading doesn't need the stream, it's not using them.
-    img = vtf.get().to_PIL()
+    img: Image.Image = vtf.get().to_PIL()
     # Check image is 64x64 and fully black.
     assert img.size == (64, 64)
     assert img.getextrema() == ((0, 0), (0, 0), (0, 0), (255, 255))

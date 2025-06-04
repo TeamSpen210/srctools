@@ -142,8 +142,8 @@ def test_merge(file_regression: FileRegressionFixture) -> None:
             ent.solids.append(solid := merged.rebuild(vmf, 'tools/toolsnodraw'))
             solid.localise(Vec(0, 0, 192))
         offset = Vec(divmod(i, 8)) * 192
-        for brush in ent.solids:
-            brush.localise(offset)
+        for solid in ent.solids:
+            solid.localise(offset)
 
     reset_ids(vmf)
     file_regression.check(vmf.export(), extension='.vmf')

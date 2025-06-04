@@ -1,7 +1,7 @@
 """Test the Vector object."""
 from collections.abc import Callable
 
-from typing import Union
+from typing import Union, TypedDict
 from typing_extensions import Literal, TypeAlias
 from fractions import Fraction
 from pathlib import Path
@@ -19,13 +19,6 @@ import pytest
 from helpers import *
 from srctools import math as vec_mod
 from srctools.math import Vec_tuple, VecUnion
-
-
-try:
-    # noinspection PyProtectedMember
-    from srctools import _math as cy_math_mod
-except ImportError:
-    cy_math_mod = None
 
 
 # Reuse these context managers.
@@ -252,7 +245,7 @@ def test_parse_vec_passthrough(py_c_vec: PyCVec) -> None:
     obj1, obj2, obj3 = object(), object(), object()
     assert parse_vec_str('1 2 3', obj1, obj2, obj3) == (1, 2, 3)
     assert parse_vec_str('fail', obj1, obj2, obj3) == (obj1, obj2, obj3)
-    assert parse_vec_str(range, obj1, obj2, obj3) == (obj1, obj2, obj3)
+    assert parse_vec_str(range, obj1, obj2, obj3) == (obj1, obj2, obj3)  # type: ignore  # Intentional
 
 
 def test_with_axes(frozen_thawed_vec: VecClass) -> None:
@@ -261,7 +254,7 @@ def test_with_axes(frozen_thawed_vec: VecClass) -> None:
     axis: Literal['x', 'y', 'z']
     u: Literal['x', 'y', 'z']
     v: Literal['x', 'y', 'z']
-    for axis, u, v in [('x', 'y', 'z'), ('y', 'x', 'z'), ('z', 'x', 'y')]:
+    for axis, u, v in (('x', 'y', 'z'), ('y', 'x', 'z'), ('z', 'x', 'y')):
         for num in VALID_ZERONUMS:
             vec = Vec.with_axes(axis, num)
             assert vec[axis] == num
@@ -484,13 +477,13 @@ def test_vec_clamped_invalid(frozen_thawed_vec: VecClass) -> None:
     Vec = frozen_thawed_vec
     vec = Vec(48, 23, 284)
     with pytest.raises(TypeError, match='either 2 positional arguments or 1-2 keyword arguments'):
-        vec.clamped(vec, vec, mins=vec, maxs=vec)
+        vec.clamped(vec, vec, mins=vec, maxs=vec)  # type: ignore  # Intentional
     with pytest.raises(TypeError, match='missing either'):
-        vec.clamped()
+        vec.clamped()  # type: ignore  # Intentional
     with pytest.raises(TypeError, match='missing 1 required positional argument'):
-        vec.clamped(vec)
+        vec.clamped(vec)  # type: ignore  # Intentional
     with pytest.raises(TypeError, match='takes 2 positional arguments but 3 were given'):
-        vec.clamped(vec, vec, vec)
+        vec.clamped(vec, vec, vec)  # type: ignore  # Intentional
 
     # Unchanged FrozenVec returns self.
     fvec = vec_mod.FrozenVec(30, 38, 87)
@@ -506,79 +499,79 @@ def test_vec_clamped_axis(frozen_thawed_vec: VecClass, axis: Axis, u: Axis, v: A
     """Test each axis is independent and behaves correctly."""
     Vec = frozen_thawed_vec
     vec = Vec.with_axes(axis, 400, u, 500, v, 800)
-    unchanged = {axis: 400, u: 500, v: 800}
+    unchanged = vec.copy()
     # Unchanged, positional + kw.
-    assert_vec(
+    assert_vec_vec(
         vec.clamped(
             Vec.with_axes(axis, 200, u, 300, v, 678),
             Vec.with_axes(axis, 900, u, 800, v, 1200),
         ),
-        **unchanged,
+        unchanged,
         type=Vec,
     )
-    assert_vec(vec, **unchanged)  # clamped() must not modify self!
-    assert_vec(
+    assert_vec_vec(vec, unchanged)  # clamped() must not modify self!
+    assert_vec_vec(
         vec.clamped(
             mins=Vec.with_axes(axis, 200, u, 300, v, 678),
             maxs=Vec.with_axes(axis, 900, u, 800, v, 1200),
         ),
-        **unchanged,
+        unchanged,
         type=Vec,
     )
-    assert_vec(vec, **unchanged)
+    assert_vec_vec(vec, unchanged)
     # Uses mins, positional, kw, both kv.
-    assert_vec(
+    assert_vec_vec(
         vec.clamped(
             Vec.with_axes(axis, 448, u, 300, v, 678),
             Vec.with_axes(axis, 900, u, 800, v, 1200),
         ),
-        **{axis: 448, u: 500, v: 800},
+        Vec.with_axes(axis, 448, u, 500, v, 800),
         type=Vec,
     )
-    assert_vec(vec, **unchanged)
-    assert_vec(
+    assert_vec_vec(vec, unchanged)
+    assert_vec_vec(
         vec.clamped(
             mins=Vec.with_axes(axis, 448, u, 300, v, 678),
         ),
-        **{axis: 448, u: 500, v: 800},
+        Vec.with_axes(axis, 448, u, 500, v, 800),
         type=Vec,
     )
-    assert_vec(vec, **unchanged)
-    assert_vec(
+    assert_vec_vec(vec, unchanged)
+    assert_vec_vec(
         vec.clamped(
             mins=Vec.with_axes(axis, 448, u, 300, v, 678),
             maxs=Vec.with_axes(axis, 900, u, 800, v, 1200),
         ),
-        **{axis: 448, u: 500, v: 800},
+        Vec.with_axes(axis, 448, u, 500, v, 800),
         type=Vec,
     )
     # Uses maxes, positional, kw, both kv.
-    assert_vec(
+    assert_vec_vec(
         vec.clamped(
             Vec.with_axes(axis, 200, u, 300, v, 678),
             Vec.with_axes(axis, 321, u, 800, v, 1200),
         ),
-        **{axis: 321, u: 500, v: 800},
+        Vec.with_axes(axis, 321, u, 500, v, 800),
         type=Vec,
     )
-    assert_vec(vec, **unchanged)
-    assert_vec(
+    assert_vec_vec(vec, unchanged)
+    assert_vec_vec(
         vec.clamped(
             maxs=Vec.with_axes(axis, 321, u, 800, v, 1200),
         ),
-        **{axis: 321, u: 500, v: 800},
+        Vec.with_axes(axis, 321, u, 500, v, 800),
         type=Vec,
     )
-    assert_vec(vec, **unchanged)
-    assert_vec(
+    assert_vec_vec(vec, unchanged)
+    assert_vec_vec(
         vec.clamped(
             mins=Vec.with_axes(axis, 200, u, 300, v, 678),
             maxs=Vec.with_axes(axis, 321, u, 800, v, 1200),
         ),
-        **{axis: 321, u: 500, v: 800},
+        Vec.with_axes(axis, 321, u, 500, v, 800),
         type=Vec,
     )
-    assert_vec(vec, **unchanged)
+    assert_vec_vec(vec, unchanged)
 
 
 @pytest.mark.slow
@@ -1305,13 +1298,13 @@ def test_setitem(py_c_vec: PyCVec) -> None:
     vec = Vec()
     for invalid in INVALID_KEYS:
         with pytest.raises(KeyError):
-            vec[invalid] = 8.0
+            vec[invalid] = 8.0  # type: ignore  # Intentional
         assert_vec(vec, 0, 0, 0, 'Invalid key set something!')
 
     with pytest.raises(TypeError):
-        vec['x'] = 'test'
+        vec['x'] = 'test'  # type: ignore  # Intentional
     with pytest.raises(TypeError):
-        vec['z'] = []
+        vec['z'] = []  # type: ignore  # Intentional
     assert_vec(vec, 0, 0, 0, 'Invalid number was stored!')
 
 
@@ -1426,12 +1419,12 @@ def test_minmax(py_c_vec: PyCVec) -> None:
 
             vec_a[axis] = a
             vec_b[axis] = b
-            assert vec_a.min(vec_b) is None, (a, b, axis, min_val)
+            assert vec_a.min(vec_b) is None, (a, b, axis, min_val)  # type: ignore[func-returns-value]
             assert vec_a[axis] == min_val, (a, b, axis, min_val)
 
             vec_a[axis] = a
             vec_b[axis] = b
-            assert vec_a.max(vec_b) is None, (a, b, axis, max_val)
+            assert vec_a.max(vec_b) is None, (a, b, axis, max_val)  # type: ignore[func-returns-value]
             assert vec_a[axis] == max_val, (a, b, axis, max_val)
 
 

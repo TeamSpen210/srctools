@@ -241,20 +241,23 @@ def test_single_axis(
     """In each axis, two rotations should be the same as adding."""
     Angle = frozen_thawed_angle
 
-    # Pitch gives gimbal lock and breaks recovery of the values.
-    for axis in ('yaw', 'roll'):
-        for ang1 in range(0, 360, 45):
-            for ang2 in range(0, 360, 45):
-                if ang1 + ang2 == 0:
-                    # 0 gives a value around the 360-0 split,
-                    # so it can round to the wrong side sometimes.
-                    continue
-                assert_ang(
-                    Angle(**{axis: ang1}) @
-                    Angle(**{axis: ang2}),
-                    **{axis: (ang1 + ang2) % 360},
-                    msg=(axis, ang1, ang2)
-                )
+    for ang1 in range(0, 360, 45):
+        for ang2 in range(0, 360, 45):
+            if ang1 + ang2 == 0:
+                # 0 gives a value around the 360-0 split,
+                # so it can round to the wrong side sometimes.
+                continue
+            # Pitch gives gimbal lock and breaks recovery of the values.
+            assert_ang(
+                Angle(yaw=ang1) @ Angle(yaw=ang2),
+                yaw=(res := (ang1 + ang2) % 360),
+                msg=('yaw', ang1, ang2)
+            )
+            assert_ang(
+                Angle(roll=ang1) @ Angle(roll=ang2),
+                roll=res,
+                msg=('roll', ang1, ang2)
+            )
 
 
 def test_axis_angle(

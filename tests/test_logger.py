@@ -14,7 +14,7 @@ def function(logger: Logger) -> None:
 
 
 def test_logging_output(
-    capsys: pytest.CaptureFixture,
+    capsys: pytest.CaptureFixture[str],
     file_regression: FileRegressionFixture,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

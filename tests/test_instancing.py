@@ -248,7 +248,7 @@ def test_node_ids(kind: ValueTypes) -> None:
     # Mark these IDs as in use.
     vmf.node_id.get_id(1)
     vmf.node_id.get_id(4)
-    cast(dict, inst.node_ids).update({
+    inst.node_ids.update({
         3: vmf.node_id.get_id(3),
         72: vmf.node_id.get_id(128),
         73: vmf.node_id.get_id(129),
