@@ -335,7 +335,7 @@ class Keyvalues:
             self._real_name = sys.intern(new_name)
             self._folded_name = sys.intern(new_name.casefold())
 
-    def edit(self, name: Optional[str] = None, value: Optional[str] = None) -> 'Keyvalues':
+    def edit(self, name: Optional[str] = None, value: Union[str, list['Keyvalues'], None] = None) -> 'Keyvalues':
         """Simultaneously modify the name and value."""
         if name is not None:
             self._real_name = name
@@ -1069,7 +1069,7 @@ class Keyvalues:
     @overload
     def __setitem__(self, index: builtins.int, value: 'Keyvalues') -> None: ...
     @overload
-    def __setitem__(self, index: str, value: str) -> None: ...
+    def __setitem__(self, index: str, value: Union[str, 'Keyvalues']) -> None: ...
 
     def __setitem__(
         self,
@@ -1079,7 +1079,8 @@ class Keyvalues:
         """Allow setting the values of the children directly.
 
         - If given an index or slice, it will add these keyvalues in these positions.
-        - If given a string, it will set the last Keyvalue with that name.
+        - If given a string, it will set the last Keyvalue with that name to a string value, or
+          replace with the provided keyvalue.
         - If none are found, it appends the value to the tree.
         """
         if not isinstance(self._value, list):
