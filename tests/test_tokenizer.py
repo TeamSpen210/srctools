@@ -509,7 +509,9 @@ def test_tok_filename(py_c_token: type[Tokenizer]) -> None:
     assert tok.filename == 'test/path.txt'
     assert isinstance(tok.filename, str)
 
-    assert Tokenizer('file', b'binary/filename\xE3\x00.txt').filename == 'binary/filename\\xe3\\x00.txt'
+    assert Tokenizer(
+        'file', b'binary/filename\xE3\x00.txt',
+    ).filename == 'binary/filename\\xe3\\x00.txt'
 
 
 def test_periodic_callback(py_c_token: type[Tokenizer]) -> None:

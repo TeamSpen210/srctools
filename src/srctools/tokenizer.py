@@ -227,16 +227,18 @@ class BaseTokenizer(abc.ABC):
 
     def __init__(
         self,
-        filename: Optional[StringPath],
+        filename: Union[StringPath, str, bytes, None],
         error: type[TokenSyntaxError],
     ) -> None:
         if filename is not None:
-            self.filename = _conv_path(filename)
-            if isinstance(self.filename, bytes):
+            conv_filename = _conv_path(filename)
+            if isinstance(conv_filename, bytes):
                 # We only use this for display, so if bytes convert.
                 # Call repr() then strip the b'', so we get the
                 # automatic escaping of unprintable characters.
-                self.filename = repr(self.filename)[2:-1]
+                self.filename = repr(conv_filename)[2:-1]
+            else:
+                self.filename = conv_filename
         else:
             self.filename = None
 
@@ -451,7 +453,7 @@ class Tokenizer(BaseTokenizer):
     def __init__(
         self,
         data: Union[str, Iterable[str]],
-        filename: Optional[StringPath] = None,
+        filename: Union[StringPath, str, bytes, None] = None,
         error: type[TokenSyntaxError] = TokenSyntaxError,
         *,
         periodic_callback: Optional[Callable[[], object]] = None,
@@ -801,7 +803,7 @@ class IterTokenizer(BaseTokenizer):
     def __init__(
         self,
         source: Iterable[tuple[Token, str]],
-        filename: StringPath = '',
+        filename: Union[StringPath, str, bytes, None] = None,
         error: type[TokenSyntaxError] = TokenSyntaxError,
     ) -> None:
         super().__init__(filename, error)
