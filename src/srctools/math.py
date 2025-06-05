@@ -28,6 +28,7 @@ from typing_extensions import (
 from collections.abc import Callable, Iterable, Iterator
 import contextlib
 import math
+import types
 
 
 __all__ = [
@@ -335,10 +336,7 @@ class VecBase:
     __slots__ = ('_x', '_y', '_z')
     __hash__ = None  # type: ignore[assignment]
 
-    #: This is a dictionary containing complementary axes.
-    #: :pycode:`INV_AXIS["x", "y"]` gives :pycode:`"z"`, and :pycode:`INV_AXIS["y"]`
-    #: returns :pycode:`("x", "z")`.
-    INV_AXIS = cast(_InvAxis, {
+    INV_AXIS: ClassVar[_InvAxis] = cast(_InvAxis, types.MappingProxyType({
         'x': ('y', 'z'),
         'y': ('x', 'z'),
         'z': ('x', 'y'),
@@ -350,7 +348,7 @@ class VecBase:
         ('z', 'y'): 'x',
         ('z', 'x'): 'y',
         ('y', 'x'): 'z',
-    })
+    }))
 
     # Vectors pointing in all cardinal directions.
     # Variable annotation here, it has to be assigned after FrozenVec
@@ -484,7 +482,7 @@ class VecBase:
             try:
                 first = next(points_iter)
             except StopIteration:
-                raise TypeError('Vec.bbox() arg is an empty sequence') from None
+                raise ValueError('Vec.bbox() arg is an empty sequence') from None
         else:
             points_iter = iter(points)
             first = next(points_iter)

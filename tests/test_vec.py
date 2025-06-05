@@ -1,7 +1,7 @@
 """Test the Vector object."""
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 
-from typing import Union, TypedDict
+from typing import Union, TypedDict, cast
 from typing_extensions import Literal, TypeAlias
 from fractions import Fraction
 from pathlib import Path
@@ -1099,6 +1099,28 @@ def test_other_axes(frozen_thawed_vec: VecClass) -> None:
         for invalid in bad_args:
             with raises_keyerror:
                 vec.other_axes(invalid)  # type: ignore   # Intentional
+
+
+def test_inv_axis(frozen_thawed_vec: VecClass) -> None:
+    """Test the contents of the INV_AXIS constant."""
+    INV_AXIS: Mapping[object, object] = cast(Mapping, frozen_thawed_vec.INV_AXIS)
+    assert len(INV_AXIS) == 9
+    for u in ['x', 'y', 'z']:
+        for v in ['x', 'y', 'z']:
+            if u >= v:  # Skip x, x, and do only one order.
+                continue
+            [other] = {'x', 'y', 'z'} - {u, v}
+            assert INV_AXIS[other] == (u, v), f'{u}{v} = {other}'
+            assert INV_AXIS[u, v] == other, f'{u}{v} = {other}'
+            assert INV_AXIS[v, u] == other, f'{u}{v} = {other}'
+    with pytest.raises(TypeError):
+        INV_AXIS["x"] = "a"  # type: ignore  # Intentional
+    vals = {
+        "x", "y", "z", ("x", "y"), ("x", "z"), ("y", "z"),
+    }
+    assert set(INV_AXIS) == vals
+    assert set(INV_AXIS.keys()) == vals
+    assert set(INV_AXIS.values()) == vals
 
 
 def test_abs(frozen_thawed_vec: VecClass) -> None:

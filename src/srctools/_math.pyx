@@ -18,7 +18,6 @@ cimport cython.operator
 
 from srctools cimport quickhull
 
-
 cdef inline Vec _vector_mut(double x, double y, double z):
     """Make a mutable Vector directly."""
     cdef Vec vec = Vec.__new__(Vec)
@@ -82,9 +81,9 @@ cdef inline MatrixBase _matrix(type typ):
     else:
         return <MatrixBase>Matrix.__new__(Matrix)
 
-cdef object Union, Iterable, Iterator  # Keep private.
 from typing import Union
 from collections.abc import Iterable, Iterator
+from types import MappingProxyType
 
 
 # Shared functions that we use to do unpickling.
@@ -1044,8 +1043,7 @@ cdef class VecBase:
     __match_args__ = ('x', 'y', 'z')
     __hash__ = None
 
-    # Various constants.
-    INV_AXIS = {
+    INV_AXIS = MappingProxyType({
         'x': ('y', 'z'),
         'y': ('x', 'z'),
         'z': ('x', 'y'),
@@ -1057,7 +1055,7 @@ cdef class VecBase:
         ('z', 'y'): 'x',
         ('z', 'x'): 'y',
         ('y', 'x'): 'z',
-    }
+    })
 
     # Vectors pointing in all cardinal directions.
     N = north = y_pos = _vector_frozen(0, 1, 0)
@@ -3408,6 +3406,7 @@ try:
 except Exception:
     pass  # Perfectly fine.
 
+# These are methods not functions.
 del cross_vec, cross_frozenvec
 # Drop references.
-Iterator = Iterable = Union = None
+del Iterator, Iterable, Union, MappingProxyType
