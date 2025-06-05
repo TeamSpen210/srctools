@@ -1116,10 +1116,12 @@ def test_inv_axis(frozen_thawed_vec: VecClass) -> None:
     with pytest.raises(TypeError):
         INV_AXIS["x"] = "a"  # type: ignore  # Intentional
     vals = {
-        "x", "y", "z", ("x", "y"), ("x", "z"), ("y", "z"),
+        "x", "y", "z",
+        ("x", "y"), ("x", "z"), ("y", "z"),
     }
-    assert set(INV_AXIS) == vals
-    assert set(INV_AXIS.keys()) == vals
+    keys = {*vals, ("y", "x"), ("z", "x"), ("z", "y")}
+    assert set(INV_AXIS) == keys
+    assert set(INV_AXIS.keys()) == keys
     assert set(INV_AXIS.values()) == vals
 
 
