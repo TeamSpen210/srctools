@@ -13,7 +13,7 @@ import shutil
 
 import attrs
 
-from srctools import conv_bool
+from srctools import conv_bool, choreo as choreo_scenes
 from srctools.bsp import BSP
 from srctools.const import FileType
 from srctools.dmx import Attribute, Element, ValueType
@@ -27,10 +27,6 @@ from srctools.mdl import MDL_EXTS_EXTRA, AnimEvents, Model
 from srctools.particles import FORMAT_NAME as PARTICLE_FORMAT_NAME, Particle
 from srctools.sndscript import SND_CHARS, Sound
 from srctools.tokenizer import TokenSyntaxError, Tokenizer
-from srctools.choreo import (
-    Scene as ChoreoScene, CRC, Entry as ChoreoEntry,
-    parse_scenes_image, checksum_filename,
-)
 from srctools.vmf import VMF, Entity
 from srctools.vmt import Material, VarType
 import srctools.logger
@@ -1367,10 +1363,10 @@ class PackList:
 
     def _get_choreo_files(self, file: PackFile) -> None:
         """Find sound dependencies for choreo scenes."""
-        crc = checksum_filename(file.filename)
+        crc = choreo_scenes.checksum_filename(file.filename)
         if file.data:
             try:
-                scene = ChoreoScene.parse_text(Tokenizer(file.data.decode('utf8')))
+                scene = choreo_scenes.Scene.parse_text(Tokenizer(file.data.decode('utf8')))
             except (TokenSyntaxError, UnicodeDecodeError) as exc:
                 LOGGER.warning(
                     'Choreo scene "{}" cannot be parsed:\n{}',
@@ -1383,20 +1379,26 @@ class PackList:
             except KeyError:
                 try:
                     with self.fsys[file.filename].open_str('utf8') as f:
-                        scene = ChoreoScene.parse_text(Tokenizer(f))
+                        scene = choreo_scenes.Scene.parse_text(Tokenizer(f))
                 except (TokenSyntaxError, UnicodeDecodeError) as exc:
                     LOGGER.warning(
                         'Choreo scene "{}" cannot be parsed:\n{}',
                         file.filename, exc,
                     )
                     return
-            else:  # Directly stored in the entry
+            else:
+                # Directly stored in the entry.
+                # This doesn't include sub-scenes, TODO handle those?
+                # If in the image, packing probably isn't too necessary,
+                # and would require wasting time uncompressing/parsing.
                 for sound in entry.sounds:
                     self.pack_soundscript(sound)
                 return
 
         for sound in scene.used_sounds():
             self.pack_soundscript(sound)
+        for event in scene.iter_events(choreo_scenes.EventType.SubScene):
+            self.pack_file(event.parameters[0], FileType.CHOREO)
 
     def _get_weaponscript_kv1_files(self, file: PackFile) -> None:
         """Find any dependencies in a Keyvalues1 weapon script."""
