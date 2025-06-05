@@ -398,7 +398,7 @@ class PackList:
     _inject_files: dict[tuple[str, str, bytes], str]
     # Cache of the models used for breakable chunks.
     _break_chunks: Optional[dict[str, list[str]]]
-    choreo: dict[CRC, ChoreoEntry]
+    choreo: dict[choreo_scenes.CRC, choreo_scenes.Entry]
     # For each model, defines the skins the model uses. None means at least
     # one use is unknown, so all skins could potentially be used.
     skinsets: dict[str, Optional[set[int]]]
@@ -824,7 +824,7 @@ class PackList:
     def load_choreo_scenes(self) -> None:
         """Load the scenes manifest."""
         with self.fsys['scenes/scenes.image'].open_bin() as file:
-            self.choreo |= parse_scenes_image(file)
+            self.choreo |= choreo_scenes.parse_scenes_image(file)
 
     @deprecated('Renamed to write_soundscript_manifest()')
     def write_manifest(self) -> None:

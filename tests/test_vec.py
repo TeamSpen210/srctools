@@ -1103,7 +1103,7 @@ def test_other_axes(frozen_thawed_vec: VecClass) -> None:
 
 def test_inv_axis(frozen_thawed_vec: VecClass) -> None:
     """Test the contents of the INV_AXIS constant."""
-    INV_AXIS: Mapping[object, object] = cast(Mapping, frozen_thawed_vec.INV_AXIS)
+    INV_AXIS = cast(Mapping[object, object], frozen_thawed_vec.INV_AXIS)
     assert len(INV_AXIS) == 9
     for u in ['x', 'y', 'z']:
         for v in ['x', 'y', 'z']:
