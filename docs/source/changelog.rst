@@ -6,7 +6,7 @@ Changelog
     :backlinks: none
 
 -------------
-Version (dev)
+Version 2.6.0
 -------------
 
 * Rewrite FGD 'helper' parsing to more closely match the actual parser.
