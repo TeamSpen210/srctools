@@ -484,7 +484,7 @@ class VecBase:
             except StopIteration:
                 raise ValueError('Vec.bbox() arg is an empty sequence') from None
         else:
-            points_iter = iter(points)
+            points_iter = iter(points)  # pyright: ignore
             first = next(points_iter)
 
         bbox_min: Py_Vec = Py_Vec(first)
