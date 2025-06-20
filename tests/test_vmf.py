@@ -546,25 +546,32 @@ def test_map_info() -> None:
     # No warning with an empty map info.
     VMF(map_info={})
 
-    vmf = pytest.deprecated_call(VMF,  map_info={'showgrid': '0'})
+    with pytest.deprecated_call():
+        vmf = VMF(map_info={'showgrid': '0'})
     assert vmf.show_grid is False
 
-    vmf = pytest.deprecated_call(VMF,  map_info={'snaptogrid': '0'})
+    with pytest.deprecated_call():
+        vmf = VMF(map_info={'snaptogrid': '0'})
     assert vmf.snap_grid is False
 
-    vmf = pytest.deprecated_call(VMF,  map_info={'show3dgrid': '1'})
+    with pytest.deprecated_call():
+        vmf = VMF(map_info={'show3dgrid': '1'})
     assert vmf.show_3d_grid is True
 
-    vmf = pytest.deprecated_call(VMF,  map_info={'showlogicalgrid': '1'})
+    with pytest.deprecated_call():
+        vmf = VMF(map_info={'showlogicalgrid': '1'})
     assert vmf.show_logic_grid is True
 
-    vmf = pytest.deprecated_call(VMF,  map_info={'gridspacing': '1024'})
+    with pytest.deprecated_call():
+        vmf = VMF(map_info={'gridspacing': '1024'})
     assert vmf.grid_spacing == 1024
 
-    vmf = pytest.deprecated_call(VMF,  map_info={'active_cam': '84'})
+    with pytest.deprecated_call():
+        vmf = VMF(map_info={'active_cam': '84'})
     assert vmf.active_cam == 84
 
-    vmf = pytest.deprecated_call(VMF,  map_info={'quickhide': '12'})
+    with pytest.deprecated_call():
+        vmf = VMF(map_info={'quickhide': '12'})
     assert vmf.quickhide_count == 12
 
 

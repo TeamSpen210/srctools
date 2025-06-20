@@ -1,4 +1,5 @@
 """Test the various geometry operations."""
+from operator import itemgetter
 from pathlib import Path
 from random import Random
 
@@ -65,9 +66,9 @@ def test_carve(datadir: Path, file_regression: FileRegressionFixture) -> None:
 
     We read a VMF, then for each ent subtract toolsclip from the rest.
     """
-    with open(datadir / 'carve_tests.vmf') as f:
+    with open(datadir / 'carve_tests.vmf', encoding='utf8') as f:
         vmf = VMF.parse(Keyvalues.parse(f))
-    for ent in sorted(vmf.by_class['func_brush'], key=lambda ent: ent['targetname']):
+    for ent in sorted(vmf.by_class['func_brush'], key=itemgetter('targetname')):
         ent.remove()
         carvers = [
             brush for brush in ent.solids if

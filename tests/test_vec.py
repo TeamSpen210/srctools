@@ -18,7 +18,8 @@ import pytest
 
 from helpers import *
 from srctools import math as vec_mod
-from srctools.math import Vec_tuple, VecUnion
+from srctools.math import Vec_tuple  # noqa
+from srctools.math import VecUnion
 
 
 # Reuse these context managers.
@@ -709,8 +710,9 @@ def test_vec_to_vec(frozen_thawed_vec: VecClass) -> None:
         """Check a Vec pair for addition and subtraction."""
         vec1 = Vec(x1, y1, z1)
         vec2 = Vec(x2, y2, z2)
-        vec_tup_1 = pytest.deprecated_call(Vec_tuple, x1, y1, z1)
-        vec_tup_2 = pytest.deprecated_call(Vec_tuple, x2, y2, z2)
+        with pytest.deprecated_call():
+            vec_tup_1 = Vec_tuple(x1, y1, z1)  # noqa
+            vec_tup_2 = Vec_tuple(x2, y2, z2)  # noqa
 
         # These are direct methods, so no inheritence and iop to deal with.
 
@@ -978,7 +980,8 @@ def test_order(py_c_vec: PyCVec) -> None:
         vec2 = Vec(x2, y2, z2)
         fvec1 = FrozenVec(x1, y1, z1)
         fvec2 = FrozenVec(x2, y2, z2)
-        vec2_tup = pytest.deprecated_call(Vec_tuple, x2, y2, z2)
+        with pytest.deprecated_call():
+            vec2_tup = Vec_tuple(x2, y2, z2)  # noqa
         for op_func, float_func in comp_ops:
             if float_func is cmp_ne:
                 # special-case - != uses or, not and
@@ -1042,8 +1045,18 @@ def test_binop_fail(frozen_thawed_vec: VecClass) -> None:
         assert not vec == fail_object
         assert not fail_object == vec
         for operation in operations:
-            pytest.raises(TypeError, operation, vec, fail_object)
-            pytest.raises(TypeError, operation, fail_object, vec)
+            try:
+                result = operation(vec, fail_object)
+            except TypeError:
+                pass
+            else:
+                pytest.fail(f'Success: {vec!r} {operation.__name__} {fail_object!r} = {result!r}')
+            try:
+                result = operation(fail_object, vec)
+            except TypeError:
+                pass
+            else:
+                pytest.fail(f'Success: {fail_object!r} {operation.__name__} {vec!r} = {result!r}')
 
 
 def test_axis(frozen_thawed_vec: VecClass) -> None:

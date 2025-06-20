@@ -3114,7 +3114,6 @@ class Entity(MutableMapping[str, str]):
         key = key.casefold()
         for k in self._keys:
             if k.casefold() == key:
-                # TODO: B909 bug?
                 return self._keys.pop(k)
         return default
 
