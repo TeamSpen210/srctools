@@ -1794,7 +1794,7 @@ class MatrixBase:
         return cls.from_angle(pitch, yaw, roll)
 
     @classmethod
-    def axis_angle(cls, axis: Union[Vec, Tuple3], angle: float) -> Self:
+    def axis_angle(cls, axis: AnyVec, angle: float) -> Self:
         """Compute the rotation matrix forming a rotation around an axis by a specific angle."""
         x, y, z = Vec(axis).norm()
         # Invert, so it matches the orientation of Angles().

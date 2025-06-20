@@ -587,6 +587,7 @@ def test_deduce_type_array(input_val: list[Any], val_type: ValueType, output: li
     """Test array deduction, and some special cases."""
     [test_type, test_arr] = deduce_type(input_val)
     assert test_type is val_type
+    assert isinstance(test_arr, list)
     assert len(input_val) == len(test_arr), repr(test_arr)
     for i, (test, out) in enumerate(zip(test_arr, output)):
         assert type(test) is type(out), f'{i}: {test!r} != {out!r}'

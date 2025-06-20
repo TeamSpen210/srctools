@@ -1,6 +1,4 @@
 """Test handling of instance collapsing."""
-from typing import cast
-
 import pytest
 
 from srctools.fgd import ValueTypes

@@ -75,8 +75,8 @@ def test_carve(datadir: Path, file_regression: FileRegressionFixture) -> None:
         ]
         try:
             [carver] = carvers
-        except ValueError:
-            raise pytest.fail(f'{carvers=}, {ent=}')
+        except ValueError as exc:
+            raise pytest.fail(f'{carvers=}, {ent=}') from exc
         ent.solids.remove(carver)
         result = Geometry.carve(
             [Geometry.from_brush(solid) for solid in ent.solids],

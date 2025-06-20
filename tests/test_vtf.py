@@ -27,8 +27,9 @@ def compare_img(obtained_fname: Path, expected_fname: Path) -> None:
     assert obtained.size == expected.size
     # If abs(a-b) == 0, images are the same.
     extrema = ImageChops.difference(obtained, expected).getextrema()
-    if any(mins > 0 or maxes > 0 for mins, maxes in extrema):
-        pytest.fail(f"{obtained_fname} and {expected_fname} do not match: {extrema!r}")
+    for val in extrema:
+        if (val[0] > 0 or val[1] > 0) if isinstance(val, tuple) else val > 0:
+            pytest.fail(f"{obtained_fname} and {expected_fname} do not match: {extrema!r}")
 
 
 # noinspection PyProtectedMember

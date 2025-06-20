@@ -1,7 +1,7 @@
 """Test the Vector object."""
 from collections.abc import Callable, Mapping
 
-from typing import Union, TypedDict, cast
+from typing import Union, cast
 from typing_extensions import Literal, TypeAlias
 from fractions import Fraction
 from pathlib import Path
