@@ -34,7 +34,7 @@
 	unknown[-E](a+b, c, d, 4+3-25, e)
 = some_entity
 	[
-	a(integer) : "First"
-	c(string) : "Second"
-	b(string) : "Third"
+	a(integer): "First"
+	c(string): "Second"
+	b(string): "Third"
 	]

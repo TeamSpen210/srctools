@@ -1293,17 +1293,17 @@ class KVDef(EntAttribute):
             file.write(f'[{", ".join(sorted(tags))}]')
         file.write('(*' if self.reportable and old_report else '(')
         if isinstance(self._type, ValueTypes):
-            file.write(f'{self._type.value}) ')
+            file.write(f'{self._type.value})')
         else:
-            file.write(f'{self._type}) ')
+            file.write(f'{self._type})')
 
         if self.editor_only and custom_syntax:
-            file.write('editor ')
+            file.write(' editor')
         # Note Valve requires this order if both are present.
         if self.readonly:
-            file.write('readonly ')
+            file.write(' readonly')
         if self.reportable and not old_report:
-            file.write('report ')
+            file.write(' report')
 
         if self._type is not ValueTypes.SPAWNFLAGS:
             # Spawnflags never use names!

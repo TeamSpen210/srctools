@@ -1,7 +1,7 @@
 
 @KeyframeClass = demo_ent
 	[
-	spawnflags(flags)  =
+	spawnflags(flags) =
 		[
 		1: "[1] A" : 0
 		2: "[2] B" : 1

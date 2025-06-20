@@ -1,12 +1,12 @@
 
 @KeyframeClass = demo_ent
 	[
-	kv_(string) : "Standard"
-	kv_report(string) report : "report"
-	kv_readonly(string) readonly : "readonly"
-	kv_readonly_report(string) readonly report : "readonly + report"
-	kv_editor(string) editor : "editor"
-	kv_editor_report(string) editor report : "editor + report"
-	kv_editor_readonly(string) editor readonly : "editor + readonly"
-	kv_editor_readonly_report(string) editor readonly report : "editor + readonly + report"
+	kv_(string): "Standard"
+	kv_report(string) report: "report"
+	kv_readonly(string) readonly: "readonly"
+	kv_readonly_report(string) readonly report: "readonly + report"
+	kv_editor(string) editor: "editor"
+	kv_editor_report(string) editor report: "editor + report"
+	kv_editor_readonly(string) editor readonly: "editor + readonly"
+	kv_editor_readonly_report(string) editor readonly report: "editor + readonly + report"
 	]
