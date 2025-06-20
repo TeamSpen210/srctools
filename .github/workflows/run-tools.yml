@@ -41,7 +41,7 @@ jobs:
         mypy --version
     - name: Lint with Ruff
       run: |
-        ruff check src/srctools/
+        ruff check src/srctools/ tests/ type_tests/
       # Override regular check, to run all tools even if one fails.
       if: (success() || failure()) && steps.install_deps.outcome == 'success'
 
