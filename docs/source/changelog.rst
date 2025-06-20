@@ -6,6 +6,12 @@ Changelog
     :backlinks: none
 
 -------------
+Version (dev)
+-------------
+
+* Add support for exporting the old FGD 'report' syntax (``name(*type)``), and suppress editor-only if custom sytnax is disabled.
+
+-------------
 Version 2.6.0
 -------------
 

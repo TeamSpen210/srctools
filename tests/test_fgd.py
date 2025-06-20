@@ -1,8 +1,8 @@
 """Test the FGD module."""
-from typing import Any
 from collections.abc import Callable, Generator
 import copy
 import io
+import itertools
 import re
 
 from pytest_regressions.file_regression import FileRegressionFixture
@@ -31,7 +31,7 @@ else:
 
 
 @pytest.fixture(params=parms, ids=ids)
-def py_c_token(request: Any) -> Generator[None, None, None]:
+def py_c_token(request: pytest.FixtureRequest) -> Generator[None, None, None]:
     """Run the test twice, for the Python and C versions of Tokenizer."""
     orig_tok = fgd_mod.Tokenizer  # type: ignore[attr-defined]
     try:
@@ -1195,6 +1195,38 @@ def test_export_regressions(file_regression: FileRegressionFixture, custom_synta
     assert file_res == direct_res
 
     file_regression.check(buf.getvalue(), extension='.fgd')
+
+
+@pytest.mark.parametrize('custom_syntax', [False, True], ids=['vanilla', 'custom'])
+@pytest.mark.parametrize('old_report', [False, True], ids=['new', 'old'])
+def test_export_kvflags(file_regression: FileRegressionFixture, custom_syntax: bool, old_report: bool) -> None:
+    """Test various KV flag exports (report, readonly, editor."""
+    fgd = FGD()
+    fgd.entities['demo_ent'] = ent = EntityDef(EntityTypes.ROPES, 'demo_ent')
+    for editor, readonly, report in itertools.product([False, True], repeat=3):
+        parts = []
+        if editor:
+            parts.append('editor')
+        if readonly:
+            parts.append('readonly')
+        if report:
+            parts.append('report')
+
+        name = 'kv_' + '_'.join(parts)
+        ent.keyvalues[name] = {frozenset(): KVDef(
+            name,
+            ValueTypes.STRING,
+            ' + '.join(parts) or 'Standard',
+            editor_only=editor,
+            readonly=readonly,
+            reportable=report,
+        )}
+    assert len(ent.keyvalues) == 8
+
+    file_regression.check(
+        fgd.export(custom_syntax=custom_syntax, old_report=old_report),
+        extension='.fgd',
+    )
 
 
 @pytest.mark.parametrize('label', [False, True], ids=['none', 'added'])

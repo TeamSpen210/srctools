@@ -1285,22 +1285,24 @@ class KVDef(EntAttribute):
         tags: Collection[str] = (),
         label_spawnflags: bool = True,
         custom_syntax: bool = True,
+        old_report: bool = False,
     ) -> None:
         """Write this back out to a FGD file."""
         file.write('\t' + self.name)
         if tags and custom_syntax:
             file.write(f'[{", ".join(sorted(tags))}]')
+        file.write('(*' if self.reportable and old_report else '(')
         if isinstance(self._type, ValueTypes):
-            file.write(f'({self._type.value}) ')
+            file.write(f'{self._type.value}) ')
         else:
-            file.write(f'({self._type}) ')
+            file.write(f'{self._type}) ')
 
-        if self.editor_only:
-            file.write('editor')
+        if self.editor_only and custom_syntax:
+            file.write('editor ')
         # Note Valve requires this order if both are present.
         if self.readonly:
             file.write('readonly ')
-        if self.reportable:
+        if self.reportable and not old_report:
             file.write('report ')
 
         if self._type is not ValueTypes.SPAWNFLAGS:
@@ -2205,6 +2207,7 @@ class EntityDef:
         file: TextIO,
         label_spawnflags: bool = True,
         custom_syntax: bool = True,
+        old_report: bool = False,
     ) -> None:
         """Write the entity out to a FGD file.
 
@@ -2255,14 +2258,13 @@ class EntityDef:
             for ind, name in
             enumerate(kv_order_list or self.kv_order)
         }
+        def kv_order_key(tup: tuple[str, dict[frozenset[str], KVDef]]) -> float:
+            """Sort by position in kv_order. If not present add to the end."""
+            return kv_order.get(tup[0], math.inf)
 
-        for name, kv_map in sorted(
-            self.keyvalues.items(),
-            # Sort by position in kv_order. If not present add to the end.
-            key=lambda name_kv: kv_order.get(name_kv[0], 2**64),
-        ):
+        for name, kv_map in sorted(self.keyvalues.items(), key=kv_order_key):
             for tags, kv in kv_map.items():
-                kv.export(file, tags, label_spawnflags, custom_syntax)
+                kv.export(file, tags, label_spawnflags, custom_syntax, old_report)
 
         if self.inputs:
             file.write('\n\t// Inputs\n')
@@ -2549,23 +2551,26 @@ class FGD:
     @overload
     def export(
         self, file: TextIO, *,
-        label_spawnflags: bool = True, custom_syntax: bool = True,
+        label_spawnflags: bool = True, custom_syntax: bool = True, old_report: bool = False,
     ) -> None: ...
     @overload
     def export(
         self, *,
-        label_spawnflags: bool = True, custom_syntax: bool = True,
+        label_spawnflags: bool = True, custom_syntax: bool = True, old_report: bool = False,
     ) -> str: ...
     def export(
         self, file: Optional[TextIO] = None, *,
         label_spawnflags: bool = True,
         custom_syntax: bool = True,
+        old_report: bool = False,
     ) -> Optional[str]:
         """Write out the FGD file.
 
         :param file: The file to write to. If `None`, the contents will be returned instead.
-        :param label_spawnflags: If set, prepend `[X]` to each spawnflag name to indicate the numeric value.
-        :param custom_syntax: If disabled, all custom syntax like tags and @resources will be skipped.
+        :param label_spawnflags: If set, prepend ``[X]`` to each spawnflag name to indicate the numeric value.
+        :param old_report: If enabled, use the legacy ``kv(*int)`` syntax for the 'report' flag.
+            This is necessary for HL2's Hammer.
+        :param custom_syntax: If disabled, all custom syntax like tags and ``@resources`` will be skipped.
             For tagged values, this can write out duplicate copies from different tags.
         """
         if file is None:
@@ -2639,7 +2644,7 @@ class FGD:
 
         for ent_def in self.sorted_ents():
             file.write('\n')
-            ent_def.export(file, label_spawnflags, custom_syntax)
+            ent_def.export(file, label_spawnflags, custom_syntax, old_report)
 
         if string_buf is not None:
             return string_buf.getvalue()
