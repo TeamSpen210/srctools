@@ -177,6 +177,14 @@ def test_func_breakable_materials() -> None:
     )
     check_entity(
         *BREAKABLE,
+        # Custom model, bypasses presets.
+        Resource('CustomChunkDef', FileType.BREAKABLE_CHUNK),
+        classname='func_breakable',
+        material=1,
+        gibmodel='CustomChunkDef',
+    )
+    check_entity(
+        *BREAKABLE,
         # Not sure which is generated, so specify both.
         Resource('ConcreteChunks', FileType.BREAKABLE_CHUNK),
         Resource('CeilingTile', FileType.BREAKABLE_CHUNK),

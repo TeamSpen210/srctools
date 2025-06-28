@@ -286,14 +286,18 @@ def base_plat_train(ctx: ResourceCtx, ent: Entity) -> ResGen:
 @cls_func
 def breakable_brush(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Breakable brushes are able to spawn specific entities."""
-    mat_type = conv_int(ent['material'])
-    if mat_type == 4:  # Cinderblocks - not clear which branch has what, include both.
-        yield Resource('CeilingTile', FileType.BREAKABLE_CHUNK)
-        yield Resource('ConcreteChunks', FileType.BREAKABLE_CHUNK)
-    elif mat_type == 9:  # Web, P2 metal panel
-        yield Resource('MetalPanelChunks' if 'P2' in ctx.tags else 'WebGibs', FileType.BREAKABLE_CHUNK)
+    if chunk := ent['gibmodel']:
+        # This overrides the presets.
+        yield Resource(chunk, FileType.BREAKABLE_CHUNK)
     else:
-        yield Resource(MATERIAL_GIB_TYPES.get(mat_type, 'WoodChunks'), FileType.BREAKABLE_CHUNK)
+        mat_type = conv_int(ent['material'])
+        if mat_type == 4:  # Cinderblocks - not clear which branch has what, include both.
+            yield Resource('CeilingTile', FileType.BREAKABLE_CHUNK)
+            yield Resource('ConcreteChunks', FileType.BREAKABLE_CHUNK)
+        elif mat_type == 9:  # Web, P2 metal panel
+            yield Resource('MetalPanelChunks' if 'P2' in ctx.tags else 'WebGibs', FileType.BREAKABLE_CHUNK)
+        else:
+            yield Resource(MATERIAL_GIB_TYPES.get(mat_type, 'WoodChunks'), FileType.BREAKABLE_CHUNK)
     object_ind = conv_int(ent['spawnobject'])
     spawns = BREAKABLE_SPAWNS_HL1 if 'HLS' in ctx.tags else BREAKABLE_SPAWNS
     # 27+ is Black Mesa exclusive.
