@@ -1530,13 +1530,13 @@ cdef class VecBase:
         """Check if the (min1, max1) bbox intersects the (min2, max2) bbox."""
         cdef vec_t min_a, min_b, max_a, max_b
         with cython.critical_section(min1):
-            min_a = min1
+            min_a = min1.val
         with cython.critical_section(min2):
-            min_b = min2
+            min_b = min2.val
         with cython.critical_section(max1):
-            max_a = max1
+            max_a = max1.val
         with cython.critical_section(max2):
-            max_b = max2
+            max_b = max2.val
         return not (
             (min_b.x - max_a.x) > TOL or (min_a.x - max_b.x) > TOL or
             (min_b.y - max_a.y) > TOL or (min_a.y - max_b.y) > TOL or
