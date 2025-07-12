@@ -83,60 +83,62 @@ Constants
 
 For convenience, several constants are available:
 
-.. py:const:: VecBase.INV_AXIS
+.. py:data:: VecBase.INV_AXIS
 
     This is a mapping containing complementary axes.
     :pycode:`INV_AXIS["x", "y"]` gives :pycode:`"z"`, and :pycode:`INV_AXIS["y"]`
     returns :pycode:`("x", "z")`.
 
-.. py:const:: VecBase.north
-.. py:const:: VecBase.N
-.. py:const:: VecBase.y_pos
+.. py:data:: VecBase.north
+    :value: FrozenVec(0, 1, 0)
+.. py:data:: VecBase.N
+    :value: FrozenVec(0, 1, 0)
+.. py:data:: VecBase.y_pos
     :value: FrozenVec(0, 1, 0)
 
 ----
 
-.. py:const:: VecBase.south
+.. py:data:: VecBase.south
     :value: FrozenVec(0, -1, 0)
-.. py:const:: VecBase.S
+.. py:data:: VecBase.S
     :value: FrozenVec(0, -1, 0)
-.. py:const:: VecBase.y_neg
+.. py:data:: VecBase.y_neg
     :value: FrozenVec(0, -1, 0)
 
 ----
 
-.. py:const:: VecBase.east
+.. py:data:: VecBase.east
     :value: FrozenVec(1, 0, 0)
-.. py:const:: VecBase.E
+.. py:data:: VecBase.E
     :value: FrozenVec(1, 0, 0)
-.. py:const:: VecBase.x_pos
+.. py:data:: VecBase.x_pos
     :value: FrozenVec(1, 0, 0)
 
 -----
 
-.. py:const:: VecBase.west
+.. py:data:: VecBase.west
     :value: FrozenVec(-1, 0, 0)
-.. py:const:: VecBase.W
+.. py:data:: VecBase.W
     :value: FrozenVec(-1, 0, 0)
-.. py:const:: VecBase.x_neg
+.. py:data:: VecBase.x_neg
     :value: FrozenVec(-1, 0, 0)
 
 -----
 
-.. py:const:: VecBase.top
+.. py:data:: VecBase.top
     :value: FrozenVec(0, 0, 1)
-.. py:const:: VecBase.T
+.. py:data:: VecBase.T
     :value: FrozenVec(0, 0, 1)
-.. py:const:: VecBase.z_pos
+.. py:data:: VecBase.z_pos
     :value: FrozenVec(0, 0, 1)
 
 ----
 
-.. py:const:: VecBase.bottom
+.. py:data:: VecBase.bottom
     :value: FrozenVec(0, 0, -1)
-.. py:const:: VecBase.B
+.. py:data:: VecBase.B
     :value: FrozenVec(0, 0, -1)
-.. py:const:: VecBase.z_neg
+.. py:data:: VecBase.z_neg
     :value: FrozenVec(0, 0, -1)
 
 
