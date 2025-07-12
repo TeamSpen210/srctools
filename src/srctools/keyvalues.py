@@ -90,7 +90,7 @@ _As_Dict_Ret: TypeAlias = Union[str, dict[str, '_As_Dict_Ret']]
 T = TypeVar('T')
 
 # Various [flags] used after keyvalues names in some Valve files.
-# See https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/tier1/KeyValues.cpp#L2055
+# See https://github.com/ValveSoftware/source-sdk-2013/blob/39f6dde8fbc238727c020d13b05ecadd31bda4c0/src/tier1/KeyValues.cpp#L2218-L2252
 FLAGS_DEFAULT = {
     # We know we're not on a console...
     'x360': False,
@@ -98,11 +98,13 @@ FLAGS_DEFAULT = {
     'gameconsole': False,
 
     'win32': True,  # Not actually windows, it actually means 'PC'
+    'windows': sys.platform == 'win32',
     'osx': sys.platform.startswith('darwin'),
     'linux': sys.platform.startswith('linux'),
-    # Not in the SDK, but shows up in compatible games.
-    'deck': 'steamdeck' in os.environ,
+    # Also means '-gamepadui'.
+    'deck': os.environ.get('steamdeck') == '1' or os.environ.get('steamtenfoot') == '1',
 }
+FLAGS_DEFAULT['posix'] = FLAGS_DEFAULT['osx'] or FLAGS_DEFAULT['linux']
 
 
 class KeyValError(TokenSyntaxError):
