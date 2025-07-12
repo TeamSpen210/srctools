@@ -3,7 +3,7 @@
 This lists keyvalue/io types and names available for every entity classname.
 The dump does not contain help descriptions to keep the data small.
 """
-from typing import IO, TYPE_CHECKING, Final, Optional, Union
+from typing import TYPE_CHECKING, Final, Optional, Union
 from typing_extensions import TypeAlias
 from collections import Counter
 from collections.abc import Callable, Collection, Iterable, Mapping, Set as AbstractSet
@@ -19,6 +19,7 @@ import warnings
 
 from .binformat import DeferredWrites
 from .const import FileType
+from .types import FileR, FileRSeek, FileWBinary, FileWBinarySeek
 from .fgd import FGD, EntAttribute, EntityDef, EntityTypes, IODef, KVDef, Resource, ValueTypes
 
 
@@ -164,7 +165,7 @@ KV_FLAG_EDITOR = 0b010
 KV_FLAG_REPORT = 0b100
 
 
-def make_lookup(file: IO[bytes], inv_list: list[str]) -> Callable[[], str]:
+def make_lookup(file: FileR[bytes], inv_list: list[str]) -> Callable[[], str]:
     """Return a function that reads the index from the file, and returns the string it matches."""
     def lookup() -> str:
         """Perform the lookup."""
@@ -218,7 +219,7 @@ class BinStrDict:
         else:
             return _fmt_16bit.pack(SHARED_STRINGS + self._dict[string])
 
-    def serialise(self, file: IO[bytes]) -> None:
+    def serialise(self, file: FileWBinary) -> None:
         """Convert this to a stream of bytes."""
         inv_list = [''] * len(self._dict)
         for txt, ind in self._dict.items():
@@ -233,7 +234,7 @@ class BinStrDict:
         file.write(data)
 
     @classmethod
-    def unserialise(cls, file: IO[bytes], base: list[str]) -> tuple[list[str], Callable[[], str]]:
+    def unserialise(cls, file: FileR[bytes], base: list[str]) -> tuple[list[str], Callable[[], str]]:
         """Read the dictionary from a file.
 
         This returns the dict, and a function which reads
@@ -246,7 +247,7 @@ class BinStrDict:
         return inv_list, make_lookup(file, base + inv_list)
 
     @staticmethod
-    def read_tags(file: IO[bytes], from_dict: Callable[[], str]) -> frozenset[str]:
+    def read_tags(file: FileR[bytes], from_dict: Callable[[], str]) -> frozenset[str]:
         """Pull tags from a BinStrDict."""
         [size] = file.read(1)
         return frozenset({
@@ -256,7 +257,7 @@ class BinStrDict:
 
     @staticmethod
     def write_tags(
-        file: IO[bytes],
+        file: FileWBinary,
         dic: 'BinStrSerialise',
         tags: Collection[str],
     ) -> None:
@@ -350,7 +351,7 @@ class EngineDB(_EngineDBProto):
         return copy.deepcopy(self.fgd)
 
 
-def kv_serialise(kvdef: KVDef, file: IO[bytes], str_dict: BinStrSerialise) -> None:
+def kv_serialise(kvdef: KVDef, file: FileWBinary, str_dict: BinStrSerialise) -> None:
     """Write keyvalues to the binary file."""
     file.write(str_dict(kvdef.name))
     file.write(str_dict(kvdef.disp_name))
@@ -387,7 +388,7 @@ def kv_serialise(kvdef: KVDef, file: IO[bytes], str_dict: BinStrSerialise) -> No
 
 
 def kv_unserialise(
-    file: IO[bytes],
+    file: FileR[bytes],
     from_dict: Callable[[], str],
 ) -> KVDef:
     """Recover a KeyValue from a binary file."""
@@ -429,14 +430,14 @@ def kv_unserialise(
     return kv
 
 
-def iodef_serialise(iodef: IODef, file: IO[bytes], dic: BinStrSerialise) -> None:
+def iodef_serialise(iodef: IODef, file: FileWBinary, dic: BinStrSerialise) -> None:
     """Write an IO def the binary file."""
     file.write(dic(iodef.name))
     file.write(_fmt_8bit.pack(VALUE_TYPE_INDEX[iodef.type]))
 
 
 def iodef_unserialise(
-    file: IO[bytes],
+    file: FileR[bytes],
     from_dict: Callable[[], str],
 ) -> IODef:
     """Recover an IODef from a binary file."""
@@ -449,7 +450,7 @@ def iodef_unserialise(
     return iodef
 
 
-def ent_serialise(ent: EntityDef, file: IO[bytes], str_dict: BinStrSerialise) -> None:
+def ent_serialise(ent: EntityDef, file: FileWBinary, str_dict: BinStrSerialise) -> None:
     """Write an entity to the binary file."""
     flags = ENTITY_TYPE_2_FLAG[ent.type]
     if ent.is_alias:
@@ -511,7 +512,7 @@ def ent_serialise(ent: EntityDef, file: IO[bytes], str_dict: BinStrSerialise) ->
 
 
 def ent_unserialise(
-    file: IO[bytes],
+    file: FileR[bytes],
     classname: str,
     from_dict: Callable[[], str],
 ) -> EntityDef:
@@ -720,7 +721,7 @@ def build_blocks(
     ]
 
 
-def serialise(fgd: FGD, file: IO[bytes]) -> None:
+def serialise(fgd: FGD, file: FileWBinarySeek) -> None:
     """Write the FGD into a compacted binary format.
 
     This is expected to be in engine format - _CBaseEntity_ is present, with all others based on it,
@@ -785,7 +786,7 @@ def serialise(fgd: FGD, file: IO[bytes]) -> None:
     deferred.write()
 
 
-def unserialise(file: IO[bytes]) -> _EngineDBProto:
+def unserialise(file: FileRSeek[bytes]) -> _EngineDBProto:
     """Unpack data from engine_make_dump() to return the original data."""
 
     if file.read(3) != b'FGD':

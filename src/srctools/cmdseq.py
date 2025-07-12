@@ -3,10 +3,12 @@
 These set the arguments to the compile tools.
 """
 import attrs
-from typing import IO, Optional, Union
+from typing import Union
 from collections.abc import Sequence
 from enum import Enum
 from struct import Struct, pack, unpack
+
+from .types import FileR, FileWBinary
 
 
 ST_COMMAND = Struct('Bi260s260sii260sii')
@@ -62,7 +64,7 @@ class Command:
     #: Whether this command is checked and should run.
     enabled: bool = attrs.field(default=True, kw_only=True)
     #: If non-None, the command should fail if this file doesn't exist after it runs.
-    ensure_file: Optional[str] = attrs.field(default=None, kw_only=True)
+    ensure_file: Union[str, None] = attrs.field(default=None, kw_only=True)
     #: Determines if the command should be executed directly, or captured in the 'run process'
     #: window. Obsolete for Hammer versions with ``hammer_run_map_launcher.exe``.
     use_proc_win: bool = attrs.field(default=True, kw_only=True)
@@ -84,7 +86,7 @@ class Command:
     ) -> 'Command':
         """Parse the command from the structure in the file."""
         exe: Union[str, SpecialCommand]
-        ensure: Optional[str]
+        ensure: Union[str, None]
         if is_special:
             exe = SpecialCommand(is_special)
         else:
@@ -107,7 +109,7 @@ class Command:
         return self.enabled
 
 
-def parse(file: IO[bytes]) -> dict[str, list[Command]]:
+def parse(file: FileR[bytes]) -> dict[str, list[Command]]:
     """Read a list of sequences from a file.
 
     This returns a dict mapping names to a list of sequences.
@@ -138,7 +140,7 @@ def parse(file: IO[bytes]) -> dict[str, list[Command]]:
     return sequences
 
 
-def write(sequences: dict[str, Sequence[Command]], file: IO[bytes]) -> None:
+def write(sequences: dict[str, Sequence[Command]], file: FileWBinary) -> None:
     """Write commands back to a file."""
     file.write(SEQ_HEADER)
     file.write(pack('f', 0.2))

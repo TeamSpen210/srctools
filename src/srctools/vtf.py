@@ -9,7 +9,7 @@ not supported, only metdata can be read.
 .. _`Python Imaging Library`: https://pillow.readthedocs.io/en/stable/
 .. _`libsquish`: https://sourceforge.net/projects/libsquish/
 """
-from typing import IO, TYPE_CHECKING, Any, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Optional, Union, overload
 from array import array
 from collections.abc import Iterator, Mapping, Sequence
 from enum import Enum, Flag
@@ -25,6 +25,7 @@ import attrs
 from . import EmptyMapping, binformat
 from .const import add_unknown
 from .math import AnyVec, FrozenVec, Vec
+from .types import FileRSeek, FileWBinarySeek
 
 
 # Only import while type checking, so these expensive libraries are only loaded
@@ -366,7 +367,7 @@ class Frame:
     width: int
     height: int
     _data: Optional['array[int]']  # Only generic in stubs!
-    _fileinfo: Optional[tuple[IO[bytes], int, ImageFormats]]
+    _fileinfo: Optional[tuple[FileRSeek[bytes], int, ImageFormats]]
 
     def __init__(
         self,
@@ -707,7 +708,7 @@ class VTF:
         self.mipmap_count = mip_count
 
     @classmethod
-    def read(cls: 'type[VTF]', file: IO[bytes], header_only: bool = False) -> 'VTF':
+    def read(cls: 'type[VTF]', file: FileRSeek[bytes], header_only: bool = False) -> 'VTF':
         """Read in a VTF file.
 
         :param file: The file to read from, must be seekable.
@@ -849,7 +850,7 @@ class VTF:
 
     def save(
         self,
-        file: IO[bytes],
+        file: FileWBinarySeek,
         version: Optional[tuple[int, int]] = None,
         sheet_seq_version: int = 1,
         asw_or_later: bool = True,

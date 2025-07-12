@@ -3,7 +3,7 @@ The binformat module :mod:`binformat` contains functionality for handling binary
 esentially expanding on :external:mod:`struct`'s functionality.
 
 """
-from typing import IO, Any, Callable, Final, Optional, TypeVar, Union
+from typing import Any, Callable, Final, Optional, TypeVar, Union, overload, cast
 from binascii import crc32
 from collections.abc import Collection, Hashable, Mapping
 from struct import Struct
@@ -12,6 +12,7 @@ import itertools
 import lzma
 
 from srctools.math import Vec
+from .types import FileR, FileRSeek, FileWBinarySeek
 
 
 __all__ = [
@@ -59,14 +60,18 @@ T = TypeVar("T")
 _cached_struct = functools.lru_cache()(Struct)
 
 
-def struct_read(fmt: Union[Struct, str], file: IO[bytes]) -> tuple[Any, ...]:
+def struct_read(fmt: Union[Struct, str], file: FileR[bytes]) -> tuple[Any, ...]:
     """Read a structure from the file, automatically computing the required number of bytes."""
     if not isinstance(fmt, Struct):
         fmt = _cached_struct(fmt)
     return fmt.unpack(file.read(fmt.size))
 
 
-def read_nullstr(file: IO[bytes], pos: Optional[int] = None, encoding: str = 'ascii') -> str:
+@overload
+def read_nullstr(file: FileR[bytes], pos: None = None, encoding: str = 'ascii') -> str: ...
+@overload
+def read_nullstr(file: FileRSeek[bytes], pos: Optional[int], encoding: str = 'ascii') -> str: ...
+def read_nullstr(file: FileR[bytes], pos: Optional[int] = None, encoding: str = 'ascii') -> str:
     """Read a null-terminated string from the file.
 
     If the position is ``0``, this will instead immediately return an empty string. If set to any
@@ -75,7 +80,7 @@ def read_nullstr(file: IO[bytes], pos: Optional[int] = None, encoding: str = 'as
     if pos is not None:
         if pos == 0:
             return ''
-        file.seek(pos)
+        cast('FileRSeek[bytes]', file).seek(pos)
 
     text: list[bytes] = []
     while True:
@@ -87,7 +92,7 @@ def read_nullstr(file: IO[bytes], pos: Optional[int] = None, encoding: str = 'as
         text.append(char)
 
 
-def read_nullstr_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> list[str]:
+def read_nullstr_array(file: FileR[bytes], count: int, encoding: str = 'ascii') -> list[str]:
     """Read the specified number of consecutive null-terminated strings from a file.
 
     If the count is zero, no reading will be performed at all.
@@ -101,13 +106,13 @@ def read_nullstr_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> 
     return arr
 
 
-def read_offset_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> list[str]:
+def read_offset_array(file: FileRSeek[bytes], count: int, encoding: str = 'ascii') -> list[str]:
     """Read an array of offsets to null-terminated strings from the file.
 
     This first reads the specified number of signed integers, then seeks to those locations and
     reads a null-terminated string from each.
     """
-    offsets = struct_read(f'<{count}i', file)
+    offsets: tuple[int, ...] = struct_read(f'<{count}i', file)
     pos = file.tell()
     arr = [
         read_nullstr(file, off, encoding)
@@ -162,7 +167,7 @@ def write_array(fmt: Union[str, Struct], data: Collection[int]) -> bytes:
     return Struct(endianness + fmt * len(data)).pack(*data)
 
 
-def str_readvec(file: IO[bytes]) -> Vec:
+def str_readvec(file: FileR[bytes]) -> Vec:
     """Shortcut to read a 3-float vector from a file."""
     return Vec(ST_VEC.unpack(file.read(ST_VEC.size)))
 
@@ -267,7 +272,7 @@ class DeferredWrites:
     to store the data. When the file is written out, call :py:func:`write()` which will :external:py:meth:`~io.IOBase.seek`
     back and fill in the values.
     """
-    def __init__(self, file: IO[bytes]) -> None:
+    def __init__(self, file: FileWBinarySeek) -> None:
         self.file = file
         # Position to write to, and the struct format to use.
         self.loc: dict[Hashable, tuple[int, Struct]] = {}
@@ -287,7 +292,7 @@ class DeferredWrites:
             fmt = _cached_struct(fmt)
         self.loc[key] = (self.file.tell(), fmt)
         if write:
-            self.file.write(bytes(fmt.size))
+            self.file.write(bytes(fmt.size))  # Empty bytes
 
     def set_data(self, key: Hashable, *data: Union[int, str, bytes, float]) -> None:
         """Specify the data for the given key.

@@ -1,9 +1,6 @@
 """Parse FGD files, used to describe Hammer entities."""
 from __future__ import annotations
-from typing import (
-    IO, TYPE_CHECKING, Any, ClassVar, Generic, Optional, TextIO, TypeVar, Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, Union, cast
 from typing_extensions import Protocol, TypeAlias, overload, Self
 from collections import ChainMap, defaultdict
 from collections.abc import (
@@ -24,8 +21,9 @@ import attrs
 
 from srctools.const import FileType
 from srctools.filesys import File, FileSystem, VirtualFileSystem
-from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
-from srctools.vmf import VMF, Entity
+from .tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
+from .vmf import VMF, Entity
+from .types import FileWText
 import srctools
 
 
@@ -417,7 +415,7 @@ def _fgd_escape(extended: bool, text: str) -> str:
     return text.replace('\n', '\\n').replace('"', "''")
 
 
-def _write_longstring(file: IO[str], extended: bool, text: str, *, indent: str) -> None:
+def _write_longstring(file: FileWText, extended: bool, text: str, *, indent: str) -> None:
     """Write potentially long strings to the file, splitting with + if needed.
 
     The game parser has a max size of 8192 bytes for the text, but can only
@@ -1004,7 +1002,7 @@ class UnknownHelper(Helper):
         """Produce the argument text to recreate this helper type."""
         return self.args[:]
 
-    __hash__ = None  # type: ignore[assignment]
+    __hash__ = None
 
 
 HelperT = TypeVar('HelperT', bound=Helper)
@@ -1281,7 +1279,7 @@ class KVDef(EntAttribute):
 
     def export(
         self,
-        file: TextIO,
+        file: FileWText,
         tags: Collection[str] = (),
         label_spawnflags: bool = True,
         custom_syntax: bool = True,
@@ -1440,7 +1438,7 @@ class IODef(EntAttribute):
 
     def export(
         self,
-        file: TextIO,
+        file: FileWText,
         io_type: str,
         tags: Collection[str] = (),
         custom_syntax: bool = True,
@@ -2204,7 +2202,7 @@ class EntityDef:
 
     def export(
         self,
-        file: TextIO,
+        file: FileWText,
         label_spawnflags: bool = True,
         custom_syntax: bool = True,
         old_report: bool = False,
@@ -2550,7 +2548,7 @@ class FGD:
 
     @overload
     def export(
-        self, file: TextIO, *,
+        self, file: FileWText, *,
         label_spawnflags: bool = True, custom_syntax: bool = True, old_report: bool = False,
     ) -> None: ...
     @overload
@@ -2559,7 +2557,7 @@ class FGD:
         label_spawnflags: bool = True, custom_syntax: bool = True, old_report: bool = False,
     ) -> str: ...
     def export(
-        self, file: Optional[TextIO] = None, *,
+        self, file: Optional[FileWText] = None, *,
         label_spawnflags: bool = True,
         custom_syntax: bool = True,
         old_report: bool = False,

@@ -1,5 +1,5 @@
 """Parses Source models, to extract metadata."""
-from typing import Any, BinaryIO, Optional, TypeVar, Union, cast
+from typing import Any, Optional, TypeVar, Union, cast
 from collections.abc import Iterable, Iterator
 from enum import Enum, Flag as FlagEnum
 from pathlib import PurePosixPath
@@ -7,11 +7,12 @@ from struct import Struct
 
 import attrs
 
-from srctools.binformat import read_nullstr, read_offset_array, str_readvec, struct_read
-from srctools.const import add_unknown
-from srctools.filesys import File, FileSystem
-from srctools.keyvalues import Keyvalues
-from srctools.math import Vec
+from .binformat import read_nullstr, read_offset_array, str_readvec, struct_read
+from .const import add_unknown
+from .filesys import File, FileSystem
+from .keyvalues import Keyvalues
+from .math import Vec
+from .types import FileR, FileRSeek
 
 
 __all__ = [
@@ -375,7 +376,7 @@ class Model:
             with phy_file.open_bin() as f:
                 self._parse_phy(f, phy_file.path)
 
-    def _load(self, f: BinaryIO) -> None:
+    def _load(self, f: FileRSeek[bytes]) -> None:
         """Read data from the MDL file."""
         assert f.tell() == 0, "Doesn't begin at start?"
         if f.read(4) != b'IDST':
@@ -624,7 +625,7 @@ class Model:
         self._cull_skins_table(f, bodypart_count)
 
     @staticmethod
-    def _read_sequences(f: BinaryIO, count: int) -> list[Sequence]:
+    def _read_sequences(f: FileRSeek[bytes], count: int) -> list[Sequence]:
         """Split this off to decrease stack in main parse method."""
         sequences: list[Sequence] = [cast(Sequence, None)] * count
         for i in range(count):
@@ -713,7 +714,7 @@ class Model:
 
         return sequences
 
-    def _cull_skins_table(self, f: BinaryIO, body_count: int) -> None:
+    def _cull_skins_table(self, f: FileRSeek[bytes], body_count: int) -> None:
         """Fix the table of used skins to correspond to those actually used.
 
         StudioMDL is rather messy, and adds many extra columns that are not used
@@ -783,7 +784,7 @@ class Model:
         for skin_ind, tex in enumerate(self.skins):
             self.skins[skin_ind] = [tex[i] for i in used_inds]
 
-    def _parse_phy(self, f: BinaryIO, filename: str) -> None:
+    def _parse_phy(self, f: FileR[bytes], filename: str) -> None:
         """Parse the physics data file, if present.
         """
         [

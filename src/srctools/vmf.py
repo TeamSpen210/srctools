@@ -1,6 +1,6 @@
 """Reads and writes VMF map files, providing various tools to make it easier to modify."""
 
-from typing import IO, TYPE_CHECKING, Any, Final, Optional, Protocol, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Final, Optional, Protocol, TypeVar, Union, overload
 from typing_extensions import Literal, TypeAlias, deprecated
 from array import ArrayType as Array
 from collections import defaultdict
@@ -22,12 +22,13 @@ import warnings
 
 import attrs
 
-from srctools import BOOL_LOOKUP, EmptyMapping
-from srctools.keyvalues import Keyvalues, escape_text
-from srctools.math import (
+from . import BOOL_LOOKUP, EmptyMapping
+from .keyvalues import Keyvalues, escape_text
+from .math import (
     Angle, AnyAngle, AnyMatrix, AnyVec, FrozenAngle, FrozenMatrix, FrozenVec, Matrix, Vec,
     format_float, to_matrix,
 )
+from .types import FileWText
 import srctools
 
 
@@ -410,7 +411,7 @@ class Strata2DViewport:
         u, v = Vec.INV_AXIS[chosen_axis]
         return cls(chosen_axis, pos[u], pos[v], zoom)
 
-    def export(self, buffer: IO[str], title: str) -> None:
+    def export(self, buffer: FileWText, title: str) -> None:
         """Export the 2D viewport definition."""
         buffer.write(f'\t\t{title}\n')
         buffer.write('\t\t{\n')
@@ -435,7 +436,7 @@ class Strata3DViewport:
     position: Vec
     angle: Angle
 
-    def export(self, buffer: IO[str], title: str) -> None:
+    def export(self, buffer: FileWText, title: str) -> None:
         """Export the 3D viewport definition."""
         buffer.write(f'\t\t{title}\n')
         buffer.write('\t\t{\n')
@@ -875,13 +876,13 @@ class VMF:
 
     @overload
     def export(
-        self, dest_file: IO[str], *,
+        self, dest_file: FileWText, *,
         inc_version: bool = True, minimal: bool = False, disp_multiblend: bool = True,
     ) -> None: ...
 
     def export(
         self,
-        dest_file: Optional[IO[str]] = None, *,
+        dest_file: Optional[FileWText] = None, *,
         inc_version: bool = True,
         minimal: bool = False,
         disp_multiblend: bool = True,
@@ -1347,7 +1348,7 @@ class Camera:
         if self.is_active():
             self.set_inactive_all()
 
-    def export(self, buffer: IO[str], ind: str = '') -> None:
+    def export(self, buffer: FileWText, ind: str = '') -> None:
         """Export the camera to the VMF file."""
         buffer.write(ind + 'camera\n')
         buffer.write(ind + '{\n')
@@ -1383,7 +1384,7 @@ class Cordon:
         max_ = bounds.vec('maxs', 128, 128, 128)
         return Cordon(vmf_file, min_, max_, is_active, name)
 
-    def export(self, buffer: IO[str], ind: str = '') -> None:
+    def export(self, buffer: FileWText, ind: str = '') -> None:
         """Write the cordon into the VMF."""
         buffer.write(f'{ind}cordon\n')
         buffer.write(f'{ind}{{\n')
@@ -1444,7 +1445,7 @@ class VisGroup:
             children,
         )
 
-    def export(self, buffer: IO[str], ind: str = '') -> None:
+    def export(self, buffer: FileWText, ind: str = '') -> None:
         """Write out the VMF text for a visgroup"""
         buffer.write(
             f'{ind}visgroup\n'
@@ -1615,7 +1616,7 @@ class Solid:
 
     def export(
         self,
-        buffer: IO[str],
+        buffer: FileWText,
         ind: str = '',
         disp_multiblend: bool = True,
         include_groups: bool = True,
@@ -2269,7 +2270,7 @@ class Side:
         return new_side
 
     # noinspection PyProtectedMember
-    def export(self, buffer: IO[str], ind: str = '', disp_multiblend: bool = True) -> None:
+    def export(self, buffer: FileWText, ind: str = '', disp_multiblend: bool = True) -> None:
         """Generate the strings required to define this side in a VMF.
 
         - disp_multiblend controls whether displacements produce their multiblend
@@ -2299,7 +2300,7 @@ class Side:
 
         buffer.write(f'{ind}}}\n')
 
-    def _export_displacement(self, buffer: IO[str], ind: str, disp_multiblend: bool) -> None:
+    def _export_displacement(self, buffer: FileWText, ind: str, disp_multiblend: bool) -> None:
         """Export displacement data."""
         assert self._disp_verts is not None
         assert self.disp_allowed_vert is not None
@@ -2348,7 +2349,7 @@ class Side:
                     buffer.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
                 buffer.write(ind + '\t\t}\n')
 
-    def _export_disp_rowset(self, name: str, membr: str, f: IO[str], ind: str, size: int) -> None:
+    def _export_disp_rowset(self, name: str, membr: str, f: FileWText, ind: str, size: int) -> None:
         """Write out one of the displacement vertex arrays."""
         assert self._disp_verts is not None
         f.write(f'{ind}\t\t{name}\n{ind}\t\t{{\n')
@@ -2492,6 +2493,7 @@ class Side:
         """Compute the unit vector which extends perpendicular to the face.
 
         """
+        # TODO: This is backwards!
         # The three points are in clockwise order, so compute differences
         # in the clockwise direction, then cross to get the normal.
         point_1 = self.planes[1] - self.planes[0]
@@ -2807,7 +2809,7 @@ class Entity(MutableMapping[str, str]):
 
     def export(
         self,
-        buffer: IO[str],
+        buffer: FileWText,
         ind: str = '',
         disp_multiblend: bool = True,
         _is_worldspawn: bool = False,
@@ -3359,7 +3361,7 @@ class EntityFixup(MutableMapping[str, str]):
         """Provides a view over all variable values."""
         return _EntityFixupValues(self)
 
-    def export(self, buffer: IO[str], ind: str) -> None:
+    def export(self, buffer: FileWText, ind: str) -> None:
         """Export all the fixup values into the VMF."""
         for fixup in sorted(self._fixup.values(), key=operator.attrgetter('id')):
             # When exporting, pad the index with zeros if necessary
@@ -3571,7 +3573,7 @@ class EntityGroup:
             self.color.copy(),
         )
 
-    def export(self, buffer: IO[str], ind: str) -> None:
+    def export(self, buffer: FileWText, ind: str) -> None:
         """Write out a group into a VMF file."""
         buffer.write(ind + 'group\n')
         buffer.write(ind + '{\n')
@@ -3843,7 +3845,7 @@ class Output:
             self.delay = 0.0
             self.times = -1
 
-    def export(self, buffer: IO[str], ind: str = '') -> None:
+    def export(self, buffer: FileWText, ind: str = '') -> None:
         """Generate the text required to define this output in the VMF."""
         buffer.write(ind + self.as_keyvalue())
 

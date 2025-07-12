@@ -31,9 +31,10 @@ import re
 import attrs
 
 from srctools import BOOL_LOOKUP, EmptyMapping, binformat, bool_as_int
-from srctools.keyvalues import Keyvalues
-from srctools.math import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Matrix, Vec
-from srctools.tokenizer import Token, Tokenizer, escape_text
+from .keyvalues import Keyvalues
+from .math import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Matrix, Vec
+from .tokenizer import Token, Tokenizer, escape_text
+from .types import FileR, FileWBinary
 
 
 __all__ = [
@@ -1257,6 +1258,7 @@ class Element(Mapping[str, Attribute]):
             attr._value = str(value)
 
     @classmethod
+    # IO[bytes] and not a specific protocol, TextIOWrapper calls most of the API.
     def parse(cls, file: IO[bytes], unicode: bool = False) -> tuple['Element', str, int]:
         """Parse a DMX file encoded in binary or KV2 (text).
 
@@ -1325,7 +1327,7 @@ class Element(Mapping[str, Attribute]):
         return result, fmt_name, fmt_vers
 
     @classmethod
-    def parse_bin(cls, file: IO[bytes], version: int, unicode: bool = False) -> 'Element':
+    def parse_bin(cls, file: FileR[bytes], version: int, unicode: bool = False) -> 'Element':
         """Parse the core binary data in a DMX file.
 
         The ``<!-- -->`` format comment line should have already be read.
@@ -1467,7 +1469,7 @@ class Element(Mapping[str, Attribute]):
             raise ValueError("No elements in DMX file!") from None
 
     @classmethod
-    def parse_kv2(cls, file: IO[str], version: int, unicode: bool = False) -> 'Element':
+    def parse_kv2(cls, file: Union[str, Iterable[str]], version: int, unicode: bool = False) -> 'Element':
         """Parse a DMX file encoded in KeyValues2.
 
         The ``<!-- -->`` format comment line should have already been read.
@@ -1628,7 +1630,7 @@ class Element(Mapping[str, Attribute]):
         return elem
 
     def export_binary(
-        self, file: IO[bytes],
+        self, file: FileWBinary,
         version: int = 5,
         fmt_name: str = 'dmx', fmt_ver: int = 1,
         unicode: Literal['ascii', 'format', 'silent'] = 'ascii',
@@ -1782,7 +1784,7 @@ class Element(Mapping[str, Attribute]):
                         file.write(bin_data)
 
     def export_kv2(
-        self, file: IO[bytes],
+        self, file: FileWBinary,
         fmt_name: str = 'dmx', fmt_ver: int = 1,
         *,
         flat: bool = False,
@@ -1857,7 +1859,7 @@ class Element(Mapping[str, Attribute]):
 
     def _export_kv2(
         self,
-        file: IO[bytes],
+        file: FileWBinary,
         indent: bytes,
         roots: set[UUID],
         encoding: str,

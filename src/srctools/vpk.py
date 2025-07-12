@@ -1,5 +1,5 @@
 """Classes for reading and writing Valve's VPK format, version 1."""
-from typing import IO, Final, Optional, Union
+from typing import Final, Optional, Union
 from typing_extensions import TypeAlias, deprecated
 from collections.abc import Iterable, Iterator
 from enum import Enum
@@ -10,7 +10,8 @@ import struct
 
 import attrs
 
-from srctools.binformat import EMPTY_CHECKSUM, checksum, struct_read
+from .binformat import EMPTY_CHECKSUM, checksum, struct_read
+from .types import FileR, FileWBinary
 
 
 __all__ = [
@@ -35,7 +36,7 @@ class OpenModes(Enum):
         return self.value in 'wa'
 
 
-def iter_nullstr(file: IO[bytes]) -> Iterator[str]:
+def iter_nullstr(file: FileR[bytes]) -> Iterator[str]:
     """Read a null-terminated ASCII string from the file.
 
     This continuously yields strings, with empty strings
@@ -60,7 +61,7 @@ def iter_nullstr(file: IO[bytes]) -> Iterator[str]:
             chars.extend(char)
 
 
-def _write_nullstring(file: IO[bytes], string: str) -> None:
+def _write_nullstring(file: FileWBinary, string: str) -> None:
     """Write a null-terminated ASCII string back to the file."""
     if string:
         file.write(string.encode('ascii', 'surrogateescape') + b'\x00')

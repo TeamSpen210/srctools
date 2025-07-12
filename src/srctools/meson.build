@@ -29,6 +29,7 @@ pure_python = files(
     'steam.py',
     'surfaceprop.py',
     'tokenizer.py',
+    'types.py',
     'vec.py',
     'vmf.py',
     'vmt.py',

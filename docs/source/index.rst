@@ -18,9 +18,7 @@ Srctools is a library for parsing and manipulating the various file formats used
 	modules/math
 	modules/const
 	modules/logger
-	modules/binformat
 	modules/filesys
-	modules/tokenizer
 
 .. toctree::
 	:maxdepth: 1
@@ -52,6 +50,14 @@ Srctools is a library for parsing and manipulating the various file formats used
 	modules/packlist
 	modules/run
 	modules/steam
+
+.. toctree::
+	:maxdepth: 1
+	:caption: Implementation Modules:
+
+	modules/binformat
+	modules/types
+	modules/tokenizer
 
 
 Indices and tables

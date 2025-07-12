@@ -5,7 +5,7 @@ import copy
 
 import attrs
 
-from srctools.dmx import Attribute, Element, ValueType
+from .dmx import Attribute, Element, ValueType
 
 
 __all__ = [
@@ -58,10 +58,7 @@ class Particle:
 
     @classmethod
     @overload
-    def parse(
-        cls,
-        file: IO[bytes],
-    ) -> dict[str, 'Particle']: ...
+    def parse(cls, file: IO[bytes]) -> dict[str, 'Particle']: ...
 
     @classmethod
     def parse(

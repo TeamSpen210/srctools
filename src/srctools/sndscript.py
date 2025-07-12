@@ -1,12 +1,13 @@
 """Reads and writes Soundscripts."""
-from typing import IO, Callable, Optional, TextIO, TypeVar, Union
+from typing import Callable, Optional, TypeVar, Union
 import enum
 import struct
 
 import attrs
 
-from srctools import conv_float
-from srctools.keyvalues import Keyvalues, NoKeyError
+from . import conv_float
+from .keyvalues import Keyvalues, NoKeyError
+from .types import FileRSeek, FileWText
 
 
 __all__ = [
@@ -270,7 +271,7 @@ class _WAVChunk:
     This is copied from the Python Standard Library, 3.11.
     We force little-endian, and to align to 2-byte boundaries.
     """
-    def __init__(self, file: IO[bytes]) -> None:
+    def __init__(self, file: FileRSeek[bytes]) -> None:
         self.closed = False
         self.file = file
         self.chunkname = file.read(4)
@@ -322,7 +323,7 @@ class _WAVChunk:
             self.size_read = self.size_read + n
 
 
-def wav_is_looped(file: IO[bytes]) -> bool:
+def wav_is_looped(file: FileRSeek[bytes]) -> bool:
     """Check if the provided wave file contains loop cue points.
 
     This code is partially copied from wave.Wave_read.initfp().
@@ -558,7 +559,7 @@ class Sound:
             sound_version == 2,
         )
 
-    def export(self, file: TextIO) -> None:
+    def export(self, file: FileWText) -> None:
         """Write a sound to a file.
 
         Pass a file-like object open for text writing.

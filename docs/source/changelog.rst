@@ -11,6 +11,8 @@ Version (dev)
 
 * Add support for exporting the old FGD 'report' syntax (``name(*type)``), and suppress editor-only if custom sytnax is disabled.
 * Support various shader parameters added by Strata Source.
+* Add :mod:`srctools.types`, which contains common types and classes.
+* Switch type hints for all functions taking files to more precise protocols.
 
 -------------
 Version 2.6.0

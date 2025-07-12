@@ -1,15 +1,16 @@
 """Parses material files."""
-from typing import Callable, Optional, TextIO, TypeVar, Union, overload
+from typing import Callable, Optional, TypeVar, Union, overload
 from collections.abc import Iterable, Iterator, Mapping, MutableMapping
 from enum import Enum
 import sys
 
 import attrs
 
-from srctools import EmptyMapping
-from srctools.filesys import FileSystem
-from srctools.keyvalues import Keyvalues
-from srctools.tokenizer import BARE_DISALLOWED, Token as Tok, Tokenizer as Tokenizer
+from .filesys import FileSystem
+from .keyvalues import Keyvalues
+from .tokenizer import BARE_DISALLOWED, Token as Tok, Tokenizer as Tokenizer
+from .types import FileWText
+from . import EmptyMapping
 
 
 class VarType(Enum):
@@ -281,7 +282,7 @@ class Material(MutableMapping[str, str]):
 
         raise tok.error('EOF without closed block!')
 
-    def export(self, f: TextIO) -> None:
+    def export(self, f: FileWText) -> None:
         """Write the material back to a file."""
         f.write(self.shader + '\n\t{\n')
         for param in self._params.values():
