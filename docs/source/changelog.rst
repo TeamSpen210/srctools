@@ -86,12 +86,10 @@ Version 2.4.1
 * Add a ``custom_syntax`` option to :py:meth:`FGD.export() <srctools.fgd.FGD.export>`, disabling
   export of custom syntax. Resources can now be exported.
 * Correctly produce an error if a FGD entity definition is missing its closing bracket.
-* Escape all characters `utlbuffer.cpp <utlbuffer_esc_>`_ does - ``\n``, ``\t``, ``\v``, ``\b``, ``\r``, ``\f``, ``\a``, ``\``, ``?``, ``'``, ``"``.
+* Escape all characters :sdk-2013:`utlbuffer.cpp <tier1/utlbuffer.cpp#L57-L69>` does - ``\n``, ``\t``, ``\v``, ``\b``, ``\r``, ``\f``, ``\a``, ``\``, ``?``, ``'``, ``"``.
 * Unconditionally enable support for escaping characters in DMX Keyvalues2, since Valve's parser can handle it. Binary formats never needed escaping.
 * Correctly look up types for conditional shader parameters (``ldr?$bumpmap``).
 * Parse FGDs correctly which have multiline strings with the plus on the second line.
-
-.. _utlbuffer_esc: https://github.com/ValveSoftware/source-sdk-2013/blob/0565403b153dfcde602f6f58d8f4d13483696a13/src/tier1/utlbuffer.cpp#L57-L69
 
 -------------
 Version 2.4.0

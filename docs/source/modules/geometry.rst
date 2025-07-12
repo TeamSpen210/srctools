@@ -8,6 +8,8 @@ In VMF files, brushes are defined solely by the direction of each face, and do n
 specify vertices. This makes manipulation and checks against them difficult. This module calculates
 the vertices of a brush, and provides the logic for operations like clipping and carving.
 
+See :sdk-2013:`utils/common/polylib.cpp` for some of the algorithms.
+
 Conversion
 ==========
 

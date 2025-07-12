@@ -83,6 +83,11 @@ extlinks = {
     'ha-issue': ('https://github.com/TeamSpen210/HammerAddons/issues/%s', 'HammerAddons Issue #%s'),
     'bee-app-issue': ('https://github.com/BEEmod/BEE2.4/issues/%s', 'BEE Issue #%s'),
     'bee-pack-issue': ('https://github.com/BEEmod/BEE2-items/issues/%s', 'BEE Issue #%s'),
+    # Pre-TF2 SDK commit.
+    'sdk-2013': ('https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/%s', "%s"),
+    'sdk-2013-mp': ('https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/mp/src/%s', "%s"),
+    # Current TF2 SDK commit.
+    'sdk-2025': ('https://github.com/ValveSoftware/source-sdk-2013/commit/39f6dde8fbc238727c020d13b05ecadd31bda4c0', "%s"),
 }
 
 

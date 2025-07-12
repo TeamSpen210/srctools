@@ -1,6 +1,6 @@
 """Implements tools for manipulating brush geometry.
 
-See `polylib.cpp <https://github.com/ValveSoftware/source-sdk-2013/blob/0565403b153dfcde602f6f58d8f4d13483696a13/src/utils/common/polylib.cpp>`_ for some of the algorithms.
+See :sdk-2013:`utils/common/polylib.cpp` for some of the algorithms.
 """
 from typing import Optional
 

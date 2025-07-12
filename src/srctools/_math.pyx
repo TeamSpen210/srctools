@@ -639,7 +639,7 @@ cdef bint _mat_from_angle(mat_t res, vec_t *angle) except False:
 
 
 cdef inline bint _mat_to_angle(vec_t *ang, mat_t mat) except False:
-    # https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/mathlib/mathlib_base.cpp#L208
+    # https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/mathlib/mathlib_base.cpp#L208
     cdef double horiz_dist = math.sqrt(mat[0][0]**2 + mat[0][1]**2)
     if horiz_dist > 0.001:
         ang.x = norm_ang(rad_2_deg(math.atan2(-mat[0][2], horiz_dist)))

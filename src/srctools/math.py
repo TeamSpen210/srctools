@@ -1847,7 +1847,7 @@ class MatrixBase:
 
         Internal, modifies the specified angle even if frozen -ensure it's new!
         """
-        # https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/mathlib/mathlib_base.cpp#L208
+        # https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/mathlib/mathlib_base.cpp#L208
         for_x = self._aa
         for_y = self._ab
         for_z = self._ac

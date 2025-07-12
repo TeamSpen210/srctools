@@ -90,7 +90,7 @@ _As_Dict_Ret: TypeAlias = Union[str, dict[str, '_As_Dict_Ret']]
 T = TypeVar('T')
 
 # Various [flags] used after keyvalues names in some Valve files.
-# See https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/tier1/KeyValues.cpp#L2055
+# See https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/tier1/KeyValues.cpp#L2055
 FLAGS_DEFAULT = {
     # We know we're not on a console...
     'x360': False,
