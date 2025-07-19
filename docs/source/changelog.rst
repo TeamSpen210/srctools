@@ -14,6 +14,7 @@ Version (dev)
 * Add :mod:`srctools.types`, which contains common types and classes.
 * Switch type hints for all functions taking files to more precise protocols.
 * Add source tracking for packed files, allows logging the cause for each file.
+* Don't resave package/soundscript caches for packlists if not modified.
 
 -------------
 Version 2.6.0

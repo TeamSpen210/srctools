@@ -214,6 +214,8 @@ class ManifestedFiles(Generic[ParsedT]):
     # For each identifier, the filename it's in and whatever data this was parsed into.
     # Do not display in the repr, there's thousands of these.
     name_to_parsed: dict[str, tuple[str, Optional[ParsedT]]] = attrs.field(factory=dict, repr=False)
+    # Identifiers which have been packed
+    packed_ids: set[str] = attrs.field(factory=set, repr=False)
     # All the filenames we know about, in order. The value is then
     # whether they should be packed.
     _files: dict[str, FileMode] = attrs.Factory(OrderedDict)
@@ -221,6 +223,7 @@ class ManifestedFiles(Generic[ParsedT]):
     # Records the contents of the cache file.
     # filename -> (cache_key, identifier_list)
     _cache: dict[str, tuple[int, list[str]]] = attrs.Factory(dict)
+    _cache_changed: bool = True
 
     def force_exclude(self, filename: str) -> None:
         """Mark this soundscript file as excluded."""
@@ -251,9 +254,13 @@ class ManifestedFiles(Generic[ParsedT]):
                 file_elem['key'].val_int & FILE_CACHE_TRUNC,
                 list(file_elem['files'].iter_string()),
             )
+        self._cache_changed = False
 
-    def save_cache(self, filename: Union[str, 'os.PathLike[str]']) -> None:
+    def save_cache(self, filename: Union[str, 'os.PathLike[str]'], force: bool = False) -> None:
         """Write back new cache data."""
+        if not force and not self._cache_changed:
+            LOGGER.debug('Skipping resaving {}', filename)
+            return
         root = Element('FileList', 'SrcFileList')
         file_arr = Attribute.array('files', ValueType.ELEMENT)
         root['files'] = file_arr
@@ -302,6 +309,7 @@ class ManifestedFiles(Generic[ParsedT]):
         LOGGER.debug('Loading {}: not in cache', filename)
         # Otherwise, parse and add to the cache.
         identifiers = []
+        self._cache_changed = True
         self._cache[filename] = key, identifiers
         for identifier, data in self.parse_func(file).items():
             identifiers.append(identifier)
@@ -344,6 +352,7 @@ class ManifestedFiles(Generic[ParsedT]):
         preload: bool = False, source: str = '',
     ) -> ParsedT:
         """Pack the associated filename, then return the data."""
+        self.packed_ids.add(identifier)
         filename, data = self.fetch_data(identifier)
 
         old = self._files[filename]
@@ -523,6 +532,17 @@ class PackList:
             filename = filename + '.vtf'
         elif data_type is FileType.VSCRIPT_SQUIRREL:
             filename = strip_extension(filename) + '.nut'
+        elif data_type is FileType.PARTICLE_FILE:
+            if data:
+                virtual_fsys = VirtualFileSystem({filename: data})
+                self.particles.add_cached_file(filename, virtual_fsys[filename], FileMode.INCLUDE)
+            else:
+                try:
+                    fsys_file = self.fsys[filename]
+                except FileNotFoundError:
+                    pass
+                else:
+                    self.particles.add_cached_file(filename, fsys_file, FileMode.INCLUDE)
 
         if data_type is FileType.MODEL:
             if not filename.startswith('models/'):
