@@ -452,6 +452,10 @@ def test_inplace_rotation(py_c_vec: PyCVec) -> None:
     v @= ang
     assert v == vec @ ang
 
+    v = vec.copy()
+    v @= mat
+    assert v == vec @ mat
+
     a = ang.copy()
     a @= ang2
     assert a == ang @ ang2

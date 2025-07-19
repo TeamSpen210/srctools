@@ -2470,7 +2470,7 @@ cdef class Vec(VecBase):
                 _mat_from_angle(temp, &(<AngleBase>other).val)
         elif mat_check(other):
             with cython.critical_section(other):
-                temp = other.mat
+                memcpy(temp, &(<MatrixBase>other).mat, sizeof(mat_t))
         else:
             return NotImplemented
         with cython.critical_section(self):
