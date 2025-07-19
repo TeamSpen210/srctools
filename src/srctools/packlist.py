@@ -172,6 +172,8 @@ class PackFile:
     filename: str
     data: Optional[bytes] = None
     optional: bool = False
+    # Human-readable indication as to the immediate cause of packing. Only the first is remembered.
+    source: str = ''
     # If we've checked for dependencies of this yet.
     _analysed: bool = attrs.field(init=False, default=False)
 
@@ -183,10 +185,10 @@ class PackFile:
     def __repr__(self) -> str:
         text = f'<{"virtual " if self.virtual else ""}{self.type.name} Packfile "{self.filename}"'
         if self.data is not None:
-            text += f' with {len(self.data)} bytes data>'
-        else:
-            text += '>'
-        return text
+            text += f' with {len(self.data)} bytes data'
+        if self.source:
+            text += f', source="{self.source}"'
+        return text + '>'
 
 
 def unify_path(path: str) -> str:
@@ -336,14 +338,18 @@ class ManifestedFiles(Generic[ParsedT]):
                 raise ValueError(f'Parsed "{filename}", but identifier "{identifier}" was not present!')
         return filename, data
 
-    def pack_and_get(self, lst: 'PackList', identifier: str, preload: bool = False) -> ParsedT:
+    def pack_and_get(
+        self, lst: 'PackList',
+        identifier: str,
+        preload: bool = False, source: str = '',
+    ) -> ParsedT:
         """Pack the associated filename, then return the data."""
         filename, data = self.fetch_data(identifier)
 
         old = self._files[filename]
         if old is not FileMode.EXCLUDE:
             self._files[filename] = FileMode.PRELOAD if preload else FileMode.INCLUDE
-            lst.pack_file(filename, self.pack_type)
+            lst.pack_file(filename, self.pack_type, source=source)
         return data
 
     def packed_files(self) -> Iterator[tuple[str, FileMode]]:
@@ -436,21 +442,25 @@ class PackList:
         filename: 'str | os.PathLike[str]',
         data_type: FileType = FileType.GENERIC,
         data: Optional[bytes] = None,
+        *,
         skinset: Optional[set[int]] = None,
         optional: bool = False,
+        source: str = '',
     ) -> None:
         """Queue the given file to be packed.
 
-        If data is set, this file will use the given data instead of any
-        on-disk data. The data_type parameter allows specifying the kind of
-        file, which ensures it can be treated appropriately.
-
-        If the file is a model, skinset allows restricting which skins are used.
-        If None (default), all skins may be used. Otherwise, it is a set of
-        skins. If all uses of a model restrict the skin, only those skins need
-        to be packed.
-        If optional is set, this will be marked as optional so no errors occur
-        if it isn't in the filesystem.
+        :param filename: The name of the file to pack. This could be symbolic
+            if certain file types are specified.
+        :param data_type: Indicates definiteively what type of file this is.
+            If generic, this is inferred from the extension.
+        :param data: If provided, this file will use the given data instead of any
+            on-disk data.
+        :param skinset: If the file is a model, skinset allows restricting which skins are used.
+            If None (default), all skins may be used. Otherwise, it is a set of
+            skins. If all uses of a model restrict the skin, only those skins need
+            to be packed.
+        :param optional: If set, no errors will occur if it isn't in the filesystem.
+        :param source: Human-readable string indicating the reason for packing.
         """
         filename = os.fspath(filename)
 
@@ -551,7 +561,10 @@ class PackList:
         if not data and filename.endswith(('.wav', '.mp3', '.ogg')) and '$gender' in filename:
             # Special case for raw sounds, they can have gendered files.
             # Just include both variants.
-            self.pack_file(filename.replace('$gender', 'female'), data_type, optional=optional)
+            self.pack_file(
+                filename.replace('$gender', 'female'),
+                data_type, optional=optional, source=source,
+            )
             filename = filename.replace('$gender', 'male')
 
         try:
@@ -571,6 +584,9 @@ class PackList:
             elif data:
                 raise ValueError(f'"{filename}": two different data streams!')
             # else: we had an override, but asked to just pack now. That's fine.
+
+            if not file.source:
+                file.source = source
 
             # Override optional packing with required packing.
             if not optional:
@@ -597,9 +613,9 @@ class PackList:
             if ext != '.txt':
                 raise ValueError(f'"{filename}" cannot be a soundscript!')
 
-        self._files[filename] = PackFile(data_type, filename, data, optional)
+        self._files[filename] = PackFile(data_type, filename, data, optional, source)
 
-    def inject_file(self, data: bytes, folder: str, ext: str) -> str:
+    def inject_file(self, data: bytes, folder: str, ext: str, *, source: str = 'inject') -> str:
         """Inject a generated file into the map and return the full name.
 
         The file will be named using the format "INJECT_<hex>".
@@ -620,7 +636,7 @@ class PackList:
             if full_name not in self._files:
                 break
             name_hash = format(abs(hash(name_hash)), 'x')
-        self.pack_file(full_name, data=data)
+        self.pack_file(full_name, data=data, source=source)
         self._inject_files[folder, ext, data] = full_name
         return full_name
 
@@ -631,11 +647,12 @@ class PackList:
         """
         return self.inject_file(
             code.encode('ascii'),
-            os.path.join('scripts/vscripts', folder), '.nut'
+            os.path.join('scripts/vscripts', folder), '.nut',
             # Strip off the scripts/vscripts/ folder since it's implied.
+            source='inject_vscript',
         )[17:]
 
-    def pack_soundscript(self, sound_name: str) -> None:
+    def pack_soundscript(self, sound_name: str, *, source: str='') -> None:
         """Pack a soundscript or raw sound file."""
         # Blank means no sound is used.
         if not sound_name:
@@ -647,25 +664,29 @@ class PackList:
             sound_name = sound_name.lstrip(SND_CHARS)
             if not sound_name.startswith('sound/'):
                 sound_name = 'sound/' + sound_name
-            self.pack_file(sound_name)
+            self.pack_file(sound_name, source=source)
             return
 
         try:
-            soundscript = self.soundscript.pack_and_get(self, sound_name)
+            soundscript = self.soundscript.pack_and_get(self, sound_name, source=source)
         except KeyError:
             LOGGER.warning('Unknown sound "{}"!', sound_name)
             return
 
         for sound in soundscript.sounds:
-            self.pack_file('sound/' + sound.lstrip(SND_CHARS).replace('\\', '/'))
+            # The soundscript is the source, not what packed the soundscript.
+            self.pack_file(
+                'sound/' + sound.lstrip(SND_CHARS).replace('\\', '/'),
+                source=sound_name,
+            )
 
-    def pack_particle(self, particle_name: str, preload: bool = False) -> None:
+    def pack_particle(self, particle_name: str, preload: bool = False, *, source: str = '') -> None:
         """Pack a particle system and the raw PCFs."""
         # Blank means no particle is used, also skip if we already packed.
         if not particle_name or particle_name in self._packed_particles:
             return
         try:
-            particle = self.particles.pack_and_get(self, particle_name, preload)
+            particle = self.particles.pack_and_get(self, particle_name, preload=preload, source=source)
         except KeyError:
             LOGGER.warning('Unknown particle "{}"!', particle_name)
             self._packed_particles.add(particle_name)
@@ -676,7 +697,7 @@ class PackList:
         except KeyError:
             pass
         else:
-            self.pack_file(mat, FileType.MATERIAL)
+            self.pack_file(mat, FileType.MATERIAL, source=particle_name)
         for rend in particle.renderers:
             if rend.function.casefold() == 'render models':
                 try:
@@ -684,16 +705,16 @@ class PackList:
                 except KeyError:
                     LOGGER.warning('Particle {} has model render with no model?', particle_name)
                 else:
-                    self.pack_file(mdl, FileType.MODEL)
+                    self.pack_file(mdl, FileType.MODEL, source=particle_name)
         for child in particle.children:
             self._packed_particles.add(child.particle)
-            self.pack_particle(child.particle, preload)
+            self.pack_particle(child.particle, preload, source=particle_name)
 
     def pack_breakable_chunk(self, chunkname: str) -> None:
         """Pack the generic gib model for the given chunk name."""
         if self._break_chunks is None:
             # Need to load the file.
-            self.pack_file('scripts/propdata.txt')
+            self.pack_file('scripts/propdata.txt', source='BreakableModels')
             try:
                 propdata = self.fsys['scripts/propdata.txt']
             except FileNotFoundError:
@@ -711,8 +732,9 @@ class PackList:
         except KeyError:
             LOGGER.warning('Unknown gib chunks type "{}"!', chunkname)
             return
+        source = f'scripts/propdata.txt:{chunkname}'
         for mdl in mdl_list:
-            self.pack_file(mdl, FileType.MODEL)
+            self.pack_file(mdl, FileType.MODEL, source=source)
 
     def load_soundscript(
         self,
@@ -846,7 +868,10 @@ class PackList:
         wrapper = io.TextIOWrapper(buf, encoding='cp1252')
         manifest.serialise(wrapper)
         wrapper.detach()
-        self.pack_file('scripts/game_sounds_manifest.txt', FileType.GENERIC, buf.getvalue())
+        self.pack_file(
+            'scripts/game_sounds_manifest.txt', FileType.GENERIC, buf.getvalue(),
+            source='<generated>',
+        )
 
     def write_particles_manifest(self, manifest_name: str) -> None:
         """Write a particles manifest, so that used particles can be loaded."""
@@ -860,17 +885,17 @@ class PackList:
         wrapper = io.TextIOWrapper(buf, encoding='cp1252')
         manifest.serialise(wrapper)
         wrapper.detach()
-        self.pack_file(manifest_name, FileType.GENERIC, buf.getvalue())
+        self.pack_file(manifest_name, FileType.GENERIC, buf.getvalue(), source='<generated>')
 
     def pack_from_bsp(self, bsp: BSP) -> None:
         """Pack files found in BSP data (excluding entities)."""
         for prop in bsp.props:
             # Static props obviously only use one skin.
-            self.pack_file(prop.model, FileType.MODEL, skinset={prop.skin})
+            self.pack_file(prop.model, FileType.MODEL, skinset={prop.skin}, source='prop_static')
 
         # These are all the materials the BSP references, including brushes and overlays.
         for mat in bsp.textures:
-            self.pack_file(f'materials/{mat.lower()}.vmt', FileType.MATERIAL)
+            self.pack_file(f'materials/{mat.lower()}.vmt', FileType.MATERIAL, source='brush/overlay')
 
     @deprecated("The provided FGD is no longer necessary, call pack_with_ents instead.",)
     def pack_fgd(self, vmf: VMF, fgd: FGD, mapname: str = '', tags: Iterable[str] = ()) -> None:
@@ -920,6 +945,7 @@ class PackList:
                 continue
 
             classname = ent['classname']
+            source = f'{classname}:{source}' if (source := ent['targetname']) else classname
 
             try:
                 ent_class = get_ent(classname)
@@ -968,7 +994,7 @@ class PackList:
                     except KeyError:
                         val_type = KVTypes.STR_MODEL  # Try to pack this anyway.
                     if val_type is KVTypes.STR_MODEL or val_type is KVTypes.STR_SPRITE:
-                        self.pack_file(value, skinset=skinset)
+                        self.pack_file(value, skinset=skinset, source=source)
                         continue
                     # Else, it's another type. Do the generic handling below.
                 try:
@@ -980,8 +1006,10 @@ class PackList:
                     # Suppress the error, we already showed a warning above.
                     if ent_class is not base_entity and (classname, key) not in unknown_keys:
                         unknown_keys.add((classname, key))
-                        LOGGER.warning('Unknown keyvalue "{}" for ent of type "{}"!',
-                                       key, classname)
+                        LOGGER.warning(
+                            'Unknown keyvalue "{}" for ent of type "{}"!',
+                            key, classname,
+                        )
                     continue
 
                 value = ent[key, default]
@@ -995,21 +1023,21 @@ class PackList:
                 except KeyError:
                     if val_type is KVTypes.STR_VSCRIPT:
                         for script in value.split():
-                            self.pack_file('scripts/vscripts/' + script)
+                            self.pack_file('scripts/vscripts/' + script, source=source)
                     elif val_type is KVTypes.STR_VSCRIPT_SINGLE:
-                        self.pack_file('scripts/vscripts/' + value)
+                        self.pack_file('scripts/vscripts/' + value, source=source)
                     elif val_type is KVTypes.STR_SOUND:
-                        self.pack_soundscript(value)
+                        self.pack_soundscript(value, source=source)
                     elif val_type is KVTypes.STR_PARTICLE:
-                        self.pack_particle(value)
+                        self.pack_particle(value, source=source)
                     # TODO: KVTypes.EXT_SOUNDSCAPE
                 else:
                     if file_type is not None:
-                        self.pack_file(value, file_type)
+                        self.pack_file(value, file_type, source=source)
 
             # Handle resources that's coded into different entities with our internal database.
             for file_type, filename in ent_class.get_resources(res_ctx, ent=ent, on_error=LOGGER.warning):
-                self.pack_file(filename, file_type)
+                self.pack_file(filename, file_type, source=source)
 
         # Handle worldspawn here - this is fairly special.
         sky_name = vmf.spawn['skyname']
@@ -1018,12 +1046,13 @@ class PackList:
                 self.pack_file(
                     f'materials/skybox/{sky_name}{suffix}.vmt',
                     FileType.MATERIAL,
+                    source='2D Skybox',
                 )
-        self.pack_file(vmf.spawn['detailmaterial'], FileType.MATERIAL)
+        self.pack_file(vmf.spawn['detailmaterial'], FileType.MATERIAL, source='prop_detail')
 
         detail_script = vmf.spawn['detailvbsp']
         if detail_script:
-            self.pack_file(detail_script, FileType.GENERIC)
+            self.pack_file(detail_script, FileType.GENERIC, source='prop_detail')
             try:
                 detail_props = self.fsys.read_kv1(detail_script, 'ansi')
             except FileNotFoundError:
@@ -1038,7 +1067,7 @@ class PackList:
                 # sheet packed above.
                 for prop in detail_props.iter_tree():
                     if prop.name == 'model':
-                        self.pack_file(prop.value, FileType.MODEL)
+                        self.pack_file(prop.value, FileType.MODEL, source='prop_detail')
 
     def pack_into_zip(
         self,
@@ -1113,9 +1142,11 @@ class PackList:
             # Need to ensure / separators.
             fname = file.filename.replace('\\', '/')
 
+            fname_source = f'{fname}\t\t(Source={file.source})' if file.source else fname
+
             if file.data is not None:
                 # Always pack, we've got custom data.
-                LOGGER.debug('CUSTOM DATA: {}', fname)
+                LOGGER.debug('CUSTOM DATA: {}', fname_source)
                 if not only_dump:
                     packed_files[fname.casefold()] = (fname, file.data)
                 if dump_loc is not None:
@@ -1128,12 +1159,12 @@ class PackList:
                 sys_file = self.fsys[file.filename]
             except FileNotFoundError:
                 if not file.optional and fname.casefold() not in packed_files:
-                    LOGGER.warning('WARNING: "{}" not packed!', file.filename)
+                    LOGGER.warning('WARNING: "{}" not packed! Source="{}"', file.filename, file.source)
                 continue
 
             if fname.casefold().endswith('.bik'):
-                # BINK cannot be packed, always skip.
-                LOGGER.debug('EXT:  {}', fname)
+                # BINK cannot be packed, always skip. TODO: Still true?
+                LOGGER.debug('EXT:  {}', fname_source)
                 continue
 
             should_pack = callback(sys_file.path)
@@ -1141,7 +1172,7 @@ class PackList:
                 should_pack = self.fsys.get_system(sys_file) in allowed
 
             if should_pack:
-                LOGGER.debug('ADD:  {}', fname)
+                LOGGER.debug('ADD:  {}', fname_source)
                 with sys_file.open_bin() as f:
                     data = f.read()
                 if not only_dump:
@@ -1151,7 +1182,7 @@ class PackList:
                     path.parent.mkdir(exist_ok=True, parents=True)
                     path.write_bytes(data)
             else:
-                LOGGER.debug('SKIP: {}', fname)
+                LOGGER.debug('SKIP: {}', fname_source)
 
         LOGGER.info('Compressing packfile...')
         # Note no with statement, the BSP takes ownership and needs it open.
@@ -1188,7 +1219,7 @@ class PackList:
                         if not file.filename.endswith('.hdr.vtf'):
                             hdr_tex = file.filename[:-3] + 'hdr.vtf'
                             if hdr_tex in self.fsys:
-                                self.pack_file(hdr_tex, optional=True)
+                                self.pack_file(hdr_tex, optional=True, source=file.filename)
                     elif file.type is FileType.VSCRIPT_SQUIRREL:
                         self._get_vscript_files(file)
                     elif file.type is FileType.CHOREO:
@@ -1208,7 +1239,8 @@ class PackList:
 
     def _get_model_files(self, file: PackFile) -> None:
         """Find any needed files for a model."""
-        filename, ext = os.path.splitext(file.filename)
+        filename = file.filename
+        file_stem, ext = os.path.splitext(filename)
 
         if ext in ('.glb', '.gltf'):
             return
@@ -1216,33 +1248,36 @@ class PackList:
         # Some of these are optional, so just skip. Do not re-pack the MDL itself, that's
         # pointless and will also erase the skinset!
         for ext in MDL_EXTS_EXTRA:
-            component = filename + ext
+            component = file_stem + ext
             if component in self.fsys:
                 self.pack_file(component)
 
         if file.data is not None:
             # We need to add that file onto the system, so it's loaded.
             self.fsys.add_sys(VirtualFileSystem({
-                file.filename: file.data,
+                filename: file.data,
             }), priority=True)
             try:
-                mdl = Model(self.fsys, self.fsys[file.filename])
+                mdl = Model(self.fsys, self.fsys[filename])
             finally:  # Remove this system.
                 self.fsys.systems.pop(0)
         else:
             try:
-                mdl = Model(self.fsys, self.fsys[file.filename])
+                mdl = Model(self.fsys, self.fsys[filename])
             except FileNotFoundError:
                 if not file.optional:
-                    LOGGER.warning('Can\'t find model "{}"!', file.filename)
+                    LOGGER.warning('Can\'t find model "{}"!', filename)
                 return
 
-        skinset = self.skinsets.get(file.filename, None)
+        skinset = self.skinsets.get(filename, None)
         for tex in mdl.iter_textures(skinset):
-            self.pack_file(tex, FileType.MATERIAL, optional=file.optional)
+            self.pack_file(tex, FileType.MATERIAL, optional=file.optional, source=filename)
 
         for mdl_file in mdl.included_models:
-            self.pack_file(mdl_file.filename, FileType.MODEL, optional=file.optional)
+            self.pack_file(
+                mdl_file.filename, FileType.MODEL,
+                optional=file.optional, source=filename,
+            )
 
         for seq in mdl.sequences:
             for event in seq.events:
@@ -1250,20 +1285,20 @@ class PackList:
                     self.pack_soundscript(event.options)
                 elif event.type in ANIM_EVENT_FOOTSTEP:
                     npc = event.options or "NPC_CombineS"
-                    self.pack_soundscript(npc + ".RunFootstepLeft")
-                    self.pack_soundscript(npc + ".RunFootstepRight")
-                    self.pack_soundscript(npc + ".FootstepLeft")
-                    self.pack_soundscript(npc + ".FootstepRight")
+                    self.pack_soundscript(npc + ".RunFootstepLeft", source=filename)
+                    self.pack_soundscript(npc + ".RunFootstepRight", source=filename)
+                    self.pack_soundscript(npc + ".FootstepLeft", source=filename)
+                    self.pack_soundscript(npc + ".FootstepRight", source=filename)
                 elif event.type is ANIM_EVENT_PARTICLE:
                     try:
                         part_name, attach_type, attach_name = event.options.split()
                     except ValueError:
                         LOGGER.warning(
                             'Invalid particle anim event params "{}" in "{}" sequence on "{}"!',
-                            event.options, seq.label, file.filename,
+                            event.options, seq.label, filename,
                         )
                     else:
-                        self.pack_particle(part_name)
+                        self.pack_particle(part_name, source=filename)
 
         for break_mdl in mdl.phys_keyvalues.find_all('break', 'model'):
             # Breakable gibs inherit the base prop skin. If the gib prop doesn't have multiple
@@ -1273,6 +1308,7 @@ class PackList:
                 FileType.MODEL,
                 optional=file.optional,
                 skinset=skinset,
+                source=filename,
             )
 
     def _get_material_files(self, file: PackFile) -> None:
@@ -1312,7 +1348,7 @@ class PackList:
             return
 
         for vmt in parents:
-            self.pack_file(vmt, FileType.MATERIAL, optional=file.optional)
+            self.pack_file(vmt, FileType.MATERIAL, optional=file.optional, source=file.filename)
 
         for param_name, param_value in mat.items():
             param_value = param_value.casefold()
@@ -1321,10 +1357,10 @@ class PackList:
                 # Skip over reference to cubemaps, or realtime buffers.
                 if param_value == 'env_cubemap' or param_value.startswith('_rt_'):
                     continue
-                self.pack_file(param_value, FileType.TEXTURE, optional=file.optional)
+                self.pack_file(param_value, FileType.TEXTURE, optional=file.optional, source=file.filename)
             # $bottommaterial for water brushes mainly.
             if param_type is VarType.MATERIAL:
-                self.pack_file(param_value, FileType.MATERIAL, optional=file.optional)
+                self.pack_file(param_value, FileType.MATERIAL, optional=file.optional, source=file.filename)
 
     def _get_vscript_files(self, file: PackFile) -> None:
         """Find dependencies in VScripts.
@@ -1359,7 +1395,7 @@ class PackList:
             except UnicodeDecodeError:
                 LOGGER.warning("Can't read filename in VScript:", exc_info=True)
                 continue
-            self.pack_file(filename, param_type, optional=file.optional)
+            self.pack_file(filename, param_type, optional=file.optional, source=file.filename)
 
     def _get_choreo_files(self, file: PackFile) -> None:
         """Find sound dependencies for choreo scenes."""
@@ -1396,9 +1432,9 @@ class PackList:
                 return
 
         for sound in scene.used_sounds():
-            self.pack_soundscript(sound)
+            self.pack_soundscript(sound, source=file.filename)
         for event in scene.iter_events(choreo_scenes.EventType.SubScene):
-            self.pack_file(event.parameters[0], FileType.CHOREO)
+            self.pack_file(event.parameters[0], FileType.CHOREO, source=file.filename)
 
     def _get_weaponscript_kv1_files(self, file: PackFile) -> None:
         """Find any dependencies in a Keyvalues1 weapon script."""
@@ -1428,7 +1464,7 @@ class PackList:
             )
             return
         for kv in data.find_children('SoundData'):
-            self.pack_file(kv.value, FileType.GAME_SOUND)
+            self.pack_file(kv.value, FileType.GAME_SOUND, source=file.filename)
         for mdl_name in [
             'viewmodel', 'playermodel',
             'viewmodel_dual', 'playermodel_dual',  # L4D2
@@ -1441,7 +1477,7 @@ class PackList:
             except LookupError:
                 pass
             else:
-                self.pack_file(mdl_value, FileType.MODEL)
+                self.pack_file(mdl_value, FileType.MODEL, source=file.filename)
         for part_name in [
             'MuzzleFlashEffect_1stPerson',
             'MuzzleFlashEffect_3rdPerson',
@@ -1452,13 +1488,13 @@ class PackList:
             except LookupError:
                 pass
             else:
-                self.pack_file(particle, FileType.PARTICLE_SYSTEM)
+                self.pack_file(particle, FileType.PARTICLE_SYSTEM, source=file.filename)
         # L4D viewmodel arms
         for viewmodel in data.find_children('CharacterViewmodelAddon'):
-            self.pack_file(viewmodel.value, FileType.MODEL)
+            self.pack_file(viewmodel.value, FileType.MODEL, source=file.filename)
         for sprite_block in data.find_children('texturedata'):
             if 'file' in sprite_block:
-                self.pack_file(sprite_block['file'], FileType.TEXTURE)
+                self.pack_file(sprite_block['file'], FileType.TEXTURE, source=file.filename)
 
     def _get_weaponscript_dmx_files(self, file: PackFile) -> None:
         """Find any dependencies in a DMX weapon script.
@@ -1489,14 +1525,14 @@ class PackList:
         else:
             for attr in sound_elem.values():
                 if attr.type is ValueType.STRING:
-                    self.pack_file(attr.val_str, FileType.GAME_SOUND)
+                    self.pack_file(attr.val_str, FileType.GAME_SOUND, source=file.filename)
         for mdl_name in ['viewmodel', 'playermodel', 'playermodel_multiplayer']:
             try:
                 mdl_attr = data[mdl_name]
             except LookupError:
                 pass
             else:
-                self.pack_file(mdl_attr.val_string, FileType.MODEL)
+                self.pack_file(mdl_attr.val_string, FileType.MODEL, source=file.filename)
 
 
 @deprecated(
@@ -1555,7 +1591,7 @@ def entclass_packfunc(classname: str) -> Callable[[PackList, Entity], object]:
         for filetype, filename in ent_def.get_resources(ResourceCtx(
             fsys=packlist.fsys,
         ), ent=ent):
-            packlist.pack_file(filename, filetype)
+            packlist.pack_file(filename, filetype, source=classname)
     return pack_shim
 
 

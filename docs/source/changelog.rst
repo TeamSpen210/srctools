@@ -13,6 +13,7 @@ Version (dev)
 * Support various shader parameters added by Strata Source.
 * Add :mod:`srctools.types`, which contains common types and classes.
 * Switch type hints for all functions taking files to more precise protocols.
+* Add source tracking for packed files, allows logging the cause for each file.
 
 -------------
 Version 2.6.0
