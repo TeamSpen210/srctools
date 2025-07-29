@@ -66,6 +66,10 @@ jobs:
       run: |
         mypy --python-version 3.13 src/srctools/ type_tests/
       if: (success() || failure()) && steps.install_deps.outcome == 'success'
+    - name: MyPy - Python 3.14
+      run: |
+        mypy --python-version 3.14 src/srctools/ type_tests/
+      if: (success() || failure()) && steps.install_deps.outcome == 'success'
 
     - name: Pyright - Python 3.9
       run: |
@@ -86,4 +90,8 @@ jobs:
     - name: Pyright - Python 3.13
       run: |
         pyright --pythonversion 3.13
+      if: (success() || failure()) && steps.install_deps.outcome == 'success'
+    - name: Pyright - Python 3.14
+      run: |
+        pyright --pythonversion 3.14
       if: (success() || failure()) && steps.install_deps.outcome == 'success'

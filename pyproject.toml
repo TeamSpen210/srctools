@@ -64,6 +64,7 @@ setup = ['--vsenv']
 
 [tool.cibuildwheel]
 archs = "auto64"
+enable = ["pypy"]
 skip = ["pp37*", "pp38*", "pp39*"]
 
 # After building, run tests to check it works.
