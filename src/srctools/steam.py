@@ -75,6 +75,7 @@ def get_steam_install_path() -> Path:
         except OSError:
             pass  # Try default locations.
     for possible_loc in _STEAM_LOCS:
+        possible_loc = possible_loc.expanduser()
         if possible_loc.exists():
             return possible_loc
     raise FileNotFoundError("No known Steam locations for this platform.")
