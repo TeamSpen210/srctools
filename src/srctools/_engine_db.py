@@ -137,6 +137,7 @@ FILE_TYPE_ORDER = [
     FileType.MODEL,
     FileType.BREAKABLE_CHUNK,
     FileType.WEAPON_SCRIPT,
+    FileType.RAW_SOUND,
 ]
 
 # Entity types -> bits used

@@ -59,6 +59,7 @@ class FileType(Enum):
     SOUNDSCRIPT = 1  #: Script file containing soundscripts.
 
     GAME_SOUND = 2  #: ``world.blah`` sound - lookup the soundscript, and raw files.
+    RAW_SOUND = 'wav'  #: A WAV/MP3/OGG sound file.
     PARTICLE = PARTICLE_SYSTEM = 3  #: The name of a particle system.
 
     PARTICLE_FILE = 'pcf'  #: A particle collection file.

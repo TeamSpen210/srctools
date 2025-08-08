@@ -532,6 +532,10 @@ class PackList:
             filename = filename + '.vtf'
         elif data_type is FileType.VSCRIPT_SQUIRREL:
             filename = strip_extension(filename) + '.nut'
+        elif data_type is FileType.RAW_SOUND:
+            filename = filename.lstrip(SND_CHARS)
+            if not filename.startswith('sound/'):
+                filename = 'sound/' + filename
         elif data_type is FileType.PARTICLE_FILE:
             if data:
                 virtual_fsys = VirtualFileSystem({filename: data})
@@ -681,10 +685,7 @@ class PackList:
         sound_name = sound_name.casefold().replace('\\', '/')
         # Check for raw sounds first.
         if sound_name.endswith(('.wav', '.mp3', '.ogg')):
-            sound_name = sound_name.lstrip(SND_CHARS)
-            if not sound_name.startswith('sound/'):
-                sound_name = 'sound/' + sound_name
-            self.pack_file(sound_name, source=source)
+            self.pack_file(sound_name, FileType.RAW_SOUND, source=source)
             return
 
         try:
@@ -695,10 +696,7 @@ class PackList:
 
         for sound in soundscript.sounds:
             # The soundscript is the source, not what packed the soundscript.
-            self.pack_file(
-                'sound/' + sound.lstrip(SND_CHARS).replace('\\', '/'),
-                source=sound_name,
-            )
+            self.pack_file(sound, FileType.RAW_SOUND, source=sound_name)
 
     def pack_particle(self, particle_name: str, preload: bool = False, *, source: str = '') -> None:
         """Pack a particle system and the raw PCFs."""
