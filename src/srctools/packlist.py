@@ -14,7 +14,7 @@ import shutil
 import attrs
 
 from srctools import conv_bool, choreo as choreo_scenes
-from srctools.bsp import BSP
+from srctools.bsp import BSP, DetailPropModel, DetailPropSprite
 from srctools.const import FileType
 from srctools.dmx import Attribute, Element, ValueType
 from srctools.fgd import FGD, EntityDef, ResourceCtx, ValueTypes as KVTypes
@@ -917,6 +917,22 @@ class PackList:
         for mat in bsp.textures:
             self.pack_file(f'materials/{mat.lower()}.vmt', FileType.MATERIAL, source='brush/overlay')
 
+        # detail.vbsp is only used by VBSP itself, so we don't need to pack.
+        has_sprite = False  # All sprites use a single texture sheet.
+        for detail in bsp.detail_props:
+            if isinstance(detail, DetailPropModel):
+                # Always skin 0.
+                self.pack_file(detail.model, FileType.MODEL, skinset={0}, source='prop_detail')
+            elif isinstance(detail, DetailPropSprite):
+                has_sprite = True
+        if has_sprite:
+            self.pack_file(
+                # Unfortunate, pack_from_ents() deals with everything else ent-wise, but we should
+                # only pack this if detail props exist.
+                bsp.ents.spawn['detailmaterial'], FileType.MATERIAL,
+                source='prop_detail_sprite',
+            )
+
     @deprecated("The provided FGD is no longer necessary, call pack_with_ents instead.",)
     def pack_fgd(self, vmf: VMF, fgd: FGD, mapname: str = '', tags: Iterable[str] = ()) -> None:
         """Deprecated version of pack_from_ents(). The FGD parameter is no longer necessary."""
@@ -928,7 +944,11 @@ class PackList:
         mapname: str = '',
         tags: Iterable[str] = (),
     ) -> None:
-        """Analyse the map to pack files, using an internal database of keyvalues."""
+        """Analyse the map to pack files, using an internal database of keyvalues.
+
+        'detailmaterial' is handled in `pack_from_bsp()`, we only need to include it if
+        a detail sprite is actually present in the BSP.
+        """
         # Don't show the same keyvalue warning twice, it's just noise.
         unknown_keys: set[tuple[str, str]] = set()
 
@@ -964,7 +984,9 @@ class PackList:
             if conv_bool(ent.pop('srctools_nopack', '')):
                 continue
 
-            classname = ent['classname']
+            classname = ent['classname'].casefold()
+            if classname == 'worldspawn':
+                continue  # Don't try packing things like detail prop materials.
             source = f'{classname}:{source}' if (source := ent['targetname']) else classname
 
             try:
@@ -1068,26 +1090,6 @@ class PackList:
                     FileType.MATERIAL,
                     source='2D Skybox',
                 )
-        self.pack_file(vmf.spawn['detailmaterial'], FileType.MATERIAL, source='prop_detail')
-
-        detail_script = vmf.spawn['detailvbsp']
-        if detail_script:
-            self.pack_file(detail_script, FileType.GENERIC, source='prop_detail')
-            try:
-                detail_props = self.fsys.read_kv1(detail_script, 'ansi')
-            except FileNotFoundError:
-                LOGGER.warning('detail.vbsp file does not exist: "{}"', detail_script)
-            except Exception:
-                LOGGER.warning(
-                    'Could not parse detail.vbsp file: ',
-                    exc_info=True
-                )
-            else:
-                # We only need to worry about models, the sprites are a single
-                # sheet packed above.
-                for prop in detail_props.iter_tree():
-                    if prop.name == 'model':
-                        self.pack_file(prop.value, FileType.MODEL, source='prop_detail')
 
     def pack_into_zip(
         self,

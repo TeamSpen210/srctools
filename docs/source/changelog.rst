@@ -9,8 +9,11 @@ Changelog
 Version (dev)
 -------------
 
-* Add support for exporting the old FGD 'report' syntax (``name(*type)``), and suppress editor-only if custom sytnax is disabled.
+* Add support for exporting the old FGD 'report' syntax (``name(*type)``).
+* Suppress the custom FGD editor-only flag if custom syntax is disabled.
 * Support various shader parameters added by Strata Source.
+* Properly implement detail prop packing logic, only pack sprites/models that
+  are used by the BSP.
 * Add :mod:`srctools.types`, which contains common types and classes.
 * Switch type hints for all functions taking files to more precise protocols.
 * Add source tracking for packed files, allows logging the cause for each file.
