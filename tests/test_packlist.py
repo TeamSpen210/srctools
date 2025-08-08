@@ -53,15 +53,17 @@ def test_valtype_basic() -> None:
     )
 
 
-def test_valtype_model() -> None:
-    """Test prop_dynamic, for the MODEL type."""
+def test_valtype_model_sound() -> None:
+    """Test prop_physics, for the MODEL and SOUND types."""
     vmf = VMF()
     vmf.create_ent(
-        'prop_dynamic',
+        'prop_physics',
         model="models/props/magic.mdl",
+        puntsound="#)explosion.wav",
     )
     packlist, files = packing_test(vmf)
     assert (FileType.MODEL, "models/props/magic.mdl") in files, list(packlist)
+    assert (FileType.RAW_SOUND, "sound/explosion.wav") in files, list(packlist)
 
 
 def test_valtype_texture() -> None:
@@ -73,6 +75,17 @@ def test_valtype_texture() -> None:
     )
     packlist, files = packing_test(vmf)
     assert (FileType.TEXTURE, "materials/effects/flashlight001.vtf") in files, list(packlist)
+
+
+def test_valtype_material() -> None:
+    """Test move_rope, for the TEXTURE type."""
+    vmf = VMF()
+    vmf.create_ent(
+        'move_rope',
+        ropematerial="cable/chain",
+    )
+    packlist, files = packing_test(vmf)
+    assert (FileType.MATERIAL, "materials/cable/chain.vmt") in files, list(packlist)
 
 
 def test_valtype_sprite() -> None:
