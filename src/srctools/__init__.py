@@ -261,10 +261,10 @@ class _EmptyMapping(MutableMapping[Any, Any]):
         return False
 
     @overload
-    def get(self, key: Any) -> None: ...
-    @overload
-    def get(self, key: Any, default: ValT) -> ValT: ...
-    def get(self, key: Any, default: Optional[ValT] = None) -> Optional[ValT]:
+    def get(self, key: Any, /) -> None: ...
+    @overload  # Stricter than Mapping.get() - that allows default=ValueT=Any, but we always return the default.
+    def get(self, key: Any, /, default: ValT) -> ValT: ...
+    def get(self, key: Any, default: Optional[ValT] = None) -> Optional[ValT]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """get() always returns the default item."""
         return default
 

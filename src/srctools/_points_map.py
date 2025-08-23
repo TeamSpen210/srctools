@@ -2,7 +2,7 @@
 
 This has a minimum distance, where points closer than that are treated equal.
 """
-from typing import Any, Union, TypeVar, Generic
+from typing import Any, Union, TypeVar, Generic, cast
 from collections.abc import Iterable, Iterator, Mapping, MutableMapping, ValuesView, ItemsView
 from copy import deepcopy
 import itertools
@@ -63,9 +63,15 @@ class PointsMap(MutableMapping[AnyVec, ValueT], Generic[ValueT]):
             raise ValueError('Epsilon must be between 0 and 1.')
         self._map = {}
         self._dist_sq = epsilon ** 2
-        if hasattr(contents, 'items'):
-            contents = contents.items()
-        for kv in contents:
+        if isinstance(contents, Mapping):
+            # Typing hole: contents could be a `Mapping[tuple[AnyVec, ValueT], ?]`, which is a
+            # valid Iterable[...], but means key is a tuple now. Occurs with all mappings. Cast
+            # away that invalid key type. If it happens in practice, the FrozenVec() conversion
+            # will catch it.
+            cont_iter = cast('Mapping[AnyVec, ValueT]', contents).items()
+        else:
+            cont_iter = contents
+        for kv in cont_iter:
             if not isinstance(kv, tuple):
                 raise TypeError(
                     'PointsMap must be initialised with a mapping, '

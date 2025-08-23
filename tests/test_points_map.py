@@ -90,6 +90,11 @@ def test_init() -> None:
     with pytest.raises(ValueError, match=r'Epsilon must be between 0 and 1'):
         PointsMap([], epsilon=-1)
 
+    # Typing edge case - Mapping[tuple[AnyVec, X], ?] is an Iterable[tuple[AnyVec, X]], so it's
+    # valid for checkers, but not for us. Check it produces some error.
+    with pytest.raises(TypeError, match=r'real number'):
+        PointsMap({(FrozenVec(), 4): 'b'})
+
 
 def test_repr() -> None:
     """Test the repr()."""
