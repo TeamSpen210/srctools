@@ -1,14 +1,16 @@
 """Test the PointsMap mapping."""
-from collections.abc import KeysView, ValuesView, ItemsView
+from typing import Union
+
+from collections.abc import KeysView, ValuesView, ItemsView, Mapping
 import copy
 import pickle
 
 import pytest
-from srctools.math import FrozenVec, Vec, PointsMap
+from srctools.math import FrozenVec, Vec, PointsMap, VecBase
 
 
 def test_insertion() -> None:
-    points = PointsMap(epsilon=0.1)
+    points: PointsMap[str] = PointsMap(epsilon=0.1)
     assert len(points) == 0
 
     points[45, 30, 0] = 'a'
@@ -31,15 +33,19 @@ def test_insertion() -> None:
 
 def test_init() -> None:
     """Test initialisation with values."""
-    points = PointsMap()
+    points: PointsMap[str] = PointsMap()
     assert len(points) == 0
-    assert list(points) == list(points.keys()) == []
-    assert list(points.values()) == list(points.items()) == []
+    assert list(points) == []
+    assert list(points.keys()) == []
+    assert list(points.values()) == []
+    assert list(points.items()) == []
 
     points = PointsMap([])
     assert len(points) == 0
-    assert list(points) == list(points.keys()) == []
-    assert list(points.values()) == list(points.items()) == []
+    assert list(points) == []
+    assert list(points.keys()) == []
+    assert list(points.values()) == []
+    assert list(points.items()) == []
 
     points = PointsMap([
         (Vec(1, 2, 3), 'a'),
@@ -49,10 +55,11 @@ def test_init() -> None:
     assert points[1, 2, 3] == 'a'
     assert points[4, 5, 6] == 'b'
 
-    points = PointsMap({
+    mapping: Mapping[Union[VecBase, tuple[float, float, float]], str] = {
         FrozenVec(1, 2, 3): 'a',
-        (4, 5, 6): 'b',
-    })
+        (4.0, 5.0, 6.0): 'b',
+    }
+    points = PointsMap(mapping)
     assert len(points) == 2
     assert points[1, 2, 3] == 'a'
     assert points[4, 5, 6] == 'b'
@@ -168,7 +175,7 @@ def test_items() -> None:
         (Vec(1, 2, 3), 'a'),
         (Vec(4, 5, 6), 'b'),
     ]
-    assert 'not_a_tuple' not in points.items()
+    assert 'not_a_tuple' not in points.items()  # type: ignore[comparison-overlap]
 
 
 def test_deletion() -> None:

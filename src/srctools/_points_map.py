@@ -63,6 +63,7 @@ class PointsMap(MutableMapping[AnyVec, ValueT], Generic[ValueT]):
             raise ValueError('Epsilon must be between 0 and 1.')
         self._map = {}
         self._dist_sq = epsilon ** 2
+        cont_iter: Iterable[tuple[AnyVec, ValueT]]
         if isinstance(contents, Mapping):
             # Typing hole: contents could be a `Mapping[tuple[AnyVec, ValueT], ?]`, which is a
             # valid Iterable[...], but means key is a tuple now. Occurs with all mappings. Cast
