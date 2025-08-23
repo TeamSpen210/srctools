@@ -24,6 +24,23 @@ _SAVE: dict[ImageFormats, SaveFunc] = {}
 _LOAD: dict[ImageFormats, LoadFunc] = {}
 
 
+def check_strided_copy() -> bool:
+    """For some reason PyPy can't copy non-contiguous arrays via memoryview. In that case,
+    we have to copy the source when slicing. Check to see if such slicing is possible.
+    """
+    src = b'ABCD'
+    dest = bytearray(8)
+    try:
+        memoryview(dest)[0::4] = memoryview(src)[::2]
+    except BufferError:
+        return False
+    return dest == b'A\x00\x00\x00C\x00\x00\x00'
+
+
+CAN_STRIDE_COPY = check_strided_copy()
+del check_strided_copy
+
+
 def ppm_convert(pixels: Array, width: int, height: int, bg: Optional[tuple[int, int, int]]) -> bytes:
     """Convert a frame into a PPM-format bytestring, for passing to tkinter.
 
@@ -34,7 +51,7 @@ def ppm_convert(pixels: Array, width: int, height: int, bg: Optional[tuple[int, 
     pix_count = width * height
     buffer = bytearray(img_off + 3 * pix_count)
     # Memoryviews to avoid making temp objects.
-    view_src = memoryview(pixels)
+    view_src = memoryview(pixels) if CAN_STRIDE_COPY else pixels
     view_dest = memoryview(buffer)
 
     view_dest[0:img_off] = header
@@ -73,7 +90,7 @@ def alpha_flatten(pixels: Array, buffer: bytearray, width: int, height: int, bg:
             buffer[3 * offset + 1] = int(pixels[4 * offset + 1] * a + inv_a * g)
             buffer[3 * offset + 2] = int(pixels[4 * offset + 2] * a + inv_a * b)
     else:
-        view_src = memoryview(pixels)
+        view_src = memoryview(pixels) if CAN_STRIDE_COPY else pixels
         view_dest = memoryview(buffer)
         view_dest[0:4*pix_count:3] = view_src[::4]
         view_dest[1:4*pix_count+1:3] = view_src[1::4]
@@ -145,7 +162,7 @@ def load(
         func = _LOAD[fmt]
     except KeyError:
         raise NotImplementedError(f"Loading {fmt.name} not implemented!") from None
-    func(pixels, view_data, width, height)
+    func(pixels, view_data if CAN_STRIDE_COPY else data, width, height)
 
 
 def save(fmt: ImageFormats, pixels: Array, data: Buffer, width: int, height: int) -> None:
@@ -236,7 +253,7 @@ def saveload_rgba(mode: str) -> tuple[LoadFunc, SaveFunc]:
             view_pix[3::4] = b'\xFF' * (width * height)
 
         def saver_rgb(pixels: Array, data: RWView, width: int, height: int) -> None:
-            view_pix = memoryview(pixels)
+            view_pix = memoryview(pixels) if CAN_STRIDE_COPY else pixels
             data[r_off::3] = view_pix[0::4]
             data[g_off::3] = view_pix[1::4]
             data[b_off::3] = view_pix[2::4]
@@ -246,14 +263,14 @@ def saveload_rgba(mode: str) -> tuple[LoadFunc, SaveFunc]:
         return loader_rgb, saver_rgb
     else:
         def loader_rgba(pixels: Array, data: ROView, width: int, height: int) -> None:
-            view_pix = memoryview(pixels)
+            view_pix = memoryview(pixels) if CAN_STRIDE_COPY else pixels
             view_pix[0::4] = data[r_off::4]
             view_pix[1::4] = data[g_off::4]
             view_pix[2::4] = data[b_off::4]
             view_pix[3::4] = data[a_off::4]
 
         def saver_rgba(pixels: Array, data: RWView, width: int, height: int) -> None:
-            view_pix = memoryview(pixels)
+            view_pix = memoryview(pixels) if CAN_STRIDE_COPY else pixels
             data[r_off::4] = view_pix[0::4]
             data[g_off::4] = view_pix[1::4]
             data[b_off::4] = view_pix[2::4]
@@ -282,7 +299,7 @@ load_uvwq8888, save_uvwq8888 = saveload_rgba('rgba')
 
 def load_bgrx8888(pixels: Array, data: ROView, width: int, height: int) -> None:
     """Strange - skip byte."""
-    view_pix = memoryview(pixels)
+    view_pix = memoryview(pixels) if CAN_STRIDE_COPY else pixels
     view_pix[0::4] = data[2::4]
     view_pix[1::4] = data[1::4]
     view_pix[2::4] = data[0::4]
@@ -291,7 +308,7 @@ def load_bgrx8888(pixels: Array, data: ROView, width: int, height: int) -> None:
 
 def save_bgrx8888(pixels: Array, data: RWView, width: int, height: int) -> None:
     """Strange - skip byte."""
-    view_pix = memoryview(pixels)
+    view_pix = memoryview(pixels) if CAN_STRIDE_COPY else pixels
     data[3::4] = b'\0' * (width * height)
     data[2::4] = view_pix[0::4]
     data[1::4] = view_pix[1::4]
@@ -411,7 +428,7 @@ def save_bgrx5551(pixels: Array, data: RWView, width: int, height: int) -> None:
 def load_i8(pixels: Array, data: ROView, width: int, height: int) -> None:
     """I8 format, R=G=B"""
     view_pix = memoryview(pixels)
-    view_dat = memoryview(data)
+    view_dat = memoryview(data) if CAN_STRIDE_COPY else data
     view_pix[0::4] = view_dat
     view_pix[1::4] = view_dat
     view_pix[2::4] = view_dat
@@ -431,7 +448,7 @@ def save_i8(pixels: Array, data: RWView, width: int, height: int) -> None:
 def load_ia88(pixels: Array, data: ROView, width: int, height: int) -> None:
     """I8 format, R=G=B + A"""
     view_pix = memoryview(pixels)
-    view_dat = memoryview(data)
+    view_dat = memoryview(data) if CAN_STRIDE_COPY else data
     view_pix[0::4] = view_pix[1::4] = view_pix[2::4] = view_dat[0::2]
     view_pix[3::4] = view_dat[1::2]
 
@@ -458,20 +475,22 @@ def load_a8(pixels: Array, data: ROView, width: int, height: int) -> None:
 
 def save_a8(pixels: Array, data: RWView, width: int, height: int) -> None:
     """Single alpha bytes."""
-    data[:] = memoryview(pixels)[3::4]
+    view_pix = memoryview(pixels) if CAN_STRIDE_COPY else pixels
+    data[:] = view_pix[3::4]
 
 
 def load_uv88(pixels: Array, data: ROView, width: int, height: int) -> None:
     """UV-only, which is mapped to RG."""
     view_pix = memoryview(pixels)
     view_pix[:] = b'\0\0\0\xFF' * (width * height)
-    view_pix[0::4] = data[0::2]
-    view_pix[1::4] = data[1::2]
+    view_dat = memoryview(data) if CAN_STRIDE_COPY else data
+    view_pix[0::4] = view_dat[0::2]
+    view_pix[1::4] = view_dat[1::2]
 
 
 def save_uv88(pixels: Array, data: RWView, width: int, height: int) -> None:
     """UV-only, which is mapped to RG."""
-    view_pix = memoryview(pixels)
+    view_pix = memoryview(pixels) if CAN_STRIDE_COPY else pixels
     data[0::2] = view_pix[0::4]
     data[1::2] = view_pix[1::4]
 

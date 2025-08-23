@@ -4,6 +4,7 @@ from array import array
 from io import BytesIO
 from pathlib import Path
 import colorsys
+import sys
 
 from PIL import Image, ImageChops
 from pytest_regressions.file_regression import FileRegressionFixture
@@ -64,6 +65,16 @@ def sample_image() -> Image.Image:
             r, g, b = colorsys.hsv_to_rgb(hue, 1.0, (1.0+y)/64.0)
             img.putpixel((x, y), (round(255*r), round(255*g), round(255*b), 255))
     return img
+
+
+@pytest.mark.xfail(sys.implementation.name == 'pypy', reason='fails on PyPy 7.3.20')
+def test_strided_copy() -> None:
+    """Check to see if we can do strided copies.
+
+    This fails on PyPy so we need to work around it. If it doesn't, it's been fixed
+    and we can remove the workaround, or it's unexpectedly triggering on CPython.
+    """
+    assert vtf_mod._py_format_funcs.CAN_STRIDE_COPY
 
 
 @pytest.mark.parametrize("fmt", FORMATS, ids=lambda fmt: fmt.name.lower())
