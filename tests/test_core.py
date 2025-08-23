@@ -1,5 +1,6 @@
 """Test functionality in srctools.__init__."""
 from typing import Any, Union
+import pickle
 
 from collections.abc import Set as AbstractSet, Callable, KeysView, ItemsView
 from pathlib import Path
@@ -8,9 +9,10 @@ from dirty_equals import IsList
 import pytest
 
 from helpers import ExactType
+# noinspection PyProtectedMember
 from srctools import (
-    EmptyMapping, _cy_conv_bool, _cy_conv_float, _cy_conv_int, _py_conv_bool,
-    _py_conv_float, _py_conv_int,
+    EmptyMapping, EmptyKeysView, EmptyValuesView, EmptyItemsView,
+    _cy_conv_bool, _cy_conv_float, _cy_conv_int, _py_conv_bool, _py_conv_float, _py_conv_int,
 )
 import srctools
 
@@ -174,7 +176,7 @@ def test_conv_float(func: Callable[..., float]) -> None:
             assert func(string, default) is default
 
 
-# noinspection PyStatementEffect, PyCallingNonCallable
+# noinspection PyStatementEffect, PyUnreachableCode
 def test_EmptyMapping() -> None:
     marker = object()
     
@@ -183,6 +185,9 @@ def test_EmptyMapping() -> None:
 
     # Must be passable to dict()
     assert dict(EmptyMapping) == {}
+
+    assert repr(EmptyMapping) == 'srctools.EmptyMapping'
+    assert str(EmptyMapping) == 'srctools.EmptyMapping'
 
     # EmptyMapping['x'] raises in various forms.
     assert 'x' not in EmptyMapping
@@ -235,37 +240,63 @@ def test_EmptyMapping() -> None:
 
 
 def test_EmptyMapping_keys() -> None:
-    """Test EmptyMapping.keys() works."""
-    assert len(EmptyMapping.keys()) == 0
-    assert object() not in EmptyMapping.keys()
-    check_empty_iterable(EmptyMapping.keys(), 'keys()')
+    """Test EmptyKeysView works."""
+    assert EmptyMapping.keys() is EmptyKeysView
+    check_empty_iterable(EmptyKeysView, 'keys()')
+
+    assert len(EmptyKeysView) == 0
+    assert object() not in EmptyKeysView
+    assert str(EmptyKeysView) == 'srctools.EmptyKeysView'
+    assert repr(EmptyKeysView) == 'srctools.EmptyKeysView'
+    assert hash(EmptyKeysView) == hash(frozenset())
 
     # Check it's registered in ABCs.
     from collections import abc
-    assert isinstance(EmptyMapping.keys(), abc.MappingView)
-    assert isinstance(EmptyMapping.items(), abc.Set)
-    assert isinstance(EmptyMapping.keys(), abc.KeysView)
+    assert isinstance(EmptyKeysView, abc.MappingView)
+    assert isinstance(EmptyItemsView, abc.Set)
+    assert isinstance(EmptyKeysView, abc.KeysView)
 
 
 def test_EmptyMapping_values() -> None:
-    """Test EmptyMapping.values() works. This isn't a Set."""
-    check_empty_iterable(EmptyMapping.values(), 'values()')
+    """Test EmptyValuesView works. This isn't a Set."""
+    assert EmptyMapping.values() is EmptyValuesView
+    check_empty_iterable(EmptyValuesView, 'values()')
+
+    assert len(EmptyValuesView) == 0
+    assert object() not in EmptyValuesView
+    assert str(EmptyValuesView) == 'srctools.EmptyValuesView'
+    assert repr(EmptyValuesView) == 'srctools.EmptyValuesView'
 
     # Check it's registered in ABCs.
     from collections import abc
-    assert isinstance(EmptyMapping.values(), abc.MappingView)
-    assert isinstance(EmptyMapping.values(), abc.ValuesView)
+    assert isinstance(EmptyValuesView, abc.MappingView)
+    assert isinstance(EmptyValuesView, abc.ValuesView)
 
 
 def test_EmptyMapping_items() -> None:
-    """Test EmptyMapping.items() works."""
-    check_empty_iterable(EmptyMapping.items(), 'items()', item=('x', 'y'))
+    """Test EmptyItemsView works."""
+    assert EmptyItemsView is EmptyItemsView
+    check_empty_iterable(EmptyItemsView, 'items()', item=('x', 'y'))
+
+    assert len(EmptyItemsView) == 0
+    assert (object(), object()) not in EmptyItemsView
+    assert str(EmptyItemsView) == 'srctools.EmptyItemsView'
+    assert repr(EmptyItemsView) == 'srctools.EmptyItemsView'
+    assert hash(EmptyItemsView) == hash(frozenset())
 
     # Check it's registered in ABCs.
     from collections import abc
-    assert isinstance(EmptyMapping.items(), abc.MappingView)
-    assert isinstance(EmptyMapping.items(), abc.Set)
-    assert isinstance(EmptyMapping.items(), abc.ItemsView)
+    assert isinstance(EmptyItemsView, abc.MappingView)
+    assert isinstance(EmptyItemsView, abc.Set)
+    assert isinstance(EmptyItemsView, abc.ItemsView)
+
+
+@pytest.mark.parametrize('version', range(pickle.HIGHEST_PROTOCOL + 1), ids=lambda x: f'v{x}')
+@pytest.mark.parametrize('empty', [EmptyMapping, EmptyKeysView, EmptyValuesView, EmptyItemsView], ids=repr)
+def test_EmptyMapping_pickle(empty: object, version: int) -> None:
+    """Test pickling EmptyMapping and its views."""
+    serial = pickle.dumps(empty, version)
+    assert pickle.loads(serial) is empty
 
 
 @pytest.mark.parametrize(
@@ -278,11 +309,14 @@ def test_EmptyMapping_set_ops(view: Union[KeysView[Any], ItemsView[Any, Any]]) -
     empty: AbstractSet[Any] = set()
     # Ensure it's valid as an items() tuple.
     full: AbstractSet[Any] = {('key', 1), ('key2', 4)}
+    invalid: Any = object()  # Should give NotImplemented, cast as Any to ignore (correct) errors.
 
     assert empty == view
     assert not (full == view)
     assert view == empty
     assert not (view == full)
+    assert empty != invalid
+    assert not (empty == invalid)
     
     assert full != view
     assert not (empty != view)
@@ -293,38 +327,46 @@ def test_EmptyMapping_set_ops(view: Union[KeysView[Any], ItemsView[Any, Any]]) -
     assert full >= view
     assert view >= empty
     assert not (view >= full)
+    assert empty.__ge__(invalid) is NotImplemented
 
     assert not (empty > view)
     assert full > view
     assert not (view > empty)
     assert not (view > full)
+    assert empty.__gt__(invalid) is NotImplemented
     
     assert not (view < empty)
     assert view < full
     assert not (empty < view)
     assert not (full < view)
+    assert empty.__lt__(invalid) is NotImplemented
     
     assert view <= empty
     assert view <= full
     assert empty <= view
     assert not (full <= view)
+    assert empty.__le__(invalid) is NotImplemented
     
     assert view.isdisjoint(full)
     assert view.isdisjoint(empty)
 
     assert (view | empty) == (empty | view) == empty
     assert (view | full) == (full | view) == full
+    assert empty.__or__(invalid) is NotImplemented
 
     assert (view & empty) == (empty & view) == empty
     assert (view & full) == (full & view) == empty
+    assert empty.__and__(invalid) is NotImplemented
 
     assert view - empty == empty
     assert view - full == empty
     assert empty - view == empty
     assert full - view == full
+    assert empty.__sub__(invalid) is NotImplemented
 
     assert (view ^ empty) == (empty ^ view) == empty
     assert (view ^ full) == (full ^ view) == full
+    assert empty.__xor__(invalid) is NotImplemented
 
 
 def test_quote_escape() -> None:
@@ -388,17 +430,20 @@ def test_atomic_writer_fails(tmp_path: Path) -> None:
     writer = srctools.AtomicWriter(filename, is_bytes=True)
     assert filename.read_bytes() == b'existing_data'
     assert list(tmp_path.iterdir()) == [filename]  # No other files yet.
-    with pytest.raises(ZeroDivisionError):
+    try:
         with writer as dest:
             dest.write(b'some partial new data')
             # File was created.
             assert list(tmp_path.iterdir()) == IsList(filename, Path(dest.name), check_order=False)
             raise ZeroDivisionError
+    except ZeroDivisionError:
+        pass
     assert list(tmp_path.iterdir()) == [filename]   # Temp file is removed.
     # And data wasn't changed.
     assert filename.read_bytes() == b'existing_data'
 
 
+# noinspection PyDeprecation
 def test_alias_math() -> None:
     """Test the lazy srctools.Vec_tuple alias."""
     from srctools.math import Vec_tuple

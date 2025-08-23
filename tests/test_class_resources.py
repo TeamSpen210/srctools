@@ -462,6 +462,19 @@ def test_env_headcrabcanister() -> None:
             SF_NO_IMPACT_EFFECTS | SF_START_IMPACTED
         ),
     )
+    check_entity(
+        *common,
+        Resource.mdl("models/props_combine/headcrabcannister01b.mdl"),
+        Resource.snd("HeadcrabCanister.AfterLanding"),
+        Resource.snd("HeadcrabCanister.Open"),
+        # Invalid headcrab, don't include anything, but don't crash.
+        classname='env_headcrabcanister',
+        headcrabtype=30,
+        spawnflags=(
+            SF_NO_IMPACT_SOUND | SF_NO_LAUNCH_SOUND |
+            SF_NO_IMPACT_EFFECTS | SF_START_IMPACTED
+        ),
+    )
     # Without no_impact_sound, we play those.
     check_entity(
         Resource.mat("materials/sprites/smoke.vmt"),
@@ -588,6 +601,12 @@ def test_env_smokestack() -> None:
         filesys__=fsys_partial,
         tags__=['hl2', 'episodic'],
     )
+    # Blank material = no behaviour.
+    check_entity(
+        Resource.mat('materials/particle/SmokeStack.vmt'),
+        classname='env_smokestack',
+        tags__=['hl2', 'episodic'],
+    )
 
 
 ammo_crate_models_hl2 = {
@@ -634,6 +653,14 @@ def test_item_ammo_crate(ammo: Mapping[int, str], tags: list[str]) -> None:
             ammotype=i,
             tags__=tags,
         )
+    # Invalid, but don't crash.
+    check_entity(
+        Resource.snd('AmmoCrate.Open'),
+        Resource.snd('AmmoCrate.Close'),
+        classname='item_ammo_crate',
+        ammotype=400,
+        tags__=tags,
+    )
     # Grenades include the entity.
     check_entity(
         Resource.snd('AmmoCrate.Open'),
@@ -849,6 +876,10 @@ def test_item_healthkit() -> None:
         tags__=['hl2'],
     )
     check_entity(
+        classname='item_healthkit',
+        tags__=TAGS_EZ2,  # No variant, include no model.
+    )
+    check_entity(
         Resource.snd('HealthKit.Touch'),
         Resource.mdl('models/items/healthkit.mdl#0'),
         classname='item_healthkit',
@@ -981,6 +1012,11 @@ def test_item_battery() -> None:
         Resource.mdl('models/items/battery.mdl'),
         classname='item_battery',
         tags__=['hl2'],
+    )
+    check_entity(
+        Resource.snd('ItemBattery.Touch'),
+        classname='item_battery',
+        tags__=TAGS_EZ2,  # No variant, include no model.
     )
     check_entity(
         Resource.snd('ItemBattery.Touch'),
