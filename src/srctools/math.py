@@ -7,6 +7,9 @@ perform repeated operations on a matrix.
 These classes will be replaced by Cython-optimized versions where possible, which are interchangable
 if pickled.
 
+`PointsMap` is a mapping with vector keys, which uses an epsilon distance to allow tolerance in
+matching keys.
+
 Rotations are performed via the matrix-multiplication operator ``@``, where the left is rotated by
 the right. Vectors can be rotated by matrices and angles and matrices can be rotated by angles,
 but not vice-versa.
@@ -33,7 +36,7 @@ import types
 
 __all__ = [
     'parse_vec_str', 'to_matrix', 'lerp', 'quickhull', 'format_float',
-    'Vec', 'FrozenVec', 'Vec_tuple', 'AnyVec', 'VecUnion',
+    'Vec', 'FrozenVec', 'Vec_tuple', 'AnyVec', 'VecUnion', 'PointsMap',
     'Angle', 'FrozenAngle', 'AnyAngle',
     'Matrix', 'FrozenMatrix', 'AnyMatrix',
 ]
@@ -3057,3 +3060,6 @@ if not TYPE_CHECKING:
         ]:
             _glob[_name] = _glob['Cy_' + _name] = getattr(_math, _name)
         del _glob, _name, _math
+
+# Then import PointsMap, so it gets the right Vector implementation.
+from srctools._points_map import PointsMap as PointsMap

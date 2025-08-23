@@ -4,8 +4,7 @@ import copy
 import pickle
 
 import pytest
-from srctools.math import FrozenVec, Vec
-from srctools.points_map import PointsMap
+from srctools.math import FrozenVec, Vec, PointsMap
 
 
 def test_insertion() -> None:

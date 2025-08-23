@@ -10,8 +10,7 @@ import os
 import re
 import warnings
 
-from srctools.math import Angle, Matrix, Vec, to_matrix
-from srctools.points_map import PointsMap
+from srctools.math import Angle, Matrix, Vec, to_matrix, PointsMap
 
 
 __all__ = [
