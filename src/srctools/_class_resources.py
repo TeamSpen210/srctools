@@ -423,16 +423,16 @@ SHOOTER_SOUNDS = [
 @cls_func
 def env_shooter(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """A hardcoded array of sounds to play."""
-    try:
-        yield SHOOTER_SOUNDS[conv_int(ent['shootsounds'])]
-    except IndexError:
-        pass
+    shoot_ind = conv_int(ent['shootsounds'])
+    # -1 is the default value, meaning nothing.
+    if 0 <= shoot_ind < len(SHOOTER_SOUNDS):
+        yield SHOOTER_SOUNDS[shoot_ind]
 
     # Valve does this same check.
-    if ent['shootmodel'].casefold().endswith('.vmt'):
-        yield Resource.mat(ent['shootmodel'])
+    if (mdl := ent['shootmodel']).casefold().endswith('.vmt'):
+        yield Resource.mat(mdl)
     else:
-        yield Resource.mdl(ent['shootmodel'])
+        yield Resource.mdl(mdl, skinset=conv_int(ent['skin']))
 
 
 @cls_func

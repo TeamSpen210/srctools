@@ -272,6 +272,13 @@ def test_func_breakable_surf() -> None:
         material=5,
         surfacetype=1,
     )
+    check_entity(
+        *BREAKABLE,
+        Resource.mdl("models/brokenglass_piece.mdl"),
+        classname='func_breakable_surf',
+        material=5,
+        surfacetype=10,  # Invalid, but no crash.
+    )
 
 
 @pytest.mark.parametrize('cls', ['move_rope', 'keyframe_rope'])
@@ -536,9 +543,47 @@ def test_env_headcrabcanister() -> None:
     )
 
 
-@pytest.mark.xfail
 def test_env_shooter() -> None:
-    raise NotImplementedError
+    check_entity(
+        classname='env_shooter',
+        shootsounds=-1,  # Default and also out of bounds.
+    )
+    check_entity(
+        Resource.snd('Breakable.MatGlass'),
+        Resource.mat('some_gib.vmt'),
+        classname='env_shooter',
+        shootmodel='some_gib.vmt',
+        shootsounds=0,
+    )
+    check_entity(
+        Resource.snd('Breakable.MatWood'),
+        Resource.mdl('skull.mdl', skinset=0),
+        classname='env_shooter',
+        shootmodel='skull.mdl',
+        shootsounds=1,
+    )
+    check_entity(
+        Resource.snd('Breakable.MatMetal'),
+        Resource.mdl('skull.mdl', skinset=4),
+        classname='env_shooter',
+        shootmodel='skull.mdl',
+        skin=4,
+        shootsounds=2,
+    )
+    check_entity(
+        Resource.snd('Breakable.MatFlesh'),
+        Resource.mdl('skull.mdl', skinset=0),
+        classname='env_shooter',
+        shootmodel='skull.mdl',
+        shootsounds=3,
+    )
+    check_entity(
+        Resource.snd('Breakable.MatConcrete'),
+        Resource.mdl('skull.mdl', skinset=0),
+        classname='env_shooter',
+        shootmodel='skull.mdl',
+        shootsounds=4,
+    )
 
 
 def test_env_smokestack() -> None:

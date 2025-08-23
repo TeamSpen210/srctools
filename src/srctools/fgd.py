@@ -910,10 +910,12 @@ class Resource:
 
         Models have an optional `filename#1,2,3` suffix to specify which skins are used.
         """
-        if isinstance(skinset, int):
-            filename = f'{filename}#{skinset}'
-        elif skinset:
-            filename = f'{filename}#{",".join(map(str, skinset))}'
+        if filename:
+            if isinstance(skinset, int):
+                filename = f'{filename}#{skinset}'
+            elif skinset:
+                filename = f'{filename}#{",".join(map(str, skinset))}'
+        # Else: Blank filename is usually skipped, so skinset is irrelevant
         return cls(filename, FileType.MODEL, tags)
 
     @classmethod
