@@ -28,10 +28,22 @@ def _cell_neighbours(x: int, y: int, z: int) -> Iterator[tuple[int, int, int]]:
 
 
 class PointsMap(MutableMapping[AnyVec, ValueT], Generic[ValueT]):
-    """A mutable mapping with vectors as keys.
+    """A :class:`~collections.abc.MutableMapping` with vectors as keys.
 
     This is constructed with an epsilon distance, and lookups succeed if
     the distance is below this value.
+
+    When keys are set, any existing key is assigned to. However it is still possible to set
+    keys such that a lookup of a particular location has multiple candidates - in this case,
+    an arbitary value is returned. Use `get_all()` if you need all matches.
+
+    Acess can be done with regular `Vecs<Vec>`, `FrozenVecs<FrozenVec>` and 3-tuples. In particular,
+    ``pointmap[1, 2, 3]`` will lookup correctly. Iteration always produces a new `Vec` each time.
+
+    .. warning::
+        This stores keys partitioned by their integral position, then checks each position plus
+        neighbours during lookups. If a large number of points are less than 1 away, performance
+        will degrade into many linear comparisons.
     """
     _map: dict[tuple[int, int, int], list[tuple[FrozenVec, ValueT]]]
     _dist_sq: float
@@ -40,6 +52,13 @@ class PointsMap(MutableMapping[AnyVec, ValueT], Generic[ValueT]):
         contents: Union[Mapping[AnyVec, ValueT], Iterable[tuple[AnyVec, ValueT]]] = (),
         epsilon: float = 1e-6,
     ) -> None:
+        """Create a PointsMap.
+
+        :param contents: If provided, used to set the initial contents. Note that it is not any
+          more efficient to construct from an existing mapping.
+        :param epsilon: If two positions are smaller than this distance, they will be treated as
+          the same. Must be between 0 and 1
+        """
         if not (0.0 < epsilon < 1.0):
             raise ValueError('Epsilon must be between 0 and 1.')
         self._map = {}
@@ -63,7 +82,7 @@ class PointsMap(MutableMapping[AnyVec, ValueT], Generic[ValueT]):
             return f'PointsMap({list(self.items())!r})'
 
     def get_all(self, item: AnyVec) -> Iterator[ValueT]:
-        """Find all items matching this position."""
+        """Iterate over all items matching this position."""
         pos = FrozenVec(item)
         x, y, z = round(pos.x), round(pos.y), round(pos.z)
         for key in _cell_neighbours(x, y, z):

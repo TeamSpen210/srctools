@@ -9,6 +9,7 @@ Changelog
 Version (dev)
 -------------
 
+* Add :class:`srctools.math.PointsMap`, which fuzzily matches vector keys.
 * Add support for exporting the old FGD 'report' syntax (``name(*type)``).
 * Suppress the custom FGD editor-only flag if custom syntax is disabled.
 * Support various shader parameters added by Strata Source.

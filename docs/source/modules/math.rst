@@ -78,6 +78,22 @@ Vectors
 	:members:
 	:special-members:
 
+
+------------
+
+.. autoclass:: Vec_tuple
+	:members:
+
+.. autoclass:: PointsMap[ValueT]
+
+	.. automethod:: get_all
+		:for: value
+
+	.. automethod:: clear()
+	.. automethod::  keys() -> ~collections.abc.KeysView
+	.. automethod::  values() -> ~collections.abc.ValuesView
+	.. automethod::  items() -> ~collections.abc.ItemsView
+
 Constants
 =========
 
@@ -140,12 +156,6 @@ For convenience, several constants are available:
     :value: FrozenVec(0, 0, -1)
 .. py:data:: VecBase.z_neg
     :value: FrozenVec(0, 0, -1)
-
-
-------------
-
-.. autoclass:: Vec_tuple
-	:members:
 
 ------------
 Euler Angles
