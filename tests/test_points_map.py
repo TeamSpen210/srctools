@@ -50,10 +50,10 @@ def test_init() -> None:
     assert points[1, 2, 3] == 'a'
     assert points[4, 5, 6] == 'b'
 
-    points = PointsMap([
-        (Vec(1, 2, 3), 'a'),
-        (Vec(4, 5, 6), 'b'),
-    ])
+    points = PointsMap({
+        FrozenVec(1, 2, 3): 'a',
+        (4, 5, 6): 'b',
+    })
     assert len(points) == 2
     assert points[1, 2, 3] == 'a'
     assert points[4, 5, 6] == 'b'
@@ -86,6 +86,25 @@ def test_init() -> None:
         PointsMap(Vec())  # type: ignore
     with pytest.raises(TypeError):
         PointsMap('ab')  # type: ignore
+    with pytest.raises(ValueError, match=r'Epsilon must be between 0 and 1'):
+        PointsMap([], epsilon=49)
+    with pytest.raises(ValueError, match=r'Epsilon must be between 0 and 1'):
+        PointsMap([], epsilon=-1)
+
+
+def test_repr() -> None:
+    """Test the repr()."""
+    points = PointsMap([
+        (Vec(1, 2, 3), 'a'),
+        (Vec(4, 5, 6), 'b'),
+    ], epsilon=1e-6)
+    assert repr(points) == "PointsMap([(Vec(1, 2, 3), 'a'), (Vec(4, 5, 6), 'b')])"
+
+    points = PointsMap([
+        (Vec(1, 2, 3), 'a'),
+        (Vec(4, 5, 6), 'b'),
+    ], epsilon=0.125)
+    assert repr(points) == "PointsMap([(Vec(1, 2, 3), 'a'), (Vec(4, 5, 6), 'b')], epsilon=0.125)"
 
 
 def test_keys() -> None:
@@ -161,6 +180,15 @@ def test_deletion() -> None:
     with pytest.raises(KeyError):
         del points[-4.0, 2.5, 4.9]
 
+    points.clear()
+    with pytest.raises(KeyError):
+        print(points[0, 0, 0])
+    assert len(points) == 0
+    assert list(points) == []
+    assert list(points.keys()) == []
+    assert list(points.values()) == []
+    assert list(points.items()) == []
+
 
 def test_copying() -> None:
     """Test copying pointsmaps."""
@@ -189,3 +217,11 @@ def test_copying() -> None:
     assert cp_pick[2, 0, 0] == list2
     assert cp_pick[1, 0, 0] is not list1
     assert cp_pick[2, 0, 0] is not list2
+
+    # Test some invalid state values.
+    with pytest.raises(TypeError, match='cannot unpack'):
+        orig.__setstate__(0)  # type: ignore
+    with pytest.raises(ValueError, match='not enough values'):
+        orig.__setstate__(())  # type: ignore
+    with pytest.raises(ValueError, match='epsilon'):
+        orig.__setstate__(('hi', []))  # type: ignore
