@@ -1,11 +1,11 @@
 """Test the PointsMap mapping."""
+from collections.abc import KeysView, ValuesView, ItemsView
 import copy
 import pickle
 
 import pytest
 from srctools.math import FrozenVec, Vec
 from srctools.points_map import PointsMap
-from collections.abc import KeysView, ValuesView, ItemsView
 
 
 def test_insertion() -> None:

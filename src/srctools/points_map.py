@@ -2,23 +2,21 @@
 
 This has a minimum distance, where points closer than that are treated equal.
 """
+from typing import Any, Union, TypeVar, Generic
+from collections.abc import Iterable, Iterator, Mapping, MutableMapping, ValuesView, ItemsView
+from copy import deepcopy
 import itertools
 import math
-from copy import deepcopy
-from typing import (
-    Any, Dict, Union, Tuple, TypeVar, Generic,
-    Iterator, Iterable, Mapping,
-    MutableMapping, List, ValuesView, ItemsView,
-)
+
 from srctools.math import AnyVec, FrozenVec, Vec
 
 
 __all__ = ['PointsMap']
 ValueT = TypeVar('ValueT')
-_State = Tuple[float, List[Tuple[float, float, float, ValueT]]]
+_State = tuple[float, list[tuple[float, float, float, ValueT]]]
 
 
-def _cell_neighbours(x: int, y: int, z: int) -> Iterator[Tuple[int, int, int]]:
+def _cell_neighbours(x: int, y: int, z: int) -> Iterator[tuple[int, int, int]]:
     """Iterate over the cells this index could match."""
     # Reorder such that (x, y, z) is the first result. Lookups are fairly likely
     # to be using the exact position, so ensure that is checked first.
@@ -35,11 +33,11 @@ class PointsMap(MutableMapping[AnyVec, ValueT], Generic[ValueT]):
     This is constructed with an epsilon distance, and lookups succeed if
     the distance is below this value.
     """
-    _map: Dict[Tuple[int, int, int], List[Tuple[FrozenVec, ValueT]]]
+    _map: dict[tuple[int, int, int], list[tuple[FrozenVec, ValueT]]]
     _dist_sq: float
     def __init__(
         self,
-        contents: Union[Mapping[AnyVec, ValueT], Iterable[Tuple[AnyVec, ValueT]]] = (),
+        contents: Union[Mapping[AnyVec, ValueT], Iterable[tuple[AnyVec, ValueT]]] = (),
         epsilon: float = 1e-6,
     ) -> None:
         if not (0.0 < epsilon < 1.0):
@@ -163,7 +161,7 @@ class PointsMap(MutableMapping[AnyVec, ValueT], Generic[ValueT]):
         }
         return copy
 
-    def __deepcopy__(self, memodict: Dict[int, Any]) -> 'PointsMap[ValueT]':
+    def __deepcopy__(self, memodict: dict[int, Any]) -> 'PointsMap[ValueT]':
         """Deep-copy this PointsMap."""
         copy = PointsMap.__new__(PointsMap)
         copy._dist_sq = self._dist_sq
@@ -224,7 +222,7 @@ class PointItemsView(ItemsView[AnyVec, ValueT], Generic[ValueT]):
                     # Else, continue, in case there's another matching point.
         return False
 
-    def __iter__(self) -> Iterator[Tuple[Vec, ValueT]]:
+    def __iter__(self) -> Iterator[tuple[Vec, ValueT]]:
         """Yield all values stored in the PointsMap."""
         for points in self._mapping._map.values():
             for pos, value in points:

@@ -22,6 +22,7 @@ pure_python = files(
     'mdl.py',
     'packlist.py',
     'particles.py',
+    'points_map.py',
     'property_parser.py',
     'run.py',
     'smd.py',
