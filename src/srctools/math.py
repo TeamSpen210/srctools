@@ -2918,7 +2918,7 @@ class Angle(AngleBase):
         self._roll = new_ang._roll
 
 
-def quickhull(vertexes: Iterable[Vec]) -> list[tuple[Vec, Vec, Vec]]:
+def quickhull(vertexes: Iterable[AnyVec]) -> list[tuple[Vec, Vec, Vec]]:
     """Use the quickhull algorithm to construct a convex hull around the provided points.
 
     This is only available when the C extension is compiled.
@@ -3059,6 +3059,8 @@ if not TYPE_CHECKING:
             'parse_vec_str', 'to_matrix', 'lerp', 'format_float',
         ]:
             _glob[_name] = _glob['Cy_' + _name] = getattr(_math, _name)
+        # Don't have a pure-py version, so we don't need to preserve.
+        quickhull = _math.quickhull
         del _glob, _name, _math
 
 # Then import PointsMap, so it gets the right Vector implementation.

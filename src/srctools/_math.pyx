@@ -3571,17 +3571,18 @@ cdef class Angle(AngleBase):
         return AngleTransform.__new__(AngleTransform, self)
 
 
-def quickhull(vertexes: Iterable[VecBase]) -> list[tuple[Vec, Vec, Vec]]:
+def quickhull(vertexes: Iterable) -> list[tuple[Vec, Vec, Vec]]:
     """Use the quickhull algorithm to construct a convex hull around the provided points."""
     cdef size_t v1, v2, v3, ind
     cdef vector[quickhull.Vector3[double]] values = vector[quickhull.Vector3[double]]()
     cdef list vert_list, result
-    cdef Vec vecobj
+    cdef vec_t vec
     cdef quickhull.QuickHull[double] qhull = quickhull.QuickHull[double]()
 
     for vecobj in vertexes:
+        conv_vec(&vec, vecobj, scalar=False)
         with cython.critical_section(vecobj):
-            values.push_back(quickhull.Vector3[double](vecobj.val.x, vecobj.val.y, vecobj.val.z))
+            values.push_back(quickhull.Vector3[double](vec.x, vec.y, vec.z))
 
     cdef quickhull.ConvexHull[double] result_hull = qhull.getConvexHull(values, False, False)
 
