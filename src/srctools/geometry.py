@@ -4,14 +4,15 @@ See :sdk-2013:`utils/common/polylib.cpp` for some of the algorithms.
 """
 from typing import Optional
 
-from collections.abc import Iterable, Iterator
+from collections.abc import Iterable, Iterator, Generator
 from collections import defaultdict
 import itertools
 import math
 
 import attrs
 
-from srctools import FrozenVec, Matrix, VMF, Vec
+from srctools._points_map import PointsMap
+from srctools.math import VecUnion, FrozenVec, Matrix, Vec, quickhull
 from srctools import vmf as vmf_mod, smd
 from srctools.bsp import Plane, PlaneType
 
@@ -59,6 +60,39 @@ class Geometry:
             poly for poly in polys
             if poly._recalculate(polys)
         ])
+
+    @classmethod
+    def from_dup_planes(cls, planes: Iterable[Plane]) -> 'Geometry':
+        """Deduplicate planes, then construct new copies of geometry"""
+        planes_map: PointsMap[list[Plane]] = PointsMap()
+        for plane in planes:
+            dist_list = planes_map.setdefault(plane.normal, [])
+            for exist in dist_list:
+                if abs(plane.dist - exist.dist) < 1e-6:
+                    break
+            else:
+                dist_list.append(plane)
+        geo = Geometry([
+            Polygon(None, [], plane)
+            for norm, dist_list in planes_map.items()
+            for plane in dist_list
+        ])
+        geo.polys = [
+            poly for poly in geo.polys
+            if poly._recalculate(geo.polys)
+        ]
+        return geo
+
+    @classmethod
+    def from_points(cls, points: list[VecUnion]) -> 'Geometry':
+        """Given a point cloud, construct a convex hull out of the geometry."""
+        def make_planes() -> 'Generator[Plane, None, None]':
+            """Create the planes."""
+            for a, b, c in quickhull(points):
+                norm = Vec.cross(a - b, b - c).norm()
+                dist = a.dot(norm)
+                yield Plane(norm, dist)
+        return cls.from_dup_planes(make_planes())
 
     def __iter__(self) -> Iterator['Polygon']:
         return iter(self.polys)
@@ -272,7 +306,7 @@ class Polygon:
     #: The plane this face is pointing along.
     plane: Plane
 
-    def build_face(self, vmf: VMF, mat: str) -> vmf_mod.Side:
+    def build_face(self, vmf: vmf_mod.VMF, mat: str) -> vmf_mod.Side:
         """Apply the polygon to the face. If the face is not present, create it.
 
         Returns the face, since it is known to exist.

@@ -10,7 +10,9 @@ Version (dev)
 -------------
 
 * Add :class:`srctools.math.PointsMap`, which fuzzily matches vector keys.
+* Add :meth:`Geometry.from_points() <srctools.geometry.Geometry.from_points>`, creating a brush from a point cloud.
 * Add support for exporting the old FGD 'report' syntax (``name(*type)``).
+* Fix :func:`srctools.math.quickhull()` not functioning, allow any vector as input.
 * Suppress the custom FGD editor-only flag if custom syntax is disabled.
 * Support various shader parameters added by Strata Source.
 * Properly implement detail prop packing logic, only pack sprites/models that
