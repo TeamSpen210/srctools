@@ -131,6 +131,10 @@ class Geometry:
                     used.add(poly.original)
         return dict(ids)
 
+    def copy(self) -> 'Geometry':
+        """Create a duplicate of this brush, duplicating any associated brush sides in the process."""
+        return Geometry([poly.copy() for poly in self.polys])
+
     def raw_clip(
         self,
         plane: Plane,
@@ -305,6 +309,14 @@ class Polygon:
     vertices: list[FrozenVec]
     #: The plane this face is pointing along.
     plane: Plane
+
+    def copy(self) -> 'Polygon':
+        """Duplicate this polygon, copying the side if necessary in the process."""
+        return Polygon(
+            self.original.copy() if self.original is not None else None,
+            self.vertices.copy(),
+            self.plane.copy(),
+        )
 
     def build_face(self, vmf: vmf_mod.VMF, mat: str) -> vmf_mod.Side:
         """Apply the polygon to the face. If the face is not present, create it.

@@ -712,7 +712,8 @@ class Plane:
 
     normal: Vec = attrs.field(on_setattr=_normal_setattr)
     dist: float = attrs.field(converter=float, validator=attrs.validators.instance_of(float))
-    _type: Optional[PlaneType] = None
+    # Should not be set by external code, could get out of sync.
+    _type: Optional[PlaneType] = attrs.field(init=False, default=None)
 
     del _normal_setattr
 
@@ -727,6 +728,12 @@ class Plane:
     def type(self, value: PlaneType) -> None:
         """Set the plane type."""
         self._type = value
+
+    def copy(self) -> 'Plane':
+        """Return a copy of this plane."""
+        copy = Plane(self.normal.copy(), self.dist)
+        copy._type = self._type
+        return copy
 
     def __invert__(self) -> 'Plane':
         """Return the inverse of this plane."""
@@ -1942,7 +1949,9 @@ class BSP:
     # Lump reading and writing code:
     def _lmp_read_planes(self, data: bytes) -> Iterator['Plane']:
         for x, y, z, dist, typ in struct.iter_unpack('<ffffi', data):
-            yield Plane(Vec(x, y, z), dist, PlaneType(typ))
+            plane = Plane(Vec(x, y, z), dist)
+            plane._type = PlaneType(typ)
+            yield plane
 
     def _lmp_write_planes(self, planes: list['Plane']) -> bytes:
         return b''.join([
