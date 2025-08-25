@@ -6,7 +6,7 @@ Changelog
     :backlinks: none
 
 -------------
-Version (dev)
+Version 2.6.1
 -------------
 
 * Add :class:`srctools.math.PointsMap`, which fuzzily matches vector keys.
