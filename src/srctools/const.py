@@ -33,9 +33,9 @@ def add_unknown(ns: MutableMapping[str, Any], long: Union[int, bool] = False) ->
     """
     # First, determine which bits we already have.
     used_bits = 0
-    for n in ns.values():
-        # Skip non-members added to the namespace.
-        if isinstance(n, int):
+    for name, n in ns.items():
+        # Skip non-members added to the namespace. Python adds things like __firstlineno__.
+        if isinstance(n, int) and not name.startswith('_'):
             used_bits |= n
 
     # The zero bit is always available as a pseudo-flag.

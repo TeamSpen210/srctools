@@ -6,6 +6,12 @@ Changelog
     :backlinks: none
 
 -------------
+Version (dev)
+-------------
+
+* Fix unknown bits sometimes not round tripping through enum bitfields.
+
+-------------
 Version 2.6.1
 -------------
 
