@@ -686,7 +686,7 @@ class Keyvalues:
         for kv in self:
             if not isinstance(kv, Keyvalues):
                 raise LeafKeyvalueError(kv, 'find children of')
-            if kv._folded_name == targ_key is not None:
+            if kv._folded_name == targ_key:
                 if depth > 1:
                     if kv.has_children():
                         yield from Keyvalues.find_all(kv, *keys[1:])
@@ -1387,7 +1387,6 @@ class Keyvalues:
                 for kv in self._value:
                     yield from kv.export()
             else:
-                assert self._real_name is not None, repr(self)
                 yield f'"{self._real_name}"\n'
                 yield '\t{\n'
                 yield from (

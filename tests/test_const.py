@@ -26,12 +26,12 @@ def test_add_unknown_32() -> None:
 
 
 def test_add_unknown_64() -> None:
+    """Test the 64-bit range too."""
     ns = {
         'a': 0x1,
         'b': 0x4,
         'c': 0x48,
         'non_member': [1, 2, 3],
-        # Python adds this, we need to ignore dunders.
         '__firstlineno__': 0x2938,
     }
     orig = ns.copy()
@@ -39,6 +39,6 @@ def test_add_unknown_64() -> None:
     expect = {
         str(i): 1 << i
         for i in range(1, 64)
-        if i not in [0, 2, 3, 6]  # These are already defined.
+        if i not in [0, 2, 3, 6]
     }
     assert ns == (orig | expect)
