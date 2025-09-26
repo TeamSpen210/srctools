@@ -106,8 +106,10 @@ class VERSIONS(Enum):
     INFRA = 22
     DOTA2 = 22
     CONTAGION = 23
-    CHAOSSOURCE = 25  # Chaos' limit increased BSPs.
+    STRATA_SOURCE = 25  # Strata Source's limit increased BSPs.
 
+    # Former name
+    CHAOSSOURCE = STRATA_SOURCE
     DESOLATION_OLD = 42  # Old version.
     VITAMINSOURCE = 43  # Desolation's expanded map format.
 
@@ -300,8 +302,8 @@ LUMP_LAYOUT_VITAMIN: LumpDataLayout = {
     "NODE": struct.Struct('<iii6iHHh2x'),
 }
 
-# https://chaosinitiative.github.io/Wiki/docs/Reference/bsp-v25/
-LUMP_LAYOUT_CHAOS: LumpDataLayout = {
+# https://wiki.stratasource.org/modding/overview/bsp-v25
+LUMP_LAYOUT_STRATA: LumpDataLayout = {
     **LUMP_LAYOUT_STANDARD,
     "FACE":             struct.Struct('<I??xx5i4sif5i3I'),
     "FACEID":           struct.Struct('<I'),
@@ -404,29 +406,32 @@ class StaticPropVersion(Enum):
         self.size = size
         self.variant = name
 
-    V4 = (4, 56) #: V4 and V5 are used in original HL2 maps.
-    V5 = (5, 60)  #: adds forcedFadeScale
-    V6 = (6, 64)  #: Some TF2 maps, adds min/max DX level
-    V7 = (7, 68)  #: Old L4D maps, adds rendercolor
-    V8 = (8, 68)  #: Main L4D, removes min/max DX, adds min/max GPU and CPU
+    V4 = (4, 56)  #: V4 and V5 are used in original HL2 maps.
+    V5 = (5, 60)  #: Adds forcedFadeScale.
+    V6 = (6, 64)  #: Some TF2 maps, adds min/max DX level.
+    V7 = (7, 68)  #: Old L4D maps, adds rendercolor.
+    V8 = (8, 68)  #: Main L4D, removes min/max DX, adds min/max GPU and CPU.
     V9 = (9, 72)  #: L4D2, adds disableX360.
-    V10 = (10, 76)  #: Old CSGO, adds new flags integer
+    V10 = (10, 76)  #: Old CSGO, adds new flags integer.
     V11 = (11, 80)  #: New CSGO, with uniform prop scaling.
 
-    #: Source 2013, also appears with version 7 but is identical.
-    #: Based on v6, adds lightmapped props.
-    #: Despite the version number, more like v6.
+    #: Source 2013, also appears with version ``7`` but is identical.
+    #: Based on ``v6``, adds lightmapped props.
+    #: Despite the version number, this is more like ``v6``.
     V_LIGHTMAP_v7 = (7, 72)
     V_LIGHTMAP_v10 = (10, 72)
     V_LIGHTMAP_MESA = (11, 80, 'Mesa')  #: Adds rendercolor to V10
 
-    V_CHAOS_V12 = (12, 80)  #: Changes the leaf list from uint16 to uint32
-    V_CHAOS_V13 = (13, 88)  #: Changes scale from one float to three for non-uniform scaling
+    V_STRATA_V12 = (12, 80)  #: Changes the leaf list from ``uint16`` to ``uint32``.
+    V_STRATA_V13 = (13, 88)  #: Changes scale from one float to three for non-uniform scaling support.
 
-    # V6_WNAME = (5, 188)  # adds targetname, used by The Ship and Bloody Good Time.
+    # V6_WNAME = (5, 188)  #: Adds a targetname field, used by The Ship and Bloody Good Time.
     UNKNOWN = (0, 0, 'unknown')  #: Indicates the lump has not been parsed.
     #: All games should recognise this, so switch to this if set to unknown.
     DEFAULT = V5
+
+    V_CHAOS_V12 = V_STRATA_V12  #: The former name for Strata Source, deprecated.
+    V_CHAOS_V13 = V_STRATA_V13  #: The former name for Strata Source, deprecated.
 
     @property
     def is_lightmap(self) -> bool:
@@ -494,7 +499,8 @@ class VisLeafFlags(Flag):
 
     # Undocumented flags, still in maps though?
     # Looks like uninitialised members.
-    add_unknown(locals(), 7)
+    # Valve uses up to 7, Strata has 15.
+    add_unknown(locals(), 15)
 
 
 class DetailPropOrientation(Enum):
@@ -1004,10 +1010,10 @@ class VisLeaf:
     flags: VisLeafFlags
     mins: Vec
     maxes: Vec
-    faces: list[Face]
-    brushes: list[Brush]
+    faces: list[Face] = attrs.field(repr=len)
+    brushes: list[Brush] = attrs.field(repr=len)
     water_id: int
-    _ambient: bytes = bytes(24)  # TODO: Parse this.
+    _ambient: bytes = attrs.field(default=bytes(24), repr=False)  # TODO: Parse this.
     # This is LEAF_MIN_DIST_TO_WATER
     min_water_dist: int = 65535
 
@@ -1481,9 +1487,9 @@ class BSP:
             if magic_name == VITAMIN_MAGIC and self.version is not VERSIONS.VITAMINSOURCE:
                 raise ValueError('VitaminSource uses a different version number.')
 
-            if self.version is VERSIONS.CHAOSSOURCE:
-                # Change the expected structure for lumps to fit chaos' increased limits
-                self.lump_layout = LUMP_LAYOUT_CHAOS
+            if self.version is VERSIONS.STRATA_SOURCE:
+                # Change the expected structure for lumps to fit strata's increased limits
+                self.lump_layout = LUMP_LAYOUT_STRATA
             elif self.version is VERSIONS.VITAMINSOURCE:
                 # Change the expected structure for lumps to fit vitamin's rad new format
                 self.lump_layout = LUMP_LAYOUT_VITAMIN
@@ -3231,7 +3237,7 @@ class BSP:
             flags = StaticPropFlags(flags)
 
             scaling = Vec(1.0, 1.0, 1.0)
-            if version is StaticPropVersion.V_CHAOS_V13:
+            if version is StaticPropVersion.V_STRATA_V13:
                 # Three floats for non-uniform scaling
                 [scaling.x, scaling.y, scaling.z] = struct_read("<fff", static_lump)
             elif vers_num >= 11:
@@ -3368,7 +3374,7 @@ class BSP:
             if vers_num >= 10 or version is StaticPropVersion.V_LIGHTMAP_MESA:
                 prop_lump.write(struct.pack('<I', prop.flags.value_sec))
 
-            if version is StaticPropVersion.V_CHAOS_V13:
+            if version is StaticPropVersion.V_STRATA_V13:
                 # Three floats for non-uniform scaling
                 if isinstance(prop.scaling, Vec):
                     scaling_3 = prop.scaling
