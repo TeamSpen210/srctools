@@ -225,7 +225,7 @@ class BaseTokenizer(abc.ABC):
     def __init__(
         self,
         filename: Union[StringPath, str, bytes, None],
-        error: type[TokenSyntaxError],
+        error: Optional[type[TokenSyntaxError]],
     ) -> None:
         if filename is not None:
             conv_filename = _conv_path(filename)
@@ -767,9 +767,7 @@ class Tokenizer(BaseTokenizer):
             if next_char == '\\' and self.allow_escapes:
                 # Escape text
                 escape = self._next_char()
-                if escape is None:
-                    raise self.error('No character to escape!')
-                elif escape == '\n':
+                if escape == '\n':
                     continue  # Allow \ at the end of a line to skip.
                 try:
                     next_char = ESCAPES[escape]
