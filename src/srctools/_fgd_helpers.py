@@ -133,7 +133,6 @@ class HelperSize(Helper):
 
 
 @deprecated("Does not exist, use HelperSize = size() instead.")
-@attrs.define
 class HelperBBox(HelperSize):
     """Deprecated, implementation for the non-existent bbox() type. Use size() instead."""
     TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.BBOX

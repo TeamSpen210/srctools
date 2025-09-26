@@ -10,6 +10,7 @@ Version (dev)
 -------------
 
 * Fix unknown bits sometimes not round tripping through enum bitfields.
+* Fix incorrect parsing of the deprecated ``bbox()`` FGD helper.
 
 -------------
 Version 2.6.1

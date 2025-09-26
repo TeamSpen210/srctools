@@ -641,27 +641,57 @@ def test_parse_helpers_extension(py_c_token: None, file_regression: FileRegressi
     file_regression.check(fgd.export(), basename="parse_helpers_ext", extension='.fgd')
 
 
-def test_illegal_helpers_size(py_c_token: None) -> None:
-    """The size helper is special, and is parsed specially."""
+def test_parse_helpers_dep_bbox(py_c_token: None) -> None:
+    """Previous versions of srctools thought that size() was named bbox(). Check it functions."""
     fsys = VirtualFileSystem({
-        'no_args.fgd': """@PointClass
-        size() 
+        'one.fgd': """@PointClass
+        bbox(32 64 128)
+        = one []
+        """,
+        'two.fgd': """@PointClass
+        bbox[+A](-64 -48 0, 64 48 32)
+        = two []
+        """
+    })
+    fgd = FGD()
+    with pytest.deprecated_call(match=r'use HelperSize = size\(\)'):
+        fgd.parse_file(fsys, fsys['one.fgd'], eval_bases=False)
+    with pytest.deprecated_call():
+        helper = fgd_mod.HelperBBox(Vec(-16, -32, -64), Vec(16, 32, 64))
+    assert fgd['one'].helpers == [helper]
+
+    with pytest.deprecated_call(match=r'use HelperSize = size\(\)'):
+        fgd.parse_file(fsys, fsys['two.fgd'], eval_bases=False)
+    with pytest.deprecated_call():
+        helper = fgd_mod.HelperBBox(
+            Vec(-64, -48, 0), Vec(64, 48, 32),
+            tags=frozenset({'+A'})
+        )
+    assert fgd['two'].helpers == [helper]
+
+
+@pytest.mark.parametrize('helper', ['size', 'bbox'])
+def test_illegal_helpers_size(py_c_token: None, helper: str) -> None:
+    """The size helper is special, and is parsed specially. bbox() is a previous synonym."""
+    fsys = VirtualFileSystem({
+        'no_args.fgd': f"""@PointClass
+        {helper}() 
         = illegal []
         """,
-        'two_coords.fgd': """@PointClass
-        size(1 2) 
+        'two_coords.fgd': f"""@PointClass
+        {helper}(1 2) 
         = illegal []
         """,
-        'early_comma.fgd': """@PointClass
-        size(1, 2 3, 4 5 6) 
+        'early_comma.fgd': f"""@PointClass
+        {helper}(1, 2 3, 4 5 6) 
         = illegal []
         """,
-        'no_comma.fgd': """@PointClass
-        size(1 2 3 4 5 6) 
+        'no_comma.fgd': f"""@PointClass
+        {helper}(1 2 3 4 5 6) 
         = illegal []
         """,
-        'extra_coords.fgd': """@PointClass
-        size(1 2 3, 4 5 6, 7 8 9) 
+        'extra_coords.fgd': f"""@PointClass
+        {helper}(1 2 3, 4 5 6, 7 8 9) 
         = illegal []
         """,
     })
