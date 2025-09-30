@@ -325,6 +325,10 @@ class Resource:
     data: Union[bytes, int]
 
 
+# Used as a placeholder definition during saving for non-inline resources we generate directly.
+_DUMMY_RESOURCE = Resource(0, b'')
+
+
 @attrs.frozen
 class Pixel:
     """Data structure to hold colour data retrieved from a frame."""
@@ -896,62 +900,84 @@ class VTF:
         elif self.depth > 1:
             raise ValueError('Cannot use volumetric textures with versions before 7.2!')
 
-        # Read resources.
+        # Write the resource list. This is slightly complicated by the requirement to keep IDs in
+        # ascending order.
+        res_list: list[tuple[ResourceID, Resource]]
         if version_minor >= 3:
-            res_count = len(self.resources) + 2  # low/high format are always present.
+            # Add dummy definitions for the resources we handle, so they're sorted correctly.
+            res_list = [
+                *self.resources.items(),
+                (ResourceID.LOW_RES, _DUMMY_RESOURCE),
+                (ResourceID.HIGH_RES, _DUMMY_RESOURCE),
+            ]
             if self.sheet_info:
-                res_count += 1
-            file.write(struct.pack('<3xI8x', res_count))
-            for res_id, res in self.resources.items():
+                res_list.append((ResourceID.PARTICLE_SHEET, _DUMMY_RESOURCE))
+            file.write(struct.pack('<3xI8x', len(res_list)))
+
+            def res_key(tup: tuple[ResourceID | bytes, Resource]) -> bytes:
+                """Resources should be ordered in ascending order."""
+                res_id = tup[0]
+                if isinstance(res_id, ResourceID):
+                    return res_id.value
+                else:
+                    return res_id
+
+            res_list.sort(key=res_key)
+
+            for res_id, res in res_list:
+                raw_res_id = res_id.value if isinstance(res_id, ResourceID) else res_id
                 if isinstance(res.data, bytes):
                     # It's later in the file.
-                    file.write(struct.pack('<3sB', getattr(res_id, 'value', res_id), res.flags & ~0x02))
+                    file.write(struct.pack('<3sB', raw_res_id, res.flags & ~0x02))
                     deferred.defer(('res', res_id), '<I', write=True)
                 else:
                     # Just here.
-                    file.write(struct.pack('<3sBI', res_id, res.flags | 0x02, res.data))
-
-            # These are always present in the resource.
-            file.write(struct.pack('<3sB', ResourceID.LOW_RES.value, 0))
-            deferred.defer('low_res', '<I', write=True)
-            file.write(struct.pack('<3sB', ResourceID.HIGH_RES.value, 0))
-            deferred.defer('high_res', '<I', write=True)
-            if self.sheet_info:
-                file.write(struct.pack('<3sB', ResourceID.PARTICLE_SHEET.value, 0))
-                deferred.defer('particle', '<I', write=True)
+                    file.write(struct.pack('<3sBI', raw_res_id, res.flags | 0x02, res.data))
         else:
             file.write(bytes(15))  # Pad to 80 bytes.
+            res_list = None
 
         deferred.set_data('header_size', file.tell())
-        if version_minor >= 3:
-            # Write the data itself.
-            for res_id, res in self.resources.items():
-                if isinstance(res.data, bytes):
-                    # There's actual data elsewhere in the file.
-                    deferred.set_data(('res', res_id), file.tell())
-                    file.write(struct.pack('<I', len(res.data)))
-                    file.write(res.data)
-            if self.sheet_info:
-                particle_data = SheetSequence.make_data(self.sheet_info, sheet_seq_version)
-                deferred.set_data('particle', file.tell())
-                file.write(struct.pack('<I', len(particle_data)))
-                file.write(particle_data)
 
+        # Now for the main body.
         self.compute_mipmaps()
         self._low_res.load()
 
-        if version_minor >= 3:
-            deferred.set_data('low_res', file.tell())
+        if res_list is not None:  # IE version >= 7.3
+            # Write the contents of resource blocks, for those that aren't inline.
+            for res_id, res in res_list:
+                if not isinstance(res.data, bytes):
+                    continue  # Inline block.
+                deferred.set_data(('res', res_id), file.tell())
+                # Low/high res blocks omit the size.
+                if res_id is ResourceID.LOW_RES:
+                    self._write_lowres(file)
+                elif res_id is ResourceID.HIGH_RES:
+                    self._write_highres(file)
+                elif res_id is ResourceID.PARTICLE_SHEET and self.sheet_info:
+                    particle_data = SheetSequence.make_data(self.sheet_info, sheet_seq_version)
+                    file.write(struct.pack('<I', len(particle_data)))
+                    file.write(particle_data)
+                else:  # Generic block.
+                    file.write(struct.pack('<I', len(res.data)))
+                    file.write(res.data)
+        else:
+            self._write_lowres(file)
+            self._write_highres(file)
+
+        deferred.write()
+
+    def _write_lowres(self, file: FileWBinarySeek) -> None:
+        """Create the low-res image data."""
         if self.low_format is not ImageFormats.NONE:
             data = bytearray(self.low_format.frame_size(self._low_res.width, self._low_res.height))
             if self._low_res._data is not None:
                 _format_funcs.save(self.low_format, self._low_res._data, data, self._low_res.width, self._low_res.height)
             file.write(data)
 
+    def _write_highres(self, file: FileWBinarySeek) -> None:
+        """Write the high-res image data to this location."""
         depth_seq = self._depth_range()
-
-        if version_minor >= 3:
-            deferred.set_data('high_res', file.tell())
         for data_mipmap in reversed(range(self.mipmap_count)):
             for frame_ind in range(self.frame_count):
                 for depth_or_cube in depth_seq:
@@ -965,7 +991,6 @@ class VTF:
                     if frame._data is not None:
                         _format_funcs.save(self.format, frame._data, data, frame.width, frame.height)
                     file.write(data)
-        deferred.write()
 
     def __enter__(self) -> 'VTF':
         """The VTF file can be used as a context manager.
