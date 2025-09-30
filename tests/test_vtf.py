@@ -197,3 +197,34 @@ def test_load_bad_size(
             b'',
             32, 32,
         )
+
+
+def test_res_hotspot(
+    datadir: Path,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Test saving and loading hotspot resources.
+
+    Sample generated with:
+    maretf create hotspot.png --version 7.5 --format I8 --filter KAISER
+    --hotspot-rect 0 0 96 256 NONE --hotspot-rect  0 24 128 512 RANDOM_REFLECTION
+    --hotspot-rect  48 56 128 512 RANDOM_ROTATION  --hotspot-rect 0 0 96 512 IS_ALTERNATE
+    """
+    with open(datadir / "hotspot.vtf", "rb") as f:
+        vtf = VTF.read(f)
+        vtf.load()
+    assert vtf.hotspot_flags == 0
+    assert vtf.hotspot_info == [
+        vtf_mod.HotspotRect(0, 0, 96, 256),
+        vtf_mod.HotspotRect(0, 24, 128, 512, random_reflection=True),
+        vtf_mod.HotspotRect(48, 56, 128, 512, random_rotation=True),
+        vtf_mod.HotspotRect(0, 0, 96, 512, is_alternate=True),
+    ]
+
+    buf = BytesIO()
+    vtf.save(buf)
+    file_regression.check(buf.getvalue(), binary=True, extension=".vtf")
+
+    with open(datadir / "test_res_hotspot.vtf", "rb") as f:
+        round = VTF.read(f)
+        round.load()

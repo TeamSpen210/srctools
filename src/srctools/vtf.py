@@ -9,7 +9,7 @@ not supported, only metdata can be read.
 .. _`Python Imaging Library`: https://pillow.readthedocs.io/en/stable/
 .. _`libsquish`: https://sourceforge.net/projects/libsquish/
 """
-from typing import TYPE_CHECKING, Any, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Optional, Union, overload, ClassVar
 from array import array
 from collections.abc import Iterator, Mapping, Sequence
 from enum import Enum, Flag
@@ -22,7 +22,7 @@ import warnings
 
 import attrs
 
-from . import EmptyMapping, binformat
+from . import EmptyMapping, binformat, Keyvalues
 from .const import add_unknown
 from .math import AnyVec, FrozenVec, Vec
 from .types import FileRSeek, FileWBinarySeek
@@ -292,7 +292,7 @@ class ResourceID(bytes, Enum):
 
     #: Valve ID. Used for particle spritesheets, decoded into `~VTF.sheet_info`.
     PARTICLE_SHEET = b'\x10\0\0'
-    #: Defined by VTFLib, a Cyclic Redundancy Checksum.
+    #: A Cyclic Redundancy Checksum of the source image file.
     CRC = b'CRC'
 
     #: Allows forcing specific mipmaps to be used for 'medium' shader settings.
@@ -303,6 +303,10 @@ class ResourceID(bytes, Enum):
 
     #: Defined by VTFLib, an arbitrary block of keyvalues data.
     KEYVALUES = b'KVD'
+
+    #: Strata Source `extension <https://wiki.stratasource.org/modding/overview/vtf-hotspot-resource>`_,
+    #: rectangular regions used to automatically retexture brush faces.
+    STRATA_HOTSPOT = b"+\0\0"
 
 
 class FilterMode(Enum):
@@ -627,12 +631,6 @@ class VTF:
     reflectivity: Vec
     #: Indicates how deep a heightmap/bumpmap ranges. Seemingly unused.
     bumpmap_scale: float
-    #: In version 7.3+, arbitrary resources may be stored in a VTF. :py:class:`ResourceID` are
-    #: defined by Valve, but any 4-byte ID may be used.
-    resources: dict[Union[ResourceID, bytes], Resource]
-    #: Textures used for particle system sprites may have this resource, defining subareas to
-    #: randomly pick from when rendering.
-    sheet_info: dict[int, 'SheetSequence']
     flags: VTFFlags  #: Bitflags specifying behaviours and how the texture was compiled.
     frame_count: int  #: The number of frames, greater than one for an animated texture.
     first_frame_index: int  #: This field appears unused.
@@ -640,6 +638,19 @@ class VTF:
     #: The image format to use for a small thumbnail, usually ≤ 16×16.
     #: This is usually :py:attr:`DXT1 <srctools.vtf.ImageFormats.DXT1>`.
     low_format: ImageFormats
+
+    #: In version 7.3+, arbitrary resources may be stored in a VTF. :py:class:`ResourceID` specify
+    #: known resources, but any 4-byte ID may be used. If you do use a custom resource, keep in
+    #: mind this could break if future srctools versions parse this normally.
+    resources: dict[Union[ResourceID, bytes], Resource]
+    #: Textures used for particle system sprites may have this resource, defining subareas to
+    #: randomly pick from when rendering.
+    sheet_info: dict[int, 'SheetSequence']
+    #: Strata Source adds the hotspot resource, defining regions used to automatically texture
+    #: brushes.
+    hotspot_info: list['HotspotRect'] | None
+    #: Implementation-specific flags byte
+    hotspot_flags: int
 
     _frames: dict[tuple[int, Union[CubeSide, int], int], Frame]
     _low_res: Frame
@@ -649,10 +660,13 @@ class VTF:
         width: int,
         height: int,
         version: tuple[int, int] = (7, 5),
+        *,
         ref: AnyVec = FrozenVec(0, 0, 0),
         frames: int = 1,
         bump_scale: float = 1.0,
         sheet_info: Mapping[int, 'SheetSequence'] = EmptyMapping,
+        hotspot_info: list['HotspotRect'] | None = None,
+        hotspot_flags: int = 0,
         flags: VTFFlags = VTFFlags.EMPTY,
         fmt: ImageFormats = ImageFormats.RGBA8888,
         thumb_fmt: ImageFormats = ImageFormats.DXT1,
@@ -684,6 +698,8 @@ class VTF:
         self.bumpmap_scale = bump_scale
         self.resources = {}
         self.sheet_info = dict(sheet_info)
+        self.hotspot_info = hotspot_info
+        self.hotspot_flags = hotspot_flags
         self.flags = flags
         self.frame_count = frames
         self.first_frame_index = 0  # Appears almost unused.
@@ -814,10 +830,15 @@ class VTF:
                     resource.data = file.read(size)
 
             if ResourceID.PARTICLE_SHEET in vtf.resources:
-                sheet_data = vtf.resources.pop(ResourceID.PARTICLE_SHEET).data
-                if isinstance(sheet_data, int):
-                    raise ValueError(f'Integer for particle data? {sheet_data!r}')
-                vtf.sheet_info = SheetSequence.from_resource(sheet_data)
+                res_data = vtf.resources.pop(ResourceID.PARTICLE_SHEET).data
+                if isinstance(res_data, int):
+                    raise ValueError(f'Integer for particle data? {res_data!r}')
+                vtf.sheet_info = SheetSequence.from_resource(res_data)
+            if ResourceID.STRATA_HOTSPOT in vtf.resources:
+                res_data = vtf.resources.pop(ResourceID.STRATA_HOTSPOT).data
+                if isinstance(res_data, int):
+                    raise ValueError(f'Integer for hotspot data? {res_data!r}')
+                vtf.hotspot_info, vtf.hotspot_flags = HotspotRect.from_resource(res_data)
 
         else:
             low_res_offset = header_size
@@ -902,7 +923,7 @@ class VTF:
 
         # Write the resource list. This is slightly complicated by the requirement to keep IDs in
         # ascending order.
-        res_list: list[tuple[ResourceID, Resource]]
+        res_list: list[tuple[ResourceID, Resource]] | None
         if version_minor >= 3:
             # Add dummy definitions for the resources we handle, so they're sorted correctly.
             res_list = [
@@ -912,6 +933,8 @@ class VTF:
             ]
             if self.sheet_info:
                 res_list.append((ResourceID.PARTICLE_SHEET, _DUMMY_RESOURCE))
+            if self.hotspot_info is not None:
+                res_list.append((ResourceID.STRATA_HOTSPOT, _DUMMY_RESOURCE))
             file.write(struct.pack('<3xI8x', len(res_list)))
 
             def res_key(tup: tuple[ResourceID | bytes, Resource]) -> bytes:
@@ -958,6 +981,10 @@ class VTF:
                     particle_data = SheetSequence.make_data(self.sheet_info, sheet_seq_version)
                     file.write(struct.pack('<I', len(particle_data)))
                     file.write(particle_data)
+                elif res_id is ResourceID.STRATA_HOTSPOT and self.hotspot_info is not None:
+                    hotspot_data = HotspotRect.build_resource(self.hotspot_info, self.hotspot_flags)
+                    file.write(struct.pack('<I', len(hotspot_data)))
+                    file.write(hotspot_data)
                 else:  # Generic block.
                     file.write(struct.pack('<I', len(res.data)))
                     file.write(res.data)
@@ -1213,3 +1240,127 @@ class SheetSequence:
                     file.write(tex_d.to_binary())
 
         return file.getvalue()
+
+
+@attrs.define
+class HotspotRect:
+    """A set of rectangular regions used to automatically retexture brushes.
+
+    There are two methods to define this format. Hammer++ uses ``.rect`` keyvalues files, while
+    Strata Source also allows a binary resource embedded in the VTF
+
+    Only one version of the VTF format exists, ``v0x1``.
+    """
+    min_x: int
+    min_y: int
+    max_x: int
+    max_y: int
+
+    #: Can the region be rotated randomly?
+    random_rotation: bool = attrs.field(kw_only=True, default=False)
+    #: Can the region be flipped horizontally?
+    random_reflection: bool = attrs.field(kw_only=True, default=False)
+    #: If enabled, this is an alternate region. If a modifier key is held, these regions are used
+    # instead of the non-alternate ones.
+    is_alternate: bool = attrs.field(kw_only=True, default=False)
+
+    _ST_HEAD: ClassVar[struct.Struct] = struct.Struct('<BBH')
+    _ST_RECT: ClassVar[struct.Struct] = struct.Struct('<B4H')
+
+    @classmethod
+    def from_resource(cls, data: bytes) -> tuple[list['HotspotRect'], int]:
+        """Parse from the VTF resource data.
+
+        This returns the list of regions, and an arbitrary implementation-specific flags byte.
+        """
+        if data[0] != 0x1:
+            raise ValueError(f'Invalid hotspot version byte {data[0]:02X}, only 0x1 is valid.')
+        (version, impl_flags, rect_count) = cls._ST_HEAD.unpack_from(data, 0)
+        off = cls._ST_HEAD.size
+        rects: list[HotspotRect] = []
+        for _ in range(rect_count):
+            (flags, min_x, min_y, max_x, max_y) = cls._ST_RECT.unpack_from(data, off)
+            off += cls._ST_RECT.size
+            rects.append(cls(
+                random_rotation=flags & 0x1 != 0,
+                random_reflection=flags & 0x2 != 0,
+                is_alternate=flags & 0x4 != 0,
+                min_x=min_x,
+                min_y=min_y,
+                max_x=max_x,
+                max_y=max_y,
+            ))
+
+        return rects, impl_flags
+
+    @classmethod
+    def build_resource(cls, hotspots: Sequence['HotspotRect'], flags: int, version: int = 1) -> bytes:
+        """Write out the VTF resource data.
+
+        :param hotspots: The regions to write.
+        :param flags: Implementation-specific flags.
+        :param version: Format version, currently only ``0x1`` exists.
+        """
+        if version != 1:
+            raise ValueError(f'Invalid hotspot version {version!r}, only 0x1 is valid.')
+        buf = BytesIO()
+        buf.write(cls._ST_HEAD.pack(1, flags, len(hotspots)))
+        for rect in hotspots:
+            buf.write(cls._ST_RECT.pack(
+                (
+                    0x1 * rect.random_rotation |
+                    0x2 * rect.random_reflection |
+                    0x4 * rect.is_alternate
+                ),
+                rect.min_x, rect.min_y, rect.max_x, rect.max_y,
+            ))
+
+        return buf.getvalue()
+
+    @classmethod
+    def parse_rect(cls, kv: Keyvalues) -> list['HotspotRect']:
+        """Parse a ``.rect`` file keyvalues block."""
+        if kv.is_root():  # Might have been passed a root KV containing this.
+            kv = kv.find_block('Rectangles')
+        rects = []
+        for child in kv.find_all('rectangle'):
+            mins = child['min']
+            try:
+                [a, b] = mins.split()
+                min_x, min_y = int(a), int(b)
+            except ValueError as exc:
+                raise ValueError(f'Invalid mins value "{mins}"!') from exc
+            maxs = child['max']
+            try:
+                [a, b] = maxs.split()
+                max_x, max_y = int(a), int(b)
+            except ValueError as exc:
+                raise ValueError(f'Invalid maxes value "{maxs}"!') from exc
+            rects.append(cls(
+                random_rotation=child.bool('rotate'),
+                random_reflection=child.bool('reflect'),
+                is_alternate=child.bool('alt'),
+                min_x=min_x,
+                min_y=min_y,
+                max_x=max_x,
+                max_y=max_y,
+            ))
+        return rects
+
+    @classmethod
+    def to_kv(cls, hotspots: Sequence['HotspotRect']) -> Keyvalues:
+        """Rebuild a ``.rect`` keyvalues file."""
+        root = Keyvalues('Rectangles', [])
+        for rect in hotspots:
+            kv = Keyvalues('rectangle', [
+                Keyvalues('min', f'{rect.min_x} {rect.min_y}'),
+                Keyvalues('max', f'{rect.max_x} {rect.max_y}'),
+            ])
+            if rect.random_rotation:
+                kv.append(Keyvalues('rotate', '1'))
+            if rect.random_reflection:
+                kv.append(Keyvalues('reflect', '1'))
+            if rect.is_alternate:
+                kv.append(Keyvalues('alt', '1'))
+            root.append(kv)
+        return root
