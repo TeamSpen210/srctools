@@ -186,6 +186,8 @@ class BSPContents(Flag):
     """The various :sdk-2013:`CONTENTS_*<public/bspflags.h#L24-L76>` flags, indicating different collision types.
 
     This is normally for brushes, but is also used on other things like models.
+
+    The ``CURRENT_*`` flags are not functional, and their bits were reused in later games.
     """
     EMPTY = 0
     SOLID = 0x1
@@ -219,8 +221,12 @@ class BSPContents(Flag):
     NPC_CLIP = 0x20000
     """Functions like ``tools/toolsclip``."""
 
+    GRENADE_CLIP = 0x80000
+    """Functions like ``tools/toolsgrenadeclip`` from CS:GO."""
+    DRONE_CLIP = 0x100000
+    """Functions like ``tools/toolsdroneclip`` from CS:GO."""
+
     CURRENT_0 = 0x40000
-    """Specifies water currents, can be mixed."""
     CURRENT_90 = 0x80000
     CURRENT_180 = 0x100000
     CURRENT_270 = 0x200000
