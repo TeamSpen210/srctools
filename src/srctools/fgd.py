@@ -1308,7 +1308,8 @@ class KVDef(EntAttribute):
         if self._type is not ValueTypes.SPAWNFLAGS:
             # Spawnflags never use names!
             file.write(': ')
-            _write_longstring(file, custom_syntax, self.disp_name, indent='\t')
+            # Name must be present, if not use the raw keyvalue name.
+            _write_longstring(file, custom_syntax, self.disp_name or self.name, indent='\t')
 
         default = self.default
         if not default and self.type is ValueTypes.BOOL:
