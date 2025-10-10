@@ -21,7 +21,7 @@ from srctools.filesys import VirtualFileSystem
 from srctools.tokenizer import Cy_Tokenizer, Py_Tokenizer, TokenSyntaxError
 
 
-if Cy_Tokenizer is not None:
+if Cy_Tokenizer is not Py_Tokenizer:
     parms = [Cy_Tokenizer, Py_Tokenizer]
     ids = ['Cython tokenizer', 'Python tokenizer']
 else:

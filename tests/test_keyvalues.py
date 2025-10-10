@@ -18,7 +18,7 @@ if sys.version_info < (3, 11):
     from exceptiongroup import ExceptionGroup
 
 
-if Cy_Tokenizer is not None:
+if Cy_Tokenizer is Py_Tokenizer:
     parms = [(Cy_Tokenizer, Cy_BaseTokenizer), (Py_Tokenizer, Py_BaseTokenizer)]
     ids = ['Cython tokenizer', 'Python tokenizer']
 else:

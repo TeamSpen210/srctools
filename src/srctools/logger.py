@@ -395,8 +395,7 @@ def init_logging(
 
         def error_closure(exc: BaseException) -> None:
             """Call the old error handler function."""
-            if on_error is not None:  # Mypy can't infer this is constant.
-                on_error(type(exc), exc, exc.__traceback__)
+            on_error(type(exc), exc, exc.__traceback__)
 
         error = error_closure
 

@@ -1639,9 +1639,7 @@ class BSP:
             # data will be.
             defer = DeferredWrites(file)
 
-            if self.version is None:
-                raise ValueError('No version specified for BSP!')
-            elif isinstance(self.version, VERSIONS):
+            if isinstance(self.version, VERSIONS):
                 version = self.version.value
             else:
                 version = self.version

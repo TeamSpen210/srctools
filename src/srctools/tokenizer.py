@@ -167,7 +167,8 @@ _OPERATORS = {
 
 
 # See https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/tier1/utlbuffer.cpp#L57-L69
-ESCAPES = {
+# Key is str | None so we can pass None/EOF to skip a check.
+ESCAPES: dict[Optional[str], str] = {
     'n': '\n',
     't': '\t',
     'v': '\v',
@@ -184,7 +185,7 @@ ESCAPES = {
     '?': '?',
 }
 # Regexes to locate escape text, then the dict to locate the resultant character.
-ESCAPES_INV = {char: f'\\{sym}' for sym, char in ESCAPES.items()}
+ESCAPES_INV: dict[str, str] = {char: f'\\{sym}' for sym, char in ESCAPES.items() if sym is not None}
 ESCAPE_RE = re.compile('|'.join(
     re.escape(c) for c in ESCAPES_INV
     if c not in '?/'
