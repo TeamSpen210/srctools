@@ -74,7 +74,10 @@ def test_strided_copy() -> None:
     This fails on PyPy so we need to work around it. If it doesn't, it's been fixed
     and we can remove the workaround, or it's unexpectedly triggering on CPython.
     """
-    assert vtf_mod._py_format_funcs.CAN_STRIDE_COPY  # type: ignore[attr-defined]
+    res = vtf_mod._py_format_funcs.STRIDE_COPY  # type: ignore[attr-defined]
+    if res is not True:
+        print('Stride copy: ', res)
+        pytest.fail(res)
 
 
 @pytest.mark.parametrize("fmt", FORMATS, ids=lambda fmt: fmt.name.lower())

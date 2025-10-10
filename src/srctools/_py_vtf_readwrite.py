@@ -3,7 +3,7 @@
 # Wherever possible, use memoryview slicing to copy channels all in one go. This is much faster
 # than a loop.
 
-from typing import TYPE_CHECKING, NewType, Optional
+from typing import TYPE_CHECKING, NewType, Optional, Union
 from typing_extensions import Buffer, TypeAlias
 from collections.abc import Callable, Iterable
 import array
@@ -24,20 +24,26 @@ _SAVE: dict[ImageFormats, SaveFunc] = {}
 _LOAD: dict[ImageFormats, LoadFunc] = {}
 
 
-def check_strided_copy() -> bool:
+def check_strided_copy() -> Union[Exception, bytearray, bool]:
     """For some reason PyPy can't copy non-contiguous arrays via memoryview. In that case,
     we have to copy the source when slicing. Check to see if such slicing is possible.
+
+    If not, stash the error to show in the test suite.
     """
     src = b'ABCD'
     dest = bytearray(8)
     try:
         memoryview(dest)[0::4] = memoryview(src)[::2]
-    except BufferError:
-        return False
-    return dest == b'A\x00\x00\x00C\x00\x00\x00'
+    except BufferError as exc:
+        return exc
+    if dest == b'A\x00\x00\x00C\x00\x00\x00':
+        return True
+    else:
+        return dest
 
 
-CAN_STRIDE_COPY = check_strided_copy()
+STRIDE_COPY = check_strided_copy()
+CAN_STRIDE_COPY = STRIDE_COPY is True
 del check_strided_copy
 
 
