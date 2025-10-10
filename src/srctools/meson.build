@@ -56,7 +56,7 @@ if get_option('build_extensions')
         ),
         override_options: ['cython_language=cpp'],
         link_with: [lib_quickhull],
-        include_directories: inc_quickhull,
+        include_directories: [inc_quickhull, inc_pycapi_compat],
 
         dependencies: dep_py,
         install: true,
@@ -68,6 +68,9 @@ if get_option('build_extensions')
         files(
             '_tokenizer.pyx',
         ),
+        include_directories: inc_pycapi_compat,
+
+        dependencies: dep_py,
         install: true,
         subdir: 'srctools',
     )
@@ -79,7 +82,7 @@ if get_option('build_extensions')
         ),
         override_options: ['cython_language=cpp'],
         link_with: [lib_squish],
-        include_directories: inc_libsquish,
+        include_directories: [inc_libsquish, inc_pycapi_compat],
 
         dependencies: dep_py,
         install: true,

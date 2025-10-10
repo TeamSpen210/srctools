@@ -38,9 +38,12 @@ if get_option('build_extensions')
         ),
         include_directories: inc_libsquish,
     )
+
+    inc_pycapi_compat = include_directories('src' / 'pythoncapi-compat')
 else
     inc_quickhull = disabler()
     lib_quickhull = disabler()
+    inc_pycapi_compat = disabler()
     inc_squish = disabler()
     lib_squish = disabler()
 endif
