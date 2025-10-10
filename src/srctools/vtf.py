@@ -648,7 +648,7 @@ class VTF:
     sheet_info: dict[int, 'SheetSequence']
     #: Strata Source adds the hotspot resource, defining regions used to automatically texture
     #: brushes.
-    hotspot_info: list['HotspotRect'] | None
+    hotspot_info: Optional[list['HotspotRect']]
     #: Implementation-specific flags byte
     hotspot_flags: int
 
@@ -665,7 +665,7 @@ class VTF:
         frames: int = 1,
         bump_scale: float = 1.0,
         sheet_info: Mapping[int, 'SheetSequence'] = EmptyMapping,
-        hotspot_info: list['HotspotRect'] | None = None,
+        hotspot_info: Optional[list['HotspotRect']] = None,
         hotspot_flags: int = 0,
         flags: VTFFlags = VTFFlags.EMPTY,
         fmt: ImageFormats = ImageFormats.RGBA8888,
@@ -923,7 +923,7 @@ class VTF:
 
         # Write the resource list. This is slightly complicated by the requirement to keep IDs in
         # ascending order.
-        res_list: list[tuple[ResourceID, Resource]] | None
+        res_list: Optional[list[tuple[Union[ResourceID, bytes], Resource]]]
         if version_minor >= 3:
             # Add dummy definitions for the resources we handle, so they're sorted correctly.
             res_list = [
@@ -937,7 +937,7 @@ class VTF:
                 res_list.append((ResourceID.STRATA_HOTSPOT, _DUMMY_RESOURCE))
             file.write(struct.pack('<3xI8x', len(res_list)))
 
-            def res_key(tup: tuple[ResourceID | bytes, Resource]) -> bytes:
+            def res_key(tup: tuple[Union[ResourceID, bytes], Resource]) -> bytes:
                 """Resources should be ordered in ascending order."""
                 res_id = tup[0]
                 if isinstance(res_id, ResourceID):
