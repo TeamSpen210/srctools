@@ -10,11 +10,17 @@ from cpython.iterator cimport PyIter_Next
 from libc cimport math
 from libc.math cimport M_PI, NAN, cos, isnan, llround, sin, tan
 from libc.stdint cimport uint16_t, uint32_t, uint_fast8_t
-from libc.stdio cimport snprintf, sscanf
+from libc.stdio cimport sscanf
 from libc.string cimport memcmp, memcpy, memset
 from libcpp cimport bool
 from libcpp.vector cimport vector
 cimport cython.operator
+
+from .pythoncapi_compat cimport (
+    PyUnicodeWriter, PyUnicodeWriter_Discard, PyUnicodeWriter_Create, PyUnicodeWriter_Finish,
+    PyUnicodeWriter_WriteChar, PyUnicodeWriter_WriteStr, PyUnicodeWriter_WriteRepr, PyUnicodeWriter_WriteUTF8,
+    PyUnicodeWriter_WriteASCII, PyUnicodeWriter_WriteSubstring, PyUnicodeWriter_Format
+)
 
 from srctools cimport quickhull
 
@@ -152,128 +158,106 @@ cdef inline double norm_ang(double val) noexcept nogil:
     return val
 
 
-cdef Py_ssize_t trim_float(char *buf, Py_ssize_t size) noexcept:
-    """Strip a .0 from the end of a float."""
+cdef Py_ssize_t calc_trim_float(const char *buf, Py_ssize_t size) noexcept:
+    """We want to strip .0 from the end of a float.
+    
+    If 0, the float is '-0', so it should be replaced by '0'. Otherwise, this
+    calculates the length to trim to, without modifying the buffer so we can read straight
+    from a string object.
+    """
     while size > 1 and buf[size - 1] == b'0':
-        buf[size - 1] = 0
         size -= 1
     if size > 1 and buf[size - 1] == b'.':
-        buf[size - 1] = 0
         size -= 1
-    if buf[0] == b'-' and buf[1] == b'0' and buf[2] == 0:
-        buf[0] = b'0'
-        buf[1] = 0
-        return 1
+    if size == 2 and buf[0] == b'-' and buf[1] == b'0':
+        return 0
     return size
 
 
-cdef char * _format_float(double x, int places) except NULL:
+cdef int _write_float(PyUnicodeWriter *writer, double x, int places) except -1:
     """Convert the specified float to a string, stripping off a .0 if it ends with that."""
     cdef char *buf
+    cdef Py_ssize_t trim_size
     buf = PyOS_double_to_string(x + 0.0, b'f', places, 0, NULL)
-    trim_float(buf, len(buf))
-    return buf
-
-
-cdef str _format_triple(const char *fmt, const vec_t *values):
-    """Format three floats into the specified format string."""
-    cdef size_t size1, size2
-    cdef char *xbuf = NULL
-    cdef char *ybuf = NULL
-    cdef char *zbuf = NULL
-    cdef char *buf = NULL
     try:
-        xbuf = _format_float(values.x, 6)
-        ybuf = _format_float(values.y, 6)
-        zbuf = _format_float(values.z, 6)
-        size1 = snprintf(NULL, 0, fmt, xbuf, ybuf, zbuf)
-        buf = <char *>PyMem_Malloc(size1 + 1)
-        if buf == NULL:
-            raise MemoryError
-        size2 = snprintf(buf, size1 + 1, fmt, xbuf, ybuf, zbuf)
-        if size1 != size2:
-            raise SystemError('Could not format numbers!')
-        return buf[:size2].decode('ascii')
+        trim_size = calc_trim_float(buf, len(buf))
+        if trim_size == 0:  # String was '-0', write positive zero
+            PyUnicodeWriter_WriteChar(writer, '0')
+        else:
+            PyUnicodeWriter_WriteASCII(writer, buf, trim_size)
     finally:
-        PyMem_Free(xbuf)
-        PyMem_Free(ybuf)
-        PyMem_Free(zbuf)
         PyMem_Free(buf)
+    return 0
 
 
 cdef str _join_triple(const vec_t *values, str joiner):
     """Format three floats, with a delimiter."""
-    cdef size_t size1, size2
-    cdef char *xbuf = NULL
-    cdef char *ybuf = NULL
-    cdef char *zbuf = NULL
-    cdef char *buf = NULL
-    cdef const char *join_b = PyUnicode_AsUTF8AndSize(joiner, NULL)
+    cdef PyUnicodeWriter *writer = PyUnicodeWriter_Create(3 * (len(joiner) + 1))
     try:
-        xbuf = _format_float(values.x, 6)
-        ybuf = _format_float(values.y, 6)
-        zbuf = _format_float(values.z, 6)
-        size1 = snprintf(NULL, 0, b'%s%s%s%s%s', xbuf, join_b, ybuf, join_b, zbuf)
-        buf = <char *>PyMem_Malloc(size1 + 1)
-        if buf == NULL:
-            raise MemoryError
-        size2 = snprintf(buf, size1 + 1, b'%s%s%s%s%s', xbuf, join_b, ybuf, join_b, zbuf)
-        if size1 != size2:
-            raise SystemError('Could not format numbers!')
-        return buf[:size2].decode('utf8')
-    finally:
-        PyMem_Free(xbuf)
-        PyMem_Free(ybuf)
-        PyMem_Free(zbuf)
-        PyMem_Free(buf)
+        _write_float(writer, values.x, 6)
+        PyUnicodeWriter_WriteStr(writer, joiner)
+        _write_float(writer, values.y, 6)
+        PyUnicodeWriter_WriteStr(writer, joiner)
+        _write_float(writer, values.z, 6)
+
+        return PyUnicodeWriter_Finish(writer)
+    except:
+        PyUnicodeWriter_Discard(writer)
+        raise
 
 cdef object _format_vec_wspec(const vec_t *values, str spec):
     """Format a vector with the specified format spec."""
-    cdef str x_str, y_str, z_str
-    cdef const char *x_buf = NULL
-    cdef const char *y_buf = NULL
-    cdef const char *z_buf = NULL
-    cdef char *buf = NULL
-    cdef char *pos
-    cdef Py_ssize_t x_size, y_size, z_size, total
+    cdef str fmt_str
+    cdef const char *fmt_buf = NULL
+    cdef Py_ssize_t fmt_size, trim_size
+    cdef PyUnicodeWriter *writer
 
-    if not spec:
-        return _format_triple(b'%s %s %s', values)
-
-    x_str = format(values.x + 0.0, spec)
-    x_buf = PyUnicode_AsUTF8AndSize(x_str, &x_size)
-
-    y_str = format(values.y + 0.0, spec)
-    y_buf = PyUnicode_AsUTF8AndSize(y_str, &y_size)
-
-    z_str = format(values.z + 0.0, spec)
-    z_buf = PyUnicode_AsUTF8AndSize(z_str, &z_size)
-
-    # Allocate enough for worst-case (no rounding)
-    buf = <char *>PyMem_Malloc(x_size + y_size + z_size + 3)
+    writer = PyUnicodeWriter_Create(6)
     try:
-        # Pos = current position through the buffer.
-        # For each, copy in the number, then trim back excess zeros.
-        # We then overwrite that with the next part.
-        pos = buf
-        memcpy(pos, x_buf, x_size)
-        x_size = trim_float(pos, x_size)
-        pos += x_size + 1
-        pos[-1] = b' '
+        if not spec:
+            # Can bypass calling format().
+            _write_float(writer, values.x, 6)
+            PyUnicodeWriter_WriteChar(writer, ' ')
+            _write_float(writer, values.y, 6)
+            PyUnicodeWriter_WriteChar(writer, ' ')
+            _write_float(writer, values.z, 6)
+            return PyUnicodeWriter_Finish(writer)
 
-        memcpy(pos, y_buf, y_size)
-        y_size = trim_float(pos, y_size)
-        pos += y_size + 1
-        pos[-1] = b' '
+        # Otherwise we need Python-level format().
+        # Format into each string object, then convert to UTF-8. Calculate trim,
+        # then write truncating to there.
+        fmt_str = format(values.x + 0.0, spec)
+        fmt_buf = PyUnicode_AsUTF8AndSize(fmt_str, &fmt_size)
+        trim_size = calc_trim_float(fmt_buf, fmt_size)
+        if trim_size == 0:  # string was '-0', write positive zero.
+            PyUnicodeWriter_WriteChar(writer, '0')
+        else:
+            PyUnicodeWriter_WriteUTF8(writer, fmt_buf, trim_size)
 
-        memcpy(pos, z_buf, z_size)
-        z_size = trim_float(pos, z_size)
-        pos += z_size
-        pos[0] = 0
-        # return repr(buf[:pos - buf])
-        return buf[:pos-buf].decode('utf8')
-    finally:
-        PyMem_Free(buf)
+        PyUnicodeWriter_WriteChar(writer, ' ')
+
+        fmt_str = format(values.y + 0.0, spec)
+        fmt_buf = PyUnicode_AsUTF8AndSize(fmt_str, &fmt_size)
+        trim_size = calc_trim_float(fmt_buf, fmt_size)
+        if trim_size == 0:
+            PyUnicodeWriter_WriteChar(writer, '0')
+        else:
+            PyUnicodeWriter_WriteUTF8(writer, fmt_buf, trim_size)
+
+        PyUnicodeWriter_WriteChar(writer, ' ')
+
+        fmt_str = format(values.z + 0.0, spec)
+        fmt_buf = PyUnicode_AsUTF8AndSize(fmt_str, &fmt_size)
+        trim_size = calc_trim_float(fmt_buf, fmt_size)
+        if trim_size == 0:
+            PyUnicodeWriter_WriteChar(writer, '0')
+        else:
+            PyUnicodeWriter_WriteUTF8(writer, fmt_buf, trim_size)
+
+        return PyUnicodeWriter_Finish(writer)
+    except:
+        PyUnicodeWriter_Discard(writer)
+        raise
 
 
 cdef VecBase pick_vec_type(type left, type right):
@@ -495,12 +479,13 @@ def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float)
 
 def format_float(x: float, places: int=6) -> str:
     """Convert the specified float to a string, stripping off a .0 if it ends with that."""
-    buf = _format_float(x, places)
+    cdef PyUnicodeWriter *writer = PyUnicodeWriter_Create(0)
     try:
-        return buf.decode('ascii')
+        _write_float(writer, x, places)
+        return PyUnicodeWriter_Finish(writer)
     finally:
-        PyMem_Free(buf)
-
+        PyUnicodeWriter_Discard(writer)
+        raise
 
 
 cdef inline bint conv_vec(
@@ -1951,7 +1936,18 @@ cdef class VecBase:
         cdef vec_t self_val
         with cython.critical_section(self):
             self_val = self.val
-        return _format_triple(b'%s %s %s', &self_val)
+
+        cdef PyUnicodeWriter *writer = PyUnicodeWriter_Create(6)
+        try:
+            _write_float(writer, self_val.x, 6)
+            PyUnicodeWriter_WriteChar(writer, ' ')
+            _write_float(writer, self_val.y, 6)
+            PyUnicodeWriter_WriteChar(writer, ' ')
+            _write_float(writer, self_val.z, 6)
+            return PyUnicodeWriter_Finish(writer)
+        except:
+            PyUnicodeWriter_Discard(writer)
+            raise
 
     def __format__(self, format_spec: str) -> str:
         """Control how the text is formatted."""
@@ -2052,7 +2048,19 @@ cdef class FrozenVec(VecBase):
 
     def __repr__(self) -> str:
         """Code required to reproduce this vector."""
-        return _format_triple(b'FrozenVec(%s, %s, %s)', &self.val)
+        cdef PyUnicodeWriter *writer = PyUnicodeWriter_Create(9)
+        try:
+            PyUnicodeWriter_WriteASCII(writer, b'FrozenVec(', len(b'FrozenVec('))
+            _write_float(writer, self.val.x, 6)
+            PyUnicodeWriter_WriteASCII(writer, b', ', 2)
+            _write_float(writer, self.val.y, 6)
+            PyUnicodeWriter_WriteASCII(writer, b', ', 2)
+            _write_float(writer, self.val.z, 6)
+            PyUnicodeWriter_WriteChar(writer, ')')
+            return PyUnicodeWriter_Finish(writer)
+        except:
+            PyUnicodeWriter_Discard(writer)
+            raise
 
     def __round__(self, object n=0):
         """Performing round() on a FrozenVec rounds each axis."""
@@ -2175,7 +2183,22 @@ cdef class Vec(VecBase):
     @cython.critical_section
     def __repr__(self) -> str:
         """Code required to reproduce this vector."""
-        return _format_triple(b'Vec(%s, %s, %s)', &self.val)
+        cdef vec_t self_val
+        with cython.critical_section(self):
+            self_val = self.val
+        cdef PyUnicodeWriter *writer = PyUnicodeWriter_Create(9)
+        try:
+            PyUnicodeWriter_WriteASCII(writer, b'Vec(', 4)
+            _write_float(writer, self_val.x, 6)
+            PyUnicodeWriter_WriteASCII(writer, b', ', 2)
+            _write_float(writer, self_val.y, 6)
+            PyUnicodeWriter_WriteASCII(writer, b', ', 2)
+            _write_float(writer, self_val.z, 6)
+            PyUnicodeWriter_WriteChar(writer, ')')
+            return PyUnicodeWriter_Finish(writer)
+        except:
+            PyUnicodeWriter_Discard(writer)
+            raise
 
     def __round__(self, object n=0):
         """Performing round() on a Vec rounds each axis."""
@@ -3136,7 +3159,18 @@ cdef class AngleBase:
         cdef vec_t self_val
         with cython.critical_section(self):
             self_val = self.val
-        return _format_triple(b'%s %s %s', &self_val)
+
+        cdef PyUnicodeWriter *writer = PyUnicodeWriter_Create(6)
+        try:
+            _write_float(writer, self_val.x, 6)
+            PyUnicodeWriter_WriteChar(writer, ' ')
+            _write_float(writer, self_val.y, 6)
+            PyUnicodeWriter_WriteChar(writer, ' ')
+            _write_float(writer, self_val.z, 6)
+            return PyUnicodeWriter_Finish(writer)
+        except:
+            PyUnicodeWriter_Discard(writer)
+            raise
 
     def __format__(self, format_spec: str, /) -> str:
         """Control how the text is formatted."""
@@ -3364,7 +3398,19 @@ cdef class FrozenAngle(AngleBase):
         return _angle_mut(self.val.x, self.val.y, self.val.z)
 
     def __repr__(self) -> str:
-        return _format_triple(b'FrozenAngle(%s, %s, %s)', &self.val)
+        cdef PyUnicodeWriter *writer = PyUnicodeWriter_Create(9)
+        try:
+            PyUnicodeWriter_WriteASCII(writer, b'FrozenAngle(', len(b'FrozenAngle('))
+            _write_float(writer, self.val.x, 6)
+            PyUnicodeWriter_WriteASCII(writer, b', ', 2)
+            _write_float(writer, self.val.y, 6)
+            PyUnicodeWriter_WriteASCII(writer, b', ', 2)
+            _write_float(writer, self.val.z, 6)
+            PyUnicodeWriter_WriteChar(writer, ')')
+            return PyUnicodeWriter_Finish(writer)
+        except:
+            PyUnicodeWriter_Discard(writer)
+            raise
 
     def __copy__(self):
         """FrozenAngle is immutable."""
@@ -3471,7 +3517,19 @@ cdef class Angle(AngleBase):
         cdef vec_t self_val
         with cython.critical_section(self):
             self_val = self.val
-        return _format_triple(b'Angle(%s, %s, %s)', &self_val)
+        cdef PyUnicodeWriter *writer = PyUnicodeWriter_Create(9)
+        try:
+            PyUnicodeWriter_WriteASCII(writer, b'Angle(', len(b'Angle('))
+            _write_float(writer, self.val.x, 6)
+            PyUnicodeWriter_WriteASCII(writer, b', ', 2)
+            _write_float(writer, self.val.y, 6)
+            PyUnicodeWriter_WriteASCII(writer, b', ', 2)
+            _write_float(writer, self.val.z, 6)
+            PyUnicodeWriter_WriteChar(writer, ')')
+            return PyUnicodeWriter_Finish(writer)
+        except:
+            PyUnicodeWriter_Discard(writer)
+            raise
 
     @classmethod
     def from_basis(
