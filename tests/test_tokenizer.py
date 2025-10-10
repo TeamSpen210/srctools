@@ -945,6 +945,23 @@ def test_unicode_error_wrapping(py_c_token: type[Tokenizer]) -> None:
     assert isinstance(exc_info.value.__cause__, UnicodeDecodeError)
 
 
+def test_surrogate_passthrough(py_c_token: type[Tokenizer]) -> None:
+    """Test that bare surrogates can pass through, if provided.
+
+    We use these to roundtrip if the encoding is unknown.
+    """
+    surrogates = b' '.join([
+        bytes([x]) for x in range(128, 256)
+    ]).decode('ascii', 'surrogateescape')
+    print(repr(surrogates))
+    tok = py_c_token(['abc{"', surrogates, '"}'])
+    check_tokens(tok, [
+        (Token.STRING, 'abc'), Token.BRACE_OPEN,  # Test normal behaviour works
+        (Token.STRING, surrogates),
+        Token.BRACE_CLOSE,  # And it's still working after.
+    ])
+
+
 def test_early_binary_arg(py_c_token: type[Tokenizer]) -> None:
     """Test that passing bytes values is caught before looping."""
     with pytest.raises(TypeError, match=r'^Cannot parse binary data! Decode'):
