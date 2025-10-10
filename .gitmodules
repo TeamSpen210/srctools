@@ -1,3 +1,6 @@
 [submodule "quickhull"]
 	path = src/quickhull
 	url = https://github.com/akuukka/quickhull.git
+[submodule "src/pythoncapi-compat"]
+	path = src/pythoncapi-compat
+	url = https://github.com/python/pythoncapi-compat.git
