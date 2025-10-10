@@ -1010,8 +1010,9 @@ class VisLeaf:
     flags: VisLeafFlags
     mins: Vec
     maxes: Vec
-    faces: list[Face] = attrs.field(repr=len)
-    brushes: list[Brush] = attrs.field(repr=len)
+    # These are massive & recursive, don't print in repr, but still show how many.
+    faces: list[Face] = attrs.field(repr=lambda faces: f'<{len(faces)} faces>')
+    brushes: list[Brush] = attrs.field(repr=lambda brushes: f'<{len(brushes)} brushes>')
     water_id: int
     _ambient: bytes = attrs.field(default=bytes(24), repr=False)  # TODO: Parse this.
     # This is LEAF_MIN_DIST_TO_WATER
@@ -2786,8 +2787,7 @@ class BSP:
     def _lmp_read_pakfile(self, data: bytes) -> ZipFile:
         """Read the raw binary as writable zip archive."""
         zipfile = ZipFile(BytesIO(data), mode='a')
-        if self.filename is not None:
-            zipfile.filename = os.fspath(self.filename)
+        zipfile.filename = os.fspath(self.filename)
         return zipfile
 
     def _lmp_write_pakfile(self, file: ZipFile) -> bytes:
