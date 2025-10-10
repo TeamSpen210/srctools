@@ -18,7 +18,7 @@ if sys.version_info < (3, 11):
     from exceptiongroup import ExceptionGroup
 
 
-if Cy_Tokenizer is Py_Tokenizer:
+if Cy_Tokenizer is not Py_Tokenizer:
     parms = [(Cy_Tokenizer, Cy_BaseTokenizer), (Py_Tokenizer, Py_BaseTokenizer)]
     ids = ['Cython tokenizer', 'Python tokenizer']
 else:
@@ -113,7 +113,9 @@ def test_names() -> None:
     with pytest.deprecated_call(match='[rR]oot [kK]eyvalues'):
         prop.name = None  # type: ignore
     with pytest.deprecated_call(match='[rR]oot [kK]eyvalues'):
-        assert prop.name is prop.real_name is None
+        assert prop.name is None
+    with pytest.deprecated_call(match='[rR]oot [kK]eyvalues'):
+        assert prop.real_name is None
 
 # If edited, update test_parse() and tokeniser check too!
 parse_test = '''
