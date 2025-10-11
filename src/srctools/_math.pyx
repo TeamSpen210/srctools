@@ -18,8 +18,8 @@ cimport cython.operator
 
 from .pythoncapi_compat cimport (
     PyUnicodeWriter, PyUnicodeWriter_Discard, PyUnicodeWriter_Create, PyUnicodeWriter_Finish,
-    PyUnicodeWriter_WriteChar, PyUnicodeWriter_WriteStr, PyUnicodeWriter_WriteRepr, PyUnicodeWriter_WriteUTF8,
-    PyUnicodeWriter_WriteASCII, PyUnicodeWriter_WriteSubstring, PyUnicodeWriter_Format
+    PyUnicodeWriter_WriteChar, PyUnicodeWriter_WriteStr,
+    PyUnicodeWriter_WriteUTF8, PyUnicodeWriter_WriteASCII,
 )
 
 from srctools cimport quickhull
@@ -483,7 +483,7 @@ def format_float(x: float, places: int=6) -> str:
     try:
         _write_float(writer, x, places)
         return PyUnicodeWriter_Finish(writer)
-    finally:
+    except:
         PyUnicodeWriter_Discard(writer)
         raise
 
