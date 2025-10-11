@@ -1,4 +1,6 @@
 """Test the VTF library."""
+from typing import Literal
+
 from collections.abc import Generator
 from array import array
 from io import BytesIO
@@ -107,6 +109,40 @@ def test_save(
         binary=True,
         extension=".vtf",
         basename=f"test_save_{cy_py_format_funcs}_{fmt.name.lower()}"
+    )
+
+
+@pytest.mark.parametrize("bg", ['bg', 'alpha'])
+def test_ppm_convert(
+    cy_py_format_funcs: str,
+    sample_image: Image.Image,
+    file_regression: FileRegressionFixture,
+    bg: Literal['bg', 'alpha'],
+) -> None:
+    """Test generating a ppm image, used for Tkinter import.
+
+    This is private functionality, but easier to test the file is correct than try to verify
+    it shows up in a GUI.
+    """
+    vtf = VTF(
+        64, 64,
+        # Format doesn't matter here.
+        fmt=ImageFormats.RGBA8888, thumb_fmt=ImageFormats.RGB888,
+    )
+    frame = vtf.get()
+    frame.copy_from(sample_image.tobytes())
+    result = vtf_mod._format_funcs.ppm_convert(
+        frame._data,
+        frame.width,
+        frame.height,
+        (200, 100, 35) if bg == 'bg' else None,
+    )
+
+    file_regression.check(
+        result,
+        binary=True,
+        extension=".ppm",
+        basename=f"test_ppm_convert_{cy_py_format_funcs}_{bg}"
     )
 
 
