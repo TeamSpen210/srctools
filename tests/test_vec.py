@@ -68,6 +68,16 @@ def test_scalar_lerp(lerp_func: Callable[[float, float, float, float, float], fl
         lerp_func(30.0, 45.0, 45.0, 80, 90)  # In is equal
 
 
+@parameterize_cython('format_float', vec_mod.Py_format_float, vec_mod.Cy_format_float)
+def test_format_float(format_float: Callable[[float, int], str]) -> None:
+    assert format_float(0, 1) == '0'
+    assert format_float(0.25, 2) == '0.25'
+    assert format_float(0.25, 1) == '0.2'
+    assert format_float(-14.0, 6) == '-14'
+    # This rounds to -0
+    assert format_float(-0.00000012, 3) == '0'
+
+
 def test_construction(py_c_vec: PyCVec, frozen_thawed_vec: VecClass) -> None:
     """Check various parts of the constructor.
 
@@ -109,12 +119,12 @@ def test_vec_copying(py_c_vec: PyCVec) -> None:
         fv = FrozenVec(x, y, z)
         fv2 = FrozenVec(v)
         assert_vec(fv2, x, y, z)
-        assert fv2 is not v
+        assert fv2 is not v  # type: ignore[comparison-overlap]
 
         assert fv.copy() is fv
 
         # Ensure this doesn't mistakenly return the existing one.
-        assert Vec(fv) is not fv
+        assert Vec(fv) is not fv  # type: ignore[comparison-overlap]
         # FrozenVec should not make a copy.
         # TODO: Cython doesn't let you override tp_new for this yet.
         if FrozenVec is vec_mod.Py_FrozenVec:
