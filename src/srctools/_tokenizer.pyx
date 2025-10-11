@@ -11,6 +11,11 @@ cimport cython
 cdef object os_fspath
 from os import fspath as os_fspath
 
+from .pythoncapi_compat cimport (
+    PyUnicodeWriter, PyUnicodeWriter_Discard, PyUnicodeWriter_Create, PyUnicodeWriter_Finish,
+    PyUnicodeWriter_WriteChar, PyUnicodeWriter_WriteStr, PyUnicodeWriter_WriteRepr, PyUnicodeWriter_WriteUTF8,
+    PyUnicodeWriter_WriteASCII, PyUnicodeWriter_WriteSubstring, PyUnicodeWriter_Format
+)
 
 # Import the Token enum from the Python file, and cache references
 # to all the parts.
@@ -1122,12 +1127,11 @@ def escape_text(str text not None: str, bint multiline: bool = False) -> str:
     """
     cdef Py_ssize_t size = len(text)
     cdef Py_ssize_t final_size = size
-    cdef Py_ssize_t i, j
     cdef Py_UCS4 letter
 
     # First loop to compute the full string length, and check if we need to
     # escape at all.
-    for i, letter in enumerate(text):
+    for letter in text:
         if letter in '\t\v\b\r\f\a\\\'"':
             final_size += 1
         elif letter == '\n' and not multiline:
@@ -1136,42 +1140,38 @@ def escape_text(str text not None: str, bint multiline: bool = False) -> str:
     if size == final_size:  # Unchanged, return original
         return text
 
-    cdef Py_UCS4 *out_buff
-    j = 0
+    cdef PyUnicodeWriter* writer = PyUnicodeWriter_Create(final_size)
     try:
-        out_buff = <Py_UCS4 *>PyMem_Malloc((final_size+1) * sizeof(Py_UCS4))
-        if out_buff is NULL:
-            raise MemoryError
-        for i, letter in enumerate(text):
+        for letter in text:
             # b'tvbrfa?\'"'
             if letter == '\t':
-                j = _write_escape(out_buff, j, 't')
+                PyUnicodeWriter_WriteASCII(writer, b"\\t", 2)
             elif letter == '\v':
-                j = _write_escape(out_buff, j, 'v')
+                PyUnicodeWriter_WriteASCII(writer, b"\\v", 2)
             elif letter == '\b':
-                j = _write_escape(out_buff, j, 'b')
+                PyUnicodeWriter_WriteASCII(writer, b"\\b", 2)
             elif letter == '\r':
-                j = _write_escape(out_buff, j, 'r')
+                PyUnicodeWriter_WriteASCII(writer, b"\\r", 2)
             elif letter == '\f':
-                j = _write_escape(out_buff, j, 'f')
+                PyUnicodeWriter_WriteASCII(writer, b"\\f", 2)
             elif letter == '\a':
-                j = _write_escape(out_buff, j, 'a')
+                PyUnicodeWriter_WriteASCII(writer, b"\\a", 2)
             elif letter == '\\':
-                j = _write_escape(out_buff, j, '\\')
+                PyUnicodeWriter_WriteASCII(writer, b"\\\\", 2)
             elif letter == '"':
-                j = _write_escape(out_buff, j, '"')
+                PyUnicodeWriter_WriteASCII(writer, b"\\\"", 2)
             elif letter == "'":
-                j = _write_escape(out_buff, j, "'")
+                PyUnicodeWriter_WriteASCII(writer, b"\\'", 2)
             else:
                 if letter == "\n" and not multiline:
-                    j = _write_escape(out_buff, j, "n")
+                    PyUnicodeWriter_WriteASCII(writer, b"\\n", 2)
                 else:
-                    out_buff[j] = letter
-            j += 1
-        out_buff[final_size] = '\0'
-        return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, out_buff, final_size)
-    finally:
-        PyMem_Free(out_buff)
+                    PyUnicodeWriter_WriteChar(writer, letter)
+
+        return PyUnicodeWriter_Finish(writer)
+    except:
+        PyUnicodeWriter_Discard(writer)
+        raise
 
 
 # This is a replacement for a method in VPK, which is very slow normally
