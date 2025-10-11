@@ -17,7 +17,7 @@ cdef extern from "pythoncapi_compat.h":
 	int PyUnicodeWriter_Format(PyUnicodeWriter *writer, const char *format, ...) except -1
 
 
-	ctypedef  struct PyBytesWriter:
+	ctypedef struct PyBytesWriter:
 		pass
 
 	void* PyBytesWriter_GetData(PyBytesWriter *writer) noexcept

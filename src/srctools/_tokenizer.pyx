@@ -2,9 +2,6 @@
 # cython: binding=True
 """Cython version of the Tokenizer class."""
 from cpython.mem cimport PyMem_Free, PyMem_Malloc, PyMem_Realloc
-from cpython.unicode cimport (
-    PyUnicode_4BYTE_KIND, PyUnicode_FromKindAndData, PyUnicode_FromStringAndSize,
-)
 from libc.stdint cimport uint_fast8_t, uint16_t, uint_fast32_t
 cimport cython
 
@@ -13,8 +10,7 @@ from os import fspath as os_fspath
 
 from .pythoncapi_compat cimport (
     PyUnicodeWriter, PyUnicodeWriter_Discard, PyUnicodeWriter_Create, PyUnicodeWriter_Finish,
-    PyUnicodeWriter_WriteChar, PyUnicodeWriter_WriteStr, PyUnicodeWriter_WriteRepr, PyUnicodeWriter_WriteUTF8,
-    PyUnicodeWriter_WriteASCII, PyUnicodeWriter_WriteSubstring, PyUnicodeWriter_Format
+    PyUnicodeWriter_WriteChar, PyUnicodeWriter_WriteASCII,
 )
 
 # Import the Token enum from the Python file, and cache references
@@ -409,21 +405,17 @@ cdef class Tokenizer(BaseTokenizer):
     cdef object _periodic_callback
     cdef Py_ssize_t char_index # Position inside cur_chunk
 
-    # Private buffer, to hold string parts we're constructing.
-    # Tokenizers are expected to be temporary, so we just never shrink.
-    cdef Py_ssize_t buf_size  # 2 << x
-    cdef Py_ssize_t buf_pos
-    cdef Py_UCS4 *val_buffer
+    # The in-progress string we're constructing, or NULL when we finished.
+    cdef PyUnicodeWriter* writer
 
     def __cinit__(self):
-        self.buf_size = 128
-        self.val_buffer = <Py_UCS4 *>PyMem_Malloc(self.buf_size * sizeof(Py_UCS4))
-        self.buf_pos = 0
-        if self.val_buffer is NULL:
-            raise MemoryError
+        self.writer = NULL
 
     def __dealloc__(self):
-        PyMem_Free(self.val_buffer)
+        if self.writer != NULL:
+            # The compat version needs the null check.
+            PyUnicodeWriter_Discard(self.writer)
+            self.writer = NULL
 
     def __init__(
         self,
@@ -484,7 +476,6 @@ cdef class Tokenizer(BaseTokenizer):
 
         # We initially add one, so it'll be 0 next.
         self.char_index = -1
-        self.buf_reset()
 
         if not filename:
             # If we're given a file-like object, automatically set the filename.
@@ -584,37 +575,20 @@ cdef class Tokenizer(BaseTokenizer):
     def plus_operator(self, bint value) -> None:
         self.flags.plus_operator = value
 
-    cdef inline bint buf_reset(self) except False:
-        """Reset the temporary buffer."""
-        # Don't bother resizing or clearing, the next append will overwrite.
-        self.buf_pos = 0
+    cdef inline bint writer_reset(self) except False:
+        """Reset the writer."""
+        if self.writer != NULL:
+            # The compat version needs the null check.
+            PyUnicodeWriter_Discard(self.writer)
+            self.writer = NULL  # If Create() raises, ensure we don't have a dead writer here.
+        self.writer = PyUnicodeWriter_Create(0)
         return True
 
-    cdef inline int buf_add_char(self, Py_UCS4 new_char) except -1:
-        """Add a character to the temporary buffer, reallocating if needed."""
-        # Temp, so if memory alloc failure occurs we're still in a valid state.
-        cdef Py_UCS4 *newbuf
-        cdef Py_ssize_t new_size
-        if self.buf_pos >= self.buf_size:
-            new_size = self.buf_size * 2
-            new_buf = <Py_UCS4 *>PyMem_Realloc(
-                self.val_buffer,
-                new_size * sizeof(Py_UCS4),
-            )
-            if new_buf:
-                self.buf_size = new_size
-                self.val_buffer = new_buf
-            else:
-                raise MemoryError
-
-        self.val_buffer[self.buf_pos] = new_char
-        self.buf_pos += 1
-
-    cdef str buf_get_text(self):
-        """Decode the buffer, and return the text."""
-        out = PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND, self.val_buffer, self.buf_pos)
-        # Don't bother resizing or clearing, the next append will overwrite.
-        self.buf_pos = 0
+    cdef str writer_get(self):
+        """Fetch the result from the buffer, resetting."""
+        assert self.writer != NULL
+        out = PyUnicodeWriter_Finish(self.writer)
+        self.writer = NULL
         return out
 
     # We check all the getitem[] accesses, so don't have Cython recheck.
@@ -744,6 +718,8 @@ cdef class Tokenizer(BaseTokenizer):
                     if self.flags.allow_star_comments:
                         start_line = self.line_num
                         save_comments = self.flags.preserve_comments
+                        if save_comments:
+                            self.writer_reset()
                         while True:
                             next_char, is_eof = self._next_char()
                             if is_eof:
@@ -754,7 +730,7 @@ cdef class Tokenizer(BaseTokenizer):
                             if next_char == '\n':
                                 self._inc_line_number()
                                 if save_comments:
-                                    self.buf_add_char(next_char)
+                                    PyUnicodeWriter_WriteChar(self.writer, next_char)
                             elif next_char == '*':
                                 # Check next, next character!
                                 peek_char, is_eof = self._next_char()
@@ -771,9 +747,9 @@ cdef class Tokenizer(BaseTokenizer):
                                     self.char_index -= 1
                             else:
                                 if save_comments:
-                                    self.buf_add_char(next_char)
+                                    PyUnicodeWriter_WriteChar(self.writer, next_char)
                         if save_comments:
-                            return COMMENT, self.buf_get_text()
+                            return COMMENT, self.writer_get()
                     else:
                         raise self._error(
                             '/**/-style comments are not allowed!'
@@ -781,18 +757,20 @@ cdef class Tokenizer(BaseTokenizer):
                 elif next_char == '/':
                     # Skip to end of line.
                     save_comments = self.flags.preserve_comments
+                    if save_comments:
+                        self.writer_reset()
                     while True:
                         next_char, is_eof = self._next_char()
                         if is_eof or next_char == '\n':
                             break
                         if save_comments:
-                            self.buf_add_char(next_char)
+                            PyUnicodeWriter_WriteChar(self.writer, next_char)
 
                     # We want to produce the token for the end character -
                     # EOF or NEWLINE.
                     self.char_index -= 1
                     if save_comments:
-                        return COMMENT, self.buf_get_text()
+                        return COMMENT, self.writer_get()
                 else:
                     raise self._error(
                         'Single slash found, '
@@ -804,18 +782,18 @@ cdef class Tokenizer(BaseTokenizer):
 
             # Strings
             elif next_char == '"':
-                self.buf_reset()
+                self.writer_reset()
                 last_was_cr = False
                 while True:
                     next_char, is_eof = self._next_char()
                     if is_eof:
                         raise self._error('Unterminated string!')
                     if next_char == '"':
-                        return STRING, self.buf_get_text()
+                        return STRING, self.writer_get()
                     elif next_char == '\r':
                         self._inc_line_number()
                         last_was_cr = True
-                        self.buf_add_char('\n')
+                        PyUnicodeWriter_WriteChar(self.writer, '\n')
                         continue
                     elif next_char == '\n':
                         if last_was_cr:
@@ -855,18 +833,18 @@ cdef class Tokenizer(BaseTokenizer):
                             next_char = escape_char
                         else:
                             # For unknown escape_chars, escape the \ automatically.
-                            self.buf_add_char('\\')
-                            self.buf_add_char(escape_char)
+                            PyUnicodeWriter_WriteChar(self.writer, '\\')
+                            PyUnicodeWriter_WriteChar(self.writer, escape_char)
                             continue
                             # raise self.error('Unknown escape_char "\\{}" in {}!', escape_char, self._cur_chunk)
-                    self.buf_add_char(next_char)
+                    PyUnicodeWriter_WriteChar(self.writer, next_char)
 
             elif next_char == '[':
                 # FGDs use [] for grouping, Properties use it for flags.
                 if not self.flags.string_brackets:
                     return BRACK_OPEN_TUP
 
-                self.buf_reset()
+                self.writer_reset()
                 while True:
                     next_char, is_eof = self._next_char()
                     # Must be one line!
@@ -879,8 +857,8 @@ cdef class Tokenizer(BaseTokenizer):
                         # Don't allow nesting, that's bad.
                         raise self._error('Cannot nest [] brackets!')
                     elif next_char == ']':
-                        return PROP_FLAG, self.buf_get_text()
-                    self.buf_add_char(next_char)
+                        return PROP_FLAG, self.writer_get()
+                    PyUnicodeWriter_WriteChar(self.writer, next_char)
 
             elif next_char == ']':
                 if self.flags.string_brackets:
@@ -895,7 +873,7 @@ cdef class Tokenizer(BaseTokenizer):
                 if not self.flags.string_parens:
                     return PAREN_OPEN_TUP
 
-                self.buf_reset()
+                self.writer_reset()
                 while True:
                     next_char, is_eof = self._next_char()
                     if is_eof:
@@ -903,10 +881,10 @@ cdef class Tokenizer(BaseTokenizer):
                     if next_char == '(':
                         raise self._error('Cannot nest () brackets!')
                     elif next_char == ')':
-                        return PAREN_ARGS, self.buf_get_text()
+                        return PAREN_ARGS, self.writer_get()
                     elif next_char == '\n':
                         self._inc_line_number()
-                    self.buf_add_char(next_char)
+                    PyUnicodeWriter_WriteChar(self.writer, next_char)
 
             elif next_char == ')':
                 if self.flags.string_parens:
@@ -917,16 +895,18 @@ cdef class Tokenizer(BaseTokenizer):
 
             # Directives
             elif next_char == '#':
-                self.buf_reset()
+                self.writer_reset()
+                # If it's entirely ascii, we can do the conversion inline, skip calling
+                # unicode logic.
                 ascii_only = True
                 while True:
                     next_char, is_eof = self._next_char()
                     if is_eof:
                         # A directive could be the last value in the file.
                         if ascii_only:
-                            return DIRECTIVE, self.buf_get_text()
+                            return DIRECTIVE, self.writer_get()
                         else:
-                            return DIRECTIVE, self.buf_get_text().casefold()
+                            return DIRECTIVE, self.writer_get().casefold()
 
                     elif (
                         next_char in BARE_DISALLOWED
@@ -939,21 +919,21 @@ cdef class Tokenizer(BaseTokenizer):
                         self.char_index -= 1
                         # And return the directive.
                         if ascii_only:
-                            return DIRECTIVE, self.buf_get_text()
+                            return DIRECTIVE, self.writer_get()
                         else:
                             # Have to go through Unicode lowering.
-                            return DIRECTIVE, self.buf_get_text().casefold()
+                            return DIRECTIVE, self.writer_get().casefold()
                     elif next_char >= 128:
                         # This is non-ASCII, run through the full
                         # Unicode-compliant conversion.
                         ascii_only = False
-                        self.buf_add_char(next_char)
+                        PyUnicodeWriter_WriteChar(self.writer, next_char)
                     else:
                         # If ASCII, use bitwise math to convert over.
                         if 'A' <= next_char <= 'Z':
-                            self.buf_add_char((<uint_fast32_t>next_char + 0x20))
+                            PyUnicodeWriter_WriteChar(self.writer, (<uint_fast32_t>next_char + 0x20))
                         else:
-                            self.buf_add_char(next_char)
+                            PyUnicodeWriter_WriteChar(self.writer, next_char)
 
             else:  # These complex checks can't be in a switch, so we need to nest this.
                 if next_char == ':' and self.flags.colon_operator:
@@ -962,14 +942,14 @@ cdef class Tokenizer(BaseTokenizer):
                     return PLUS_TUP
                 # Bare names
                 if next_char not in BARE_DISALLOWED:
-                    self.buf_reset()
-                    self.buf_add_char(next_char)
+                    self.writer_reset()
+                    PyUnicodeWriter_WriteChar(self.writer, next_char)
                     while True:
                         next_char, is_eof = self._next_char()
                         if is_eof:
                             # Bare names at the end are actually fine.
                             # It could be a value for the last prop.
-                            return STRING, self.buf_get_text()
+                            return STRING, self.writer_get()
 
                         elif (
                             next_char in BARE_DISALLOWED
@@ -979,9 +959,9 @@ cdef class Tokenizer(BaseTokenizer):
                             # char next. If it's not allowed, that'll error on
                             # next call.
                             self.char_index -= 1
-                            return STRING, self.buf_get_text()
+                            return STRING, self.writer_get()
                         else:
-                            self.buf_add_char(next_char)
+                            PyUnicodeWriter_WriteChar(self.writer, next_char)
                 else:
                     raise self._error(f'Unexpected character "{next_char}"' '!')
 
