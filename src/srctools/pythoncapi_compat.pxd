@@ -1,5 +1,9 @@
 # Bindings for pythoncapi-compat, implemented directly in Python.h in newer versions.
 
+# If PyPy, include this implementation
+cdef extern from "unicode_writer.h":
+	pass
+
 cdef extern from "pythoncapi_compat.h":
 	ctypedef struct PyUnicodeWriter:
 		pass
@@ -15,7 +19,6 @@ cdef extern from "pythoncapi_compat.h":
 	# int PyUnicodeWriter_WriteWideChar(PyUnicodeWriter *writer, const wchar_t *str, Py_ssize_t size) except -1
 	int PyUnicodeWriter_WriteSubstring(PyUnicodeWriter *writer, unicode str, Py_ssize_t start, Py_ssize_t end) except -1
 	int PyUnicodeWriter_Format(PyUnicodeWriter *writer, const char *format, ...) except -1
-
 
 	ctypedef struct PyBytesWriter:
 		pass
