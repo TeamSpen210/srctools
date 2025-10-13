@@ -1,8 +1,21 @@
 # Cython-generated
-srctools/*.c linguist-generated=true
-srctools/*.cpp linguist-generated=true
+src/srctools/_math.cpp linguist-generated=true
+src/srctools/_tokenizer.c linguist-generated=true
+src/srctools/_cy_vtf_readwrite.c linguist-generated=true
 
-libsquish/* linguist-vendored=true
+src/libsquish/** linguist-vendored=true
 
 # Force to binary, KV2 should use windows line endings.
 *.dmx -text binary
+
+# Exclude from sdists. Keep our own dev files, but exclude ones for dependencies.
+src/libsquish/CMakeModules/** export-ignore
+src/libsquish/extra/** export-ignore
+src/libsquish/Makefile export-ignore
+src/libsquish/libSquish.png export-ignore
+src/libsquish/libSquish.pri export-ignore
+src/libsquish/libSquish.pro export-ignore
+src/libsquish/libSquish.svg export-ignore
+src/libsquish/ChangeLog.txt export-ignore
+src/libsquish/CMakeLists.txt export-ignore
+src/libsquish/Doxyfile export-ignore
