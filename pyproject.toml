@@ -83,7 +83,8 @@ include = [
 	"type_tests/",
 	]
 exclude = [
-	"**/__pycache__"
+	"**/__pycache__",
+	"src/pythoncapi-compat/",
 	]
 stubPath = "src/"   # Use our module for stubs.
 # We want to do conversions when setting.
