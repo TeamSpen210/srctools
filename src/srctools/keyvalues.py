@@ -1324,9 +1324,11 @@ class Keyvalues:
         This does not handle cyclic loops in the tree.
 
         :param file: The file to write to. If omitted, the data is returned instead.
-        :param indent: The characters to use for each indentation level.
+        :param indent: The characters to use for each indentation level. Normally spaces/tabs, but
+               any character is accepted.
         :param indent_braces: If enabled, indent the braces to match the block contents, instead of the name.
-        :param start_indent: The initial starting indentation. Useful to allow serialising inside an existing file.
+        :param start_indent: The initial starting indentation. Useful to allow serialising
+               inside an existing file, or to add a prefix like comment delimiters.
         """
         buffer: Optional[io.StringIO] = None
         if file is None:
