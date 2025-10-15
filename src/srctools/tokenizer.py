@@ -345,11 +345,24 @@ class BaseTokenizer(abc.ABC):
 
         self._pushback.append((tok, value))
 
-    def peek(self) -> tuple[Token, str]:
-        """Peek at the next token, without removing it from the stream."""
+    def peek(self, consume_newlines: bool=False) -> tuple[Token, str]:
+        """Peek at the next token, without removing it from the stream.
+
+        :param consume_newlines: Skip over newlines until a non-newline is found.
+               All tokens are preserved.
+        """
         tok_and_val = self()
-        self._pushback.append(tok_and_val)
-        return tok_and_val
+        if consume_newlines and tok_and_val[0] is Token.NEWLINE:
+            tokens = [tok_and_val]
+            while True:
+                tok_and_val = tok, tok_value = self()
+                tokens.append(tok_and_val)
+                if tok is not Token.NEWLINE:
+                    self._pushback.extend(tokens)
+                    return tok_and_val
+        else:
+            self._pushback.append(tok_and_val)
+            return tok_and_val
 
     def skipping_newlines(self) -> Iterator[tuple[Token, str]]:
         """Iterate over the tokens, skipping newlines."""

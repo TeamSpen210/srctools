@@ -310,6 +310,32 @@ def test_pushback_opvalues(py_c_token: type[Tokenizer], token: Token, val: str) 
     assert tok() == (token, val)
 
 
+def test_peek(py_c_token: type[Tokenizer]) -> None:
+    """Test the behaviour of peek()."""
+    tok: Tokenizer = py_c_token(
+        'a b c = d \n \n e f',
+    )
+    assert tok() == (Token.STRING, 'a')
+    assert tok.peek() == (Token.STRING, 'b')
+    assert tok.peek() == (Token.STRING, 'b')
+    assert tok() == (Token.STRING, 'b')
+    tok.push_back(Token.PAREN_OPEN, '(')
+    assert tok.peek() == (Token.PAREN_OPEN, '(')
+    assert tok.peek() == (Token.PAREN_OPEN, '(')
+    assert tok() == (Token.PAREN_OPEN, '(')
+    assert tok.peek(True) == (Token.STRING, 'd')
+    assert tok.peek(True) == (Token.STRING, 'd')
+    assert tok == (Token.STRING, 'd')
+    # Consumes newlines, but puts them back.
+    assert tok.peek(True) == (Token.STRING, 'e')
+    assert tok.peek(True) == (Token.STRING, 'e')
+    assert tok() == (Token.NEWLINE, '\n')
+    assert tok() == (Token.NEWLINE, '\n')
+    assert tok() == (Token.STRING, 'e')
+    assert tok() == (Token.STRING, 'f')
+    assert tok() == (Token.EOF, '')
+
+
 def test_call_next(py_c_token: type[Tokenizer]) -> None:
     """Test that tok() functions, and it can be mixed with iteration."""
     tok: Tokenizer = py_c_token('''{ "test" } "test" { = } ''', 'file')

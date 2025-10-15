@@ -344,12 +344,25 @@ cdef class BaseTokenizer:
 
         self.pushback.append((tok, value))
 
-    def peek(self):
-        """Peek at the next token, without removing it from the stream."""
-        tok_and_val = <tuple>self.next_token()
-        self.pushback.append(tok_and_val)
+    def peek(self, bint consume_newlines: bool = False):
+        """Peek at the next token, without removing it from the stream.
 
-        return tok_and_val
+        :param consume_newlines: Skip over newlines until a non-newline is found.
+               All tokens are preserved.
+        """
+        cdef tuple tok_and_val = <tuple?>self.next_token()
+        cdef list tokens
+        if consume_newlines and tok_and_val[0] is NEWLINE:
+            tokens = [tok_and_val]
+            while True:
+                tok_and_val = <tuple?>self.next_token()
+                tokens.append(tok_and_val)
+                if tok_and_val[0] is not NEWLINE:
+                    self.pushback.extend(tokens)
+                    return tok_and_val
+        else:
+            self.pushback.append(tok_and_val)
+            return tok_and_val
 
     def skipping_newlines(self):
         """Iterate over the tokens, skipping newlines."""
