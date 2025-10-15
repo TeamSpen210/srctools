@@ -958,21 +958,35 @@ class Attribute(_ValProps, Generic[ValueT]):
     def _read_val(self, newtype: ValueType) -> Value:
         """Convert to the desired type."""
         if isinstance(self._value, list):
-            raise ValueError('Cannot read value of array elements!')
+            raise ValueError(
+                f'Cannot convert {self._typ.name} array attribute "{self.name}" to scalar type {newtype}!'
+            )
         if isinstance(self._value, dict):
-            raise ValueError('Cannot read value of compound elements!')
+            raise ValueError(
+                f'Cannot convert compound attribute "{self.name}" to scalar type {newtype}!'
+            )
         try:
             func = TYPE_CONVERT[self._typ, newtype]
         except KeyError:
-            raise ValueError(f'Cannot convert ({self._value!r}) to {newtype} type!') from None
-        return func(self._value)
+            raise ValueError(
+                f'Cannot convert ({self._value!r}) to {newtype} type for attribute "{self.name}"!'
+            ) from None
+        try:
+            return func(self._value)
+        except StructError as exc:
+            # Struct errors don't include the value.
+            raise ValueError(
+                f'Cannot convert attribute "{self.name}"={self._value!r} to {newtype}!'
+            ) from exc
 
     def _iter_array(self, newtype: ValueType) -> Iterator[Value]:
         """Iterate over the values, converted to the desired type."""
         try:
             func = TYPE_CONVERT[self._typ, newtype]
         except KeyError:
-            raise ValueError(f'Cannot convert ({self._value!r}) to {newtype} type!') from None
+            raise ValueError(
+                f'Cannot convert attribute "{self.name}"=({self._value!r}) to {newtype} type!'
+            ) from None
         if isinstance(self._value, list):
             return map(func, self._value)
         else:
@@ -980,7 +994,9 @@ class Attribute(_ValProps, Generic[ValueT]):
                 return iter([func(self._value)])
             except StructError as exc:
                 # Struct errors don't include the value.
-                raise ValueError(f'Failed to convert: {exc}, with value {self._value!r}') from None
+                raise ValueError(
+                    f'Cannot convert attribute "{self.name}"={self._value!r} to {newtype}!'
+                ) from exc
     if TYPE_CHECKING:
         def iter_int(self) -> Iterator[builtins.int]:
             """Iterate over the attribute, treating it as an array of integer values."""
@@ -1557,11 +1573,18 @@ class Element(Mapping[str, Attribute]):
             try:
                 attr_type = ValueType(typ_name)
             except ValueError:
-                # It's an inline compound element.
-                elem._members[attr_name.casefold()] = Attribute(
-                    attr_name, ValueType.ELEMENT,
-                    cls._parse_kv2_element(tok, id_to_elem, fixups, stubs, attr_name, orig_typ_name),
-                )
+                # Not a valid value, it could be an inline compound element if followed by a brace.
+                tok_typ, tok_value = tok.peek(consume_newlines=True)
+                if tok_typ is Token.BRACE_OPEN:
+                    elem._members[attr_name.casefold()] = Attribute(
+                        attr_name, ValueType.ELEMENT,
+                        cls._parse_kv2_element(tok, id_to_elem, fixups, stubs, attr_name, orig_typ_name),
+                    )
+                else:  # Nope, just an invalid attribute.
+                    raise tok.error(
+                        'Invalid attribute type {} for attribute "{}"!',
+                        typ_name, attr_name,
+                    )
                 continue
             if is_array:
                 array: list[Any] = []
