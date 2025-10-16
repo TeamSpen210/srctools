@@ -358,6 +358,7 @@ cdef class BaseTokenizer:
                 tok_and_val = <tuple?>self.next_token()
                 tokens.append(tok_and_val)
                 if tok_and_val[0] is not NEWLINE:
+                    tokens.reverse()
                     self.pushback.extend(tokens)
                     return tok_and_val
         else:

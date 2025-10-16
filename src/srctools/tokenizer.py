@@ -358,6 +358,7 @@ class BaseTokenizer(abc.ABC):
                 tok_and_val = tok, tok_value = self()
                 tokens.append(tok_and_val)
                 if tok is not Token.NEWLINE:
+                    tokens.reverse()
                     self._pushback.extend(tokens)
                     return tok_and_val
         else:

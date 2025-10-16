@@ -1584,7 +1584,7 @@ class Element(Mapping[str, Attribute]):
                     raise tok.error(
                         'Invalid attribute type {} for attribute "{}"!',
                         typ_name, attr_name,
-                    )
+                    ) from None
                 continue
             if is_array:
                 array: list[Any] = []

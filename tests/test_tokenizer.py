@@ -313,7 +313,7 @@ def test_pushback_opvalues(py_c_token: type[Tokenizer], token: Token, val: str) 
 def test_peek(py_c_token: type[Tokenizer]) -> None:
     """Test the behaviour of peek()."""
     tok: Tokenizer = py_c_token(
-        'a b c = d \n \n e f',
+        'a b c = \n \n d e',
     )
     assert tok() == (Token.STRING, 'a')
     assert tok.peek() == (Token.STRING, 'b')
@@ -323,16 +323,17 @@ def test_peek(py_c_token: type[Tokenizer]) -> None:
     assert tok.peek() == (Token.PAREN_OPEN, '(')
     assert tok.peek() == (Token.PAREN_OPEN, '(')
     assert tok() == (Token.PAREN_OPEN, '(')
-    assert tok.peek(True) == (Token.STRING, 'd')
-    assert tok.peek(True) == (Token.STRING, 'd')
-    assert tok == (Token.STRING, 'd')
+    assert tok.peek(True) == (Token.STRING, 'c')
+    assert tok.peek(True) == (Token.STRING, 'c')
+    assert tok() == (Token.STRING, 'c')
+    assert tok() == (Token.EQUALS, '=')
     # Consumes newlines, but puts them back.
-    assert tok.peek(True) == (Token.STRING, 'e')
-    assert tok.peek(True) == (Token.STRING, 'e')
+    assert tok.peek(True) == (Token.STRING, 'd')
+    assert tok.peek(True) == (Token.STRING, 'd')
     assert tok() == (Token.NEWLINE, '\n')
     assert tok() == (Token.NEWLINE, '\n')
+    assert tok() == (Token.STRING, 'd')
     assert tok() == (Token.STRING, 'e')
-    assert tok() == (Token.STRING, 'f')
     assert tok() == (Token.EOF, '')
 
 
