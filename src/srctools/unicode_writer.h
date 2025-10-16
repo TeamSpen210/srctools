@@ -1,6 +1,7 @@
 #ifdef PYPY_VERSION
-
 // PyPy is missing _PyUnicodeWriter (since that's private), so include a basic version.
+
+#include <stddef.h> // NULL
 
 typedef struct PyUnicodeWriter {
 	Py_ssize_t size;
@@ -9,9 +10,9 @@ typedef struct PyUnicodeWriter {
 } PyUnicodeWriter;
 
 static inline void PyUnicodeWriter_Discard(PyUnicodeWriter *writer) {
-	if (writer != _Py_NULL) {
+	if (writer != NULL) {
 	    PyMem_Free(writer->buffer);
-	    writer->buffer = _Py_NULL;
+	    writer->buffer = NULL;
 	    PyMem_Free(writer);
 	}
 }
@@ -43,7 +44,7 @@ static int _PyUnicodeWriter_Prepare(PyUnicodeWriter *writer, Py_ssize_t size) {
     }
 
 	Py_UCS4 *buf = (Py_UCS4*)PyMem_Realloc(writer->buffer, alloc * sizeof(Py_UCS4));
-	if (buf == _Py_NULL) {
+	if (buf == NULL) {
 		return -1;
 	}
 	writer->buffer = buf;
@@ -59,13 +60,13 @@ static inline PyUnicodeWriter* PyUnicodeWriter_Create(Py_ssize_t length) {
     }
 
     PyUnicodeWriter *writer = (PyUnicodeWriter *)PyMem_Malloc(sizeof(PyUnicodeWriter));
-    if (writer == _Py_NULL) {
+    if (writer == NULL) {
         PyErr_NoMemory();
-        return _Py_NULL;
+        return NULL;
     }
     writer->size = 0;
     writer->allocated = 0;
-    writer->buffer = _Py_NULL;
+    writer->buffer = NULL;
     if (_PyUnicodeWriter_Prepare(writer, length) < 0) {
         PyUnicodeWriter_Discard(writer);
         return NULL;
@@ -142,7 +143,7 @@ static inline int PyUnicodeWriter_WriteUTF8(PyUnicodeWriter *writer, const char 
     }
 
     PyObject *str_obj = PyUnicode_FromStringAndSize(str, size);
-    if (str_obj == _Py_NULL) {
+    if (str_obj == NULL) {
         return -1;
     }
 
@@ -174,7 +175,7 @@ static inline int PyUnicodeWriter_Format(PyUnicodeWriter *writer, const char *fo
     va_start(vargs, format);
     PyObject *str = PyUnicode_FromFormatV(format, vargs);
     va_end(vargs);
-    if (str == _Py_NULL) {
+    if (str == NULL) {
         return -1;
     }
 
