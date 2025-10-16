@@ -1270,7 +1270,9 @@ class PackList:
         for ext in MDL_EXTS_EXTRA:
             component = file_stem + ext
             if component in self.fsys:
-                self.pack_file(component)
+                # The sub-files are really part of the main one, they should be packed with
+                # the same source.
+                self.pack_file(component, source=file.source)
 
         if file.data is not None:
             # We need to add that file onto the system, so it's loaded.
