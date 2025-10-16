@@ -164,6 +164,7 @@ static inline int PyUnicodeWriter_WriteASCII(PyUnicodeWriter *writer, const char
 	for(Py_ssize_t i=0; i<size; i++) {
 		writer->buffer[off+i] = str[i];
 	}
+	return 0;
 }
 
 // Not used yet, don't bother.
