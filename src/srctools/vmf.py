@@ -852,8 +852,6 @@ class VMF:
             worldspawn['classname'] = 'worldspawn'
             map_obj.by_target[worldspawn['targetname'].casefold() or None].add(worldspawn)
             # Always a brush entity.
-            if worldspawn.solids is None:
-                worldspawn.solids = []
             map_obj.brushes = worldspawn.solids
 
             for ent in tree.find_all('Entity'):
@@ -2722,7 +2720,7 @@ class Entity(MutableMapping[str, str]):
         editor_color = Vec()
         for item in tree_list:
             name = item.name
-            assert name is not None, repr(item)
+            assert name is not None, repr(item)  # type: ignore  # TODO Remove when root props change.
             if item.has_children():
                 if name == "solid":
                     solids.append(Solid.parse(vmf_file, item))

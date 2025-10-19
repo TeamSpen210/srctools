@@ -131,6 +131,7 @@ def test_ppm_convert(
     )
     frame = vtf.get()
     frame.copy_from(sample_image.tobytes())
+    assert frame._data is not None, "copy_from() didn't set data?"
     result = vtf_mod._format_funcs.ppm_convert(
         frame._data,
         frame.width,
