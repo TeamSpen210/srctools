@@ -14,7 +14,7 @@
 		"pos_float" "float" "22097.837891"
 		"truth" "bool" "1"
 		"falsity" "bool" "0"
-		"string" "string" "string \n \t \v \b \r \f \a \\ ? \' \""
+		"string" "string" "string \n \t \v \b \r \f \a \\ ? ' \""
 		"red" "color" "240 32 32 255"
 		"blue" "color" "32 240 32 255"
 		"green" "color" "32 32 240 255"
@@ -36,7 +36,7 @@
 		[
 			"regular Value",
 			"\n \t \v \b \r \f \a",
-			"\\ ? \' \""
+			"\\ ? ' \""
 		]
 		"integers" "int_array"
 		[
