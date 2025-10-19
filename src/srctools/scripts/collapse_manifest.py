@@ -32,7 +32,7 @@ def main(args: Optional[list[str]] = None) -> None:
     else:
         dest = source.with_suffix('.vmf')
 
-    with source.open() as f:
+    with source.open(encoding='ascii', errors='surrogateescape') as f:
         submaps = Manifest.parse(Keyvalues.parse(f))
     fsys = RawFileSystem(source.with_suffix(''))
 
@@ -54,7 +54,7 @@ def main(args: Optional[list[str]] = None) -> None:
         collapse_one(vmf, submap, sub_file, visgroup=visgroup, engine_cache=engine_cache)
 
     print(f'Writing {dest}...')
-    with dest.open('w') as f:
+    with dest.open('w', encoding='ascii', errors='surrogateescape') as f:
         vmf.export(f)
 
 
