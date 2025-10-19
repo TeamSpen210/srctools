@@ -25,8 +25,8 @@ IS_CPYTHON = platform.python_implementation() == 'CPython'
 
 # See https://github.com/ValveSoftware/source-sdk-2013/blob/
 # 0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/tier1/utlbuffer.cpp#L57-L69
-ESCAPE_CHARS = "\n \t \v \b \r \f \a \\ \' \""
-ESCAPE_ENCODED = r"\n \t \v \b \r \f \a \\ \' " + r'\"'
+ESCAPE_CHARS = "\n \t \v \b \r \f \a \\ \""
+ESCAPE_ENCODED = r'\n \t \v \b \r \f \a \\ \"'
 
 TokenList: TypeAlias = list[Union[Token, tuple[Token, str]]]
 
@@ -120,6 +120,7 @@ noprop_parse_test = """
 "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0c\x0e\x0f\x10\
 \x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"
 #ﬁmport test
+"\\/ \\? \\'" "/ ? '"
 #EXclßÀde value\r
 #caseA\u0345\u03a3test
 { ]]{ }}}[[ {{] = "test" "ing" == vaLUE= 4 6
@@ -132,6 +133,7 @@ noprop_parse_tokens: TokenList = [
     (T.STRING, "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x0b\x0c\x0e\x0f\x10\x11"
                "\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f"), T.NEWLINE,
     (T.DIRECTIVE, "fimport"), (T.STRING, "test"), T.NEWLINE,
+    (T.STRING, "/ ? '"),  (T.STRING, "/ ? '"), T.NEWLINE,  # Can be escaped, but not required
     (T.DIRECTIVE, "exclssàde"), (T.STRING, "value"), T.NEWLINE,
     (T.DIRECTIVE, "casea\u03b9\u03c3test"), T.NEWLINE,
     T.BRACE_OPEN, T.BRACK_CLOSE, T.BRACK_CLOSE, T.BRACE_OPEN, T.BRACE_CLOSE, T.BRACE_CLOSE, T.BRACE_CLOSE,
@@ -607,7 +609,7 @@ def test_obj_config(
 @pytest.mark.parametrize('inp, out', [
     ('', ''),
     ("hello world", "hello world"),
-    ("\thello_world", r"\thello_world"),
+    ("\thello'_'world", r"\thello'_'world"),
     ("\\thello_world", r"\\thello_world"),
     ("\\ttest\nvalue\t\\r\t\n", r"\\ttest\nvalue\t\\r\t\n"),
     (ESCAPE_CHARS, ESCAPE_ENCODED),

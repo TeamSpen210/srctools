@@ -846,7 +846,7 @@ cdef class Tokenizer(BaseTokenizer):
                             # For these, we escape to give the literal value.
                             next_char = escape_char
                         else:
-                            # For unknown escape_chars, escape the \ automatically.
+                            # For unknown escape_chars, leave unchanged.
                             PyUnicodeWriter_WriteChar(self.writer, '\\')
                             PyUnicodeWriter_WriteChar(self.writer, escape_char)
                             continue
@@ -1115,8 +1115,8 @@ def escape_text(str text not None: str, bint multiline: bool = False) -> str:
     r"""Escape special characters and backslashes, so tokenising reproduces them.
 
     This matches utilbuffer.cpp in the SDK.
-    The following characters are escaped: \t, \v, \b, \r, \f, \a, \, ', ".
-    / and ? are accepted as escapes, but not produced since they're unambiguous.
+    The following characters are escaped: \t, \v, \b, \r, \f, \a, \, ".
+    /, ' and ? are accepted as escapes, but not produced since they're unambiguous.
     In addition, \n is escaped only if `multiline` is false.
     """
     cdef Py_ssize_t size = len(text)
@@ -1154,8 +1154,6 @@ def escape_text(str text not None: str, bint multiline: bool = False) -> str:
                 PyUnicodeWriter_WriteASCII(writer, b"\\\\", 2)
             elif letter == '"':
                 PyUnicodeWriter_WriteASCII(writer, b"\\\"", 2)
-            elif letter == "'":
-                PyUnicodeWriter_WriteASCII(writer, b"\\'", 2)
             else:
                 if letter == "\n" and not multiline:
                     PyUnicodeWriter_WriteASCII(writer, b"\\n", 2)

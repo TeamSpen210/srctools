@@ -188,11 +188,11 @@ ESCAPES: dict[Optional[str], str] = {
 ESCAPES_INV: dict[str, str] = {char: f'\\{sym}' for sym, char in ESCAPES.items() if sym is not None}
 ESCAPE_RE = re.compile('|'.join(
     re.escape(c) for c in ESCAPES_INV
-    if c not in '?/'
+    if c not in "?'/"
 ))
 ESCAPE_MULTILINE_RE = re.compile('|'.join(
     re.escape(c) for c in ESCAPES_INV
-    if c not in '?/\n'
+    if c not in "?'/\n"
 ))
 
 #: Characters not allowed for bare strings. These must be quoted.
@@ -842,8 +842,8 @@ def escape_text(text: str, multiline: bool=False) -> str:
 
     This matches utilbuffer.cpp in the SDK.
     The following characters are escaped: ``\t``, ``\v``, ``\b``, ``\r``, ``\f``,
-    ``\a``, ``\``, ``'``, ``"``.
-    ``/`` and ``?`` are accepted as escapes, but not produced since they're unambiguous.
+    ``\a``, ``\``, ``"``.
+    ``/``, ``'`` and ``?`` are accepted as escapes, but not produced since they're unambiguous.
     In addition, ``\n`` is escaped only if ``multiline`` is false.
 
     :parameter text: The text to escape.
