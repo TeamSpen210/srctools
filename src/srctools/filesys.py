@@ -50,6 +50,7 @@ CACHE_KEY_INVALID: Final = -1
 """This is returned from :py:meth:`FileSystem.cache_key()` to indicate no key could be computed."""
 
 # This is the type of File._data. It should only be used by subclasses.
+# TODO: File[Self] doesn't work with this in Pyright.
 _FileDataT = TypeVar('_FileDataT', default=Any)
 
 
@@ -355,7 +356,7 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
             return File(self, full_name, file_info)
         raise FileNotFoundError(name)
 
-    def open_str(self, name: Union[str, File[Self]], encoding: str = 'utf8') -> TextIO:
+    def open_str(self, name: Union[str, File[Self]], encoding: str = 'utf8') -> TextIO:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Open a file in unicode mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -364,7 +365,7 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
             return self._get_data(name).open_str(encoding)
         return self._get_file(name).open_str(encoding)
 
-    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:
+    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Open a file in bytes mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -403,7 +404,7 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
                     file,
                 )
 
-    def _get_cache_key(self, file: File[Self]) -> int:
+    def _get_cache_key(self, file: File[Self]) -> int:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return the last modified time of this file.
 
         If individual timestamps are not stored, the modification time of the
@@ -451,7 +452,7 @@ class VirtualFileSystem(FileSystem[str]):
             path = path.path
         return os.path.normpath(path).replace('\\', '/').casefold()
 
-    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:
+    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return a bytes buffer for a 'file'."""
         try:
             filename, data = self._mapping[self._clean_path(name)]
@@ -461,7 +462,7 @@ class VirtualFileSystem(FileSystem[str]):
             data = data.encode(self.bytes_encoding)
         return io.BytesIO(data)
 
-    def open_str(
+    def open_str(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         name: Union[str, File[Self]],
         encoding: str = 'utf8',
@@ -544,7 +545,7 @@ class RawFileSystem(FileSystem[str]):
                 ).replace('\\', '/')
                 yield File(self, rel_path, rel_path)
 
-    def open_str(self, name: Union[str, File[Self]], encoding: str = 'utf8') -> TextIO:
+    def open_str(self, name: Union[str, File[Self]], encoding: str = 'utf8') -> TextIO:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Open a file in unicode mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -553,7 +554,7 @@ class RawFileSystem(FileSystem[str]):
             name = self._get_data(name)
         return open(self._resolve_path(name), encoding=encoding)
 
-    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:
+    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Open a file in bytes mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -572,7 +573,7 @@ class RawFileSystem(FileSystem[str]):
             return File(self, name, name)
         raise FileNotFoundError(name)
 
-    def _get_cache_key(self, file: File[Self]) -> int:
+    def _get_cache_key(self, file: File[Self]) -> int:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Our cache key is the last modification time."""
         try:
             return os.stat(self._resolve_path(file.path)).st_mtime_ns
@@ -605,7 +606,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
             if filename.startswith(folder):
                 yield File(self, fileinfo.filename, fileinfo)
 
-    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:
+    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Open a file in bytes mode or raise FileNotFoundError.
 
         The filesystem needs to be open while accessing this.
@@ -624,7 +625,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
         # Type of open() is IO[bytes], basically the same.
         return cast(BinaryIO, self.zip.open(info))
 
-    def open_str(
+    def open_str(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         name: Union[str, File[Self]],
         encoding: str = 'utf8',
@@ -647,7 +648,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
     def _file_exists(self, name: str) -> bool:
         return name.replace('\\', '/').casefold() in self._name_to_info
 
-    def _get_cache_key(self, file: File[Self]) -> int:
+    def _get_cache_key(self, file: File[Self]) -> int:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return the CRC of the VPK file."""
         return self._get_data(file).CRC
 
@@ -685,7 +686,7 @@ class VPKFileSystem(FileSystem[VPKFile]):
             if file.dir.startswith(folder):
                 yield File(self, file.filename, file)
 
-    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:
+    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Open a file in bytes mode or raise FileNotFoundError."""
         # Extract our VPK info directly.
         if isinstance(name, File):
@@ -697,7 +698,7 @@ class VPKFileSystem(FileSystem[VPKFile]):
                 raise FileNotFoundError(name) from None
         return io.BytesIO(file.read())
 
-    def open_str(
+    def open_str(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
         name: Union[str, File[Self]],
         encoding: str = 'utf8',
@@ -715,6 +716,6 @@ class VPKFileSystem(FileSystem[VPKFile]):
         # wrap that to decode and clean up universal newlines.
         return io.TextIOWrapper(io.BytesIO(file.read()), encoding)
 
-    def _get_cache_key(self, file: File[Self]) -> int:
+    def _get_cache_key(self, file: File[Self]) -> int:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return the CRC of the VPK file."""
         return self._get_data(file).crc
