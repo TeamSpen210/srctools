@@ -88,7 +88,7 @@ class PointsMap(MutableMapping[AnyVec, ValueT], Generic[ValueT]):
         else:
             return f'PointsMap({list(self.items())!r})'
 
-    def get_all(self, item: AnyVec) -> Iterator[ValueT]:
+    def get_all(self, item: AnyVec, /) -> Iterator[ValueT]:
         """Iterate over all items matching this position."""
         pos = FrozenVec(item)
         x, y, z = round(pos.x), round(pos.y), round(pos.z)
@@ -101,14 +101,14 @@ class PointsMap(MutableMapping[AnyVec, ValueT], Generic[ValueT]):
                 if (pos - map_pos).mag_sq() < self._dist_sq:
                     yield value
 
-    def __getitem__(self, item: AnyVec) -> ValueT:
+    def __getitem__(self, item: AnyVec, /) -> ValueT:
         """Find the first item matching this position."""
         try:
             return next(self.get_all(item))
         except StopIteration:
             raise KeyError(item) from None
 
-    def __setitem__(self, item: AnyVec, value: ValueT) -> None:
+    def __setitem__(self, item: AnyVec, value: ValueT, /) -> None:
         """Set the first item matching this position, or add a new item."""
         pos = FrozenVec(item)
         x, y, z = round(pos.x), round(pos.y), round(pos.z)
@@ -123,7 +123,7 @@ class PointsMap(MutableMapping[AnyVec, ValueT], Generic[ValueT]):
                     return
         self._map.setdefault((x, y, z), []).append((pos, value))
 
-    def __delitem__(self, item: AnyVec) -> None:
+    def __delitem__(self, item: AnyVec, /) -> None:
         """Remove the first item matching this position."""
         pos = FrozenVec(item)
         x, y, z = round(pos.x), round(pos.y), round(pos.z)
@@ -168,7 +168,7 @@ class PointsMap(MutableMapping[AnyVec, ValueT], Generic[ValueT]):
             for pos, value in points
         ]
 
-    def __setstate__(self, state: _State[ValueT]) -> None:
+    def __setstate__(self, state: _State[ValueT], /) -> None:
         """Apply the pickled state."""
         self._dist_sq, points = state
         self._map = {}  # Pickle skips __init__!

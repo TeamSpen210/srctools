@@ -2605,7 +2605,7 @@ class BSP:
 
     def _lmp_read_texinfo(self, data: bytes) -> Iterator['TexInfo']:
         """Read the texture info lump, providing positioning information."""
-        texdata_list = []
+        texdata_list: list[TexData] = []
         # The view width/height is unused stuff, identical to regular
         # width/height. VitaminSource elides this useless info.
         if self.is_vitamin:
@@ -2684,7 +2684,7 @@ class BSP:
 
     def _lmp_read_bmodels(self, data: bytes) -> 'WeakKeyDictionary[Entity, BModel]':
         """Parse the brush model definitions."""
-        bmodel_list = []
+        bmodel_list: list[BModel] = []
         for (
             min_x, min_y, min_z, max_x, max_y, max_z,
             pos_x, pos_y, pos_z,
@@ -3404,7 +3404,10 @@ class BSP:
         models = list(self._read_static_props_models(buf))
 
         [sprite_count] = struct_read('<i', buf)
-        detail_sprites = []
+        detail_sprites: list[tuple[
+            tuple[float, float], tuple[float, float],
+            tuple[float, float], tuple[float, float],
+        ]] = []
         for _ in range(sprite_count):
             (
                 dim_ul_x, dim_ul_y,

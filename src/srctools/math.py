@@ -1112,7 +1112,7 @@ class FrozenVec(VecBase):
         # Already a FrozenVec.
         if isinstance(x, cls):
             return x
-        res = object.__new__(cls)
+        res: FrozenVec = object.__new__(cls)
         if isinstance(x, (int, float)):
             res._x = float(x)
             res._y = float(y)
@@ -2584,7 +2584,7 @@ class FrozenAngle(AngleBase):
         # Already a FrozenVec.
         if isinstance(pitch, cls):
             return pitch
-        res = object.__new__(cls)
+        res: FrozenAngle = object.__new__(cls)
         if isinstance(pitch, (int, float)):
             res._pitch = float(pitch) % 360.0 % 360.0
             res._yaw = float(yaw) % 360.0 % 360.0

@@ -862,7 +862,10 @@ class PackList:
             self.particles.save_cache(cache_file)
 
     def load_choreo_scenes(self) -> None:
-        """Load the scenes manifest."""
+        """Load the scenes manifest.
+
+        :raises FileNotFoundError: If the scenes.image manifest is missing.
+        """
         with self.fsys['scenes/scenes.image'].open_bin() as file:
             self.choreo |= choreo_scenes.parse_scenes_image(file)
 

@@ -208,13 +208,13 @@ class IDMan(AbstractSet[int]):
         """Check if the given ID is registered."""
         return item in self._used
 
-    def discard(self, element: int) -> None:
+    def discard(self, element: int, /) -> None:
         """Return the specified ID for others to use, or do nothing if already removed."""
         self._used.discard(element)
         if element < self._search_pos:
             self._search_pos = element
 
-    def remove(self, element: int) -> None:
+    def remove(self, element: int, /) -> None:
         """Return the specified ID for others to use."""
         self._used.remove(element)
         if element < self._search_pos:
@@ -3303,7 +3303,7 @@ class EntityFixup(MutableMapping[str, str]):
         else:
             return self.get(key)
 
-    def __contains__(self, var: object) -> builtins.bool:
+    def __contains__(self, var: object, /) -> builtins.bool:
         """Check if a variable is present in the fixup list."""
         if isinstance(var, str):
             if var and var[0] == '$':

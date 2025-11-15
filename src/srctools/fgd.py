@@ -630,7 +630,7 @@ def match_tags(search: Container[str], tags: Collection[str]) -> bool:
 
     has_all = '<ALL>' in search
     # None = no normal tags, True = matched one, False = not matched one.
-    matched = None
+    matched: bool | None = None
     for tag in tags:
         tag = tag.upper()
         start = tag[:1]

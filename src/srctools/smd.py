@@ -749,8 +749,9 @@ class Mesh:
         """
         # pos -> list of vertexes close to here.
         weld_table: PointsMap[list[Vertex]] = PointsMap(epsilon=dist_tol)
+        existing: list[Vertex]
+        vert: Vertex
         for tri in self.triangles:
-            vert: Vertex
             for i, vert in enumerate(tri):
                 try:
                     existing = weld_table[vert.pos]
