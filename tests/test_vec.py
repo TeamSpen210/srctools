@@ -84,6 +84,10 @@ def test_construction(py_c_vec: PyCVec, frozen_thawed_vec: VecClass) -> None:
     This tests Vec(), Vec.from_str() and parse_vec_str().
     """
     Vec = frozen_thawed_vec
+    # Test construction via both floats and vectors.
+    assert_vec(Vec(1, 2, 3), 1, 2, 3)
+    assert_vec(Vec(1.0, 2.0, 3.0), 1, 2, 3)
+
     for x, y, z in iter_vec(VALID_ZERONUMS):
         assert_vec(Vec(x, y, z), x, y, z)
         assert_vec(Vec(x, y), x, y, 0)

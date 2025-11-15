@@ -136,18 +136,25 @@ def assert_vec(
     assert builtins.type(vec).__name__ in ('Vec', 'FrozenVec'), vec
     if type is not None:
         assert builtins.type(vec) is type, f'{builtins.type(vec)} != {type}: {msg}'
-
-    if not math.isclose(vec.x, x, abs_tol=tol):
-        failed = 'x'
-    elif not math.isclose(vec.y, y, abs_tol=tol):
-        failed = 'y'
-    elif not math.isclose(vec.z, z, abs_tol=tol):
-        failed = 'z'
+    vx, vy, vz = vec.x, vec.y, vec.z
+    if not isinstance(vx, float):
+        new_msg = f'{vec!r}.x = {vx!r}'
+    elif not isinstance(vy, float):
+        new_msg = f'{vec!r}.y = {vy!r}'
+    elif not isinstance(vz, float):
+        new_msg = f'{vec!r}.z = {vz!r}'
     else:
-        # Success!
-        return
+        if not math.isclose(vec.x, x, abs_tol=tol):
+            failed = 'x'
+        elif not math.isclose(vec.y, y, abs_tol=tol):
+            failed = 'y'
+        elif not math.isclose(vec.z, z, abs_tol=tol):
+            failed = 'z'
+        else:
+            # Success!
+            return
 
-    new_msg = f"{vec!r}.{failed} != ({x}, {y}, {z})"
+        new_msg = f"{vec!r}.{failed} != ({x}, {y}, {z})"
     if msg:
         new_msg += ': ' + str(msg)
     pytest.fail(new_msg)
