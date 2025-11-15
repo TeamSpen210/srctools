@@ -552,7 +552,7 @@ cdef inline double _vec_mag_sq(vec_t *vec) noexcept nogil:
 cdef inline double _vec_mag(vec_t *vec) noexcept nogil:
     return math.sqrt(_vec_mag_sq(vec))
 
-cdef inline double _vec_normalise(vec_t *out, vec_t *inp) except -1.0:
+cdef inline double _vec_normalise(vec_t *out, vec_t *inp) noexcept nogil:
     """Normalise the vector, writing to out. inp and out may be the same."""
     cdef double mag = _vec_mag(inp)
 
@@ -568,7 +568,18 @@ cdef inline double _vec_normalise(vec_t *out, vec_t *inp) except -1.0:
     return mag
 
 
+# Reserve ability to raise exceptions in the future.
 cdef inline bint mat_mul(mat_t targ, mat_t rot) except False:
+    """Rotate target by the rotator matrix."""
+    _mat_mul(targ, rot)
+
+
+cdef inline bint vec_rot(vec_t *vec, mat_t mat) except False:
+    """Rotate a vector by our value."""
+    _vec_rot(vec, mat)
+
+
+cdef inline void _mat_mul(mat_t targ, mat_t rot) noexcept nogil:
     """Rotate target by the rotator matrix."""
     cdef double a, b, c
     cdef int i
@@ -581,10 +592,9 @@ cdef inline bint mat_mul(mat_t targ, mat_t rot) except False:
         targ[i][0] = a * rot[0][0] + b * rot[1][0] + c * rot[2][0]
         targ[i][1] = a * rot[0][1] + b * rot[1][1] + c * rot[2][1]
         targ[i][2] = a * rot[0][2] + b * rot[1][2] + c * rot[2][2]
-    return True
 
 
-cdef inline bint vec_rot(vec_t *vec, mat_t mat) except False:
+cdef inline void _vec_rot(vec_t *vec, mat_t mat) noexcept nogil:
     """Rotate a vector by our value."""
     cdef double x = vec.x
     cdef double y = vec.y
@@ -592,18 +602,16 @@ cdef inline bint vec_rot(vec_t *vec, mat_t mat) except False:
     vec.x = (x * mat[0][0]) + (y * mat[1][0]) + (z * mat[2][0])
     vec.y = (x * mat[0][1]) + (y * mat[1][1]) + (z * mat[2][1])
     vec.z = (x * mat[0][2]) + (y * mat[1][2]) + (z * mat[2][2])
-    return True
 
 
-cdef inline bint _vec_cross(vec_t *res, vec_t *a, vec_t *b) except False:
+cdef inline void _vec_cross(vec_t *res, vec_t *a, vec_t *b) noexcept nogil:
     """Compute the cross product of A x B. """
     res.x = a.y * b.z - a.z * b.y
     res.y = a.z * b.x - a.x * b.z
     res.z = a.x * b.y - a.y * b.x
-    return True
 
 
-cdef bint _mat_from_angle(mat_t res, vec_t *angle) except False:
+cdef void _mat_from_angle(mat_t res, vec_t *angle) noexcept nogil:
     cdef double p = deg_2_rad(angle.x)
     cdef double y = deg_2_rad(angle.y)
     cdef double r = deg_2_rad(angle.z)
@@ -619,10 +627,9 @@ cdef bint _mat_from_angle(mat_t res, vec_t *angle) except False:
     res[2][0] = sin(p) * cos(r) * cos(y) + sin(r) * sin(y)
     res[2][1] = sin(p) * cos(r) * sin(y) - sin(r) * cos(y)
     res[2][2] = cos(r) * cos(p)
-    return True
 
 
-cdef inline bint _mat_to_angle(vec_t *ang, mat_t mat) except False:
+cdef inline void _mat_to_angle(vec_t *ang, mat_t mat) noexcept nogil:
     # https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/mathlib/mathlib_base.cpp#L208
     cdef double horiz_dist = math.sqrt(mat[0][0]**2 + mat[0][1]**2)
     if horiz_dist > 0.001:
@@ -634,7 +641,6 @@ cdef inline bint _mat_to_angle(vec_t *ang, mat_t mat) except False:
         ang.x = norm_ang(rad_2_deg(math.atan2(-mat[0][2], horiz_dist)))
         ang.y = norm_ang(rad_2_deg(math.atan2(-mat[1][0], mat[1][1])))
         ang.z = 0.0  # Can't produce.
-    return True
 
 
 cdef bint _mat_from_basis(mat_t mat, VecBase x, VecBase y, VecBase z) except False:
@@ -718,16 +724,15 @@ cdef bint _mat_from_basis(mat_t mat, VecBase x, VecBase y, VecBase z) except Fal
     return True
 
 
-cdef inline bint _mat_identity(mat_t matrix) except False:
+cdef inline void _mat_identity(mat_t matrix) noexcept nogil:
     """Set the matrix to the identity transform."""
     memset(matrix, 0, sizeof(mat_t))
     matrix[0][0] = 1.0
     matrix[1][1] = 1.0
     matrix[2][2] = 1.0
-    return True
 
 
-cdef bint _conv_matrix(mat_t result, object value) except False:
+cdef void _conv_matrix(mat_t result, object value) noexcept:
     """Convert various values to a rotation matrix.
 
     Vectors will be treated as angles, and None as the identity.
@@ -747,7 +752,6 @@ cdef bint _conv_matrix(mat_t result, object value) except False:
     else:
         [ang.x, ang.y, ang.z] = value
         _mat_from_angle(result, &ang)
-    return True
 
 
 def to_matrix(value) -> Matrix:
@@ -1007,7 +1011,7 @@ cdef class VecTransform:
             exc_tb is None
         ):
             with cython.critical_section(self.vec, self.mat):
-                vec_rot(&self.vec.val, self.mat.mat)
+                _vec_rot(&self.vec.val, self.mat.mat)
         return False
 
 
@@ -1071,7 +1075,7 @@ cdef class VecBase:
     B = bottom = z_neg = _vector_frozen(0, 0, -1)
 
     @cython.critical_section
-    def __init__(self, x=0.0, y=0.0, z=0.0) -> None:
+    def __init__(self, x=0.0, y: float = 0.0, z: float = 0.0) -> None:
         """Create a Vector.
 
         All values are converted to Floats automatically.
@@ -1176,7 +1180,7 @@ cdef class VecBase:
             if isinstance(axis_obj, str) and len(<str>axis_obj) == 1:
                 axis = (<str>axis_obj)[0]
             else:
-                raise KeyError(f'Invalid axis {axis_obj!r}' '!')
+                raise KeyError(f'Invalid axis: {axis_obj!r}')
             if axis == 'x':
                 if vec_check(axis_val):
                     with cython.critical_section(axis_val):
@@ -1196,7 +1200,7 @@ cdef class VecBase:
                 else:
                     vec.val.z = axis_val
             else:
-                raise KeyError(f'Invalid axis {axis_obj!r}' '!')
+                raise KeyError(f'Invalid axis: {axis_obj!r}')
 
         return vec
 
@@ -1476,7 +1480,7 @@ cdef class VecBase:
         if isinstance(axis, str) and len(<str>axis) == 1:
             axis_chr = (<str>axis)[0]
         else:
-            raise KeyError(f'Invalid axis {axis!r}' '!')
+            raise KeyError(f'Invalid axis: {axis!r}')
         cdef vec_t self_val
         with cython.critical_section(self):
             self_val = self.val
@@ -1486,7 +1490,7 @@ cdef class VecBase:
             return self_val.x, self_val.z
         elif axis_chr == b'z':
             return self_val.x, self_val.y
-        raise KeyError(f'Invalid axis {axis!r}' '!')
+        raise KeyError(f'Invalid axis: {axis!r}')
 
     def in_bbox(self, a, b):
         """Check if this point is inside the specified bounding box."""
@@ -1799,10 +1803,10 @@ cdef class VecBase:
         if angle_check(second):
             with cython.critical_section(second):
                 _mat_from_angle(temp, &(<AngleBase>second).val)
-            vec_rot(&res.val, temp)
+            _vec_rot(&res.val, temp)
         elif mat_check(second):
             with cython.critical_section(second):
-                vec_rot(&res.val, (<MatrixBase>second).mat)
+                _vec_rot(&res.val, (<MatrixBase>second).mat)
         else:
             return NotImplemented
 
@@ -2004,7 +2008,7 @@ cdef class VecBase:
                     elif axis == "z":
                         return self.val.z
 
-        raise KeyError(f'Invalid axis {ind_obj!r}' '!')
+        raise KeyError(f'Invalid axis: {ind_obj!r}')
 
 
 @cython.final
@@ -2294,7 +2298,7 @@ cdef class Vec(VecBase):
 
         _mat_from_angle(matrix, &angle)
         with cython.critical_section(self):
-            vec_rot(&self.val, matrix)
+            _vec_rot(&self.val, matrix)
 
             if round_vals:
                 self.val.x = round(self.val.x, ROUND_TO)
@@ -2323,7 +2327,7 @@ cdef class Vec(VecBase):
         _parse_vec_str(&angle, ang, pitch, yaw, roll)
         _mat_from_angle(matrix, &angle)
         with cython.critical_section(self):
-            vec_rot(&self.val, matrix)
+            _vec_rot(&self.val, matrix)
 
             if round_vals:
                 self.val.x = round(self.val.x, ROUND_TO)
@@ -2496,7 +2500,7 @@ cdef class Vec(VecBase):
         else:
             return NotImplemented
         with cython.critical_section(self):
-            vec_rot(&self.val, temp)
+            _vec_rot(&self.val, temp)
         return self
 
     def max(self, other):
@@ -2538,7 +2542,7 @@ cdef class Vec(VecBase):
         _conv_matrix(matrix, angles)
         conv_vec(&offset, origin, scalar=False)
         with cython.critical_section(self):
-            vec_rot(&self.val, matrix)
+            _vec_rot(&self.val, matrix)
             self.val.x += offset.x
             self.val.y += offset.y
             self.val.z += offset.z
@@ -2582,7 +2586,7 @@ cdef class Vec(VecBase):
                         self.val.z = val
                         return
 
-        raise KeyError(f'Invalid axis {ind_obj!r}' '!')
+        raise KeyError(f'Invalid axis: {ind_obj!r}')
 
     def transform(self):
         """Perform rotations on this Vector efficiently.
@@ -2885,7 +2889,7 @@ cdef class MatrixBase:
                     _mat_from_angle(temp, &(<AngleBase>second).val)
             else:
                 return NotImplemented
-            mat_mul(mat.mat, temp)
+            _mat_mul(mat.mat, temp)
             return mat
         elif mat_check(second):
             if isinstance(first, Vec):
@@ -2893,34 +2897,34 @@ cdef class MatrixBase:
                 with cython.critical_section(first):
                     memcpy(&vec.val, &(<VecBase>first).val, sizeof(vec_t))
                 with cython.critical_section(second):
-                    vec_rot(&vec.val, (<MatrixBase>second).mat)
+                    _vec_rot(&vec.val, (<MatrixBase>second).mat)
                 return vec
             elif isinstance(first, FrozenVec):
                 vec = <VecBase>FrozenVec.__new__(FrozenVec)
                 # Immutable, no lock required.
                 memcpy(&vec.val, &(<VecBase>first).val, sizeof(vec_t))
                 with cython.critical_section(second):
-                    vec_rot(&vec.val, (<MatrixBase>second).mat)
+                    _vec_rot(&vec.val, (<MatrixBase>second).mat)
                 return vec
             elif isinstance(first, tuple):
                 vec = Vec.__new__(Vec)
                 vec.val.x, vec.val.y, vec.val.z = <tuple>first
                 with cython.critical_section(second):
-                    vec_rot(&vec.val, (<MatrixBase>second).mat)
+                    _vec_rot(&vec.val, (<MatrixBase>second).mat)
                 return vec
             elif isinstance(first, Angle):
                 ang = Angle.__new__(Angle)
                 with cython.critical_section(first):
                     _mat_from_angle(temp, &(<AngleBase>first).val)
                 with cython.critical_section(second):
-                    mat_mul(temp, (<MatrixBase>second).mat)
+                    _mat_mul(temp, (<MatrixBase>second).mat)
                 _mat_to_angle(&ang.val, temp)
                 return ang
             elif isinstance(first, FrozenAngle):
                 ang = FrozenAngle.__new__(FrozenAngle)
                 _mat_from_angle(temp, &(<AngleBase>first).val)
                 with cython.critical_section(second):
-                    mat_mul(temp, (<MatrixBase>second).mat)
+                    _mat_mul(temp, (<MatrixBase>second).mat)
                 _mat_to_angle(&ang.val, temp)
                 return ang
             else:
@@ -3012,7 +3016,7 @@ cdef class Matrix(MatrixBase):
         else:
             return NotImplemented
         with cython.critical_section(self):
-            mat_mul(self.mat, temp)
+            _mat_mul(self.mat, temp)
         return self
 
 
@@ -3303,10 +3307,10 @@ cdef class AngleBase:
             if angle_check(second):
                 with cython.critical_section(second):
                     _mat_from_angle(temp2, &(<AngleBase>second).val)
-                mat_mul(temp1, temp2)
+                _mat_mul(temp1, temp2)
             elif mat_check(second):
                 with cython.critical_section(second):
-                    mat_mul(temp1, (<MatrixBase>second).mat)
+                    _mat_mul(temp1, (<MatrixBase>second).mat)
             else:
                 return NotImplemented
             res = pick_ang_type(type(first), type(second))
@@ -3318,7 +3322,7 @@ cdef class AngleBase:
             if isinstance(first, tuple):
                 res = Vec.__new__(Vec)
                 (<Vec>res).val.x, (<Vec>res).val.y, (<Vec>res).val.z = <tuple>first
-                vec_rot(&(<Vec>res).val, temp2)
+                _vec_rot(&(<Vec>res).val, temp2)
                 return res
             # These classes should do this themselves, but this is here for
             # completeness.
@@ -3326,23 +3330,23 @@ cdef class AngleBase:
                 res = Matrix.__new__(Matrix)
                 with cython.critical_section(first):
                     memcpy((<Matrix>res).mat, (<Matrix>first).mat, sizeof(mat_t))
-                mat_mul((<Matrix>res).mat, temp2)
+                _mat_mul((<Matrix>res).mat, temp2)
                 return res
             if isinstance(first, FrozenMatrix):
                 res = FrozenMatrix.__new__(FrozenMatrix)
                 memcpy((<FrozenMatrix>res).mat, (<FrozenMatrix>first).mat, sizeof(mat_t))
-                mat_mul((<FrozenMatrix>res).mat, temp2)
+                _mat_mul((<FrozenMatrix>res).mat, temp2)
                 return res
             elif isinstance(first, Vec):
                 res = Vec.__new__(Vec)
                 with cython.critical_section(first):
                     memcpy(&(<Vec>res).val, &(<Vec>first).val, sizeof(vec_t))
-                vec_rot(&(<Vec>res).val, temp2)
+                _vec_rot(&(<Vec>res).val, temp2)
                 return res
             elif isinstance(first, FrozenVec):
                 res = FrozenVec.__new__(FrozenVec)
                 memcpy(&(<FrozenVec>res).val, &(<FrozenVec>first).val, sizeof(vec_t))
-                vec_rot(&(<FrozenVec>res).val, temp2)
+                _vec_rot(&(<FrozenVec>res).val, temp2)
                 return res
 
         return NotImplemented
@@ -3614,7 +3618,7 @@ cdef class Angle(AngleBase):
             return NotImplemented
         with cython.critical_section(self):
             _mat_from_angle(mat_self, &(<Angle>self).val)
-            mat_mul(mat_self, temp2)
+            _mat_mul(mat_self, temp2)
             _mat_to_angle(&self.val, mat_self)
         return self
 
@@ -3664,10 +3668,13 @@ from cpython.object cimport PyTypeObject
 
 
 if USE_TYPE_INTERNALS:
+    (<PyTypeObject *>VecBase).tp_name = b"srctools.math.VecBase"
     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
     (<PyTypeObject *>FrozenVec).tp_name = b"srctools.math.FrozenVec"
+    (<PyTypeObject *>AngleBase).tp_name = b"srctools.math.AngleBase"
     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"
     (<PyTypeObject *>FrozenAngle).tp_name = b"srctools.math.FrozenAngle"
+    (<PyTypeObject *>MatrixBase).tp_name = b"srctools.math.MatrixBase"
     (<PyTypeObject *>Matrix).tp_name = b"srctools.math.Matrix"
     (<PyTypeObject *>FrozenMatrix).tp_name = b"srctools.math.FrozenMatrix"
     (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_or_Angle_iterator"
