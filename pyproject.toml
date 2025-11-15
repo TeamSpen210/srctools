@@ -2,7 +2,7 @@
 requires = [
 	"meson >= 1.8.0",
 	"meson-python == 0.18.0",
-	"cython >= 3.1.0",
+	"cython >= 3.2.0",
 	]
 build-backend = "mesonpy"
 
@@ -120,6 +120,15 @@ enable_error_code = [
 	'unimported-reveal',
 	'unreachable',
 	'unused-awaitable',
+]
+
+[tool.pyrefly]
+project-includes = [
+	"src/", "type_tests/",
+]
+project-excludes = [
+	"**/node_modules", "**/__pycache__", "**/*venv/**", "**/.[!/.]*/**",  # Defaults
+	"src/pythoncapi-compat",
 ]
 
 [tool.isort]

@@ -447,7 +447,7 @@ cdef class Tokenizer(BaseTokenizer):
         bint plus_operator: bool = False,
     ):
         # Early warning for this particular error.
-        if isinstance(data, bytes) or isinstance(data, bytearray):
+        if isinstance(data, bytes | bytearray):
             raise TypeError(
                 'Cannot parse binary data! Decode to the desired encoding, '
                 'or wrap in io.TextIOWrapper() to decode gradually.'

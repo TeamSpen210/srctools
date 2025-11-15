@@ -375,16 +375,16 @@ cdef object vector_compare(VecBase self, object other_obj, int op):
     except (TypeError, ValueError):
         return NotImplemented
 
-    # 'redundant' == True prevents the individual comparisons from trying
-    # to convert the result individually on failure.
+    # 'redundant' conditional expression prevents the individual
+    # comparisons from trying to convert the result individually on failure.
     # Use subtraction so that values within TOL are accepted.
     with cython.critical_section(self):
         if op == Py_EQ:
-            return (
+            return True if (
                 abs(self.val.x - other.x) <= TOL and
                 abs(self.val.y - other.y) <= TOL and
                 abs(self.val.z - other.z) <= TOL
-            ) == True
+            ) else False
         elif op == Py_NE:
             return (
                 abs(self.val.x - other.x) > TOL or
@@ -392,29 +392,29 @@ cdef object vector_compare(VecBase self, object other_obj, int op):
                 abs(self.val.z - other.z) > TOL
             ) == True
         elif op == Py_LT:
-            return (
+            return True if (
                 (other.x - self.val.x) > TOL and
                 (other.y - self.val.y) > TOL and
                 (other.z - self.val.z) > TOL
-            ) == True
+            ) else False
         elif op == Py_GT:
-            return (
+            return True if (
                 (self.val.x - other.x) > TOL and
                 (self.val.y - other.y) > TOL and
                 (self.val.z - other.z) > TOL
-            ) == True
+            ) else False
         elif op == Py_LE:  # !GT
-            return (
+            return True if (
                 (self.val.x - other.x) <= TOL and
                 (self.val.y - other.y) <= TOL and
                 (self.val.z - other.z) <= TOL
-            ) == True
+            ) else False
         elif op == Py_GE: # !LT
-            return (
+            return True if (
                 (other.x - self.val.x) <= TOL and
                 (other.y - self.val.y) <= TOL and
                 (other.z - self.val.z) <= TOL
-            ) == True
+            ) else False
         else:
             raise SystemError('Unknown operation', op)
 
@@ -501,7 +501,7 @@ cdef inline bint conv_vec(
             result.x = (<VecBase>vec).val.x
             result.y = (<VecBase>vec).val.y
             result.z = (<VecBase>vec).val.z
-    elif isinstance(vec, float) or isinstance(vec, int):
+    elif isinstance(vec, float | int):
         if scalar:
             result.x = result.y = result.z = vec
         else:
@@ -529,7 +529,7 @@ cdef inline bint conv_angles(vec_t *result, object ang) except False:
             result.x = (<AngleBase>ang).val.x
             result.y = (<AngleBase>ang).val.y
             result.z = (<AngleBase>ang).val.z
-    elif isinstance(ang, float) or isinstance(ang, int):
+    elif isinstance(ang, float | int):
         raise TypeError('Cannot convert scalars to an Angle!')
     elif isinstance(ang, tuple):
         x, y, z = <tuple>ang
@@ -1088,7 +1088,7 @@ cdef class VecBase:
         if type(self) is VecBase:
             raise TypeError('This class cannot be instantiated!')
 
-        if isinstance(x, float) or isinstance(x, int):
+        if isinstance(x, float | int):
             self.val.x = x
             self.val.y = y
             self.val.z = z
@@ -1633,7 +1633,7 @@ cdef class VecBase:
         cdef VecBase vec
         cdef double scalar
         # Vector * Vector is disallowed.
-        if isinstance(obj_a, (int, float)):
+        if isinstance(obj_a, int | float):
             # scalar * vector
             if type(obj_b) is Vec:
                 vec = Vec.__new__(Vec)
@@ -1646,7 +1646,7 @@ cdef class VecBase:
             vec.val.x = scalar * vec.val.x
             vec.val.y = scalar * vec.val.y
             vec.val.z = scalar * vec.val.z
-        elif isinstance(obj_b, (int, float)):
+        elif isinstance(obj_b, int | float):
             # vector * scalar.
             if type(obj_a) is Vec:
                 vec = Vec.__new__(Vec)
@@ -1673,7 +1673,7 @@ cdef class VecBase:
         cdef VecBase vec
         cdef double scalar
         # Vector / Vector is disallowed.
-        if isinstance(obj_a, (int, float)):
+        if isinstance(obj_a, int | float):
             # scalar / vector
             if type(obj_b) is Vec:
                 vec = Vec.__new__(Vec)
@@ -1686,7 +1686,7 @@ cdef class VecBase:
             vec.val.x = scalar / vec.val.x
             vec.val.y = scalar / vec.val.y
             vec.val.z = scalar / vec.val.z
-        elif isinstance(obj_b, (int, float)):
+        elif isinstance(obj_b, int | float):
             # vector / scalar.
             if type(obj_a) is Vec:
                 vec = Vec.__new__(Vec)
@@ -1712,7 +1712,7 @@ cdef class VecBase:
         cdef VecBase vec
         cdef double scalar
         # Vector // Vector is disallowed.
-        if isinstance(obj_a, (int, float)):
+        if isinstance(obj_a, int | float):
             # scalar // vector
             if type(obj_b) is Vec:
                 vec = Vec.__new__(Vec)
@@ -1725,7 +1725,7 @@ cdef class VecBase:
             vec.val.x = scalar // vec.val.x
             vec.val.y = scalar // vec.val.y
             vec.val.z = scalar // vec.val.z
-        elif isinstance(obj_b, (int, float)):
+        elif isinstance(obj_b, int | float):
             # vector // scalar.
             if type(obj_a) is Vec:
                 vec = Vec.__new__(Vec)
@@ -1751,7 +1751,7 @@ cdef class VecBase:
         cdef VecBase vec
         cdef double scalar
         # Vector % Vector is disallowed.
-        if isinstance(obj_a, (int, float)):
+        if isinstance(obj_a, int | float):
             # scalar % vector
             if type(obj_b) is Vec:
                 vec = Vec.__new__(Vec)
@@ -1765,7 +1765,7 @@ cdef class VecBase:
             vec.val.y = scalar % vec.val.y
             vec.val.z = scalar % vec.val.z
             return vec
-        elif isinstance(obj_b, (int, float)):
+        elif isinstance(obj_b, int | float):
             # vector % scalar.
             if type(obj_a) is Vec:
                 vec = Vec.__new__(Vec)
@@ -2422,7 +2422,7 @@ cdef class Vec(VecBase):
         Like the normal one except without duplication.
         """
         cdef double scalar
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             scalar = other
             with cython.critical_section(self):
                 self.val.x *= scalar
@@ -2440,7 +2440,7 @@ cdef class Vec(VecBase):
         Like the normal one except without duplication.
         """
         cdef double scalar
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             scalar = other
             with cython.critical_section(self):
                 self.val.x /= scalar
@@ -2458,7 +2458,7 @@ cdef class Vec(VecBase):
         Like the normal one except without duplication.
         """
         cdef double scalar
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             scalar = other
             with cython.critical_section(self):
                 self.val.x //= scalar
@@ -2476,7 +2476,7 @@ cdef class Vec(VecBase):
         Like the normal one except without duplication.
         """
         cdef double scalar
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             scalar = other
             with cython.critical_section(self):
                 self.val.x %= scalar
@@ -3040,7 +3040,7 @@ cdef class AngleBase:
         if type(self) is AngleBase:
             raise TypeError('This class cannot be instantiated!')
 
-        if isinstance(pitch, float) or isinstance(pitch, int):
+        if isinstance(pitch, int | float):
             self.val.x = norm_ang(pitch)
             self.val.y = norm_ang(yaw)
             self.val.z = norm_ang(roll)
@@ -3261,7 +3261,7 @@ cdef class AngleBase:
         cdef vec_t angle
         cdef AngleBase res
         # Angle * Angle is disallowed.
-        if isinstance(obj_a, (int, float)):
+        if isinstance(obj_a, int | float):
             # scalar * vector
             if type(obj_b) is Angle:
                 res = Angle.__new__(Angle)
@@ -3275,7 +3275,7 @@ cdef class AngleBase:
             res.val.x = norm_ang(scalar * angle.x)
             res.val.y = norm_ang(scalar * angle.y)
             res.val.z = norm_ang(scalar * angle.z)
-        elif isinstance(obj_b, (int, float)):
+        elif isinstance(obj_b, int | float):
             # vector * scalar.
             if type(obj_a) is Angle:
                 res = Angle.__new__(Angle)
@@ -3596,7 +3596,7 @@ cdef class Angle(AngleBase):
         Like the normal one except without duplication.
         """
         cdef double scalar
-        if isinstance(other, (int, float)):
+        if isinstance(other, int | float):
             scalar = other
             with cython.critical_section(self):
                 self.val.x = norm_ang(self.val.x * scalar)
