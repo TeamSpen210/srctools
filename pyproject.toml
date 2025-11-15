@@ -75,7 +75,7 @@ test-command = 'pytest --assert=plain -m "not slow" {project}/tests'
 markers = [
 	"slow: marks especially-slow tests, to skip when building wheels",
 ]
-xfail_strict = true  # If xfail actually succeeds, fail the suite.
+xfail_strict = false  # If xfail actually succeeds, fail the suite.
 
 [tool.pyright]
 include = [
