@@ -13,6 +13,7 @@ Version (dev)
 * Fix incorrect parsing of the deprecated ``bbox()`` FGD helper.
 * Add support for saving/loading VTF hotspot data.
 * Don't backslash-escape single quote characters.
+* Consult the various app IDs when looking for folders for searchpaths.
 
 -------------
 Version 2.6.1

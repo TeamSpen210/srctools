@@ -1,5 +1,6 @@
 """Reads the GameInfo file to determine where Source game data is stored."""
 from typing import Final, Optional, Union
+from collections.abc import Sequence, Iterable
 from pathlib import Path
 import itertools
 import os
@@ -9,11 +10,13 @@ import sys
 from srctools.filesys import FileSystemChain, RawFileSystem, VPKFileSystem
 from srctools.keyvalues import Keyvalues
 from srctools.steam import find_app
+from srctools.logger import get_logger
 
 
 __all__ = ['GINFO', 'Game', 'find_gameinfo']
 GINFO: Final = 'gameinfo.txt'
 MOUNTSKV: Final = 'cfg/mounts.kv'
+LOGGER = get_logger(__name__)
 
 
 class Game:
@@ -59,24 +62,49 @@ class Game:
         self.strata_mounts = list(gameinfo.find_children("mount"))
 
         # Note: the behaviour of Source can be examined via the "path" command.
+        # TODO: This should be moved into get_filesystem(), check for folders as FSes are made.
+
+        # First, if app IDs were provided, locate those game dirs to check, if the folder isn't
+        # found at the specified game. This probably isn't quite correct, but close enough.
+        roots = [self.root]
+        for root_name, app_id in zip(
+            ('app', 'tools', 'additional content'),
+            [self.app_id, self.tools_id, self.additional_content]
+        ):
+            if app_id is not None:
+                try:
+                    app_id_int = int(app_id)
+                except (TypeError, ValueError):
+                    LOGGER.warning('Invalid {} ID {}', root_name, app_id)
+                    continue
+                try:
+                    roots.append(find_app(app_id_int).path)
+                except KeyError:
+                    LOGGER.warning('Cannot find {} ID {}', root_name, app_id)
         for search_path in fsystems.find_children('SearchPaths'):
-            exp_path = self.parse_search_path(search_path)
+            exp_path = self.parse_search_path(search_path, roots)
+            LOGGER.debug(
+                'Expanded search path {} =\n"{}" ->\n"{}"',
+                search_path.real_name, search_path.value, exp_path,
+            )
             # Expand /* if at the end of paths.
+            subpaths: Iterable[Path]
             if exp_path.name == '*':
                 try:
-                    self.search_paths.extend(
-                        filter(Path.is_dir, exp_path.parent.iterdir())
-                    )
+                    subpaths = exp_path.parent.iterdir()
                 except FileNotFoundError:
-                    pass
+                    continue
             # Handle folder_* too.
             elif exp_path.name.endswith('*'):
                 exp_path = exp_path.with_name(exp_path.name[:-1])
-                self.search_paths.extend(
-                    filter(Path.is_dir, exp_path.glob(exp_path.name))
-                )
+                subpaths = exp_path.glob(exp_path.name)
             else:
                 self.search_paths.append(exp_path)
+                continue
+            for subpath in subpaths:
+                # Skip _000.vpk.
+                if subpath.is_dir() or (subpath.suffix.casefold() == '.vpk' and not subpath.stem[-3:].isdigit()):
+                    self.search_paths.append(subpath)
 
         # Add DLC folders based on the first/bin folder.
         try:
@@ -183,17 +211,12 @@ class Game:
 
         return parsed_mounts_heads, parsed_mounts
 
-    def parse_search_path(self, prop: Keyvalues) -> Path:
+    def parse_search_path(self, prop: Keyvalues, roots: Sequence[Path]=()) -> Path:
         """Evaluate options like :code:`|gameinfo_path|`."""
         token = prop.value.casefold()
         if token.startswith('|gameinfo_path|'):
-            return (self.path / prop.value.removeprefix('|gameinfo_path|')).absolute()
-
-        # We should have to figure out which of the possible paths this is.
-        # But, the game (public/filesystem_init.cpp) doesn't actually, it
-        # assumes Steam has included the needed VPKs.
-        if token.startswith('|all_source_engine_paths|'):
-            return (self.root / prop.value.removeprefix('|all_source_engine_paths|')).absolute()
+            # Always relative to the gameinfo path.
+            return (self.path / prop.value.removeprefix('|gameinfo_path|')).resolve()
 
         # New 2013MP feature, mounts from another game directly.
         if match := re.match(r'\|appid_([0-9]+)\|', token):
@@ -202,9 +225,19 @@ class Game:
             except (TypeError, ValueError):
                 raise ValueError(f'Invalid App ID {match.group(1)} in "{prop.value}"!') from None
             app = find_app(appid)
-            return (app.path / prop.value[match.end():]).absolute()
+            return (app.path / prop.value[match.end():]).resolve()
 
-        return (self.root / prop.value).absolute()
+        # This token isn't very useful, we need to lookup locations even if it's not present.
+        relative = prop.value.removeprefix('|all_source_engine_paths|')
+        for root in roots:
+            path = root / relative
+            if path.exists():
+                return path.resolve()
+            elif path.suffix.casefold() == '.vpk' and not path.name.casefold().endswith('_dir.vpk'):
+                path = path.with_name(path.stem + '_dir.vpk')
+                if path.is_file():
+                    return path.resolve()
+        return (self.root / relative).resolve()
 
     def get_filesystem(self) -> FileSystemChain:
         """Build a chained filesystem from the search paths."""
@@ -235,11 +268,14 @@ class Game:
 
             if not path.suffix:
                 path = path.with_suffix('.vpk')
-            if not path.name.endswith('_dir.vpk'):
-                path = path.with_name(path.name[:-4] + '_dir.vpk')
-
-            if path.is_file() and path.suffix == '.vpk':
+            if path.suffix.casefold() != '.vpk':
+                continue
+            if path.is_file():
                 vpks.append(path)
+            if not path.name.casefold().endswith('_dir.vpk'):
+                path = path.with_name(path.stem + '_dir.vpk')
+                if path.is_file():
+                    vpks.append(path)
 
         for path in vpks:
             fsys.add_sys(VPKFileSystem(path))
