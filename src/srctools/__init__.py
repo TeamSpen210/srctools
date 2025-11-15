@@ -99,9 +99,9 @@ def blacklist(
 
 def escape_quote_split(line: str) -> list[str]:
     """Split quote values on a line, handling \\" correctly."""
-    out_strings = []
+    out_strings: list[str] = []
     was_backslash = False  # Last character was a backslash
-    cur_part = []  # The current chunk of text
+    cur_part: list[str] = []  # The current chunk of text
 
     for char in line:
         if char == '\\':
@@ -234,29 +234,29 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     """
     __slots__ = ()
 
-    def __call__(self) -> '_EmptyMapping':
+    def __call__(self, /) -> '_EmptyMapping':
         # Just in case someone tries to instantiate this
         return self
 
-    def __repr__(self) -> str:
+    def __repr__(self, /) -> str:
         return "srctools.EmptyMapping"
 
-    def __reduce__(self) -> str:
+    def __reduce__(self, /) -> str:
         return 'EmptyMapping'
 
-    def __getitem__(self, key: Any) -> Any:
+    def __getitem__(self, key: Any, /) -> Any:
         """All key acesses fail."""
         raise KeyError(key)
 
-    def __setitem__(self, key: Any, value: Any) -> None:
+    def __setitem__(self, key: Any, value: Any, /) -> None:
         """All key setting suceeds."""
         pass
 
-    def __delitem__(self, key: Any) -> None:
+    def __delitem__(self, key: Any, /) -> None:
         """All key deletions fail."""
         raise KeyError(key)
 
-    def __contains__(self, key: Any) -> bool:
+    def __contains__(self, key: Any, /) -> bool:
         """EmptyMapping does not have any keys."""
         return False
 
@@ -264,43 +264,43 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     def get(self, key: Any, /) -> None: ...
     @overload  # Stricter than Mapping.get() - that allows default=ValueT=Any, but we always return the default.
     def get(self, key: Any, /, default: ValT) -> ValT: ...
-    def get(self, key: Any, default: Optional[ValT] = None) -> Optional[ValT]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get(self, key: Any, /, default: Optional[ValT] = None) -> Optional[ValT]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """get() always returns the default item."""
         return default
 
-    def __bool__(self) -> bool:
+    def __bool__(self, /) -> bool:
         """EmptyMapping is falsey."""
         return False
 
-    def __len__(self) -> int:
+    def __len__(self, /) -> int:
         """EmptyMapping is 0 long."""
         return 0
 
-    def __iter__(self) -> Iterator[Any]:
+    def __iter__(self, /) -> Iterator[Any]:
         """Iteration yields no values."""
         return iter(())
 
-    def keys(self) -> KeysView[Any]:
+    def keys(self, /) -> KeysView[Any]:
         """Return an empty keys() view singleton."""
         return EmptyKeysView
 
-    def items(self) -> ItemsView[Any, Any]:
+    def items(self, /) -> ItemsView[Any, Any]:
         """Return an empty items() view singleton."""
         return EmptyItemsView
 
-    def values(self) -> ValuesView[Any]:
+    def values(self, /) -> ValuesView[Any]:
         """Return an empty values() view singleton."""
         return EmptyValuesView
 
     # Mutable functions
 
     @overload  # type: ignore[override]
-    def setdefault(self, key: Any) -> None: ...
+    def setdefault(self, key: Any, /) -> None: ...
     # This is stricter than Mapping[Any, Any]. That returns Any, we always return the default.
     @overload
-    def setdefault(self, key: Any, default: ValT) -> ValT: ...
+    def setdefault(self, key: Any, /, default: ValT) -> ValT: ...
 
-    def setdefault(self, key: Any, default: Optional[ValT] = None) -> Optional[ValT]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def setdefault(self, key: Any, /, default: Optional[ValT] = None) -> Optional[ValT]:  # pyright: ignore[reportIncompatibleMethodOverride]
         """setdefault() always returns the default item, but does not store it."""
         return default
 
@@ -309,9 +309,9 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     @overload
     def update(self, m: Iterable[tuple[Any, Any]], /, **kwargs: Any) -> None: ...
     @overload
-    def update(self, **kwargs: Any) -> None: ...
+    def update(self, /, **kwargs: Any) -> None: ...
 
-    def update(self, *args: Any, **kargs: Any) -> None:  # type: ignore  # Mypy bug?
+    def update(self, /, *args: Any, **kargs: Any) -> None:
         """Runs {}.update() on arguments."""
         # Check arguments are correct, and raise appropriately.
         # Also consume args[0] if an iterator - this raises if args > 1.
@@ -325,13 +325,13 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     @overload
     def pop(self, key: Any, /, default: ValT) -> ValT: ...
 
-    def pop(self, key: Any, default: ValT = __marker) -> ValT:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def pop(self, key: Any, /, default: ValT = __marker) -> ValT:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Returns the default value, or raises KeyError if not present."""
         if default is self.__marker:
             raise KeyError(key)
         return default
 
-    def popitem(self) -> NoReturn:
+    def popitem(self, /) -> NoReturn:
         """Popitem() raises, since no items are in EmptyMapping."""
         raise KeyError('EmptyMapping is empty')
 
@@ -340,7 +340,7 @@ class _EmptySetView(AbstractSet[Any]):
     """Common code between EmptyKeysView and EmptyItemsView."""
     __slots__ = ()
 
-    def __len__(self) -> int:
+    def __len__(self, /) -> int:
         """This contains no keys/items."""
         return 0
 
@@ -348,7 +348,7 @@ class _EmptySetView(AbstractSet[Any]):
         """All keys/items are not present."""
         return False
 
-    def __iter__(self) -> Iterator[Any]:
+    def __iter__(self, /) -> Iterator[Any]:
         """Iteration produces no values."""
         return iter(())
 
@@ -405,10 +405,10 @@ class _EmptyKeysView(_EmptySetView, KeysView[Any]):
     """A Mapping view implementation that always acts empty, and supports set operations."""
     __slots__ = ()
 
-    def __repr__(self) -> str:
+    def __repr__(self, /) -> str:
         return 'srctools.EmptyKeysView'
 
-    def __reduce__(self) -> str:
+    def __reduce__(self, /) -> str:
         return 'EmptyKeysView'
 
 
@@ -416,10 +416,10 @@ class _EmptyItemsView(_EmptySetView, ItemsView[Any, Any]):
     """A Mapping view implementation that always acts empty, and supports set operations."""
     __slots__ = ()
 
-    def __repr__(self) -> str:
+    def __repr__(self, /) -> str:
         return 'srctools.EmptyItemsView'
 
-    def __reduce__(self) -> str:
+    def __reduce__(self, /) -> str:
         return 'EmptyItemsView'
 
 
@@ -427,21 +427,21 @@ class _EmptyValuesView(ValuesView[Any]):
     """A Mapping.values() implementation that always acts empty. This is not a set."""
     __slots__ = ()
 
-    def __repr__(self) -> str:
+    def __repr__(self, /) -> str:
         return 'srctools.EmptyValuesView'
 
-    def __reduce__(self) -> str:
+    def __reduce__(self, /) -> str:
         return 'EmptyValuesView'
 
     def __contains__(self, key: Any) -> bool:
         """All values are not present."""
         return False
 
-    def __len__(self) -> int:
+    def __len__(self, /) -> int:
         """This contains no values."""
         return 0
 
-    def __iter__(self) -> Iterator[Any]:
+    def __iter__(self, /) -> Iterator[Any]:
         """Iteration produces no values."""
         return iter(())
 
