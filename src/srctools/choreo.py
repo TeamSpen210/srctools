@@ -236,12 +236,6 @@ NAME_TO_EVENT_TYPE = {
     event.name.casefold(): event
     for event in EventType
 }
-# Match to the index in our list for easier parsing.
-PARAM_KEY_INDEXES = {
-    'param': 0,
-    'param2': 1,
-    'param3': 2,
-}
 NAME_TO_CAPTION_TYPE = {
     'cc_master': CaptionType.Master,
     'cc_slave': CaptionType.Slave,
@@ -812,7 +806,7 @@ class Event:
             ) from None
 
         flags = EventFlags.Active
-        params = ['', '', '']
+        param_1 = param_2 = param_3 = ''
         start_time = 0.0
         end_time = -1.0
 
@@ -852,8 +846,12 @@ class Event:
                         'Invalid duration values {} {}',
                         start_str, end_str,
                     ) from exc
-            elif folded in PARAM_KEY_INDEXES:
-                params[PARAM_KEY_INDEXES[folded]] = tokenizer.expect(Token.STRING, skip_newline=False)
+            elif folded == 'param':
+                param_1 = tokenizer.expect(Token.STRING, skip_newline=False)
+            elif folded == 'param2':
+                param_2 = tokenizer.expect(Token.STRING, skip_newline=False)
+            elif folded == 'param3':
+                param_3 = tokenizer.expect(Token.STRING, skip_newline=False)
             elif folded in NAME_TO_EVENT_FLAG:
                 flags |= NAME_TO_EVENT_FLAG[folded]
             elif folded == "active":
@@ -914,8 +912,7 @@ class Event:
             else:
                 raise tokenizer.error('Unknown event keyvalue "{}"!', key_name)
 
-        param_tup = tuple(params)
-        assert len(param_tup) == 3
+        params = (param_1, param_2, param_3)
 
         # Pick the appropriate type.
         if event_type is EventType.Gesture:
@@ -923,7 +920,7 @@ class Event:
                 name=name,
                 start_time=start_time,
                 end_time=end_time,
-                parameters=param_tup,
+                parameters=params,
                 ramp=ramp,
                 flags=EventFlags(flags),
                 default_curve_type=default_curve_type,
@@ -945,7 +942,7 @@ class Event:
                 name=name,
                 start_time=start_time,
                 end_time=end_time,
-                parameters=param_tup,
+                parameters=params,
                 ramp=ramp,
                 default_curve_type=default_curve_type,
                 flags=EventFlags(flags),
@@ -967,7 +964,7 @@ class Event:
                 name=name,
                 start_time=start_time,
                 end_time=end_time,
-                parameters=param_tup,
+                parameters=params,
                 ramp=ramp,
                 default_curve_type=default_curve_type,
                 flags=EventFlags(flags),
@@ -994,7 +991,7 @@ class Event:
                 name=name,
                 start_time=start_time,
                 end_time=end_time,
-                parameters=param_tup,
+                parameters=params,
                 ramp=ramp,
                 default_curve_type=default_curve_type,
                 flags=EventFlags(flags),
