@@ -112,6 +112,9 @@ class File(Generic[FileSysT_co]):
         self.path = path
         self._data = data
 
+    def __repr__(self) -> str:
+        return f'<File {self.path!r} of {self.sys!r}>'
+
     def __fspath__(self) -> str:
         """This can be interpreted as a path."""
         return self.path
