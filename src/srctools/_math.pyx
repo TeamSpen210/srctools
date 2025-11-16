@@ -606,9 +606,9 @@ cdef inline void _vec_rot(vec_t *vec, mat_t mat) noexcept nogil:
 
 cdef inline void _vec_cross(vec_t *res, vec_t *a, vec_t *b) noexcept nogil:
     """Compute the cross product of A x B. """
-    res.x = a.y * b.z - a.z * b.y
-    res.y = a.z * b.x - a.x * b.z
-    res.z = a.x * b.y - a.y * b.x
+    res.x = <long double>(a.y * b.z) - <long double>(a.z * b.y)
+    res.y = <long double>(a.z * b.x) - <long double>(a.x * b.z)
+    res.z = <long double>(a.x * b.y) - <long double>(a.y * b.x)
 
 
 cdef void _mat_from_angle(mat_t res, vec_t *angle) noexcept nogil:

@@ -728,7 +728,7 @@ def test_vec_to_vec(frozen_thawed_vec: VecClass) -> None:
             vec_tup_1 = Vec_tuple(x1, y1, z1)  # noqa
             vec_tup_2 = Vec_tuple(x2, y2, z2)  # noqa
 
-        # These are direct methods, so no inheritence and iop to deal with.
+        # These are direct methods, so no inheritance and iop to deal with.
 
         # Commutative
         assert vec1.dot(vec2) == pytest.approx(x1*x2 + y1*y2 + z1*z2)
@@ -743,7 +743,6 @@ def test_vec_to_vec(frozen_thawed_vec: VecClass) -> None:
         # Ensure they haven't modified the originals
         assert_vec(vec1, x1, y1, z1, type=Vec)
         assert_vec(vec2, x2, y2, z2, type=Vec)
-
 
         # Addition and subtraction
         for op_name, op_func, op_ifunc in operators:
