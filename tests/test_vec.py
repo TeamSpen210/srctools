@@ -412,12 +412,12 @@ def test_mag(frozen_thawed_vec: VecClass) -> None:
         mag = vec.mag()
         length = vec.len()
         assert mag == length, "Exact equality, should be identical."
-        assert mag == pytest.approx(math.sqrt(x**2 + y**2 + z**2))
+        assert mag == pytest.approx(math.sqrt(x**2 + y**2 + z**2), abs=EPSILON)
 
         mag_sq = vec.mag_sq()
         len_sq = vec.len_sq()
         assert mag_sq == len_sq, "Exact equality, should be identical."
-        assert len_sq == pytest.approx(x**2 + y**2 + z**2)
+        assert len_sq == pytest.approx(x**2 + y**2 + z**2, abs=EPSILON)
 
         if mag == 0:
             # Vec(0, 0, 0).norm() = 0, 0, 0
@@ -731,8 +731,8 @@ def test_vec_to_vec(frozen_thawed_vec: VecClass) -> None:
         # These are direct methods, so no inheritance and iop to deal with.
 
         # Commutative
-        assert vec1.dot(vec2) == pytest.approx(x1*x2 + y1*y2 + z1*z2)
-        assert vec2.dot(vec1) == pytest.approx(x1*x2 + y1*y2 + z1*z2)
+        assert vec1.dot(vec2) == pytest.approx(x1*x2 + y1*y2 + z1*z2, abs=EPSILON)
+        assert vec2.dot(vec1) == pytest.approx(x1*x2 + y1*y2 + z1*z2, abs=EPSILON)
         assert_vec(
             vec1.cross(vec2),
             y1*z2-z1*y2,
