@@ -1187,7 +1187,7 @@ def test_hash(py_c_vec: PyCVec) -> None:
 
     for x, y, z in iter_vec(VALID_NUMS):
         # Must match tuples.
-        assert hash(FrozenVec(x, y, z)) == hash((x, y, z))
+        assert hash(FrozenVec(x, y, z)) == hash((round(x, 6), round(y, 6), round(z, 6)))
     test_dict = {
         FrozenVec(4.0, 5.8, 9.6): 'a',
         (12.8, -2.3, 12.0): 'b',

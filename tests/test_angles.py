@@ -9,15 +9,6 @@ import pytest
 from helpers import *
 
 
-VALID_NUMS = [
-    # Make sure we use double-precision with the precise small value.
-    30, 1.5, 0.2827, 282.34645456362782677821,
-]
-VALID_NUMS += [-x for x in VALID_NUMS]
-
-VALID_ZERONUMS = [*VALID_NUMS, 0, -0]
-
-
 def test_construction(frozen_thawed_angle: AngleClass) -> None:
     """Check the Angle() and FrozenAngle() constructors."""
     Angle = frozen_thawed_angle
