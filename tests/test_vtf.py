@@ -1,4 +1,5 @@
 """Test the VTF library."""
+from pytest_datadir.plugin import LazyDataDir
 from typing import Literal
 
 from collections.abc import Generator
@@ -151,14 +152,14 @@ def test_ppm_convert(
 def test_load(
     cy_py_format_funcs: str,
     fmt: ImageFormats,
-    datadir: Path,
+    lazy_datadir: LazyDataDir,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test loading the specified format.
 
     These samples were created using VTFEdit Reloaded.
     """
-    with open(datadir / f"sample_{fmt.name.lower()}.vtf", "rb") as f:
+    with open(lazy_datadir / f"sample_{fmt.name.lower()}.vtf", "rb") as f:
         vtf = VTF.read(f)
         assert vtf.format is fmt
         vtf.load()
@@ -179,10 +180,10 @@ def test_load(
 @pytest.mark.parametrize("fmt", FORMATS, ids=lambda fmt: fmt.name.lower())
 def test_load_header_only(
     fmt: ImageFormats,
-    datadir: Path,
+    lazy_datadir: LazyDataDir,
 ) -> None:
     """Test loading only the header."""
-    with open(datadir / f"sample_{fmt.name.lower()}.vtf", "rb") as f:
+    with open(lazy_datadir / f"sample_{fmt.name.lower()}.vtf", "rb") as f:
         vtf = VTF.read(f, header_only=True)
         assert vtf.format is fmt
     # Check loading doesn't need the stream, it's not using them.
@@ -240,7 +241,7 @@ def test_load_bad_size(
 
 
 def test_res_hotspot(
-    datadir: Path,
+    lazy_datadir: LazyDataDir,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test saving and loading hotspot resources.
@@ -250,7 +251,7 @@ def test_res_hotspot(
     --hotspot-rect 0 0 96 256 NONE --hotspot-rect  0 24 128 512 RANDOM_REFLECTION
     --hotspot-rect  48 56 128 512 RANDOM_ROTATION  --hotspot-rect 0 0 96 512 IS_ALTERNATE
     """
-    with open(datadir / "hotspot.vtf", "rb") as f:
+    with open(lazy_datadir / "hotspot.vtf", "rb") as f:
         vtf = VTF.read(f)
         vtf.load()
     assert vtf.hotspot_flags == 0
@@ -265,6 +266,6 @@ def test_res_hotspot(
     vtf.save(buf)
     file_regression.check(buf.getvalue(), binary=True, extension=".vtf")
 
-    with open(datadir / "test_res_hotspot.vtf", "rb") as f:
-        round = VTF.read(f)
-        round.load()
+    with open(lazy_datadir / "test_res_hotspot.vtf", "rb") as f:
+        roundtrip = VTF.read(f)
+        roundtrip.load()

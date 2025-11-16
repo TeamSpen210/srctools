@@ -1,13 +1,13 @@
 """Test particle system parsing."""
-from pathlib import Path
+from pytest_datadir.plugin import LazyDataDir
 
 from srctools.dmx import Attribute, Element
 from srctools.particles import FORMAT_NAME, Operator, Particle
 
 
-def test_parsing(datadir: Path) -> None:
+def test_parsing(lazy_datadir: LazyDataDir) -> None:
     """Parse a sample particle, and verify the values are correct."""
-    with (datadir / 'sample.pcf').open('rb') as f:
+    with (lazy_datadir / 'sample.pcf').open('rb') as f:
         root, fmt_name, fmt_version = Element.parse(f)
     assert fmt_name == 'pcf' == FORMAT_NAME
     assert fmt_version in [1, 2]

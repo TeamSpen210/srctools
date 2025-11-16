@@ -1,8 +1,8 @@
 """Test the various geometry operations."""
 from operator import itemgetter
-from pathlib import Path
 from random import Random
 
+from pytest_datadir.plugin import LazyDataDir
 from pytest_regressions.file_regression import FileRegressionFixture
 import pytest
 
@@ -61,12 +61,12 @@ def test_cube_clipping(axis: FrozenVec, file_regression: FileRegressionFixture) 
     )
 
 
-def test_carve(datadir: Path, file_regression: FileRegressionFixture) -> None:
+def test_carve(lazy_datadir: LazyDataDir, file_regression: FileRegressionFixture) -> None:
     """Carve various objects to test the functionality.
 
     We read a VMF, then for each ent subtract toolsclip from the rest.
     """
-    with open(datadir / 'carve_tests.vmf', encoding='utf8') as f:
+    with open(lazy_datadir / 'carve_tests.vmf', encoding='utf8') as f:
         vmf = VMF.parse(Keyvalues.parse(f))
     for ent in sorted(vmf.by_class['func_brush'], key=itemgetter('targetname')):
         ent.remove()

@@ -1,6 +1,7 @@
-from pathlib import Path
+"""Test the soundscript module"""
 import re
 
+from pytest_datadir.plugin import LazyDataDir
 import pytest
 
 from srctools.keyvalues import Keyvalues
@@ -153,7 +154,10 @@ def test_parse_opstacks() -> None:
     ('sound_noloop.wav', False),
     ('sound_loop.wav', True),
 ])
-def test_looping_check(fname: str, loop: bool, datadir: Path) -> None:
+def test_looping_check(
+    fname: str, loop: bool,
+    lazy_datadir: LazyDataDir,
+) -> None:
     """A very basic test of wav_is_looped, test two sample files."""
-    with open(datadir / fname, 'rb') as f:
+    with open(lazy_datadir / fname, 'rb') as f:
         assert sndscript.wav_is_looped(f) is loop

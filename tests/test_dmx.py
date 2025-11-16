@@ -2,12 +2,12 @@
 from typing import Any, cast, Optional, Literal
 from collections.abc import Callable
 from io import BytesIO
-from pathlib import Path
 from uuid import UUID, uuid4
 import array
 import collections
 
 from dirty_equals import IsFloat, IsInt
+from pytest_datadir.plugin import LazyDataDir
 from pytest_regressions.file_regression import FileRegressionFixture
 import pytest
 
@@ -665,9 +665,9 @@ def test_special_attr_id() -> None:
     'binary_v4',  # L4D2's dmxconvert
     'binary_v5',  # P2+'s dmxconvert
 ])
-def test_parse(datadir: Path, filename: str) -> None:
+def test_parse(lazy_datadir: LazyDataDir, filename: str) -> None:
     """Test parsing all the format types."""
-    with (datadir / f'{filename}.dmx').open('rb') as f:
+    with (lazy_datadir / f'{filename}.dmx').open('rb') as f:
         root, fmt_name, fmt_version = Element.parse(f)
     assert fmt_name == 'dmx'
 
@@ -850,22 +850,22 @@ def verify_sample(root: Element) -> None:
     assert arr_elem[3].val is arr_elem_1
 
 
-def test_parse_binaryv3(datadir: Path) -> None:
+def test_parse_binaryv3(lazy_datadir: LazyDataDir) -> None:
     """Test parsing of binary version 3.
 
     We don't have a DMXconvert that produces this, so instead compare an existing
     file to the text version.
     """
-    with (datadir / 'tf_movies.dmx').open('rb') as f:
+    with (lazy_datadir / 'tf_movies.dmx').open('rb') as f:
         root_bin, fmt_name, fmt_version = Element.parse(f)
-    with (datadir / 'tf_movies_text.dmx').open('rb') as f:
+    with (lazy_datadir / 'tf_movies_text.dmx').open('rb') as f:
         root_txt, fmt_name, fmt_version = Element.parse(f)
     assert_tree(root_bin, root_txt)
 
 
-def test_parse_long_header(datadir: Path) -> None:
+def test_parse_long_header(lazy_datadir: LazyDataDir) -> None:
     """Test parsing a DMX with a long header, requiring additional reads to complete."""
-    with (datadir / 'kv2_long_header.dmx').open('rb') as f:
+    with (lazy_datadir / 'kv2_long_header.dmx').open('rb') as f:
         root, fmt_name, fmt_version = Element.parse(f)
     assert len(fmt_name) == 205
     assert fmt_version == 123456789
@@ -875,9 +875,9 @@ def test_parse_long_header(datadir: Path) -> None:
 
 
 @pytest.mark.parametrize('version', [2, 4, 5])
-def test_export_bin_roundtrip(datadir: Path, version: int) -> None:
+def test_export_bin_roundtrip(lazy_datadir: LazyDataDir, version: int) -> None:
     """Test exporting binary types roundtrip."""
-    with (datadir / 'binary_v5.dmx').open('rb') as f:
+    with (lazy_datadir / 'binary_v5.dmx').open('rb') as f:
         root, fmt_name, fmt_version = Element.parse(f)
 
     buf = BytesIO()
@@ -892,9 +892,9 @@ def test_export_bin_roundtrip(datadir: Path, version: int) -> None:
 
 
 @pytest.mark.parametrize('flat', [False, True], ids=['indented', 'flat'])
-def test_export_kv2_roundtrip(datadir: Path, flat: bool) -> None:
+def test_export_kv2_roundtrip(lazy_datadir: LazyDataDir, flat: bool) -> None:
     """Test exporting keyvalues2 roundtrip."""
-    with (datadir / 'keyvalues2.dmx').open('rb') as f:
+    with (lazy_datadir / 'keyvalues2.dmx').open('rb') as f:
         root, fmt_name, fmt_version = Element.parse(f)
 
     buf = BytesIO()
@@ -952,10 +952,10 @@ def test_ext_roundtrip_unicode(version: str) -> None:
 @pytest.mark.parametrize('version', EXPORT_VALS)
 def test_export_regression(
     version: str,
-    datadir: Path, file_regression: FileRegressionFixture,
+    lazy_datadir: LazyDataDir, file_regression: FileRegressionFixture,
 ) -> None:
     """Test regressions in the export results."""
-    with (datadir / 'binary_v5.dmx').open('rb') as f:
+    with (lazy_datadir / 'binary_v5.dmx').open('rb') as f:
         root, fmt_name, fmt_version = Element.parse(f)
     file_regression.check(export(root, version), extension='.dmx', binary=True)
 

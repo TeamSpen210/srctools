@@ -1,15 +1,15 @@
 """Test parsing and exporting entity lumps."""
-from pathlib import Path
+from pytest_datadir.plugin import LazyDataDir
 
 from srctools.vmf import Entity
 from test_bsp import make_dummy
 
 
-def test_read(datadir: Path) -> None:
+def test_read(lazy_datadir: LazyDataDir) -> None:
     """Test reading entity lumps."""
     bsp = make_dummy()
     # Note: \n endings, null byte at the end.
-    vmf = bsp._lmp_read_ents((datadir / 'ent_lump.lmp').read_bytes())
+    vmf = bsp._lmp_read_ents((lazy_datadir / 'ent_lump.lmp').read_bytes())
     assert vmf.map_ver == 3928
 
     assert vmf.spawn['world_mins'] == '-2048 -2048 0'

@@ -1,7 +1,7 @@
 """Test choreographed scene parsing."""
-from pathlib import Path
 import io
 
+from pytest_datadir.plugin import LazyDataDir
 from pytest_regressions.file_regression import FileRegressionFixture
 import dirty_equals
 
@@ -12,9 +12,9 @@ from srctools.choreo import (
 from srctools.tokenizer import Tokenizer
 
 
-def test_parse_vcd(datadir: Path) -> None:
+def test_parse_vcd(lazy_datadir: LazyDataDir) -> None:
     """Test parsing a sample VCD file."""
-    with open(datadir / 'sample.vcd', encoding='utf8') as f:
+    with open(lazy_datadir / 'sample.vcd', encoding='utf8') as f:
         scene = Scene.parse_text(Tokenizer(f))
     assert scene.fps == 60
     assert scene.scale_settings == {
@@ -162,19 +162,19 @@ def test_parse_vcd(datadir: Path) -> None:
     )
 
 
-def test_save_text(datadir: Path, file_regression: FileRegressionFixture) -> None:
+def test_save_text(lazy_datadir: LazyDataDir, file_regression: FileRegressionFixture) -> None:
     """Test resaving a text VCD file."""
-    with open(datadir / 'sample.vcd', encoding='utf8') as f:
+    with open(lazy_datadir / 'sample.vcd', encoding='utf8') as f:
         scene = Scene.parse_text(Tokenizer(f))
     buf = io.StringIO()
     scene.export_text(buf)
     file_regression.check(buf.getvalue(), extension='.vcd')
 
 
-def test_save_binary(datadir: Path, file_regression: FileRegressionFixture) -> None:
+def test_save_binary(lazy_datadir: LazyDataDir, file_regression: FileRegressionFixture) -> None:
     """Test resaving a binary VCD file."""
     import json
-    with open(datadir / 'sample.vcd', encoding='utf8') as f:
+    with open(lazy_datadir / 'sample.vcd', encoding='utf8') as f:
         scene = Scene.parse_text(Tokenizer(f))
 
     pool: list[str] = []
