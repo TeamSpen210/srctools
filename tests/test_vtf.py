@@ -103,7 +103,8 @@ def test_mip_generation(
         buf.getvalue(),
         binary=True,
         extension=".png",
-        basename=f"test_mipmap_{cy_py_format_funcs}_{filter_mode.name.lower()}"
+        basename=f"test_mipmap_{cy_py_format_funcs}_{filter_mode.name.lower()}",
+        check_fn=compare_img,
     )
 
 
