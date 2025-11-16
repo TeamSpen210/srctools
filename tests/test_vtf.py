@@ -14,7 +14,7 @@ from pytest_regressions.file_regression import FileRegressionFixture
 import pytest
 
 from srctools import vtf as vtf_mod
-from srctools.vtf import VTF, ImageFormats
+from srctools.vtf import VTF, Frame, ImageFormats, FilterMode
 
 
 # A few formats aren't implemented by us/Valve.
@@ -81,6 +81,30 @@ def test_strided_copy() -> None:
     if res is not True:
         print('Stride copy: ', res)
         pytest.fail(res)
+
+
+@pytest.mark.parametrize("filter_mode", FilterMode, ids=lambda mode: mode.name.lower())
+def test_mip_generation(
+    cy_py_format_funcs: str,
+    sample_image: Image.Image,
+    file_regression: FileRegressionFixture,
+    filter_mode: FilterMode,
+) -> None:
+    """Test the mipmap scaling algorithm."""
+    frame = Frame(64, 64)
+    frame.copy_from(sample_image.tobytes())
+    small = Frame(32, 32)
+    small.rescale_from(frame, filter_mode)
+
+    buf = BytesIO()
+    small.to_PIL().save(buf, "png")
+
+    file_regression.check(
+        buf.getvalue(),
+        binary=True,
+        extension=".png",
+        basename=f"test_mipmap_{cy_py_format_funcs}_{filter_mode.name.lower()}"
+    )
 
 
 @pytest.mark.parametrize("fmt", FORMATS, ids=lambda fmt: fmt.name.lower())
