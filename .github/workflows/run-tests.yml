@@ -23,7 +23,7 @@ jobs:
           'pypy3.10',
         ]
         # Test on both x86 and ARM
-        os: [ubuntu-latest, ubuntu24.04-arm]
+        os: [ubuntu-latest, ubuntu-24.04-arm]
 
     steps:
     - uses: actions/checkout@v4
