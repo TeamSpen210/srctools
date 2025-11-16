@@ -604,13 +604,11 @@ cdef inline void _vec_rot(vec_t *vec, mat_t mat) noexcept nogil:
     vec.z = (x * mat[0][2]) + (y * mat[1][2]) + (z * mat[2][2])
 
 
-cdef inline vec_t _vec_cross(vec_t a, vec_t b) noexcept nogil:
+cdef inline void _vec_cross(vec_t *res, vec_t *a, vec_t *b) noexcept nogil:
     """Compute the cross product of A x B. """
-    return {
-        'x': a.y * b.z - a.z * b.y,
-        'y': a.z * b.x - a.x * b.z,
-        'z': a.x * b.y - a.y * b.x,
-    }
+    res.x = a.y * b.z - a.z * b.y
+    res.y = a.z * b.x - a.x * b.z
+    res.z = a.x * b.y - a.y * b.x
 
 
 cdef void _mat_from_angle(mat_t res, vec_t *angle) noexcept nogil:
@@ -672,10 +670,10 @@ cdef bint _mat_from_basis(mat_t mat, VecBase x, VecBase y, VecBase z) except Fal
                 # All three provided, nothing to check.
                 pass
             else:
-                vec_z = _vec_cross(vec_x, vec_y)
+                _vec_cross(&vec_z, &vec_x, &vec_y)
         else:
             if z is not None:
-                vec_y = _vec_cross(vec_z, vec_x)
+                _vec_cross(&vec_y, &vec_z, &vec_x)
             else:
                 # Just X.
                 if vec_x.x ** 2 + vec_x.y ** 2 < 1e-6:
@@ -684,11 +682,11 @@ cdef bint _mat_from_basis(mat_t mat, VecBase x, VecBase y, VecBase z) except Fal
                 else:
                     vec_y = {'x': -vec_x.y, 'y': vec_x.x, 'z': 0.0}
                     _vec_normalise(&vec_y, &vec_y)
-                vec_z = _vec_cross(vec_x, vec_y)
+                _vec_cross(&vec_z, &vec_x, &vec_y)
     else:
         if y is not None:
             if z is not None:
-                vec_x = _vec_cross(vec_y, vec_z)
+                _vec_cross(&vec_x, &vec_y, &vec_z)
             else:
                 # Just Y.
                 if vec_y.x ** 2 + vec_y.y ** 2 < 1e-6:
@@ -697,7 +695,7 @@ cdef bint _mat_from_basis(mat_t mat, VecBase x, VecBase y, VecBase z) except Fal
                 else:
                     vec_x = {'x': vec_y.y, 'y': -vec_y.x, 'z': 0.0}
                     _vec_normalise(&vec_x, &vec_x)
-                vec_z = _vec_cross(vec_x, vec_y)
+                _vec_cross(&vec_z, &vec_x, &vec_y)
         else:
             if z is not None:
                 # Just Z.
@@ -707,7 +705,7 @@ cdef bint _mat_from_basis(mat_t mat, VecBase x, VecBase y, VecBase z) except Fal
                 else:
                     vec_y = {'x': -vec_z.y, 'y': vec_z.x, 'z': 0.0}
                     _vec_normalise(&vec_y, &vec_y)
-                vec_x = _vec_cross(vec_y, vec_z)
+                _vec_cross(&vec_x, &vec_y, &vec_z)
             else:
                 # None provided, identity.
                 _mat_identity(mat)
@@ -774,7 +772,7 @@ def cross_frozenvec(left, right):
     conv_vec(&a, left, False)
     conv_vec(&b, right, False)
     res = FrozenVec.__new__(FrozenVec)
-    res.val = _vec_cross(a, b)
+    _vec_cross(&res.val, &a, &b)
     return res
 
 def cross_vec(left, right):
@@ -785,7 +783,7 @@ def cross_vec(left, right):
     conv_vec(&a, left, False)
     conv_vec(&b, right, False)
     res = Vec.__new__(Vec)
-    res.val = _vec_cross(a, b)
+    _vec_cross(&res.val, &a, &b)
     return res
 
 
