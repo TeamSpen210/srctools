@@ -14,7 +14,7 @@ permissions:
 
 jobs:
   run-tests:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -22,6 +22,8 @@ jobs:
           '3.9', '3.10', '3.11', '3.12', '3.13', '3.14-dev', '3.14t-dev',
           'pypy3.10',
         ]
+        # Test on both x86 and ARM
+        os: [ubuntu-latest, ubuntu24.04-arm]
 
     steps:
     - uses: actions/checkout@v4
@@ -44,7 +46,15 @@ jobs:
       # Enable Python's debug mode to do additional checks, and error if any uncaught warnings are
       # produced.
       # Disable assertion rewriting on PyPy, it sometimes breaks there.
+      # We set the temp folder, because regression tests write to there.
       run: |
-        python -X dev -Werror -m pytest --assert=${{ contains(matrix.python-version, 'pypy') && 'plain' || 'rewrite'  }} tests
+        python -X dev -Werror -m pytest --basetemp "pytest_temp" --assert=${{ contains(matrix.python-version, 'pypy') && 'plain' || 'rewrite'  }} tests
       # Don't fail for beta versions of Python.
       continue-on-error: ${{ contains(matrix.python-version, 'dev') }}
+    - name: Upload on fail
+      if: ${{ failure() }}
+      uses: actions/upload-artifact@v4
+      with:
+        name: failure-regress-${{ matrix.os }}-${{ matrix.python-version }}
+        path: pytest_temp/
+        if-no-files-found: warn
