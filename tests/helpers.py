@@ -36,11 +36,8 @@ __all__ = [
     'frozen_thawed_vec', 'frozen_thawed_angle', 'frozen_thawed_matrix',
 ]
 
-
-VALID_NUMS = [
-    # 10e38 is the max single value, make sure we use double-precision.
-    30, 1.5, 0.2827, 2.3464545636e47,
-]
+# Make sure we use double-precision with the precise small value.
+VALID_NUMS = [30, 1.5, 0.2827, 282.34645456362782677821,]
 VALID_NUMS += [-x for x in VALID_NUMS]
 
 VALID_ZERONUMS = [*VALID_NUMS, 0, -0, 2.535047750982637e-175]
