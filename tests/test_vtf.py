@@ -128,7 +128,8 @@ def test_save(
     vtf.get().copy_from(sample_image.tobytes())
 
     buf = BytesIO()
-    vtf.save(buf)
+    # Use nearest filter, since we don't really care about the mipmaps.
+    vtf.save(buf, mip_filter=FilterMode.NEAREST)
     file_regression.check(
         buf.getvalue(),
         binary=True,
@@ -287,7 +288,7 @@ def test_res_hotspot(
     ]
 
     buf = BytesIO()
-    vtf.save(buf)
+    vtf.save(buf, mip_filter=FilterMode.NEAREST)
     file_regression.check(buf.getvalue(), binary=True, extension=".vtf")
 
     with open(lazy_datadir / "test_res_hotspot.vtf", "rb") as f:
