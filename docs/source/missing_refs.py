@@ -1,8 +1,9 @@
 """Handle missing references in documentation.."""
-import re
-from typing import Iterator, Optional, Tuple
-
+from collections.abc import Iterator
+from typing import Optional
 from pathlib import Path
+import re
+
 
 from docutils.nodes import Element
 from sphinx.addnodes import pending_xref
@@ -11,12 +12,12 @@ from sphinx.environment import BuildEnvironment
 from sphinx.errors import NoUri
 
 
-def identify_typevars() -> Iterator[Tuple[str, str]]:
+def identify_typevars() -> Iterator[tuple[str, str]]:
     """Record all typevars in srctools."""
     srctools_folder = Path(__file__, '..', '..', '..', 'src', 'srctools').resolve()
     print(srctools_folder.resolve())
     for mod_name in srctools_folder.glob('*.py'):
-        with open(mod_name) as f:
+        with open(mod_name, encoding='utf8') as f:
             for line in f:
                 # A simple regex should be sufficient to find them all, no need to actually parse.
                 match = re.search(r'^\s*(\w+)\s*=\s*(TypeVar|TypeVarTuple|ParamSpec)\(', line)

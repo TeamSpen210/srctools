@@ -241,6 +241,7 @@ _FORMAT_TRANSPARENT = {
 
 class VTFFlags(Flag):
     """The various image flags that may be set."""
+    _numeric_repr_ = hex
     EMPTY = 0
     # Flags from the *.txt config file
     POINT_SAMPLE = 0x00000001

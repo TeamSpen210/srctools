@@ -79,6 +79,7 @@ class DispFlag(Flag):
 
     Does NOT match the file values, since those are inverted.
     """
+    _numeric_repr_ = hex
     COLL_NONE = 0
     COLL_PHYSICS = 1  # Can physics objects collide?
     COLL_PLAYER_NPC = 2  # QPhysics hull collisions
@@ -111,6 +112,7 @@ class TriangleTag(Flag):
     If walkable, it is shallow enough to stand on.
     If buildable, TF2 Engineers can place buildings.
     """
+    _numeric_repr_ = hex
     STEEP = 0  # Not buildable/walkable
     WALKABLE = 1  # Just walkable
     # 8 by itself is buildable only, that's impossible.

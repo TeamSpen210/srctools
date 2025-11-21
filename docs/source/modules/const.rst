@@ -21,11 +21,9 @@ This module contains various constants and enums that are useful for multiple mo
 .. autosrcenum:: BSPContents
 	:members:
 	:undoc-members:
-	:hex:
 	:member-order: bysource
 
 .. autosrcenum:: SurfFlags
 	:members:
 	:undoc-members:
-	:hex:
 	:member-order: bysource

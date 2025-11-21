@@ -145,6 +145,7 @@ class GameID(Enum):
 class SurfFlags(Flag):
     """The various :sdk-2013:`SURF_*<public/bspflags.h#L80-L97>` flags, indicating different attributes for faces.
     """
+    _numeric_repr_ = hex
     NONE = 0
     LIGHT = 0x1
     """The face has lighting info."""
@@ -189,6 +190,7 @@ class BSPContents(Flag):
 
     The ``CURRENT_*`` flags are not functional, and their bits were reused in later games.
     """
+    _numeric_repr_ = hex
     EMPTY = 0
     SOLID = 0x1
     """Regular solid brush. Player camera is not valid inside here."""

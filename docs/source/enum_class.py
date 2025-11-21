@@ -1,35 +1,37 @@
 """Implements a documenter for Enum classes."""
 from collections import defaultdict
+from collections.abc import Callable, Iterable
 from inspect import Signature
 
-from typing import Any, Dict, Iterable, List, Tuple, Type
+from typing import Any, Optional
 from dataclasses import dataclass
 import enum
 import functools
 
-from sphinx.ext.autodoc import ClassDocumenter, AttributeDocumenter, ObjectMember, bool_option
+from sphinx.ext.autodoc import ClassDocumenter, AttributeDocumenter, ObjectMember
 
 
 @dataclass
 class EnumInfo:
     """Computed member info."""
-    cls: Type[enum.Enum]
-    aliases: Dict[str, List[str]]
-    canonical: List[enum.Enum]
-    should_hex: bool = False
+    cls: type[enum.Enum]
+    aliases: dict[str, list[str]]
+    canonical: list[enum.Enum]
+    repr_func: Optional[Callable[[int], str]]
 
 
-@functools.lru_cache(maxsize=None)
-def enum_aliases(enum_obj: Type[enum.Enum]) -> EnumInfo:
+@functools.cache
+def enum_aliases(enum_obj: type[enum.Enum]) -> EnumInfo:
     """Compute the aliases for this enum."""
-    aliases: Dict[str, List[str]] = defaultdict(list)
-    canonical: List[enum.Enum] = []
+    aliases: dict[str, list[str]] = defaultdict(list)
+    canonical: list[enum.Enum] = []
     for name, member in enum_obj.__members__.items():
         if name != member.name:
             aliases[member.name].append(name)
         else:
             canonical.append(member)
-    return EnumInfo(enum_obj, dict(aliases), canonical)
+    repr_func = getattr(enum_obj, '_numeric_repr_', None)
+    return EnumInfo(enum_obj, dict(aliases), canonical, repr_func)
 
 
 class EnumDocumenter(ClassDocumenter):
@@ -39,7 +41,6 @@ class EnumDocumenter(ClassDocumenter):
     priority = 10 + ClassDocumenter.priority
     option_spec = {
         **ClassDocumenter.option_spec,
-        'hex': bool_option,
     }
     del option_spec['show-inheritance']
 
@@ -58,12 +59,11 @@ class EnumDocumenter(ClassDocumenter):
         """We can only document Enums."""
         return isinstance(member, type) and issubclass(member, enum.Enum)
 
-    def filter_members(self, members: Iterable[ObjectMember], want_all: bool) -> List[Tuple[str, Any, bool]]:
+    def filter_members(self, members: Iterable[ObjectMember], want_all: bool) -> list[tuple[str, Any, bool]]:
         """Specially handle enum members."""
-        results: List[Tuple[str, object, bool]] = []
+        results: list[tuple[str, object, bool]] = []
 
         info = enum_aliases(self.object)
-        info.should_hex = self.options.hex
 
         for member in info.canonical:  # Keep in order.
             if member.name.isdigit() and isinstance(member.value, int):
@@ -93,15 +93,18 @@ class EnumMemberDocumenter(AttributeDocumenter):
 
     @classmethod
     def can_document_member(cls, member: Any, membername: str, isattr: bool, parent: Any) -> bool:
-        """We only document members from EnumDocumenter."""
-        return isinstance(parent, EnumDocumenter)
+        """We only enumeration members."""
+        return (
+            isinstance(parent, EnumDocumenter)
+            and issubclass(enum_cls := parent.object, enum.Enum)
+            and membername in enum_cls.__members__
+        )
 
     def add_directive_header(self, sig: str) -> None:
         """Alter behaviour of the header."""
-        # If we're
         info = enum_aliases(self.parent)
-        if info.should_hex:
-            self.object = NoReprString(f'0x{int(self.object):x}')
+        if info.repr_func is not None and isinstance(self.object, int):
+            self.object = NoReprString(info.repr_func(self.object))
         super().add_directive_header(sig)
 
     def add_content(self, *args, **kwargs) -> None:

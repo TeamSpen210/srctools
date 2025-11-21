@@ -208,6 +208,7 @@ class EventType(enum.Enum):
 
 class EventFlags(enum.Flag):
     """Flags for an event."""
+    _numeric_repr_ = hex
     NoFlags = 0
     ResumeCondition = 1 << 0
     LockBodyFacing = 1 << 1
