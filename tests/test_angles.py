@@ -54,8 +54,9 @@ def test_copy(py_c_vec: PyCVec) -> None:
         assert Angle(fang) is not fang
         # FrozenAngle should not make a copy.
         # TODO: Cython doesn't let you override tp_new for this yet.
-        if FrozenAngle is vec_mod.Py_FrozenAngle:
-            assert FrozenAngle(fang) is fang
+        did_copy = FrozenAngle(fang) is not fang
+        should_copy = FrozenAngle is vec_mod.Cy_FrozenAngle
+        assert did_copy == should_copy
 
 
 def test_from_str(frozen_thawed_angle: AngleClass) -> None:
