@@ -1814,6 +1814,7 @@ class UVAxis:
         """Return the axis as a vector."""
         return Vec(self.x, self.y, self.z)
 
+    @deprecated("Use localise() instead, this doesn't produce correct results.")
     def rotate(self, angles: Union[AnyAngle, AnyMatrix]) -> 'UVAxis':
         """Rotate the axis by some orientation.
 
