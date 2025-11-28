@@ -111,7 +111,6 @@ class TriangleTag(Flag):
     If walkable, it is shallow enough to stand on.
     If buildable, TF2 Engineers can place buildings.
     """
-    _numeric_repr_ = hex
     STEEP = 0  # Not buildable/walkable
     WALKABLE = 1  # Just walkable
     # 8 by itself is buildable only, that's impossible.

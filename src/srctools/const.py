@@ -193,7 +193,6 @@ class BSPContents(Flag):
 
     The ``CURRENT_*`` flags are not functional, and their bits were reused in later games.
     """
-    _numeric_repr_ = hex
     EMPTY = 0
     SOLID = 0x1
     """Regular solid brush. Player camera is not valid inside here."""

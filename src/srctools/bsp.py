@@ -491,7 +491,6 @@ class StaticPropFlags(Flag):
 
 class VisLeafFlags(Flag):
     """Visleaf flags."""
-    _numeric_repr_ = hex
     NONE = 0x0
     SKY_3D = 0x01  #: The 3D skybox is visible from here.
     SKY_2D = 0x04  #: The 2D skybox is visible from here.

@@ -67,7 +67,8 @@ def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float)
 def parse_vec_str(
     val: Union[str, 'VecBase', 'AngleBase'],
     x: Union[X, float] = 0.0, y: Union[Y, float] = 0.0, z: Union[Z, float] = 0.0,
-) -> Union[tuple[float, float, float], tuple[X, Y, Z]]:
+    # Could more properly be tuple[f,f,f] | tuple[X, Y, Z], but that needs better typevar + default handling.
+) -> tuple[Union[X, float], Union[Y, float], Union[Z, float]]:
     """Convert a string in the form ``(4 6 -4)`` into a set of floats.
 
     If the string is unparsable or an invalid type, this uses the defaults :pycode:`(x, y, z)` (which don't have to be floats).
