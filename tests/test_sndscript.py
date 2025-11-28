@@ -146,8 +146,10 @@ def test_parse() -> None:
     assert not sound.stack_update
 
 
+@pytest.mark.xfail
 def test_parse_opstacks() -> None:
     """Test parsing a v2 soundscript, with operator stacks."""
+    raise NotImplementedError
 
 
 @pytest.mark.parametrize('fname, loop', [
