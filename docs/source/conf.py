@@ -4,6 +4,7 @@ import sys
 import os
 
 from sphinx.application import Sphinx
+import attrs
 
 
 # Prevent Cython modules from importing, Python ones have all the type hints and docstrings.
@@ -125,6 +126,9 @@ def autodoc_process_signature(
     """Modify found signatures to fix various issues."""
     if signature is not None:
         signature = signature.replace("TypeAliasForwardRef('ValidKVs')", "ValidKVs")
+        if isinstance(obj, type) and attrs.has(obj) and 'NOTHING' in signature:
+            # attrs.NOTHING appears in the __init__ defaults, replace to be less confusing.
+            signature = signature.replace('= NOTHING', '=...')
         if 'EmptyMapping' not in name:
             # Make `= EmptyMapping` look like `= ...`, but not in the class' own docs.
             # That way users don't need to know about the singleton when reading other modules.
@@ -136,6 +140,9 @@ def autodoc_process_signature(
                 "<class 'srctools.tokenizer.TokenSyntaxError'>",
                 'TokenSyntaxError',
             )
+        if name == 'srctools.fgd.EntityDef.get_resources':
+            # Similar issue with this function as a default.
+            signature = signature.replace('<function ignore_errors>', 'ignore_errors')
 
     return signature, return_annotation
 

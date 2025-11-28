@@ -1,7 +1,6 @@
 """
-The binformat module :mod:`binformat` contains functionality for handling binary formats, \
+The binformat module contains functionality for handling binary formats, \
 esentially expanding on :external:mod:`struct`'s functionality.
-
 """
 from typing import Any, Callable, Final, Optional, TypeVar, Union, overload, cast
 from binascii import crc32

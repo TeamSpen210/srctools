@@ -51,9 +51,9 @@ Numeric = Union[int, float, SupportsFloat, SupportsIndex]
 VecT = TypeVar('VecT', bound='VecBase')
 AngleT = TypeVar('AngleT', bound='AngleBase')
 MatrixT = TypeVar('MatrixT', bound='MatrixBase')
-T1 = TypeVar('T1')
-T2 = TypeVar('T2')
-T3 = TypeVar('T3')
+X = TypeVar('X')
+Y = TypeVar('Y')
+Z = TypeVar('Z')
 
 
 def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:
@@ -66,8 +66,8 @@ def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float)
 
 def parse_vec_str(
     val: Union[str, 'VecBase', 'AngleBase'],
-    x: Union[T1, float] = 0.0, y: Union[T2, float] = 0.0, z: Union[T3, float] = 0.0,
-) -> tuple[Union[T1, float], Union[T2, float], Union[T3, float]]:
+    x: Union[X, float] = 0.0, y: Union[Y, float] = 0.0, z: Union[Z, float] = 0.0,
+) -> Union[tuple[float, float, float], tuple[X, Y, Z]]:
     """Convert a string in the form ``(4 6 -4)`` into a set of floats.
 
     If the string is unparsable or an invalid type, this uses the defaults :pycode:`(x, y, z)` (which don't have to be floats).

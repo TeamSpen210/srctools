@@ -82,6 +82,27 @@ srctools.fgd
 	This was renamed so it is not confused with Keyvalues1 trees.
 
 
+srctools.packlist
+-----------------
+
+
+.. py:class:: srctools.packlist.SoundScriptMode
+	:no-index:
+	:canonical: srctools.packlist.FileMode
+
+	This was renamed once it became used for particle systems as well.
+
+.. py:function:: srctools.packlist.entclass_canonicalize
+	:no-index:
+	:canonical: srctools.packlist.entclass_canonicalise
+
+.. autofunction:: srctools.packlist.entclass_canonicalise
+.. autofunction:: srctools.packlist.entclass_packfunc
+.. autofunction:: srctools.packlist.entclass_resources
+
+.. autofunction:: srctools.packlist.entclass_iter
+	:for: classname
+
 
 srctools.property_parser
 ------------------------

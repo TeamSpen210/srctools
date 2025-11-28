@@ -1561,7 +1561,7 @@ class PackList:
 
 
 @deprecated(
-    'Using entclass_resources() is deprecated, access EntityDef.engine_cls() and '
+    'Using entclass_resources() is deprecated, access EntityDef.engine_def() and '
     'then EntityDef.get_resources() instead.',
 )
 def entclass_resources(classname: str) -> Iterable[tuple[str, FileType]]:
@@ -1599,7 +1599,7 @@ entclass_canonicalize = entclass_canonicalise  # noqa  # America.
 
 
 @deprecated(
-    'Using entclass_packfunc() is deprecated, access FGD.engine_db() and '
+    'Using entclass_packfunc() is deprecated, access EntityDef.engine_def() and '
     'then EntityDef.get_resources() instead.'
 )
 def entclass_packfunc(classname: str) -> Callable[[PackList, Entity], object]:
@@ -1607,7 +1607,8 @@ def entclass_packfunc(classname: str) -> Callable[[PackList, Entity], object]:
 
     If the specified classname is one, return a callable that packs it.
 
-    :deprecated: Use :py:func:`EntityDef.engine_cls()` then :py:func:`EntityDef.get_resources()`.
+    :deprecated: Use :py:meth:`EntityDef.engine_def() <srctools.fgd.EntityDef.engine_def>` \
+    then :py:meth:`EntityDef.get_resources() <srctools.fgd.EntityDef.get_resources>`.
     """
     ent_def = EntityDef.engine_def(classname)
 
@@ -1620,10 +1621,10 @@ def entclass_packfunc(classname: str) -> Callable[[PackList, Entity], object]:
     return pack_shim
 
 
-@deprecated('Using entclass_iter() is deprecated, access FGD.engine_db() instead.')
+@deprecated('Using entclass_iter() is deprecated, access EntityDef.engine_classes() instead.')
 def entclass_iter() -> Collection[str]:
     """Yield all classnames with known behaviour.
 
-    :deprecated: Use :py:func:`FGD.engine_db()` instead.
+    :deprecated: Use :py:meth:`EntityDef.engine_classes() <srctools.fgd.EntityDef.engine_classes>` instead.
     """
     return EntityDef.engine_classes()

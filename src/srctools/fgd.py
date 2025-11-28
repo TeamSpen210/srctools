@@ -63,6 +63,11 @@ Choices: TypeAlias = tuple[str, str, TagsSet]
 _ENGINE_DB: Optional[list[_EngineDBProto]] = None
 
 
+def ignore_errors(error: str, /) -> None:
+    """Default function for get_resources, discards errors."""
+    return None
+
+
 class FGDParseError(TokenSyntaxError):
     """Raised if the FGD contains invalid syntax."""
 
@@ -2085,7 +2090,8 @@ class EntityDef:
         ctx: ResourceCtx,
         *,
         ent: Optional[Entity],
-        on_error: Callable[[str], object] = lambda err: None,
+        # Note, this default arg is checked in Sphinx conf.py
+        on_error: Callable[[str], Optional[BaseException]] = ignore_errors,
     ) -> Iterator[tuple[FileType, str]]:
         """Recursively fetch all the resources this entity may use, simulating ``Precache()``.
 

@@ -14,9 +14,10 @@ Conversion
 ==========
 
 First, call `~Geometry.from_brush` to convert a `~srctools.vmf.Solid` into a calculated geometry
-object.
+object, or `~Geometry.from_points` to construct a convex hull out of a point cloud.
 
 .. automethod:: Geometry.from_brush
+.. automethod:: Geometry.from_points
 
 These are composed of `Polygon` objects, which each wrap a `~srctools.vmf.Side` object. After
 performing operations, call `Geometry.rebuild` to remake the `~srctools.vmf.Solid` objects, reusing
