@@ -145,7 +145,6 @@ class GameID(Enum):
 class SurfFlags(Flag):
     """The various :sdk-2013:`SURF_*<public/bspflags.h#L80-L97>` flags, indicating different attributes for faces.
     """
-    _numeric_repr_ = hex
     NONE = 0
     LIGHT = 0x1
     """The face has lighting info."""

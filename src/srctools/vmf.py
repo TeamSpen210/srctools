@@ -79,7 +79,6 @@ class DispFlag(Flag):
 
     Does NOT match the file values, since those are inverted.
     """
-    _numeric_repr_ = hex
     COLL_NONE = 0
     COLL_PHYSICS = 1  # Can physics objects collide?
     COLL_PLAYER_NPC = 2  # QPhysics hull collisions

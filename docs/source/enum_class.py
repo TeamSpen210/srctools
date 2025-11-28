@@ -10,6 +10,8 @@ import functools
 
 from sphinx.ext.autodoc import ClassDocumenter, AttributeDocumenter, ObjectMember
 
+from srctools import conv_bool
+
 
 @dataclass
 class EnumInfo:
@@ -17,7 +19,7 @@ class EnumInfo:
     cls: type[enum.Enum]
     aliases: dict[str, list[str]]
     canonical: list[enum.Enum]
-    repr_func: Optional[Callable[[int], str]]
+    should_hex: bool = False
 
 
 @functools.cache
@@ -30,8 +32,7 @@ def enum_aliases(enum_obj: type[enum.Enum]) -> EnumInfo:
             aliases[member.name].append(name)
         else:
             canonical.append(member)
-    repr_func = getattr(enum_obj, '_numeric_repr_', None)
-    return EnumInfo(enum_obj, dict(aliases), canonical, repr_func)
+    return EnumInfo(enum_obj, dict(aliases), canonical, should_hex=issubclass(enum_obj, enum.Flag))
 
 
 class EnumDocumenter(ClassDocumenter):
@@ -41,6 +42,8 @@ class EnumDocumenter(ClassDocumenter):
     priority = 10 + ClassDocumenter.priority
     option_spec = {
         **ClassDocumenter.option_spec,
+        # If value is blank (=None), treat as set
+        'hex': lambda value: conv_bool(value, True),
     }
     del option_spec['show-inheritance']
 
@@ -64,6 +67,8 @@ class EnumDocumenter(ClassDocumenter):
         results: list[tuple[str, object, bool]] = []
 
         info = enum_aliases(self.object)
+        if (hex_opt := self.options.get('hex', None)) is not None:
+            info.should_hex = hex_opt
 
         for member in info.canonical:  # Keep in order.
             if member.name.isdigit() and isinstance(member.value, int):
@@ -93,7 +98,7 @@ class EnumMemberDocumenter(AttributeDocumenter):
 
     @classmethod
     def can_document_member(cls, member: Any, membername: str, isattr: bool, parent: Any) -> bool:
-        """We only enumeration members."""
+        """We only document enumeration members."""
         return (
             isinstance(parent, EnumDocumenter)
             and issubclass(enum_cls := parent.object, enum.Enum)
@@ -103,8 +108,8 @@ class EnumMemberDocumenter(AttributeDocumenter):
     def add_directive_header(self, sig: str) -> None:
         """Alter behaviour of the header."""
         info = enum_aliases(self.parent)
-        if info.repr_func is not None and isinstance(self.object, int):
-            self.object = NoReprString(info.repr_func(self.object))
+        if info.should_hex and isinstance(self.object, int):
+            self.object = NoReprString(hex(self.object))
         super().add_directive_header(sig)
 
     def add_content(self, *args, **kwargs) -> None:

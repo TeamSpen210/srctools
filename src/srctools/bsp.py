@@ -456,7 +456,6 @@ class StaticPropFlags(Flag):
 
     These are actually split over two flag fields, but are merged here for simplicity.
     """
-    _numeric_repr_ = hex
     NONE = 0
 
     DOES_FADE = 0x01  # Is the fade distances set?
