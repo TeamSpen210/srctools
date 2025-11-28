@@ -1327,7 +1327,8 @@ class Element(Mapping[str, Attribute]):
         # Seek back to where the end of the header is
         file.seek(header_len)
 
-        if enc_name == b'keyvalues2':
+        if enc_name == b'keyvalues2' or enc_name == b'keyvalues2_noids':
+            # The latter is S2, indicates UUIDs are absent. But we already allow that.
             file_txt = io.TextIOWrapper(file, encoding='utf8' if unicode else 'ascii')
             try:
                 result = cls.parse_kv2(file_txt, enc_vers)
