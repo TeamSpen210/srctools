@@ -55,14 +55,18 @@ class FileType(Enum):
     If this represents a specific file type, the value is the extension. Otherwise, it's an
     arbitrary integer. That occurs for things like soundscript entries which are arbitary names.
     """
+    # Numbers are out of order to preserve cross-version pickling etc.
     GENERIC = 0  #: Arbitrary file type.
     SOUNDSCRIPT = 1  #: Script file containing soundscripts.
 
     GAME_SOUND = 2  #: ``world.blah`` sound - lookup the soundscript, and raw files.
     RAW_SOUND = 'wav'  #: A WAV/MP3/OGG sound file.
-    PARTICLE = PARTICLE_SYSTEM = 3  #: The name of a particle system.
 
+    PARTICLE = PARTICLE_SYSTEM = 3  #: The name of a particle system.
     PARTICLE_FILE = 'pcf'  #: A particle collection file.
+
+    SOUNDSCAPE_NAME = 8  #: The name of a soundscape.
+    SOUNDSCAPE_FILE = 9  #: Script file containing soundscapes.
 
     VSCRIPT_SQUIRREL = 'nut'  #: Squirrel VScript file.
 
