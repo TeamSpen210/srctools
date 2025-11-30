@@ -138,6 +138,8 @@ FILE_TYPE_ORDER = [
     FileType.BREAKABLE_CHUNK,
     FileType.WEAPON_SCRIPT,
     FileType.RAW_SOUND,
+    FileType.SOUNDSCAPE_NAME,
+    FileType.SOUNDSCAPE_FILE,
 ]
 
 # Entity types -> bits used
