@@ -1,5 +1,7 @@
 """Reads and writes Soundscripts."""
-from typing import Callable, Optional, TypeVar, Union
+from typing import Callable, Optional, TypeVar, Union, TypeAlias
+
+from collections.abc import Mapping
 import enum
 import struct
 
@@ -12,9 +14,13 @@ from .types import FileRSeek, FileWText
 
 __all__ = [
     'SoundChars', 'Pitch', 'VOL_NORM', 'Channel', 'Level',
-    'Sound', 'wav_is_looped', 'split_float', 'join_float',
-    'SND_CHARS',
+    'Sound', 'wav_is_looped', 'parse_split_float', 'split_float', 'join_float',
+    'SND_CHARS', 'Interval', 'VOLUME', 'ATTENUATION', 'SOUND_LEVELS'
 ]
+
+EnumT = TypeVar('EnumT')
+Interval: TypeAlias = tuple[Union[float, EnumT], Union[float, EnumT]]
+
 
 #: Possible sound characters.
 #: deprecated: Use SoundChars instead.
@@ -106,6 +112,11 @@ class Pitch(float, enum.Enum):
     def __str__(self) -> str:
         return self.name
 
+    @classmethod
+    def parse_interval_kv(self, kv: Keyvalues, key: str = 'pitch') -> Interval['Level']:
+        """Parse an interval of pitches from a subkey of a keyvalues block."""
+        return parse_split_float(kv, key, Pitch.__getitem__, 100)
+
 
 class VOLUME(enum.Enum):
     """Special value, substitutes default volume (usually 1)."""
@@ -118,11 +129,16 @@ class VOLUME(enum.Enum):
         """We only have one value, and it's available globally - use that name."""
         return 'srctools.sndscript.VOL_NORM'
 
+    @classmethod
+    def parse_interval_kv(self, kv: Keyvalues, key: str = 'volume') -> Interval['Channel']:
+        """Parse an interval of volumes from a subkey of a keyvalues block."""
+        return parse_split_float(kv, key, VOLUME.__getitem__,1.0)
+
 
 VOL_NORM = VOLUME.VOL_NORM
 
 # Old compatibility values, replaced by soundlevel.
-ATTENUATION: dict[str, float] = {
+ATTENUATION: Mapping[str, float] = {
     'ATTN_NONE': 0.0,
     'ATTN_NORM': 0.8,
     'ATTN_IDLE': 2.0,
@@ -188,22 +204,40 @@ class Level(enum.Enum):
     def __str__(self) -> str:
         return self.name
 
+    @classmethod
+    def parse_interval_kv(cls, kv: Keyvalues) -> Interval['Level']:
+        """Parse an interval of volumes from the 'soundlevel' and 'attenuation' keys of a keyvalues block."""
+        if 'attenuation' in kv:
+            atten_min: float
+            atten_max: float
+            atten_min, atten_max = parse_split_float(
+                kv, 'attenuation',
+                ATTENUATION.__getitem__,
+                ATTENUATION['ATTN_IDLE'],
+            )
+            return (atten_to_level(atten_min), atten_to_level(atten_max))
+        elif 'soundlevel' in kv:
+            return parse_split_float(
+                kv, 'soundlevel',
+                SOUND_LEVELS.__getitem__,
+                Level.SNDLVL_NORM,
+            )
+        else:
+            return (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
 
-SOUND_LEVELS = {
+
+SOUND_LEVELS: Mapping[str, Level] = {
     level.name.upper(): level
     for level in Level
 }
 
 
-EnumType = TypeVar('EnumType', bound=enum.Enum)
-
-
 def parse_split_float(
     kv: Keyvalues,
     key: str,
-    enum: Callable[[str], Union[float, EnumType]],
-    default: Union[float, EnumType],
-) -> tuple[Union[float, EnumType], Union[float, EnumType]]:
+    enum: Callable[[str], Union[float, EnumT]],
+    default: Union[float, EnumT],
+) -> Interval[EnumT]:
     """Parse pairs of float/enum values from keyvalues.
 
     A single number can be provided, producing the same value for low and high.
@@ -225,9 +259,9 @@ def parse_split_float(
 
 def split_float(
     value: str,
-    enum: Callable[[str], Union[float, EnumType]],
-    default: Union[float, EnumType],
-) -> tuple[Union[float, EnumType], Union[float, EnumType]]:
+    enum: Callable[[str], Union[float, EnumT]],
+    default: Union[float, EnumT],
+) -> Interval[EnumT]:
     """Handle values which can be a low, high pair of numbers or enum constants.
 
     A single number can be provided, producing the same value for low and high.
@@ -256,13 +290,25 @@ def split_float(
         return out, out
 
 
-def join_float(val: tuple[Union[float, enum.Enum], Union[float, enum.Enum]]) -> str:
+def join_float(val: Interval[enum.Enum]) -> str:
     """Reverse split_float(). The two parameters should be stringifiable into floats/constants."""
     low, high = val
     if low == high:
         return str(low)
     else:
         return f'{low!s}, {high!s}'
+
+
+def atten_to_level(attenuation: float) -> float:
+    """Convert an old attenuation value to a soundlevel.
+
+    See source_sdk/public/soundflags.h:ATTN_TO_SNDLVL()
+    # TODO: Link that ^^
+    """
+    if attenuation:
+        return 50.0 + 20.0 / attenuation
+    else:
+        return 0.0
 
 
 class _WAVChunk:
@@ -349,10 +395,10 @@ class Sound:
     """Represents a single soundscript."""
     name: str
     sounds: list[str] = attrs.Factory(list)
-    volume: tuple[Union[float, VOLUME], Union[float, VOLUME]] = (VOL_NORM, VOL_NORM)
+    volume: Interval[VOLUME] = (VOL_NORM, VOL_NORM)
     channel: Union[int, Channel] = Channel.DEFAULT
-    level: tuple[Union[float, Level], Union[float, Level]] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
-    pitch: tuple[Union[float, Pitch], Union[float, Pitch]] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM)
+    level: Interval[Level] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
+    pitch: Interval[Pitch] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM)
 
     _stack_start: Optional[Keyvalues] = None
     _stack_update: Optional[Keyvalues] = None
@@ -363,19 +409,10 @@ class Sound:
         self,
         name: str,
         sounds: list[str],
-        volume: Union[
-            tuple[Union[float, VOLUME], Union[float, VOLUME]],
-            float, VOLUME,
-        ] = (VOL_NORM, VOL_NORM),
+        volume: Union[Interval[VOLUME], float, VOLUME] = (VOL_NORM, VOL_NORM),
         channel: Union[int, Channel] = Channel.DEFAULT,
-        level: Union[
-            tuple[Union[float, Level], Union[float, Level]],
-            float, Level,
-        ] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM),
-        pitch: Union[
-            tuple[Union[float, Pitch], Union[float, Pitch]],
-            float, Pitch,
-        ] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM),
+        level: Union[Interval[Level], float, Level] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM),
+        pitch: Union[Interval[Pitch], float, Pitch] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM),
 
         # Operator stacks
         stack_start: Optional[Keyvalues] = None,
@@ -473,38 +510,9 @@ class Sound:
     @classmethod
     def parse_one(cls, sound_kv: Keyvalues) -> 'Sound':
         """Parse a single soundscript definition."""
-
-        volume = parse_split_float(
-            sound_kv, 'volume',
-            VOLUME.__getitem__,
-            1.0,
-        )
-        pitch = parse_split_float(
-            sound_kv, 'pitch',
-            Pitch.__getitem__,
-            100.0,
-        )
-
-        if 'soundlevel' in sound_kv:
-            level = parse_split_float(
-                sound_kv, 'soundlevel',
-                SOUND_LEVELS.__getitem__,
-                Level.SNDLVL_NORM,
-            )
-        elif 'attenuation' in sound_kv:
-            atten_min, atten_max = parse_split_float(
-                sound_kv, 'attenuation',
-                ATTENUATION.__getitem__,
-                ATTENUATION['ATTN_IDLE'],
-            )
-            # Convert to a soundlevel.
-            # See source_sdk/public/soundflags.h:ATTN_TO_SNDLVL()
-            level = (
-                (50.0 + 20.0 / atten_min) if atten_min else 0.0,
-                (50.0 + 20.0 / atten_max) if atten_max else 0.0,
-            )
-        else:
-            level = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
+        volume = VOLUME.parse_interval_kv(sound_kv)
+        pitch = Pitch.parse_interval_kv(sound_kv)
+        level = Level.parse_interval_kv(sound_kv)
 
         # Either 1 "wave", or multiple in "rndwave".
         wavs: list[str] = []
