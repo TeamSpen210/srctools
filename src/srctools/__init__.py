@@ -45,8 +45,7 @@ _FILE_CHARS = frozenset(
     '-_ .|'
 )
 ValT = TypeVar('ValT')
-# Pathlike can only be subscripted in 3.9+
-StringPath: TypeAlias = Union[str, '_os.PathLike[str]']
+StringPath: TypeAlias = Union[str, _os.PathLike[str]]
 
 
 def clean_line(line: str) -> str:

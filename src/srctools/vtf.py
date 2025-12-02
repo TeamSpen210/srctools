@@ -64,9 +64,9 @@ if not TYPE_CHECKING:
 # is 16-bit for each channel. We can't do much about that.
 
 __all__ = [
-    'VTF', 'Frame', 'FilterMode',
+    'VTF', 'Frame', 'FilterMode', 'Pixel',
     'ResourceID', 'CubeSide', 'ImageFormats', 'VTFFlags',
-    'Resource', 'SheetSequence',
+    'Resource', 'SheetSequence', 'TexCoord', 'HotspotRect',
 ]
 
 

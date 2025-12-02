@@ -4,7 +4,7 @@ srctools.keyvalues
 .. module:: srctools.keyvalues
 	:synopsis: Reads and writes KeyValues 1 files.
 
-`Keyvalues 1 <https://developer.valvesoftware.com/wiki/KeyValues>`_ files are very common in Source 1.
+:vdc:`Keyvalues 1 <KeyValues>` files are very common in Source 1.
 VMFs, soundscripts, VMT and many other files use the syntax.
 A keyvalues file is a tree structure composed of keyvalue nodes. Each has a name,
 and either a single string value or any number of children. Duplicate names are allowed.

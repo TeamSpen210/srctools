@@ -770,6 +770,7 @@ class HelperExtAppliesTo(Helper):
     TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.EXT_APPLIES_TO
     IS_EXTENSION: ClassVar[bool] = True
 
+    #: The tags this entity requires.
     applies: list[str] = attrs.Factory(list)
 
     @classmethod

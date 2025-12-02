@@ -67,7 +67,6 @@ relevant object is alive - removing them from the VMF will still keep it reserve
 .. autoattribute:: Solid.id
 .. autoattribute:: Side.id
 .. autoattribute:: VisGroup.id
-.. autoattribute:: VisGroup.id
 .. autoattribute:: Entity.id
 .. autoattribute:: EntityGroup.id
 

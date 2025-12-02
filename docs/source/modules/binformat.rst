@@ -83,9 +83,9 @@ indexes. These functions help in constructing such an array, while reusing entri
 unnecessary duplication. `find_or_insert` inserts a single item, while `find_or_extend` inserts
 a subsequence, returning the offset.
 
-.. autofunction:: find_or_insert[T](item_list: list[T], key_func: Callable[[T], Hashable] = id) -> Callable[[T], int]:
+.. autofunction:: find_or_insert[T](item_list: list[T], key_func: Callable[[T], Hashable] = id) -> Callable[[T], int]
 
-.. autofunction:: find_or_extend[T](item_list: list[T], key_func: Callable[[T], Hashable] = id) -> Callable[[list[T]], int]:
+.. autofunction:: find_or_extend[T](item_list: list[T], key_func: Callable[[T], Hashable] = id) -> Callable[[list[T]], int]
 
 
 ============

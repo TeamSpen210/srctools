@@ -1,9 +1,9 @@
 """Implements a documenter for Enum classes."""
 from collections import defaultdict
-from collections.abc import Callable, Iterable
+from collections.abc import Iterable
 from inspect import Signature
 
-from typing import Any, Optional
+from typing import Any
 from dataclasses import dataclass
 import enum
 import functools

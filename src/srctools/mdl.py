@@ -20,7 +20,7 @@ __all__ = [
     'AnimEventTypes', 'CL', 'SV', 'AnimEvents',
     'IncludedMDL', 'SeqEvent', 'Sequence',
 ]
-# All the file extensions used for models, other than .mdl.
+#: All the file extensions used for models, other than .mdl.
 MDL_EXTS_EXTRA: tuple[str, ...] = (
     '.phy',
     '.vvd',
@@ -30,7 +30,7 @@ MDL_EXTS_EXTRA: tuple[str, ...] = (
     '.sw.vtx',
     '.vtx',
 )
-# All the file extensions used for models.
+#: All the file extensions used for models.
 MDL_EXTS: tuple[str, ...] = (
     '.mdl',
     *MDL_EXTS_EXTRA,

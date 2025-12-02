@@ -84,12 +84,14 @@ extlinks = {
     'ha-issue': ('https://github.com/TeamSpen210/HammerAddons/issues/%s', 'HammerAddons Issue #%s'),
     'bee-app-issue': ('https://github.com/BEEmod/BEE2.4/issues/%s', 'BEE Issue #%s'),
     'bee-pack-issue': ('https://github.com/BEEmod/BEE2-items/issues/%s', 'BEE Issue #%s'),
+    'vdc': ('https://developer.valvesoftware.com/wiki/%s', '%s'),
     # Pre-TF2 SDK commit.
     'sdk-2013': ('https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/%s', "%s"),
     'sdk-2013-mp': ('https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/mp/src/%s', "%s"),
     # Current TF2 SDK commit.
     'sdk-2025': ('https://github.com/ValveSoftware/source-sdk-2013/commit/39f6dde8fbc238727c020d13b05ecadd31bda4c0', "%s"),
 }
+extlinks_detect_hardcoded_links = True
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -126,9 +128,12 @@ def autodoc_process_signature(
     """Modify found signatures to fix various issues."""
     if signature is not None:
         signature = signature.replace("TypeAliasForwardRef('ValidKVs')", "ValidKVs")
+        if 'srctools.binformat.find_or' in name:
+            signature = signature.replace('<built-in function id>', 'id')
         if isinstance(obj, type) and attrs.has(obj) and 'NOTHING' in signature:
             # attrs.NOTHING appears in the __init__ defaults, replace to be less confusing.
             signature = signature.replace('= NOTHING', '=...')
+        signature = signature.replace('StringPath', 'str | os.PathLike[str]')
         if 'EmptyMapping' not in name:
             # Make `= EmptyMapping` look like `= ...`, but not in the class' own docs.
             # That way users don't need to know about the singleton when reading other modules.

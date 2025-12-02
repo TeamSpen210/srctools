@@ -507,8 +507,8 @@ class Attribute(_ValProps, Generic[ValueT]):
     Attributes store either a single scalar value, or an array of multiple values of the same type.
     Creation is accomplished mainly via the many classmethods, one for each value type.
 
-    To access the value, read/write one of the `val_*` properties, which will if possible convert
-    the value to the desired type. For arrays either use `iter_*()` or `attr[ind].val_*` to fetch
+    To access the value, read/write one of the `val_* <Attribute.val_str>` properties, which will if possible convert
+    the value to the desired type. For arrays either use `iter_*() <Attribute.iter_str>` or `attr[ind].val_* <Attribute.val_str>` to fetch
     by index.
     """
     __slots__ = ['name', '_typ', '_value']
@@ -1222,7 +1222,7 @@ class Element(Mapping[str, Attribute]):
     type: str
     """
     In Valve's formats, this is the name of the C++ class that the element should deserialise
-    into, like `DMElement` for example. It can be used for any purpose though. In binary files,
+    into, like ``DMElement`` for example. It can be used for any purpose though. In binary files,
     elements with identical types names are deduplicated in the file.
     """
     uuid: UUID

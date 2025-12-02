@@ -12,10 +12,17 @@ srctools.mdl
 Constants
 =========
 
-.. :py:data:: MDL_EXTS
-   :value: ['.mdl', '.phy', ...]
+.. py:data:: MDL_EXTS
+    :type: ~collections.abc.Sequence[str]
+    :value: ['.mdl', '.vvd', '.dx90.vtx', '.phy', ...]
 
-   A sequence of the file extensions used for the various model files.
+    A sequence of the file extensions used for the various model files.
+
+.. py:data:: MDL_EXTS_EXTRA
+    :type: ~collections.abc.Sequence[str]
+    :value: ['.vvd', '.dx90.vtx', '.phy', ...]
+
+    A sequence of the file extensions used for the various model files, excluding ``.mdl``.
 
 .. autosrcenum:: AnimEventTypes()
 	:undoc-members:

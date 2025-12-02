@@ -14,7 +14,7 @@ lumps will be reconstructed, while unparsed lumps will be resaved unchanged.
 In Team Fortress 2, support was added for compressed BSP files. Support for this is somewhat incomplete.
 
 The data structures closely match the underlying file format, though some details are automatically
-handled. For full details, consult the `VDC article on the format <https://developer.valvesoftware.com/wiki/BSP_(Source)>`_.
+handled. For full details, consult the :vdc:`VDC article on the format <BSP_(Source)>`.
 
 
 General Functionality
@@ -25,7 +25,7 @@ currently it is not possible to create one from scratch. Call ::py:meth:`BSP.sav
 
 .. py:class:: BSP
 
-    .. py:method:: __init__(filename: StringPath, version: Union[VERSIONS, GameVersion, None] = None)
+    .. py:method:: __init__(filename: str | os.PathLike[str], version: Union[VERSIONS, GameVersion, None] = None)
 
         Create and load a BSP.
 
@@ -38,7 +38,7 @@ currently it is not possible to create one from scratch. Call ::py:meth:`BSP.sav
 
         :param expected_version: Specify the expected file version, causing an error if the BSP does not match.
 
-    .. py:method:: save(self, filename: str | None = None) -> None:
+    .. py:method:: save(self, filename: str | None = None) -> None
 
         Write the BSP back into the given file.
 
@@ -160,7 +160,7 @@ Entity Lump
         :type: ~srctools.keyvalues.Keyvalues | None
 
         If this brush model is solid, this contains the VPhysics data. It is very similar to that
-        in `.phy` model files. For each brush, this stores metadata like mass, surfaceprop, etc.
+        in ``.phy`` model files. For each brush, this stores metadata like mass, surfaceprop, etc.
 
     .. automethod:: clear_physics
 
@@ -172,7 +172,7 @@ Pakfile
 
     The pakfile is an internal archive containing resources packed into the BSP for the level to use.
     By default, cubemaps are included here as well as patched brush materials VBSP generates for various
-    purposes. Any file can be stored here, but only the :py:attr:`zipfile.ZIP_STORED` (no compression) format is allowed.
+    purposes. Any file can be stored here, but only the :py:data:`zipfile.ZIP_STORED` (no compression) format is allowed.
 
     The returned zipfile wraps an :py:class:`io.BytesIO` object, and will be closed/finalised automatically. Do not close it yourself.
 

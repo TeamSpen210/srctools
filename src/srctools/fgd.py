@@ -913,7 +913,7 @@ class Resource:
     def mdl(cls, filename: str, tags: TagsSet = frozenset(), skinset: Union[Sequence[int], int]=()) -> Resource:
         """Create a resource definition for a model.
 
-        Models have an optional `filename#1,2,3` suffix to specify which skins are used.
+        Models have an optional ``filename.mdl#1,2,3`` suffix to specify which skins are used.
         """
         if filename:
             if isinstance(skinset, int):
@@ -951,7 +951,8 @@ class Helper:
     These mainly add visual widgets in Hammer's views for manipulating and
     previewing keyvalues.
 
-    This should not be instantiated, only subclasses in _fgd_helpers.
+    This should not be instantiated, use the various subclasses for known helper types, or
+    `UnknownHelper`.
     """
     # The HelperType which this implements.
     TYPE: ClassVar[Optional[HelperTypes]] = None

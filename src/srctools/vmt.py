@@ -309,7 +309,7 @@ class Material(MutableMapping[str, str]):
         limit: int = 100,
         parent_func: Optional[Callable[[str], None]] = None,
     ) -> 'Material':
-        """If the material is a `Patch <https://developer.valvesoftware.com/wiki/Patch>` shader expand to the full material.
+        """If the material is a :vdc:`Patch` shader expand to the full material.
 
         :param fsys: This reads from the supplied filesystem as required.
         :param limit: If more than this many files are parsed, a RecursionError is raised.

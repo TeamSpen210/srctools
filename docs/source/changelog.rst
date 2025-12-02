@@ -45,7 +45,7 @@ Version 2.6.0
     * RGB colours now are ``0-255`` integers, not floats.
     * Helpers now all support tags, except for some extension helpers.
     * Deprecate ``bbox()`` helper, this doesn't actually exist.
-    * Backward-incompatible change - renamed `HelperAppliesTo.tag <srctools.fgd.HelperAppliesTo.applies>`
+    * Backward-incompatible change - renamed `HelperExtAppliesTo.tag <srctools.fgd.HelperExtAppliesTo.applies>`
       to ``.applies``.
 * Add :mod:`srctools.geometry`, which implements clipping and carving brushes.
 * Add extension ``editor`` (-only) flag to FGD keyvalue definitions.
@@ -185,7 +185,7 @@ Version 2.3.13
 * Add :py:attr:`Tokenizer.preserve_comments <srctools.tokenizer.Tokenizer.preserve_comments>`, which
   produces :py:const:`COMMENT <srctools.tokenizer.Token.COMMENT>` tokens instead of discarding them.
 * :src-issue:`18`: Fix incorrect module/function names in logging messages (via :gh-user:`ENDERZOMBI102`).
-* Fix :py:meth:`srctools.mdl.Model.apply_patches()` not applying material proxies from the parent.
+* Fix :py:meth:`srctools.vmt.Material.apply_patches()` not applying material proxies from the parent.
 * Use ``surrogateescape`` when encoding/decoding BSP data, to allow values to round-trip.
 
 --------------
@@ -346,7 +346,7 @@ Version 2.3.2
 -------------
 
 * Make particle systems use a cache file for the manifest too.
-* Make :py:meth:`srctools.fgd.FGD.engine_db()` actually cache and copy the database.
+* Make :py:meth:`srctools.fgd.FGD.engine_dbase()` actually cache and copy the database.
 * Automatically add the ``update`` folder to searchpath precedence, fixing :ha-issue:`164`.
 * Make DMX scalar type deduction more strict (removing iterable -> vec support), making it typesafe.
 * Add :py:data:`srctools.filesys.CACHE_KEY_INVALID`.
@@ -384,7 +384,7 @@ Version 2.3.0
 * :py:class:`srctools.vmf.Entity` now directly implements
   :external:py:class:`collections.abc.MutableMapping`. Direct access to the ``Entity.keys``
   :external:py:class:`dict` is deprecated.
-* Correctly handle proxy blocks in :py:class:`~srctools.vmt.VMT` patch shaders.
+* Correctly handle proxy blocks in :py:class:`~srctools.vmt.Material` patch shaders.
 * DMX stub and null elements use an immutable subclass, instead of having elements be None-able.
 * Disallow entities to have a blank classname.
 * Elide long arrays in element reprs.
@@ -396,7 +396,7 @@ Version 2.3.0
   :py:meth:`srctools.vmf.EntityFixup.substitute()`.
 * Remove support for deprecated ``imghdr`` module.
 * Upgrade plugin finding logic to ensure each source is mounted under a persistent ID.
-* Add missing :py:attr:`srctools.bsp.Primitive.dynamic_shadows`.
+* Add missing :py:attr:`srctools.bsp.Face.dynamic_shadows`.
 * Deprecate :py:class:`srctools.AtomicWriter`, use the ``atomicwrites`` module.
 * :py:mod:`!srctools._class_resources` is now only imported when required.
 * Use Cython when building, instead of including sources.
@@ -451,7 +451,7 @@ Version 2.2.1
 
 * Missing particles is now an warning, not an error.
 * Particles are now case-insensitive.
-* py:meth:`srctools.vmf.EntityFixup.keys()`, :py:meth:`~srctools.vmf.EntityFixup.values()` and :py:meth:`~srctools.vmf.EntityFixup.items()` are now full mapping views.
+* py:meth:`!srctools.vmf.EntityFixup.keys()`, :py:meth:`~srctools.vmf.EntityFixup.values()` and :py:meth:`~srctools.vmf.EntityFixup.items()` are now full mapping views.
 * Fix incompatibility with some Python versions.
 
 -------------

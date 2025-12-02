@@ -2108,7 +2108,7 @@ class BSP:
                 orig_face = None
                 area = 0
                 primitives = []
-                no_dynamic_shadows = False
+                dynamic_shadows = False
                 smoothing_group = 0
                 hammer_id = None
             else:
@@ -2131,7 +2131,7 @@ class BSP:
                     smoothing_group,
                 ) = face_data
                 primitives = self.primitives[prim_first:prim_first + (prim_num & 0x7fff)]
-                no_dynamic_shadows = not (prim_num & 0x8000)
+                dynamic_shadows = not (prim_num & 0x8000)
                 vitamin_flags = 0
 
                 # If orig faces is provided, that is the original face
@@ -2161,7 +2161,7 @@ class BSP:
                 (lightmap_mins_x, lightmap_mins_y),
                 (lightmap_size_x, lightmap_size_y),
                 orig_face,
-                primitives, no_dynamic_shadows,
+                primitives, dynamic_shadows,
                 smoothing_group,
                 hammer_id,
                 vitamin_flags,

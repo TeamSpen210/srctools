@@ -538,10 +538,16 @@ class VMF:
     vis_id: IDMan
     node_id: IDMan
 
-    # Allow quick searching for particular groups, without checking
-    # the whole map
-    by_target: MutableMapping[Optional[str], CopySet['Entity']]
+    #: A dynamic mapping from classnames to a set of all matching entities. Useful for iterating
+    #: through all entities of a specific classname, or union-ing multiple together. This automatically
+    #: updates when an entity is added/removed or its classname is changed.
     by_class: MutableMapping[str, CopySet['Entity']]
+
+    #: A dynamic mapping from targetnames to a set of all matching entities. This can be used
+    #: to iterate though all entities with a specific name, though `VMF.search()` is preferred
+    #: since that handles wildcards and other lookups. This mapping automatically updates when
+    #: an entity is added/removed or its name is changed.
+    by_target: MutableMapping[Optional[str], CopySet['Entity']]
     #: The list of all entities in the map.
     entities: list['Entity']
     #: The list of all world brushes in the map.
@@ -3618,7 +3624,7 @@ class Output:
     inst_in: Optional[str]
     """The local entity we are really triggering in instance inputs (``instance:name;Input``)"""
     comma_sep: bool
-    """Use a comma as a separator, instead of the :py:const:`OUTPUT_SEP` character."""
+    """Use a comma as a separator, instead of the :py:const:`~srctools.vmf.Output.SEP` character."""
     times: int
     """The number of times to fire before being deleted. ``-1`` means forever, Hammer only uses ``-1`` and ``1``."""
 

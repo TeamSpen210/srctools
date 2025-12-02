@@ -870,6 +870,7 @@ def init(formats: 'srctools.vtf.ImageFormats') -> None:
             raise AssertionError(f'{index}: {fmt} != {FORMATS[index].name.decode("ascii")}')
         if FORMATS[index].load != NULL or FORMATS[index].save != NULL:
             if FORMATS[index].size == NULL:
+                # Must have a size function if the load or save function is present.
                 raise AssertionError(f'Null size for {FORMATS[index].name.decode("ascii")}')
     ImageFormats = formats
 
