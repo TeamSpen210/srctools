@@ -102,6 +102,7 @@ _FGD_TO_FILE = {
     KVTypes.STR_MODEL: FileType.MODEL,
     KVTypes.EXT_STR_TEXTURE: FileType.TEXTURE,
     KVTypes.STR_SCENE: FileType.CHOREO,
+    KVTypes.STR_SOUND: FileType.GAME_SOUND,
 
     # These don't do anything, avoid checking the rest.
     KVTypes.VOID: None,
@@ -493,15 +494,17 @@ class PackList:
             except KeyError:
                 pass
 
+        # These are entry names, not files - the function packs any actual resources.
+        # If this matches any of these, we don't want to pack a 'file', they'll do that.
         if data_type is FileType.GAME_SOUND:
-            self.pack_soundscript(filename)
-            return  # This packs the soundscript and wav for us.
+            self.pack_soundscript(filename, source=source)
+            return
         if data_type is FileType.PARTICLE:
-            self.pack_particle(filename)
-            return  # This packs the PCF and material if required.
+            self.pack_particle(filename, source=source)
+            return
         if data_type is FileType.BREAKABLE_CHUNK:
             self.pack_breakable_chunk(filename)
-            return  # Packs additional models.
+            return
 
         # If soundscript data is provided, load it and force-include it.
         elif data_type is FileType.SOUNDSCRIPT and data:
@@ -1069,11 +1072,8 @@ class PackList:
                             self.pack_file('scripts/vscripts/' + script, source=source)
                     elif val_type is KVTypes.STR_VSCRIPT_SINGLE:
                         self.pack_file('scripts/vscripts/' + value, source=source)
-                    elif val_type is KVTypes.STR_SOUND:
-                        self.pack_soundscript(value, source=source)
                     elif val_type is KVTypes.STR_PARTICLE:
                         self.pack_particle(value, source=source)
-                    # TODO: KVTypes.EXT_SOUNDSCAPE
                 else:
                     if file_type is not None:
                         self.pack_file(value, file_type, source=source)
