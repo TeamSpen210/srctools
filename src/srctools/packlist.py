@@ -789,6 +789,24 @@ class PackList:
         self.particles.add_file(filename, particles.items(), mode)
         return particles.values()
 
+    def load_manifests(self, cache_folder: Union[Path, str, None] = None) -> None:
+        """Parse the manifests and script files for things like soundscripts or particles.
+
+        This is necessary to perform lookups by name.
+        If the cache prefix is provided, this is used as a path and prefix for files writted
+        to cache results to speed up later executions.
+        """
+        if cache_folder is not None:
+            cache = Path(cache_folder)
+            prefix = cache.stem
+            self.load_soundscript_manifest(cache.with_name(f'{prefix}_soundscript.dmx'))
+            self.load_particle_manifest(cache.with_name(f'{prefix}_particles.dmx'))
+        else:
+            self.load_soundscript_manifest()
+            self.load_particle_manifest()
+
+        self.load_choreo_scenes()  # Image is already a compact cache.
+
     def load_soundscript_manifest(self, cache_file: Union[Path, str, None] = None) -> None:
         """Read the soundscript manifest, and read all mentioned scripts.
 
@@ -798,6 +816,7 @@ class PackList:
         try:
             man = self.fsys.read_kv1('scripts/game_sounds_manifest.txt', encoding='cp1252')
         except FileNotFoundError:
+            LOGGER.warning('No soundscripts manifest.')
             return
 
         if cache_file is not None:
@@ -865,12 +884,14 @@ class PackList:
             self.particles.save_cache(cache_file)
 
     def load_choreo_scenes(self) -> None:
-        """Load the scenes manifest.
-
-        :raises FileNotFoundError: If the scenes.image manifest is missing.
-        """
-        with self.fsys['scenes/scenes.image'].open_bin() as file:
-            self.choreo |= choreo_scenes.parse_scenes_image(file)
+        """Load the scenes manifest."""
+        try:
+            image = self.fsys['scenes/scenes.image']
+        except FileNotFoundError:
+            LOGGER.warning('No scenes.image!')
+        else:
+            with image.open_bin() as file:
+                self.choreo |= choreo_scenes.parse_scenes_image(file)
 
     @deprecated('Renamed to write_soundscript_manifest()')
     def write_manifest(self) -> None:

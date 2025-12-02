@@ -6,6 +6,11 @@ Changelog
     :backlinks: none
 
 -------------
+Version (dev)
+-------------
+* Changed `PackList.load_choreo_scenes() <srctools.packlist.PackList.load_choreo_scenes>` to warn if ``scenes.image`` is not found.
+
+-------------
 Version 2.6.2
 -------------
 
