@@ -25,6 +25,7 @@ from srctools.filesys import (
 from srctools.keyvalues import KeyValError, Keyvalues, NoKeyError
 from srctools.mdl import MDL_EXTS_EXTRA, AnimEvents, Model
 from srctools.particles import FORMAT_NAME as PARTICLE_FORMAT_NAME, Particle
+from srctools.sndscape import Soundscape
 from srctools.sndscript import SND_CHARS, Sound
 from srctools.tokenizer import TokenSyntaxError, Tokenizer
 from srctools.vmf import VMF, Entity
@@ -103,6 +104,7 @@ _FGD_TO_FILE = {
     KVTypes.EXT_STR_TEXTURE: FileType.TEXTURE,
     KVTypes.STR_SCENE: FileType.CHOREO,
     KVTypes.STR_SOUND: FileType.GAME_SOUND,
+    KVTypes.EXT_SOUNDSCAPE: FileType.SOUNDSCAPE_NAME,
 
     # These don't do anything, avoid checking the rest.
     KVTypes.VOID: None,
@@ -369,19 +371,27 @@ class ManifestedFiles(Generic[ParsedT]):
                 yield file, mode
 
 
-def _load_soundscript(file: File) -> dict[str, Sound]:
-    """Parse a soundscript file, logging errors that occur."""
-    try:
-        with file.open_str(encoding='cp1252') as f:
-            kv = Keyvalues.parse(f, file.path, allow_escapes=False)
-        return Sound.parse(kv)
-    except FileNotFoundError:
-        # It doesn't exist, complain and pretend it's empty.
-        LOGGER.warning('Soundscript "{}" does not exist!', file.path)
-        return {}
-    except (KeyValError, ValueError):
-        LOGGER.warning('Soundscript "{}" could not be parsed:', file.path, exc_info=True)
-        return {}
+def _make_load_sound_file(
+    kind: str, parse: Callable[[Keyvalues], dict[str, ParsedT]],
+) -> Callable[[File], dict[str, ParsedT]]:
+    """Make a function that parses a soundscript or soundscape file, logging errors that occur."""
+    def func(file: File) -> dict[str, ParsedT]:
+        try:
+            with file.open_str(encoding='cp1252') as f:
+                kv = Keyvalues.parse(f, file.path, allow_escapes=False)
+            return parse(kv)
+        except FileNotFoundError:
+            # It doesn't exist, complain and pretend it's empty.
+            LOGGER.warning('{} "{}" does not exist!', kind, file.path)
+            return {}
+        except (KeyValError, ValueError):
+            LOGGER.warning('{} "{}" could not be parsed:', kind, file.path, exc_info=True)
+            return {}
+    return func
+
+
+_load_soundscript = _make_load_sound_file('Soundscript', Sound.parse)
+_load_soundscape = _make_load_sound_file('Soundscape', Soundscape.parse)
 
 
 def _load_particle_system(file: File) -> dict[str, Particle]:
@@ -406,9 +416,11 @@ class PackList:
     fsys: FileSystemChain
 
     soundscript: ManifestedFiles[Sound]
+    soundscapes: ManifestedFiles[Soundscape]
     particles: ManifestedFiles[Particle]
 
     _packed_particles: set[str]
+    _packed_soundscapes: set[str]
     _files: dict[str, PackFile]
     # folder, ext, data -> filename used
     _inject_files: dict[tuple[str, str, bytes], str]
@@ -422,6 +434,7 @@ class PackList:
     def __init__(self, fsys: FileSystemChain) -> None:
         self.fsys = fsys
         self.soundscript = ManifestedFiles('soundscript', FileType.SOUNDSCRIPT, _load_soundscript)
+        self.soundscapes = ManifestedFiles('soundscapes', FileType.SOUNDSCAPE_FILE, _load_soundscape)
         self.particles = ManifestedFiles('particle', FileType.PARTICLE_FILE, _load_particle_system)
         self._packed_particles = set()
         self._files = {}
@@ -504,6 +517,9 @@ class PackList:
             return
         if data_type is FileType.BREAKABLE_CHUNK:
             self.pack_breakable_chunk(filename)
+            return
+        if data_type is FileType.SOUNDSCAPE_NAME:
+            self.pack_soundscape(filename, source=source)
             return
 
         # If soundscript data is provided, load it and force-include it.
@@ -701,16 +717,39 @@ class PackList:
             # The soundscript is the source, not what packed the soundscript.
             self.pack_file(sound, FileType.RAW_SOUND, source=sound_name)
 
+    def pack_soundscape(self, soundscape_name: str, *, source: str = '') -> None:
+        """Pack a soundscape, and all the sounds it needs."""
+        # Blank produces a dev message, also skip already-packed names.
+        if not soundscape_name or (folded := soundscape_name.casefold()) in self._packed_soundscapes:
+            return
+        self._packed_soundscapes.add(folded)
+        try:
+            soundscape = self.soundscapes.pack_and_get(self, soundscape_name, source=source)
+        except KeyError:
+            LOGGER.warning('Unknown soundscape "{}"!', soundscape_name)
+            return
+        for loop in soundscape.loop_sounds:
+            # The soundscape is the source, not what packed the soundscape.
+            self.pack_file(loop.sound, FileType.RAW_SOUND, source=soundscape_name)
+        for rand in soundscape.rand_sounds:
+            for sound in rand.sounds:
+                self.pack_file(sound, FileType.RAW_SOUND, source=soundscape_name)
+        # This is recursive, but the packed-soundscapes set means all levels need to be unique to
+        # have any effect. Game only allows 8 levels, so whatever we hit is already far exceeding
+        # that.
+        for child in soundscape.children:
+            self.pack_soundscape(child.name, source=soundscape_name)
+
     def pack_particle(self, particle_name: str, preload: bool = False, *, source: str = '') -> None:
         """Pack a particle system and the raw PCFs."""
         # Blank means no particle is used, also skip if we already packed.
         if not particle_name or particle_name in self._packed_particles:
             return
+        self._packed_particles.add(particle_name)
         try:
             particle = self.particles.pack_and_get(self, particle_name, preload=preload, source=source)
         except KeyError:
             LOGGER.warning('Unknown particle "{}"!', particle_name)
-            self._packed_particles.add(particle_name)
             return
         # Pack the sprites the particle system uses.
         try:
