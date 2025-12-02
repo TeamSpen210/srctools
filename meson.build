@@ -1,7 +1,7 @@
 project(
     'srctools',
     'cython', 'c', 'cpp',
-    version: '2.6.1',
+    version: '2.6.2',
     default_options : ['c_std=c11', 'cpp_std=c++11'],
     meson_version:'>=1.1',
     )
