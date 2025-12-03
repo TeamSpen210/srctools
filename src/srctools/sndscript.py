@@ -116,9 +116,9 @@ class Pitch(float, enum.Enum):
         return self.name
 
     @classmethod
-    def parse_interval_kv(self, kv: Keyvalues, key: str = 'pitch') -> Interval['Level']:
+    def parse_interval_kv(cls, kv: Keyvalues, key: str = 'pitch') -> Interval['Pitch']:
         """Parse an interval of pitches from a subkey of a keyvalues block."""
-        return parse_split_float(kv, key, Pitch.__getitem__, 100)
+        return parse_split_float(kv, key, cls.__getitem__, 100)
 
 
 class Volume(enum.Enum):
@@ -133,9 +133,9 @@ class Volume(enum.Enum):
         return 'srctools.sndscript.VOL_NORM'
 
     @classmethod
-    def parse_interval_kv(self, kv: Keyvalues, key: str = 'volume') -> Interval['Channel']:
+    def parse_interval_kv(cls, kv: Keyvalues, key: str = 'volume') -> Interval['Volume']:
         """Parse an interval of volumes from a subkey of a keyvalues block."""
-        return parse_split_float(kv, key, Volume.__getitem__, 1.0)
+        return parse_split_float(kv, key, cls.__getitem__, 1.0)
 
 
 VOL_NORM = Volume.VOL_NORM

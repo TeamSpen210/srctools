@@ -87,7 +87,7 @@ class RandSound(SoundRule):
         sounds = []
         for child in kv.find_all('rndwave'):
             sounds.extend(child.as_array())
-        time = parse_split_float(kv, 'time', no_enum, 0.0)
+        time: tuple[float, float] = parse_split_float(kv, 'time', no_enum, 0.0)
 
         return cls(
             pitch=Pitch.parse_interval_kv(kv),
