@@ -113,12 +113,13 @@ class Pitch(float, enum.Enum):
     PITCH_HIGH = 120.0
 
     def __str__(self) -> str:
-        return self.name
+        """These names aren't recognised in all cases, just use the value."""
+        return format(self.value, 'g')
 
     @classmethod
     def parse_interval_kv(cls, kv: Keyvalues, key: str = 'pitch') -> Interval['Pitch']:
         """Parse an interval of pitches from a subkey of a keyvalues block."""
-        return parse_split_float(kv, key, cls.__getitem__, 100)
+        return parse_split_float(kv, key, cls.__getitem__, cls.PITCH_NORM)
 
 
 class Volume(enum.Enum):
@@ -135,7 +136,7 @@ class Volume(enum.Enum):
     @classmethod
     def parse_interval_kv(cls, kv: Keyvalues, key: str = 'volume') -> Interval['Volume']:
         """Parse an interval of volumes from a subkey of a keyvalues block."""
-        return parse_split_float(kv, key, cls.__getitem__, 1.0)
+        return parse_split_float(kv, key, cls.__getitem__, cls.VOL_NORM)
 
 
 VOL_NORM = Volume.VOL_NORM
@@ -331,12 +332,12 @@ def split_float(
 def join_float(val: Interval[enum.Enum]) -> str:
     """Reverse split_float(). The two parameters should be stringifiable into floats/constants."""
     low, high = val
-    low_str = low.name if isinstance(low, enum.Enum) else format_float(low)
+    low_str = str(low) if isinstance(low, enum.Enum) else format_float(low)
     if low == high:
         return low_str
     else:
         if isinstance(high, enum.Enum):
-            return f'{low_str}, {high.name}'
+            return f'{low_str}, {high!s}'
         else:
             return f'{low_str}, {format_float(high)}'
 
@@ -618,9 +619,9 @@ class Sound:
         file.write(f'\tchannel {self.channel}\n')
         file.write(f'\tsoundlevel {Level.join_interval(self.level)}\n')
 
-        if self.volume != (1, 1):
+        if self.volume != (1.0, 1.0) and self.volume != (VOL_NORM, VOL_NORM):
             file.write(f'\tvolume {join_float(self.volume)}\n')
-        if self.pitch != (100, 100):
+        if self.pitch != (Pitch.PITCH_NORM, Pitch.PITCH_NORM):
             file.write(f'\tpitch {join_float(self.pitch)}\n')
 
         if len(self.sounds) != 1:

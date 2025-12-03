@@ -1,0 +1,53 @@
+"samples.SimpleScape"
+	{
+	dsp 83
+	fadetime "0.75"
+
+	playrandom
+		{
+		time "0.5, 0.92"
+		volume "0.8, 1.275"
+		pitch "50, 253"
+		soundlevel "SNDLVL_TALKING"
+		position 5
+		rndwave
+			{
+			wave "ambient/wind1.wav"
+			wave "ambient/wind2.wav"
+			wave "ambient.Windy"
+			}
+		}
+	playlooping
+		{
+		position random
+		wave "music/epic_music.mp3"
+		attenuation "1.25, 1.0"
+		pitch "PITCH_LOW, PITCH_HIGH"
+		radius "8192.85"
+		suppress_on_restore 1
+		}
+	playlooping
+		{
+		origin "0 -29.5 1928"
+		wave "npc/whispers.wav"
+		soundlevel "SNDLVL_10db"
+		}
+	playsoundscape
+		{
+		name "samples.graveYard"
+		positionoverride 4
+		ambientpositionoverride 5
+		}
+	playsoundscape
+		{
+		name "samples.beach_common"
+		volume "0.3, 0.4"
+		position 1
+		}
+	playsoundscape
+		{
+		name "samples.birds"
+		volume "10, 11"
+		positionoverride 6
+		}
+	}

@@ -9,7 +9,7 @@ from . import conv_int, conv_float
 from .math import Vec
 from .keyvalues import Keyvalues
 from .sndscript import (
-    Volume, Pitch, Level, LevelInterval, Interval,
+    Volume, VOL_NORM, Pitch, Level, LevelInterval, Interval,
     join_float, parse_split_float,
 )
 from .types import FileWText
@@ -45,7 +45,7 @@ class SoundRule:
     def _parse_pos(cls, kv: Keyvalues) -> Union[PosType, int, Vec]:
         """Parse the position option."""
         if 'origin' in kv:
-            return Vec.from_str(kv.value)
+            return Vec.from_str(kv['origin'])
 
         pos = kv['position', None]
         if pos is None:
@@ -67,7 +67,7 @@ class SoundRule:
             file.write(f'\t\tposition "{self.position}"\n')
         if self.no_restore:
             file.write('\t\tsuppress_on_restore 1\n')
-        if self.volume != (1.0, 1.0):
+        if self.volume != (1.0, 1.0) and self.volume != (VOL_NORM, VOL_NORM):
             file.write(f'\t\tvolume "{join_float(self.volume)}"\n')
         if self.pitch != (100, 100):
             file.write(f'\t\tpitch "{join_float(self.pitch)}"\n')
@@ -167,7 +167,7 @@ class SubScape:
         """Write this block to a file."""
         file.write('\tplaysoundscape\n\t\t{\n')
         file.write(f'\t\tname "{self.name}"\n')
-        if self.volume != (1.0, 1.0):
+        if self.volume != (1.0, 1.0) and self.volume != (VOL_NORM, VOL_NORM):
             file.write(f'\t\tvolume "{join_float(self.volume)}"\n')
         if self.pos_offset != 0:
             file.write(f'\t\tposition "{self.pos_offset}"\n')
@@ -177,7 +177,6 @@ class SubScape:
         if self.ambient_pos_override is not None and self.ambient_pos_override != self.pos_override:
             file.write(f'\t\tambientpositionoverride "{self.ambient_pos_override}"\n')
         file.write('\t\t}\n')
-
 
 
 @attrs.define(kw_only=True)
