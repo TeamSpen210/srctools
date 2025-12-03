@@ -437,6 +437,7 @@ class PackList:
         self.soundscapes = ManifestedFiles('soundscapes', FileType.SOUNDSCAPE_FILE, _load_soundscape)
         self.particles = ManifestedFiles('particle', FileType.PARTICLE_FILE, _load_particle_system)
         self._packed_particles = set()
+        self._packed_soundscapes = set()
         self._files = {}
         self._inject_files = {}
         self._break_chunks = {}
@@ -493,10 +494,6 @@ class PackList:
                 raise ValueError('Data provided with no filename!')
             return
 
-        # Disallow tabs, to guard against cases where we incorrectly parse \t in file paths.
-        if '\t' in filename:
-            raise ValueError(f'No tabs are allowed in filenames ({filename!r})')
-
         if data_type is FileType.ENTCLASS_FUNC or data_type is FileType.ENTITY:
             raise ValueError(f'File type "{data_type.name}" must not be packed directly!')
 
@@ -522,14 +519,18 @@ class PackList:
             self.pack_soundscape(filename, source=source)
             return
 
-        # If soundscript data is provided, load it and force-include it.
-        elif data_type is FileType.SOUNDSCRIPT and data:
+        # If soundscript data is provided, load and force-include it.
+        if data_type is FileType.SOUNDSCRIPT and data:
             try:
                 sounds = Sound.parse(Keyvalues.parse(data.decode('cp1252'), filename))
             except (KeyValError, ValueError):
                 LOGGER.warning('Soundscript "{}" could not be parsed:', filename, exc_info=True)
             else:
                 self.soundscript.add_file(filename, sounds.items(), FileMode.INCLUDE)
+
+        # Disallow tabs, to guard against cases where we incorrectly parse \t in file paths.
+        if '\t' in filename:
+            raise ValueError(f'No tabs are allowed in filenames ({filename!r})')
 
         filename = unify_path(filename)
 
@@ -839,6 +840,7 @@ class PackList:
             cache = Path(cache_folder)
             prefix = cache.stem
             self.load_soundscript_manifest(cache.with_name(f'{prefix}_soundscript.dmx'))
+            self.load_soundscape_manifest(cache.with_name(f'{prefix}_soundscapes.dmx'))
             self.load_particle_manifest(cache.with_name(f'{prefix}_particles.dmx'))
         else:
             self.load_soundscript_manifest()
@@ -878,6 +880,36 @@ class PackList:
 
         if cache_file is not None:
             self.soundscript.save_cache(cache_file)
+
+    def load_soundscape_manifest(self, cache_file: Union[Path, str, None] = None) -> None:
+        """Read the soundscape manifest, and read all mentioned scripts.
+
+        If cache_file is provided, it should be a path to a file used to
+        cache the file reading for later use.
+        """
+        try:
+            man = self.fsys.read_kv1('scripts/soundscapes_manifest.txt', encoding='cp1252')
+        except FileNotFoundError:
+            LOGGER.warning('No soundscapes manifest.')
+            return
+
+        if cache_file is not None:
+            self.soundscapes.load_cache(cache_file)
+
+        for kv in man.find_children('soundscapes_manifest'):
+            if kv.name != 'file':
+                continue
+            try:
+                file = self.fsys[kv.value]
+            except FileNotFoundError:
+                LOGGER.warning('Soundscape "{}" does not exist!', kv.value)
+                # Don't write anything into the cache, so we check this
+                # every time.
+                continue
+            self.soundscapes.add_cached_file(kv.value, file)
+
+        if cache_file is not None:
+            self.soundscapes.save_cache(cache_file)
 
     def load_particle_manifest(self, cache_file: Union[Path, str, None] = None) -> None:
         """Read the particle manifest, and read all mentioned scripts.
@@ -1092,8 +1124,8 @@ class PackList:
                     # But look up the KV anyway - if it's explicitly not one of those, don't pack
                     # this. That indicates it's just there to let you swap the model for in Hammer.
                     value = ent[key]
-                    if value.startswith('*'):
-                        continue  # Do not "pack" brush references.
+                    if not value or value.startswith('*'):
+                        continue  # Do not "pack" brush references, or blank ones.
 
                     try:
                         val_type = ent_class.kv[key].type
