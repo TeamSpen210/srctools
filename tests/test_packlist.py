@@ -53,6 +53,21 @@ def test_valtype_basic() -> None:
     )
 
 
+def test_valtype_choreo() -> None:
+    """Test logic_choreographed_scene, for the CHOREO types."""
+    vmf = VMF()
+    vmf.create_ent(
+        'logic_choreographed_scene',
+        scenefile='character/player/talk.vcd',
+        resumescenefile='generic/swap.vcd',
+    )
+    packlist, files = packing_test(vmf)
+    assert files == IsList(
+        (FileType.CHOREO, 'character/player/talk.vcd'),
+        (FileType.CHOREO, 'generic/swap.vcd'),
+    )
+
+
 def test_valtype_model_sound() -> None:
     """Test prop_physics, for the MODEL and SOUND types."""
     vmf = VMF()
