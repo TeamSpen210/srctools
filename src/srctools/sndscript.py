@@ -1,6 +1,4 @@
 """Reads and writes Soundscripts."""
-from pydoc import classname
-
 from typing import Callable, Optional, TypeVar, Union, TypeAlias
 
 from collections.abc import Mapping
@@ -16,9 +14,9 @@ from .types import FileRSeek, FileWText
 
 
 __all__ = [
-    'SoundChars', 'Pitch', 'VOL_NORM', 'Channel', 'Level',
+    'SoundChars', 'Pitch', 'Channel', 'Level', 'Volume', 'VOL_NORM',
     'Sound', 'wav_is_looped', 'parse_split_float', 'split_float', 'join_float',
-    'SND_CHARS', 'Interval', 'LevelInterval', 'VOLUME',
+    'SND_CHARS', 'Interval', 'LevelInterval',
 ]
 
 EnumT = TypeVar('EnumT')
@@ -122,7 +120,7 @@ class Pitch(float, enum.Enum):
         return parse_split_float(kv, key, Pitch.__getitem__, 100)
 
 
-class VOLUME(enum.Enum):
+class Volume(enum.Enum):
     """Special value, substitutes default volume (usually 1)."""
     VOL_NORM = 'VOL_NORM'
 
@@ -136,10 +134,11 @@ class VOLUME(enum.Enum):
     @classmethod
     def parse_interval_kv(self, kv: Keyvalues, key: str = 'volume') -> Interval['Channel']:
         """Parse an interval of volumes from a subkey of a keyvalues block."""
-        return parse_split_float(kv, key, VOLUME.__getitem__,1.0)
+        return parse_split_float(kv, key, Volume.__getitem__, 1.0)
 
 
-VOL_NORM = VOLUME.VOL_NORM
+VOL_NORM = Volume.VOL_NORM
+VOLUME = Volume  # Deprecated alias
 
 # Old compatibility values, replaced by soundlevel.
 ATTENUATION: Mapping[str, float] = {
@@ -189,7 +188,7 @@ class Level(enum.Enum):
 
     @classmethod
     def parse(cls, text: str) -> Union[int, 'Level']:
-        """Parse a soundlevel string, which might be a fixed name or a number."""
+        """Parse a soundlevel string, which might be a ``SNDLVL`` name or a number."""
         text = text.upper()
         try:
             return cls[text]
@@ -207,9 +206,9 @@ class Level(enum.Enum):
 
     @classmethod
     def parse_interval_kv(cls, kv: Keyvalues) -> LevelInterval:
-        """Parse an interval of attenuations from the 'soundlevel' and 'attenuation' keys of a keyvalues block.
+        """Parse an interval of attenuations from the ``soundlevel`` and ``attenuation`` keys of a keyvalues block.
 
-        Unlike others, this is rounded to an integer. Valve's code only supports the SNDLVL names
+        Unlike others, this is rounded to an integer. Valve's code only supports the ``SNDLVL`` names
         for a single value, but we allow it for an interval.
         """
         if 'attenuation' in kv:
@@ -429,7 +428,7 @@ class Sound:
     """Represents a single soundscript."""
     name: str
     sounds: list[str] = attrs.Factory(list)
-    volume: Interval[VOLUME] = (VOL_NORM, VOL_NORM)
+    volume: Interval[Volume] = (VOL_NORM, VOL_NORM)
     channel: Union[int, Channel] = Channel.DEFAULT
     level: LevelInterval = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
     pitch: Interval[Pitch] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM)
@@ -443,7 +442,7 @@ class Sound:
         self,
         name: str,
         sounds: list[str],
-        volume: Union[Interval[VOLUME], float, VOLUME] = (VOL_NORM, VOL_NORM),
+        volume: Union[Interval[Volume], float, Volume] = (VOL_NORM, VOL_NORM),
         channel: Union[int, Channel] = Channel.DEFAULT,
         level: Union[LevelInterval, int, Level] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM),
         pitch: Union[Interval[Pitch], float, Pitch] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM),
@@ -544,7 +543,7 @@ class Sound:
     @classmethod
     def parse_one(cls, sound_kv: Keyvalues) -> 'Sound':
         """Parse a single soundscript definition."""
-        volume = VOLUME.parse_interval_kv(sound_kv)
+        volume = Volume.parse_interval_kv(sound_kv)
         pitch = Pitch.parse_interval_kv(sound_kv)
         level = Level.parse_interval_kv(sound_kv)
 

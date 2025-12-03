@@ -7,7 +7,7 @@ import attrs
 
 from srctools import Vec, conv_int, conv_float
 from srctools.keyvalues import Keyvalues
-from srctools.sndscript import VOLUME, Pitch, Level, parse_split_float, Interval
+from srctools.sndscript import Volume, Pitch, Level, parse_split_float, LevelInterval, Interval
 
 
 def no_enum(_: str, /) -> NoReturn:
@@ -28,7 +28,7 @@ class SoundRule:
     """Common attributes for both types of sounds."""
     # Specific position type, integral position defined by the ent, or a fixed location.
     position: Union[PosType, int, Vec]
-    volume: Interval[VOLUME]
+    volume: Interval[Volume]
     pitch: Interval[Pitch]
     level: LevelInterval
     no_restore: bool  #: If true, this rule is discarded if reloading from a save.
@@ -65,7 +65,7 @@ class RandSound(SoundRule):
 
         return cls(
             pitch=Pitch.parse_interval_kv(kv),
-            volume=VOLUME.parse_interval_kv(kv),
+            volume=Volume.parse_interval_kv(kv),
             level=Level.parse_interval_kv(kv),
             position=cls._parse_pos(kv),
             no_restore=kv.bool('suppress_on_restore'),
@@ -86,7 +86,7 @@ class LoopSound(SoundRule):
         return cls(
             sound=kv['wave'],
             pitch=Pitch.parse_interval_kv(kv),
-            volume=VOLUME.parse_interval_kv(kv),
+            volume=Volume.parse_interval_kv(kv),
             level=Level.parse_interval_kv(kv),
             position=cls._parse_pos(kv),
             radius=kv.float('radius', 0.0),
@@ -98,7 +98,7 @@ class LoopSound(SoundRule):
 class SubScape:
     """A sub-soundscape entry, which allows overriding some values."""
     name: str  #: The name of the soundscape to play
-    volume: Interval[VOLUME]
+    volume: Interval[Volume]
     pos_offset: int  #: This is added to any integral positions in the soundscape.
     pos_override: Optional[int]  #: If set, overrides all positions to this one.
     ambient_pos_override: Optional[int]  #: If set, overrides ambient sounds to use this position.
@@ -111,7 +111,7 @@ class SubScape:
         ambient_pos_override = kv.int('ambientpositionoverride', pos_override)
         return cls(
             name=kv['name'],
-            volume=VOLUME.parse_interval_kv(kv),
+            volume=Volume.parse_interval_kv(kv),
             pos_offset=kv.int('position', 0),
             pos_override=pos_override,
             ambient_pos_override=ambient_pos_override,

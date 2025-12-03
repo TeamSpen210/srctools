@@ -24,11 +24,12 @@ Several options have a number of predefined names.
 	:undoc-members:
 	:member-order: bysource
 
-.. py:class:: VOLUME
+.. autosrcenum:: Volume
+	:members:
 
 .. py:data:: VOL_NORM
 
-	Volumes have only one value available, which produces a full volume (:pycode:`1.0`).
+	This is available globally for convenience.
 
 
 Sound
