@@ -62,7 +62,7 @@ def test_join() -> None:
     assert sndscript.join_float((4.5, 4.5)) == '4.5'
     assert sndscript.join_float((1.2, 3.4)) == '1.2, 3.4'
 
-    assert sndscript.join_float((sndscript.Pitch.PITCH_LOW, sndscript.Pitch.PITCH_LOW)) == 'PITCH_LOW'
+    assert sndscript.join_float((sndscript.Level.SNDLVL_NONE, sndscript.Level.SNDLVL_NONE)) == 'SNDLVL_NONE'
     assert sndscript.join_float((sndscript.VOL_NORM, 4.5)) == 'VOL_NORM, 4.5'
     assert sndscript.join_float((8.28, sndscript.VOL_NORM)) == '8.28, VOL_NORM'
 

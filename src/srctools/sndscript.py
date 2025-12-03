@@ -1,5 +1,6 @@
 """Reads and writes Soundscripts."""
-from typing import Callable, Optional, TypeVar, Union, TypeAlias
+from typing import Callable, Optional, TypeVar, Union
+from typing_extensions import TypeAlias
 
 from collections.abc import Mapping
 import enum
