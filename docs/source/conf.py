@@ -89,7 +89,7 @@ extlinks = {
     'sdk-2013': ('https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/%s', "%s"),
     'sdk-2013-mp': ('https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/mp/src/%s', "%s"),
     # Current TF2 SDK commit.
-    'sdk-2025': ('https://github.com/ValveSoftware/source-sdk-2013/commit/39f6dde8fbc238727c020d13b05ecadd31bda4c0', "%s"),
+    'sdk-2025': ('https://github.com/ValveSoftware/source-sdk-2013/blob/2d3a6efb50bba856a44e73d4f0098ed4a726699c/src/%s', "%s"),
 }
 extlinks_detect_hardcoded_links = True
 

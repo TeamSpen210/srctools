@@ -1,13 +1,16 @@
 """Reads and writes Soundscripts."""
+from pydoc import classname
+
 from typing import Callable, Optional, TypeVar, Union, TypeAlias
 
 from collections.abc import Mapping
 import enum
 import struct
+import re
 
 import attrs
 
-from . import conv_float
+from . import conv_float, conv_int
 from .keyvalues import Keyvalues, NoKeyError
 from .types import FileRSeek, FileWText
 
@@ -15,11 +18,12 @@ from .types import FileRSeek, FileWText
 __all__ = [
     'SoundChars', 'Pitch', 'VOL_NORM', 'Channel', 'Level',
     'Sound', 'wav_is_looped', 'parse_split_float', 'split_float', 'join_float',
-    'SND_CHARS', 'Interval', 'VOLUME', 'ATTENUATION', 'SOUND_LEVELS'
+    'SND_CHARS', 'Interval', 'LevelInterval', 'VOLUME',
 ]
 
 EnumT = TypeVar('EnumT')
 Interval: TypeAlias = tuple[Union[float, EnumT], Union[float, EnumT]]
+LevelInterval: TypeAlias = tuple[Union[int, 'Level'], Union[int, 'Level']]
 
 
 #: Possible sound characters.
@@ -170,43 +174,44 @@ class Channel(enum.Enum):
 
 class Level(enum.Enum):
     """Soundlevel constants - attenuation."""
-    SNDLVL_NONE = 'SNDLVL_NONE'
-    SNDLVL_20dB = 'SNDLVL_20dB'
-    SNDLVL_25dB = 'SNDLVL_25dB'
-    SNDLVL_30dB = 'SNDLVL_30dB'
-    SNDLVL_35dB = 'SNDLVL_35dB'
-    SNDLVL_40dB = 'SNDLVL_40dB'
-    SNDLVL_45dB = 'SNDLVL_45dB'
-    SNDLVL_50dB = 'SNDLVL_50dB'
-    SNDLVL_55dB = 'SNDLVL_55dB'
-    SNDLVL_IDLE = 'SNDLVL_IDLE'
-    SNDLVL_65dB = 'SNDLVL_65dB'
-    SNDLVL_STATIC = 'SNDLVL_STATIC'
-    SNDLVL_70dB = 'SNDLVL_70dB'
-    SNDLVL_NORM = 'SNDLVL_NORM'
-    SNDLVL_80dB = 'SNDLVL_80dB'
-    SNDLVL_TALKING = 'SNDLVL_TALKING'
-    SNDLVL_85dB = 'SNDLVL_85dB'
-    SNDLVL_90dB = 'SNDLVL_90dB'
-    SNDLVL_95dB = 'SNDLVL_95dB'
-    SNDLVL_100dB = 'SNDLVL_100dB'
-    SNDLVL_105dB = 'SNDLVL_105dB'
-    SNDLVL_110dB = 'SNDLVL_110dB'
-    SNDLVL_120dB = 'SNDLVL_120dB'
-    SNDLVL_125dB = 'SNDLVL_125dB'
-    SNDLVL_130dB = 'SNDLVL_130dB'
-    SNDLVL_GUNFIRE = 'SNDLVL_GUNFIRE'
-    SNDLVL_140dB = 'SNDLVL_140dB'
-    SNDLVL_145dB = 'SNDLVL_145dB'
-    SNDLVL_150dB = 'SNDLVL_150dB'
-    SNDLVL_180dB = 'SNDLVL_180dB'
+    SNDLVL_NONE = 0
+    SNDLVL_IDLE = 60
+    SNDLVL_STATIC = 66
+    SNDLVL_NORM = 75
+    SNDLVL_TALKING = 80
+    SNDLVL_GUNFIRE = 140
 
     def __str__(self) -> str:
         return self.name
 
+    def __int__(self) -> int:
+        return self.value
+
     @classmethod
-    def parse_interval_kv(cls, kv: Keyvalues) -> Interval['Level']:
-        """Parse an interval of volumes from the 'soundlevel' and 'attenuation' keys of a keyvalues block."""
+    def parse(cls, text: str) -> Union[int, 'Level']:
+        """Parse a soundlevel string, which might be a fixed name or a number."""
+        text = text.upper()
+        try:
+            return cls[text]
+        except KeyError:
+            pass
+        # Game code doesn't actually validate the 'db' bit, just stops as soon as a non-num is present.
+        if (match := re.match('SNDLVL_([0-9]+)', text)) is not None:
+            num = int(match.group(1))
+        else:
+            num = conv_int(text, -1)
+        if 0 <= num <= 180:
+            return num
+        else:
+            return Level.SNDLVL_NORM
+
+    @classmethod
+    def parse_interval_kv(cls, kv: Keyvalues) -> LevelInterval:
+        """Parse an interval of attenuations from the 'soundlevel' and 'attenuation' keys of a keyvalues block.
+
+        Unlike others, this is rounded to an integer. Valve's code only supports the SNDLVL names
+        for a single value, but we allow it for an interval.
+        """
         if 'attenuation' in kv:
             atten_min: float
             atten_max: float
@@ -217,18 +222,47 @@ class Level(enum.Enum):
             )
             return (atten_to_level(atten_min), atten_to_level(atten_max))
         elif 'soundlevel' in kv:
-            return parse_split_float(
+            level_min, level_max = parse_split_float(
                 kv, 'soundlevel',
-                SOUND_LEVELS.__getitem__,
+                cls.parse,
                 Level.SNDLVL_NORM,
+            )
+            # The game does parse as float then round down, so that's accurate.
+            # We additionally allow SNDLVL constants in both positions.
+            return (
+                level_min if isinstance(level_min, Level) else int(level_min),
+                level_max if isinstance(level_max, Level) else int(level_max),
             )
         else:
             return (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
 
+    @classmethod
+    def join_interval(cls, interval: LevelInterval) -> str:
+        """Convert an interval back to a string. Valve requires full integers for intervals."""
+        low, high = interval
+        if int(low) == int(high):
+            if isinstance(low, Level):
+                return str(low)  # SNDLVL_IDLE etc
+            elif isinstance(high, Level):
+                return str(high)  # (0, SNDLVL_NONE) -> name
+            elif low % 5 == 0:  # Standard levels.
+                return f'SNDLVL_{low}dB'
+            else:
+                return str(low)  # Can also be SNDLVL, but nicer to do this.
+        else:
+            if isinstance(low, Level):
+                low = low.value
+            if isinstance(high, Level):
+                high = high.value
+            return f'{low}, {high}'
 
-SOUND_LEVELS: Mapping[str, Level] = {
+
+SOUND_LEVELS: Mapping[str, Union[float, Level]] = {
     level.name.upper(): level
     for level in Level
+} | {
+    f'SNDLVL_{x}DB': x
+    for x in range(181)
 }
 
 
@@ -299,16 +333,16 @@ def join_float(val: Interval[enum.Enum]) -> str:
         return f'{low!s}, {high!s}'
 
 
-def atten_to_level(attenuation: float) -> float:
+def atten_to_level(attenuation: float) -> int:
     """Convert an old attenuation value to a soundlevel.
 
-    See source_sdk/public/soundflags.h:ATTN_TO_SNDLVL()
+    See ATTN_TO_SNDLVL in :sdk-2025:`public/soundflags.h#L105`
     # TODO: Link that ^^
     """
     if attenuation:
-        return 50.0 + 20.0 / attenuation
+        return int(50.0 + 20.0 / attenuation)
     else:
-        return 0.0
+        return 0
 
 
 class _WAVChunk:
@@ -397,7 +431,7 @@ class Sound:
     sounds: list[str] = attrs.Factory(list)
     volume: Interval[VOLUME] = (VOL_NORM, VOL_NORM)
     channel: Union[int, Channel] = Channel.DEFAULT
-    level: Interval[Level] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
+    level: LevelInterval = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
     pitch: Interval[Pitch] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM)
 
     _stack_start: Optional[Keyvalues] = None
@@ -411,7 +445,7 @@ class Sound:
         sounds: list[str],
         volume: Union[Interval[VOLUME], float, VOLUME] = (VOL_NORM, VOL_NORM),
         channel: Union[int, Channel] = Channel.DEFAULT,
-        level: Union[Interval[Level], float, Level] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM),
+        level: Union[LevelInterval, int, Level] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM),
         pitch: Union[Interval[Pitch], float, Pitch] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM),
 
         # Operator stacks
@@ -574,7 +608,7 @@ class Sound:
         """
         file.write(f'"{self.name}"\n\t{{\n')
         file.write(f'\tchannel {self.channel}\n')
-        file.write(f'\tsoundlevel {join_float(self.level)}\n')
+        file.write(f'\tsoundlevel {Level.join_interval(self.level)}\n')
 
         if self.volume != (1, 1):
             file.write(f'\tvolume {join_float(self.volume)}\n')

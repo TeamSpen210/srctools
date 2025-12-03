@@ -55,8 +55,12 @@ Sound Characters
 Utilities
 =========
 
+.. autofunction:: parse_split_float
+
 .. autofunction:: split_float
 
 .. autofunction:: join_float
 
 .. autofunction:: wav_is_looped
+
+.. autofunction:: atten_to_level

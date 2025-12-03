@@ -67,6 +67,60 @@ def test_join() -> None:
     assert sndscript.join_float((8.28, sndscript.VOL_NORM)) == '8.28, VOL_NORM'
 
 
+def test_parse_soundlevel() -> None:
+    """Test parsing soundlevels, which have an attenuation fallback."""
+    Level = sndscript.Level
+    assert Level.parse('4') == 4
+    assert Level.parse('SNDLVL_NONE') is Level.SNDLVL_NONE
+    assert Level.parse('SNDLVL_IDLE') is Level.SNDLVL_IDLE
+    assert Level.parse('SNDLVL_TALKING') is Level.SNDLVL_TALKING
+    assert Level.parse('sndLVL_gunFIRE') is Level.SNDLVL_GUNFIRE
+    assert Level.parse('SNDLvL_45dB') == 45
+    assert Level.parse('SNDLVL_83dB') == 83
+    assert Level.parse('149') == 149
+    # Out of range
+    assert Level.parse('SndLvL_200dB') is Level.SNDLVL_NORM
+    assert Level.parse('SNDLVL_-5dB') is Level.SNDLVL_NORM
+    assert Level.parse('181') is Level.SNDLVL_NORM
+    assert Level.parse('-5') is Level.SNDLVL_NORM
+
+
+def test_parse_soundlevel_kv() -> None:
+    """Test parsing soundlevels via keyvalues."""
+    Level = sndscript.Level
+    assert Level.parse_interval_kv(Keyvalues.root(
+        Keyvalues('soundlevel', '4')
+    )) == (4, 4)
+    assert Level.parse_interval_kv(Keyvalues.root(
+        Keyvalues('soundlevel', 'SNDLVL_IDLE')
+    )) == (Level.SNDLVL_IDLE, Level.SNDLVL_IDLE)
+    assert Level.parse_interval_kv(Keyvalues.root(
+        Keyvalues('soundlevel', 'SNDLvL_45dB, SNDLVL_48db')
+    )) == (45, 48)
+    assert Level.parse_interval_kv(Keyvalues.root(
+        Keyvalues('soundlevel', '49, SNDLVL_48db')
+    )) == (49, 48)
+    assert Level.parse_interval_kv(Keyvalues.root(
+        Keyvalues('attenuation', '0.5, 2'),
+        Keyvalues('soundlevel', 'SNDLVL_IDLE'),
+    )) == (90, 60)
+    assert Level.parse_interval_kv(Keyvalues.root(
+        Keyvalues('attenuation', 'ATTN_NORM, ATTN_GUNFIRE'),
+    )) == (75, 124)
+
+
+def test_join_soundlevel() -> None:
+    """Test generating text for soundlevels."""
+    Level = sndscript.Level
+    assert Level.join_interval((Level.SNDLVL_IDLE, Level.SNDLVL_IDLE)) == 'SNDLVL_IDLE'
+    assert Level.join_interval((Level.SNDLVL_NONE, 0)) == 'SNDLVL_NONE'
+    assert Level.join_interval((80, Level.SNDLVL_TALKING)) == 'SNDLVL_TALKING'
+    assert Level.join_interval((75, 75)) == 'SNDLVL_75dB'
+    assert Level.join_interval((76, 76)) == '76'
+    assert Level.join_interval((Level.SNDLVL_IDLE, Level.SNDLVL_STATIC)) == '60, 66'
+    assert Level.join_interval((75, Level.SNDLVL_GUNFIRE)) == '75, 140'
+
+
 def test_soundchar_parse() -> None:
     """Test parsing sound characters out of filenames."""
     SoundChars = sndscript.SoundChars

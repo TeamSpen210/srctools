@@ -7,7 +7,7 @@ import attrs
 
 from srctools import Vec, conv_int, conv_float
 from srctools.keyvalues import Keyvalues
-from srctools.sndscript import VOLUME, Pitch, Level, parse_split_float
+from srctools.sndscript import VOLUME, Pitch, Level, parse_split_float, Interval
 
 
 def no_enum(_: str, /) -> NoReturn:
@@ -28,9 +28,9 @@ class SoundRule:
     """Common attributes for both types of sounds."""
     # Specific position type, integral position defined by the ent, or a fixed location.
     position: Union[PosType, int, Vec]
-    volume: tuple[Union[float, VOLUME], Union[float, VOLUME]]
-    pitch: tuple[Union[float, Pitch], Union[float, Pitch]]
-    level: tuple[Union[float, Level], Union[float, Level]]
+    volume: Interval[VOLUME]
+    pitch: Interval[Pitch]
+    level: LevelInterval
     no_restore: bool  #: If true, this rule is discarded if reloading from a save.
 
     @classmethod
@@ -98,7 +98,7 @@ class LoopSound(SoundRule):
 class SubScape:
     """A sub-soundscape entry, which allows overriding some values."""
     name: str  #: The name of the soundscape to play
-    volume: tuple[Union[float, VOLUME], Union[float, VOLUME]]
+    volume: Interval[VOLUME]
     pos_offset: int  #: This is added to any integral positions in the soundscape.
     pos_override: Optional[int]  #: If set, overrides all positions to this one.
     ambient_pos_override: Optional[int]  #: If set, overrides ambient sounds to use this position.
@@ -106,11 +106,22 @@ class SubScape:
     @classmethod
     def parse(cls, kv: Keyvalues) -> 'SubScape':
         """Parse a playsoundscape entry."""
+        # If pos override is set, it's the default for ambient pos override.
+        pos_override = kv.int('positionoverride', None)
+        ambient_pos_override = kv.int('ambientpositionoverride', pos_override)
+        return cls(
+            name=kv['name'],
+            volume=VOLUME.parse_interval_kv(kv),
+            pos_offset=kv.int('position', 0),
+            pos_override=pos_override,
+            ambient_pos_override=ambient_pos_override,
+        )
 
 
 @attrs.define(kw_only=True)
 class Soundscape:
     """A single soundscape definition."""
+    name: str
     rand_sounds: list[RandSound] = attrs.Factory(list)
     loop_sounds: list[LoopSound] = attrs.Factory(list)
     children: list[SubScape] = attrs.Factory(list)
@@ -133,7 +144,7 @@ class Soundscape:
     @classmethod
     def parse_one(cls, kv: Keyvalues) -> 'Soundscape':
         """Parse a single soundscape definition."""
-        scape = cls()
+        scape = cls(name=kv.real_name)
         for child_kv in kv:
             if child_kv.name == 'playlooping':
                 scape.loop_sounds.append(LoopSound.parse(child_kv))
