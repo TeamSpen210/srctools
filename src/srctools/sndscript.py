@@ -9,6 +9,7 @@ import re
 import attrs
 
 from . import conv_float, conv_int
+from .math import format_float
 from .keyvalues import Keyvalues, NoKeyError
 from .types import FileRSeek, FileWText
 
@@ -183,9 +184,6 @@ class Level(enum.Enum):
     def __str__(self) -> str:
         return self.name
 
-    def __int__(self) -> int:
-        return self.value
-
     @classmethod
     def parse(cls, text: str) -> Union[int, 'Level']:
         """Parse a soundlevel string, which might be a ``SNDLVL`` name or a number."""
@@ -239,11 +237,18 @@ class Level(enum.Enum):
     def join_interval(cls, interval: LevelInterval) -> str:
         """Convert an interval back to a string. Valve requires full integers for intervals."""
         low, high = interval
-        if int(low) == int(high):
+        # Upgrade to names if possible.
+        try:
+            low = cls(low)
+        except ValueError:
+            pass
+        try:
+            high = cls(high)
+        except ValueError:
+            pass
+        if low == high:
             if isinstance(low, Level):
                 return str(low)  # SNDLVL_IDLE etc
-            elif isinstance(high, Level):
-                return str(high)  # (0, SNDLVL_NONE) -> name
             elif low % 5 == 0:  # Standard levels.
                 return f'SNDLVL_{low}dB'
             else:
@@ -326,10 +331,14 @@ def split_float(
 def join_float(val: Interval[enum.Enum]) -> str:
     """Reverse split_float(). The two parameters should be stringifiable into floats/constants."""
     low, high = val
+    low_str = low.name if isinstance(low, enum.Enum) else format_float(low)
     if low == high:
-        return str(low)
+        return low_str
     else:
-        return f'{low!s}, {high!s}'
+        if isinstance(high, enum.Enum):
+            return f'{low_str}, {high.name}'
+        else:
+            return f'{low_str}, {format_float(high)}'
 
 
 def atten_to_level(attenuation: float) -> int:

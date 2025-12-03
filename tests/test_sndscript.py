@@ -88,6 +88,7 @@ def test_parse_soundlevel() -> None:
 def test_parse_soundlevel_kv() -> None:
     """Test parsing soundlevels via keyvalues."""
     Level = sndscript.Level
+    assert Level.parse_interval_kv(Keyvalues.root()) == (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
     assert Level.parse_interval_kv(Keyvalues.root(
         Keyvalues('soundlevel', '4')
     )) == (4, 4)
@@ -114,11 +115,12 @@ def test_join_soundlevel() -> None:
     Level = sndscript.Level
     assert Level.join_interval((Level.SNDLVL_IDLE, Level.SNDLVL_IDLE)) == 'SNDLVL_IDLE'
     assert Level.join_interval((Level.SNDLVL_NONE, 0)) == 'SNDLVL_NONE'
+    assert Level.join_interval((0, 0)) == 'SNDLVL_NONE'
     assert Level.join_interval((80, Level.SNDLVL_TALKING)) == 'SNDLVL_TALKING'
-    assert Level.join_interval((75, 75)) == 'SNDLVL_75dB'
+    assert Level.join_interval((70, 70)) == 'SNDLVL_70dB'
     assert Level.join_interval((76, 76)) == '76'
     assert Level.join_interval((Level.SNDLVL_IDLE, Level.SNDLVL_STATIC)) == '60, 66'
-    assert Level.join_interval((75, Level.SNDLVL_GUNFIRE)) == '75, 140'
+    assert Level.join_interval((70, Level.SNDLVL_GUNFIRE)) == '70, 140'
 
 
 def test_soundchar_parse() -> None:
@@ -183,7 +185,7 @@ def test_parse() -> None:
     """Test parsing a basic soundscript."""
     kv = Keyvalues.root(Keyvalues('some.Sound', [
         Keyvalues('channel', 'CHAN_VoICE'),
-        Keyvalues('soundlevel', 'sndLVL_85db, 0.4'),
+        Keyvalues('soundlevel', 'sndLVL_TALKING, 65'),
         Keyvalues('volume', '0.85, 0.95'),
         Keyvalues('wave', ')util/some_sound.wav'),
     ]))
@@ -192,7 +194,7 @@ def test_parse() -> None:
     sound = sound_dict['some.sound']
     assert sound.sounds == [')util/some_sound.wav']
     assert sound.channel is sndscript.Channel.VOICE
-    assert sound.level == (sndscript.Level.SNDLVL_85dB, 0.4)
+    assert sound.level == (sndscript.Level.SNDLVL_TALKING, 65)
     assert sound.volume == (0.85, 0.95)
     assert sound.force_v2 is False
     assert not sound.stack_start
