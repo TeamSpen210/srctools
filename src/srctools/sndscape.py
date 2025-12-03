@@ -5,9 +5,17 @@ from typing import Union, Optional, NoReturn
 
 import attrs
 
-from srctools import Vec, conv_int, conv_float
-from srctools.keyvalues import Keyvalues
-from srctools.sndscript import Volume, Pitch, Level, parse_split_float, LevelInterval, Interval
+from . import conv_int, conv_float
+from .math import Vec
+from .keyvalues import Keyvalues
+from .sndscript import (
+    Volume, Pitch, Level, LevelInterval, Interval,
+    join_float, parse_split_float,
+)
+from .types import FileWText
+
+
+__all__ = ['PosType', 'Soundscape', 'SubScape', 'LoopSound', 'RandSound']
 
 
 def no_enum(_: str, /) -> NoReturn:
@@ -47,11 +55,29 @@ class SoundRule:
         else:
             return conv_int(pos)
 
+    def export(self, file: FileWText) -> None:
+        """Write these common parameters to a file."""
+        if self.position is PosType.RANDOM:
+            file.write('\t\tposition random\n')
+        elif self.position is PosType.AMBIENT:
+            pass  # Default
+        elif isinstance(self.position, int):
+            file.write(f'\t\tposition {self.position}\n')
+        else:
+            file.write(f'\t\tposition "{self.position}"\n')
+        if self.no_restore:
+            file.write('\t\tsuppress_on_restore 1\n')
+        if self.volume != (1.0, 1.0):
+            file.write(f'\t\tvolume "{join_float(self.volume)}"\n')
+        if self.pitch != (100, 100):
+            file.write(f'\t\tpitch "{join_float(self.pitch)}"\n')
+        if self.level != (Level.SNDLVL_NORM, Level.SNDLVL_NORM):
+            file.write(f'\t\tsoundlevel "{Level.join_interval(self.level)}"\n')
+
 
 @attrs.define(kw_only=True)
 class RandSound(SoundRule):
     """A playrandom entry in a soundscape."""
-
     time: tuple[float, float]
     sounds: list[str]
 
@@ -73,6 +99,17 @@ class RandSound(SoundRule):
             sounds=sounds,
         )
 
+    def export(self, file: FileWText) -> None:
+        """Write this block to a file."""
+        file.write('\tplayrandom\n\t\t{\n')
+        file.write(f'\t\ttime "{join_float(self.time)}"\n')
+        super().export(file)
+        file.write('\t\trndwave\n\t\t\t{\n')
+        for snd in self.sounds:
+            file.write(f'\t\t\twave "{snd}"\n')
+        file.write('\t\t\t}\n')
+        file.write('\t\t}\n')
+
 
 @attrs.define(kw_only=True)
 class LoopSound(SoundRule):
@@ -92,6 +129,15 @@ class LoopSound(SoundRule):
             radius=kv.float('radius', 0.0),
             no_restore=kv.bool('suppress_on_restore'),
         )
+
+    def export(self, file: FileWText) -> None:
+        """Write this block to a file."""
+        file.write('\tplaylooping\n\t\t{\n')
+        file.write(f'\t\twave "{self.sound}"\n')
+        super().export(file)
+        if self.radius != 0.0:
+            file.write(f'\t\tradius "{self.radius}"\n')
+        file.write('\t\t}\n')
 
 
 @attrs.define(kw_only=True)
@@ -116,6 +162,22 @@ class SubScape:
             pos_override=pos_override,
             ambient_pos_override=ambient_pos_override,
         )
+
+    def export(self, file: FileWText) -> None:
+        """Write this block to a file."""
+        file.write('\tplaysoundscape\n\t\t{\n')
+        file.write(f'\t\tname "{self.name}"\n')
+        if self.volume != (1.0, 1.0):
+            file.write(f'\t\tvolume "{join_float(self.volume)}"\n')
+        if self.pos_offset != 0:
+            file.write(f'\t\tposition "{self.pos_offset}"\n')
+        if self.pos_override is not None:
+            file.write(f'\t\tpositionoverride "{self.pos_override}"\n')
+        # This defaults to match the regular override, so no need to define if they match.
+        if self.ambient_pos_override is not None and self.ambient_pos_override != self.pos_override:
+            file.write(f'\t\tambientpositionoverride "{self.ambient_pos_override}"\n')
+        file.write('\t\t}\n')
+
 
 
 @attrs.define(kw_only=True)
@@ -165,3 +227,49 @@ class Soundscape:
             else:
                 raise ValueError(f'Unknown soundscape option:', child_kv.real_name)
         return scape
+
+    def export(self, file: FileWText) -> None:
+        """Write a soundscape to a file.
+
+        Pass a file-like object open for text writing.
+        """
+        file.write(f'"{self.name}"\n\t{{\n')
+        # Add a gap between soundscape options, and each type of sound,
+        # but only if there's something before.
+        gap = False
+        if self.fadetime != 0.0:
+            gap = True
+            file.write(f'\tfadetime "{self.fadetime}"\n')
+        if self.soundmixer is not None:
+            gap = True
+            file.write(f'\tsoundmixer "{self.soundmixer}"\n')
+        if self.dsp is not None:
+            gap = True
+            file.write(f'\tdsp {self.dsp}\n')
+        if self.dsp_spatial is not None:
+            gap = True
+            file.write(f'\tdsp_spatial {self.dsp_spatial}\n')
+        if self.dsp_volume != 1.0:
+            gap = True
+            file.write(f'\tdsp_volume "{self.dsp_volume}"\n')
+
+        if self.loop_sounds:
+            if gap:
+                file.write('\n')
+            gap = True
+            for loop in self.loop_sounds:
+                loop.export(file)
+        if self.rand_sounds:
+            if gap:
+                file.write('\n')
+            gap = True
+            for rand in self.rand_sounds:
+                rand.export(file)
+        if self.children:
+            if gap:
+                file.write('\n')
+            gap = True
+            for child in self.children:
+                child.export(file)
+
+        file.write('\t}\n')
