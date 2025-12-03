@@ -135,7 +135,7 @@ def autodoc_process_signature(
             signature = signature.replace('= NOTHING', '=...')
         signature = signature.replace('StringPath', 'str | os.PathLike[str]')
         if 'EmptyMapping' not in name:
-            # Make `= EmptyMapping` look like `= ...`, but not in the class' own docs.
+            # Make `= EmptyMapping` look like `= ...`, except for inside EmptyMapping's own docs.
             # That way users don't need to know about the singleton when reading other modules.
             signature = signature.replace('srctools.EmptyMapping', '...')
         if name in {'srctools.tokenizer.Tokenizer', 'srctools.tokenizer.IterTokenizer'}:

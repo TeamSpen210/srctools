@@ -2,7 +2,7 @@
 import io
 
 from pytest_datadir.plugin import LazyDataDir
-from dirty_equals import IsList, HasAttributes
+from dirty_equals import IsList
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from srctools import Keyvalues, Vec
@@ -12,7 +12,7 @@ from srctools.sndscape import Soundscape, PosType, LoopSound, RandSound, SubScap
 
 def test_parse(lazy_datadir: LazyDataDir) -> None:
     """Test parsing a sample soundscape."""
-    with open(lazy_datadir / 'sample_scape.txt') as f:
+    with open(lazy_datadir / 'sample_scape.txt', encoding='utf8') as f:
         kv = Keyvalues.parse(f)
     scapes = Soundscape.parse(kv)
     assert len(scapes) == 1
@@ -82,7 +82,7 @@ def test_parse(lazy_datadir: LazyDataDir) -> None:
 
 def test_roundtrip(lazy_datadir: LazyDataDir, file_regression: FileRegressionFixture) -> None:
     """Test exporting, by resaving our test file."""
-    with open(lazy_datadir / 'sample_scape.txt') as f:
+    with open(lazy_datadir / 'sample_scape.txt', encoding='utf8') as f:
         kv = Keyvalues.parse(f)
     scapes = Soundscape.parse(kv)
 

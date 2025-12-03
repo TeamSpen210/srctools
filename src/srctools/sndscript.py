@@ -194,7 +194,7 @@ class Level(enum.Enum):
         except KeyError:
             pass
         # Game code doesn't actually validate the 'db' bit, just stops as soon as a non-num is present.
-        if (match := re.match('SNDLVL_([0-9]+)', text)) is not None:
+        if (match := re.match(r'SNDLVL_([0-9]+)', text)) is not None:
             num = int(match.group(1))
         else:
             num = conv_int(text, -1)

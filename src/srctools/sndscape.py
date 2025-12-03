@@ -1,7 +1,8 @@
 """Parses soundscape files, which define sets of soundscripts/raw sounds to play."""
-from enum import Enum
-
 from typing import Union, Optional, NoReturn
+
+from enum import Enum
+import abc
 
 import attrs
 
@@ -25,21 +26,34 @@ def no_enum(_: str, /) -> NoReturn:
 
 class PosType(Enum):
     """Type of sound position."""
-    # Play from a random position near the player
+    #: Play from a random position near the player
     RANDOM = 'random'
-    # Default behaviour, play from all locations.
+    #: Default behaviour, play at full volume regardless of location.
     AMBIENT = 'ambient'
 
 
 @attrs.define(kw_only=True)
-class SoundRule:
-    """Common attributes for both types of sounds."""
-    # Specific position type, integral position defined by the ent, or a fixed location.
-    position: Union[PosType, int, Vec]
-    volume: Interval[Volume]
-    pitch: Interval[Pitch]
-    level: LevelInterval
-    no_restore: bool  #: If true, this rule is discarded if reloading from a save.
+class SoundRule(abc.ABC):
+    """Abstract base class for both types of sounds."""
+    #: The position to play the sound from. This can take a few forms:
+    #:
+    #: `PosType.AMBIENT` (default)
+    #:    Plays at full volume regardless of location.
+    #: `PosType.RANDOM`
+    #:    Plays from a random position near the player.
+    #: An integer
+    #:    This is the index of an entity referenced by the ``env_soundscape``.
+    #: A vector
+    #:    This is a fixed position in world, only useful for map-specific soundscapes.
+    position: Union[PosType, int, Vec] = PosType.AMBIENT
+    #: Modulates the volume of the sound.
+    volume: Interval[Volume] = (VOL_NORM, VOL_NORM)
+    #: Alters the pitch of the sound when played.
+    pitch: Interval[Pitch] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM)
+    #: Adjusts how far and quickly the sound fades with distance.
+    level: LevelInterval = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
+    #: If true, this rule is discarded if reloading from a save.
+    no_restore: bool = False
 
     @classmethod
     def _parse_pos(cls, kv: Keyvalues) -> Union[PosType, int, Vec]:
@@ -55,6 +69,7 @@ class SoundRule:
         else:
             return conv_int(pos)
 
+    @abc.abstractmethod
     def export(self, file: FileWText) -> None:
         """Write these common parameters to a file."""
         if self.position is PosType.RANDOM:
@@ -77,8 +92,10 @@ class SoundRule:
 
 @attrs.define(kw_only=True)
 class RandSound(SoundRule):
-    """A playrandom entry in a soundscape."""
+    """A playrandom entry in a soundscape. These are played at random intervals."""
+    #: The time to wait between each play of this sound.
     time: tuple[float, float]
+    #: The filenames to randomly pick from when playing.
     sounds: list[str]
 
     @classmethod
@@ -114,7 +131,9 @@ class RandSound(SoundRule):
 @attrs.define(kw_only=True)
 class LoopSound(SoundRule):
     """A playlooping entry in a soundscape."""
-    radius: float
+    #: Overrides the maximum audible distance for the sound.
+    radius: float = 1.0
+    #: The looping sound to play.
     sound: str
 
     @classmethod
@@ -142,12 +161,17 @@ class LoopSound(SoundRule):
 
 @attrs.define(kw_only=True)
 class SubScape:
-    """A sub-soundscape entry, which allows overriding some values."""
+    """A sub-soundscape entry, which triggers another soundscape to play also."""
     name: str  #: The name of the soundscape to play
-    volume: Interval[Volume]
-    pos_offset: int  #: This is added to any integral positions in the soundscape.
-    pos_override: Optional[int]  #: If set, overrides all positions to this one.
-    ambient_pos_override: Optional[int]  #: If set, overrides ambient sounds to use this position.
+    #: Modulates the volume of the child soundscape, and anything it plays.
+    volume: Interval[Volume] = (VOL_NORM, VOL_NORM)
+    #: This changes the starting index for positions in the soundscape,
+    # allowing picking which entities in ``env_soundscape`` it uses.
+    pos_offset: int = 0
+    #: If set, overrides all positions to use this entity index.
+    pos_override: Optional[int] = None
+    #: If set, overrides non-positioned sounds to instead to use this position.
+    ambient_pos_override: Optional[int] = None
 
     @classmethod
     def parse(cls, kv: Keyvalues) -> 'SubScape':
@@ -182,23 +206,32 @@ class SubScape:
 @attrs.define(kw_only=True)
 class Soundscape:
     """A single soundscape definition."""
+    #: The name of the soundscape with its original casing.
     name: str
+    #: All ``playrandom`` rules defined by this soundscape.
     rand_sounds: list[RandSound] = attrs.Factory(list)
+    #: All ``playloooping`` rules defined by this soundscape.
     loop_sounds: list[LoopSound] = attrs.Factory(list)
+    #: All ``playsoundscape`` rules defined by this soundscape.
     children: list[SubScape] = attrs.Factory(list)
 
     # Scalar options set by the scape.
+    #: Sets the DSP preset while this soundscape is active.
     dsp: Optional[int] = None
+    #: Sets the spatial DSP preset while this soundscape is active.
     dsp_spatial: Optional[int] = None
+    #: Controls the volume of all DSP effects.
     dsp_volume: float = 1.0
+    #: If non-zero, overrides the duration of the crossfade between this and the previous soundscape.
     fadetime: float = 0.0
+    #: Makes a specific soundmixer active, to override sound priority.
     soundmixer: Optional[str] = None
 
     @classmethod
     def parse(cls, file: Keyvalues) -> dict[str, 'Soundscape']:
         """Parse all soundscape definitions in a file.
 
-        This returns a dict mapping casefolded names to Sounds.
+        This returns a dict mapping casefolded names to Soundscapes.
         """
         return {kv.name: cls.parse_one(kv) for kv in file}
 
@@ -224,7 +257,7 @@ class Soundscape:
             elif child_kv.name == 'soundmixer':
                 scape.soundmixer = child_kv.value
             else:
-                raise ValueError(f'Unknown soundscape option:', child_kv.real_name)
+                raise ValueError('Unknown soundscape option:', child_kv.real_name)
         return scape
 
     def export(self, file: FileWText) -> None:
