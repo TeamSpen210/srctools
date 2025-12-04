@@ -93,6 +93,7 @@ ANIM_EVENT_FOOTSTEP = {
     AnimEvents.AE_NPC_RIGHTFOOT,
 }
 ANIM_EVENT_PARTICLE = AnimEvents.AE_CL_CREATE_PARTICLE_EFFECT
+ANIM_EVENT_PARTICLE_SCRIPT = AnimEvents.CL_EVENT_SPRITEGROUP_CREATE
 
 _FGD_TO_FILE = {
     # Appears differently in Hammer etc, but all load mats.
@@ -1416,6 +1417,17 @@ class PackList:
                         )
                     else:
                         self.pack_particle(part_name, source=filename)
+                elif event.type is ANIM_EVENT_PARTICLE_SCRIPT:
+                    # This is used for env_particlescript only.
+                    try:
+                        attach_name, sprite_name = event.options.split()
+                    except ValueError:
+                        LOGGER.warning(
+                            'Invalid env_particlescript sprite event params "{}" in "{}" sequence on "{}"!',
+                            event.options, seq.label, filename,
+                        )
+                    else:
+                        self.pack_file(sprite_name, FileType.MATERIAL, source=filename)
 
         for break_mdl in mdl.phys_keyvalues.find_all('break', 'model'):
             # Breakable gibs inherit the base prop skin. If the gib prop doesn't have multiple
