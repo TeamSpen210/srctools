@@ -1,5 +1,5 @@
 """Implemenations of specific code for each FGD helper type."""
-from typing import ClassVar, Optional, Union
+from typing import ClassVar, Optional, Union, Literal
 from typing_extensions import Self, deprecated
 from collections.abc import Collection, Iterable, Iterator
 
@@ -23,7 +23,8 @@ __all__ = [
     'HelperVecLine', 'HelperWorldText',
 
     'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy',
-    'HelperExtCatapult',
+    'HelperExtCatapult', 'HelperExtStrataFlatOBB', 'HelperExtStrataHalfFlatOBB',
+    'HelperExtStrataClusteredLight',
 ]
 
 
@@ -834,5 +835,58 @@ class HelperExtAutoVisgroups(Helper):
 
 @attrs.define
 class HelperExtCatapult(Helper):
-    """Specialized helper for trigger_catapult, in Hammer++."""
+    """Specialized helper for trigger_catapult, in Hammer++ and Strata Source."""
     TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.ENT_CATAPULT
+
+
+@attrs.define
+class HelperExtStrataFlatOBB(Helper):
+    """A 2D oriented bounding box, specified by width/height. Used to visualise VGUI entities."""
+    TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.STRATA_FLAT_OBB
+
+    width_kv: str
+    height_kv: str
+
+    @classmethod
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
+        """Parse orientedwidthheight(width, height)."""
+        if len(args) != 2:
+            raise ValueError(f'Expected 2 arguments, got {args!r}!')
+        return cls(args[0], args[1], tags=tags)
+
+    def export(self) -> list[str]:
+        """Produce the arguments for orientedwidthheight()."""
+        return [self.width_kv, self.height_kv]
+
+
+@attrs.define
+class HelperExtStrataHalfFlatOBB(HelperExtStrataFlatOBB):
+    """A 2D oriented bounding box, specified by a half-width/height. Used to visualise portal entities."""
+    TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.STRATA_HALF_FLAT_OBB
+
+
+@attrs.define
+class HelperExtStrataClusteredLight(Helper):
+    """Visualises parameters for clustered lights."""
+    TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.ENT_STRATA_CLUSTERED_LIGHT
+
+    #: Type of clustered light.
+    kind: Literal['point', 'spot']
+
+    @classmethod
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
+        """Parse clusteredlight(width, height)."""
+        if len(args) != 1:
+            raise ValueError(f'Expected 1 argument, got {args!r}!')
+        kind = args[0].casefold()
+        # Feels redundant, but technically kind could be a subclass, therefore not a literal.
+        if kind == 'point':
+            return cls('point', tags=tags)
+        elif kind == 'spot':
+            return cls('spot', tags=tags)
+        else:
+            raise ValueError(f'Unknown light kind "{kind}"!')
+
+    def export(self) -> list[str]:
+        """Produce the arguments for clusteredlight()."""
+        return [self.kind]

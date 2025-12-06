@@ -30,7 +30,7 @@ import srctools
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes', 'AutoVisgroup', 'FGDParseError',
     'FGD', 'EntityDef', 'KVDef', 'IODef', 'EntAttribute', 'Helper', 'UnknownHelper',
-    'match_tags', 'validate_tags', 'Resource', 'ResourceCtx', 'Snippet',
+    'match_tags', 'validate_tags', 'Resource', 'ResourceCtx', 'Snippet', 'TagsSet',
 
     # From srctools._fgd_helpers
     'HelperAxis', 'HelperBBox', 'HelperBoundingBox', 'HelperBreakableSurf',
@@ -282,7 +282,13 @@ class HelperTypes(Enum):
     ENT_WORLDTEXT = 'worldtext'  #: Renders 3D text in-world.
     ENT_CATAPULT = 'catapult'  #: Renders trigger_catpault trajectors prediction
 
+    #: Strata Source addition, an oriented 2D bbox.
+    STRATA_FLAT_OBB = 'orientedwidthheight'
+    #: Strata Source addition, an oriented 2D bbox using half width/height values.
+    STRATA_HALF_FLAT_OBB = 'orientedwidthheighthalf'
+
     ENT_LIGHT_CONE_BLACK_MESA = 'lightconenew'  #: New helper added in Black Mesa.
+    ENT_STRATA_CLUSTERED_LIGHT = 'clusteredlight'  #: Helper for Strata's clustered lights.
 
     # Format extensions.
 

@@ -10,6 +10,7 @@ Version (dev)
 -------------
 * Add :mod:`srctools.sndscape`, for parsing soundscape scripts.
 * Changed `PackList.load_choreo_scenes() <srctools.packlist.PackList.load_choreo_scenes>` to warn if ``scenes.image`` is not found.
+* Add support for ``orientedwidthheight()``, ``orientedwidthheighthalf()`` and ``clusteredlight()`` Strata FGD helpers.
 
 -------------
 Version 2.6.2
