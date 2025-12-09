@@ -241,6 +241,8 @@ class FileSystem(Generic[_FileDataT]):
 
         It should only be available to that filesystem, and produces the type.
         """
+        if type(file.sys) is not cls:
+            raise ValueError(f"File {file} does not belong to {cls.__qualname__} systems!")
         # File/Filesystem may use each other's internals.
         # noinspection PyProtectedMember
         return cast(_FileDataT, file._data)
@@ -452,6 +454,7 @@ class VirtualFileSystem(FileSystem[str]):
     def _clean_path(cls, path: Union[str, File[Self]]) -> str:
         """Convert paths to one representation."""
         if isinstance(path, File):
+            cls._get_data(path)  # Check ownership.
             path = path.path
         return os.path.normpath(path).replace('\\', '/').casefold()
 
