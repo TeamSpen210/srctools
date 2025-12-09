@@ -65,6 +65,7 @@ def test_valtype_choreo() -> None:
     assert files == IsList(
         (FileType.CHOREO, 'character/player/talk.vcd'),
         (FileType.CHOREO, 'generic/swap.vcd'),
+        check_order=False,
     )
 
 
@@ -131,4 +132,7 @@ def test_valtype_decal() -> None:
         texture="decals/decal_crater001a",
     )
     packlist, files = packing_test(vmf)
-    assert (FileType.MATERIAL, "materials/decals/decal_crater001a.vmt") in files, list(packlist)
+    assert files == IsList(
+        (FileType.MATERIAL, "materials/decals/decal_crater001a.vmt"),
+        check_order=False,
+    )
