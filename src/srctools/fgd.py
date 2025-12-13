@@ -63,7 +63,7 @@ Choices: TypeAlias = tuple[str, str, TagsSet]
 _ENGINE_DB: Optional[list[_EngineDBProto]] = None
 
 
-def ignore_errors(error: str, /) -> None:
+def ignore_errors(_: str, /) -> None:
     """Default function for get_resources, discards errors."""
     return None
 
@@ -295,6 +295,10 @@ class HelperTypes(Enum):
     #: Indicates this entity is only available in the given games.
     EXT_APPLIES_TO = 'appliesto'
     EXT_ORDERBY = 'orderby'  #: Reorder keyvalues. Args = names in order.
+    #: Removes a keyvalue, input or output from which was defined in super-classes.
+    #: Does not apply to this entity, allowing it to override them with types which would
+    #: usually be incompatible.
+    EXT_NO_INHERIT = 'noinherit'
 
     #: Convenience only used in parsing, adds @AutoVisgroup parents for the
     #: current entity. 'Auto' is implied at the start.

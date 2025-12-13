@@ -31,6 +31,9 @@
 @PointClass 
 	appliesto(tag1, +tag2, -tag3, !tag4)
 	orderby(a, c, b)
+	noinherit[TAG1](keyvalue, kV2, kV3, kv1)
+	noinherit(input, iNp1, inp2)
+	noinherit(output, OUT3, out1, out2)
 	unknown[-E](a+b, c, d, 4+3-25, e)
 = some_entity
 	[

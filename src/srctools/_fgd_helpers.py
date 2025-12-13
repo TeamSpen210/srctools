@@ -1,7 +1,7 @@
-"""Implemenations of specific code for each FGD helper type."""
+"""Implementations of specific code for each FGD helper type."""
 from typing import ClassVar, Optional, Union, Literal
 from typing_extensions import Self, deprecated
-from collections.abc import Collection, Iterable, Iterator
+from collections.abc import Collection, Iterable, Iterator, Mapping
 
 import attrs
 
@@ -23,6 +23,7 @@ __all__ = [
     'HelperVecLine', 'HelperWorldText',
 
     'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy',
+    'HelperExtNoInherit',
     'HelperExtCatapult', 'HelperExtStrataFlatOBB', 'HelperExtStrataHalfFlatOBB',
     'HelperExtStrataClusteredLight',
 ]
@@ -831,6 +832,51 @@ class HelperExtAutoVisgroups(Helper):
     def export(self) -> list[str]:
         """Produce the arguments for autovis()."""
         return self.path
+
+
+@attrs.define
+class HelperExtNoInherit(Helper):
+    """Specifies keyvalues/inputs/outputs which are not inherited from the base classes."""
+    TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.EXT_NO_INHERIT
+
+    kind: Literal['keyvalue', 'input', 'output']
+    names: set[str] = attrs.Factory(set)
+
+    # noinspection PyClassVar
+    _KINDS: ClassVar[Mapping[str, Literal['keyvalue', 'input', 'output']]] = {
+        'keyvalue': 'keyvalue',
+        'k': 'keyvalue',
+        'key': 'keyvalue',
+        'kv': 'keyvalue',
+        'i': 'input',
+        'in': 'input',
+        'inp': 'input',
+        'o': 'output',
+        'out': 'output',
+        'output': 'output',
+    }
+
+    @classmethod
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
+        """Parse noinherit(keyvalue, key1, key2, key3)."""
+        # 1 arg is useless but technically valid.
+        if len(args) == 0:
+            raise ValueError(f'Expected 1 or more arguments, got {args!r}!')
+        kind: Literal['keyvalue', 'input', 'output']
+        try:
+            kind = cls._KINDS[args[0].casefold()]
+        except KeyError:
+            # Allow shorthands, but use the full form in the error.
+            raise ValueError(
+                f'Unknown type "{args[0]}", expected "keyvalue", "input" or "output"'
+            ) from None
+        return cls(kind, set(args[1:]), tags=tags)
+
+    def export(self) -> list[str]:
+        """Produce the arguments for orderby()."""
+        result = sorted(self.names)
+        result.insert(0, self.kind)
+        return result
 
 
 @attrs.define

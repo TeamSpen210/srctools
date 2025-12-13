@@ -616,6 +616,9 @@ def test_parse_helpers_extension(py_c_token: None, file_regression: FileRegressi
     orderby(a, c, b)
     autovis(Auto, some, group)
     autovis(Spaced Parent, spaced cHIld)
+    noinherit[tag1](key kv1, kV2, kV3)
+    noinherit(inP, iNp1, inp2)
+    noinherit(o, OUT3, out1, out2)
     unknown[-E](a+b, c  d 4+3-25, e)
     = some_entity [
         a(int) : "First"
@@ -629,6 +632,9 @@ def test_parse_helpers_extension(py_c_token: None, file_regression: FileRegressi
     assert ent.helpers == [
         fgd_mod.HelperExtAppliesTo(["tag1", "+tag2", "-tag3", "!tag4"]),
         fgd_mod.HelperExtOrderBy(["a", "c", "b"]),
+        fgd_mod.HelperExtNoInherit('keyvalue', {'kv1', 'kV2', 'kV3'}, tags=frozenset({'TAG1'})),
+        fgd_mod.HelperExtNoInherit('input', {'iNp1', 'inp2'}),
+        fgd_mod.HelperExtNoInherit('output', {'out1', 'out2', 'OUT3'}),
         fgd_mod.UnknownHelper("unknown", ["a+b", "c", "d", "4+3-25", "e"], tags=frozenset({'-E'})),
     ]
     assert fgd.auto_visgroups == {
