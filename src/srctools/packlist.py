@@ -862,6 +862,7 @@ class PackList:
             self.load_particle_manifest(cache.with_name(f'{prefix}_particles.dmx'))
         else:
             self.load_soundscript_manifest()
+            self.load_soundscape_manifest()
             self.load_particle_manifest()
 
         self.load_choreo_scenes()  # Image is already a compact cache.

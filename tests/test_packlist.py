@@ -1,9 +1,14 @@
 """Test packlist logic."""
+from typing import Union
+
+from collections.abc import Mapping
+
 from dirty_equals import IsList
 
+from srctools import EmptyMapping
 from srctools.vmf import VMF
 from srctools.const import FileType
-from srctools.filesys import FileSystemChain
+from srctools.filesys import FileSystemChain, VirtualFileSystem
 from srctools.packlist import strip_extension, PackList
 
 
@@ -19,9 +24,16 @@ def test_strip_extensions() -> None:
 # Test packing, by using various representative entities.
 # -------------------------------------------------------
 
-def packing_test(vmf: VMF) -> tuple[PackList, list[tuple[FileType, str]]]:
+def packing_test(
+    vmf: VMF,
+    files: Mapping[str, Union[str, bytes]] = EmptyMapping,
+) -> tuple[PackList, list[tuple[FileType, str]]]:
     """Pack ents in a VMF, then return the files for checking packing logic."""
-    packlist = PackList(FileSystemChain())
+    fsys = FileSystemChain()
+    if files is not EmptyMapping:
+        fsys.add_sys(VirtualFileSystem(files))
+    packlist = PackList(fsys)
+    packlist.load_manifests()
     packlist.pack_from_ents(vmf, 'some_map')
     return packlist, [(file.type, file.filename) for file in packlist]
 
@@ -83,6 +95,34 @@ def test_valtype_model_sound() -> None:
     packlist, files = packing_test(vmf)
     assert (FileType.MODEL, "models/props/magic.mdl") in files, list(packlist)
     assert (FileType.RAW_SOUND, "sound/explosion.wav") in files, list(packlist)
+
+
+def test_valtype_soundscript() -> None:
+    """Test ambient_generic, for soundscripts."""
+    vmf = VMF()
+    vmf.create_ent('ambient_generic', message='test.some_sound')
+    fsys = {
+        'scripts/game_sounds_manifest.txt': '''
+"game_sounds_manifest"
+    {
+    "precache_file" "scripts/soundscript.txt"
+    }
+''',
+        'scripts/soundscript.txt': '''
+"test.some_sound"
+    {
+    "channel" "CHAN_STATIC"
+    "volume"  "VOL_NORM"
+    "wave"	  "ambient/playonce/sound.wav"
+    }
+'''
+    }
+    packlist, files = packing_test(vmf, fsys)
+    assert files == IsList(
+        (FileType.RAW_SOUND, 'sound/ambient/playonce/sound.wav'),
+        (FileType.SOUNDSCRIPT, 'scripts/soundscript.txt'),
+        check_order=False,
+    ), list(packlist)
 
 
 def test_valtype_texture() -> None:
