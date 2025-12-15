@@ -140,6 +140,12 @@ _FGD_TO_FILE = {
     KVTypes.EXT_ANGLE_PITCH: None,
     KVTypes.EXT_ANGLES_LOCAL: None,
 }
+# The set of types with packing behaviour.
+_USEFUL_KV_TYPES = {
+    kv_type for kv_type, result in _FGD_TO_FILE.items()
+    if result is not None
+}
+_USEFUL_KV_TYPES |= {KVTypes.STR_VSCRIPT, KVTypes.STR_VSCRIPT_SINGLE, KVTypes.STR_PARTICLE}
 
 
 @deprecated(
@@ -1063,16 +1069,17 @@ class PackList:
         # Definitions for the common keyvalues on all entities.
         base_entity = EntityDef.engine_def('_CBaseEntity_')
 
-        cache: dict[str, EntityDef] = {}
+        ent_cache: dict[str, EntityDef] = {}
+        kv_cache: dict[EntityDef, set[str]] = {}
 
         def get_ent(classname: str) -> EntityDef:
             """Look up the FGD for an entity."""
             try:
-                return cache[classname]
+                return ent_cache[classname]
             except KeyError:
                 pass
             try:
-                ent_class = cache[classname] = EntityDef.engine_def(classname)
+                ent_class = ent_cache[classname] = EntityDef.engine_def(classname)
                 return ent_class
             except KeyError:
                 if (classname, '') not in unknown_keys:
@@ -1102,6 +1109,17 @@ class PackList:
             except KeyError:
                 # Fall back to generic keyvalues.
                 ent_class = base_entity
+            try:
+                relevant_keys = kv_cache[ent_class]
+            except KeyError:
+                # Filter keyvalues down to those which could result in packing.
+                # There's a lot of random keys in CBaseEntity etc which are never going
+                # to produce files.
+                relevant_keys = kv_cache[ent_class] = {
+                    name
+                    for name in ent_class.kv
+                    if name.casefold() == 'model' or ent_class.kv[name].type in _USEFUL_KV_TYPES
+                }
 
             skinset: Optional[set[int]]
             if 'skinset' in ent:
@@ -1116,7 +1134,9 @@ class PackList:
 
             value: str
             key: str
-            for key in set(ent) | set(ent_class.kv):
+            # Check both keys set on the ent (for unknown-kv warnings), and potentially packable
+            # ones in the FGD, so we can check the defaults.
+            for key in set(ent) | relevant_keys:
                 key = key.casefold()
                 # These are always present on entities, and we don't have to do
                 # any packing for them.
@@ -1172,6 +1192,7 @@ class PackList:
                     file_type = _FGD_TO_FILE[val_type]
                 except KeyError:
                     # Handle some file types with unique behaviour.
+                    # Note, if adding more, add to _USEFUL_KV_TYPES too!
 
                     # Either a space-separated list of scripts, or a single one. Valve only used
                     # Squirrel (.nut) for VScript, but it's possible mods could have added others.
