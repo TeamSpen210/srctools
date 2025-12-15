@@ -125,6 +125,57 @@ def test_valtype_soundscript() -> None:
     ), list(packlist)
 
 
+def test_valtype_soundscape() -> None:
+    """Test env_soundscape, for soundscapes."""
+    vmf = VMF()
+    vmf.create_ent('env_soundscape', soundscape='test.some_scape')
+    fsys = {
+        'scripts/soundscapes_manifest.txt': '''
+"soundscapes_manifest"
+    {
+    "file" "scripts/soundscape.txt"
+    }
+''',
+        'scripts/soundscape.txt': '''
+"test.some_scape"
+    {
+    playlooping
+        {
+        wave "ambient/loop_sound.mp3"
+        }
+    playsoundscape
+        {
+        name test.another_scape
+        }
+    playrandom
+        {
+        rndwave
+            {
+            wave "ambient/rand_1.wav"
+            wave ambient/rand_2.wav
+            }
+        }
+    }
+"test.another_scape"
+    {
+    "playlooping"
+        {
+        "wave" "ambient/sub_sound.wav"
+        }
+    }
+'''
+    }
+    packlist, files = packing_test(vmf, fsys)
+    assert files == IsList(
+        (FileType.RAW_SOUND, 'sound/ambient/loop_sound.mp3'),
+        (FileType.RAW_SOUND, 'sound/ambient/sub_sound.wav'),
+        (FileType.RAW_SOUND, 'sound/ambient/rand_1.wav'),
+        (FileType.RAW_SOUND, 'sound/ambient/rand_2.wav'),
+        (FileType.SOUNDSCAPE_FILE, 'scripts/soundscape.txt'),
+        check_order=False,
+    ), list(packlist)
+
+
 def test_valtype_texture() -> None:
     """Test env_projectedtexture, for the TEXTURE type."""
     vmf = VMF()
