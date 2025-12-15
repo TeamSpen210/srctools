@@ -32,6 +32,7 @@ def test_valtype_basic() -> None:
     vmf.create_ent(
         'npc_sniper',
         targetname='a_sniper',  # target_source
+        vscripts='first.nut second',  # vscript_list
         angles='0 90 10',  # Angle
         radius=3.8,  # Float
         spawnflags=1024,  # Spawnflags
@@ -45,6 +46,8 @@ def test_valtype_basic() -> None:
     )
     packlist, files = packing_test(vmf)
     assert files == IsList(  # These are all npc_sniper default resources.
+        (FileType.VSCRIPT_SQUIRREL, 'scripts/vscripts/first.nut'),
+        (FileType.VSCRIPT_SQUIRREL, 'scripts/vscripts/second.nut'),
         (FileType.MATERIAL, 'materials/effects/bluelaser1.vmt'),
         (FileType.MATERIAL, 'materials/sprites/muzzleflash1.vmt'),
         (FileType.MATERIAL, 'materials/sprites/light_glow03.vmt'),

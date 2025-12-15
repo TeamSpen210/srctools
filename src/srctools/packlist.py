@@ -166,6 +166,17 @@ def strip_extension(filename: str) -> str:
     return filename[:dot_pos]
 
 
+def default_extension(filename: str, ext: str) -> str:
+    """If an extension isn't specified, use the provided one."""
+    try:
+        dot_pos = filename.rindex('.')
+    except ValueError:
+        return filename + ext  # No existing one.
+    if '/' in filename[dot_pos:]:
+        return filename + ext
+    return filename  # We do have one.
+
+
 @attrs.define(eq=False, repr=False)
 class PackFile:
     """Represents a single file we are packing.
@@ -1160,11 +1171,22 @@ class PackList:
                 try:
                     file_type = _FGD_TO_FILE[val_type]
                 except KeyError:
+                    # Handle some file types with unique behaviour.
+
+                    # Either a space-separated list of scripts, or a single one. Valve only used
+                    # Squirrel (.nut) for VScript, but it's possible mods could have added others.
+                    # The extension is optional, so assume nut if no other is provided.
                     if val_type is KVTypes.STR_VSCRIPT:
                         for script in value.split():
-                            self.pack_file('scripts/vscripts/' + script, source=source)
+                            self.pack_file(
+                                default_extension(f'scripts/vscripts/{script}', '.nut'),
+                                source=source,
+                            )
                     elif val_type is KVTypes.STR_VSCRIPT_SINGLE:
-                        self.pack_file('scripts/vscripts/' + value, source=source)
+                        self.pack_file(
+                            default_extension(f'scripts/vscripts/{value}', '.nut'),
+                            source=source,
+                        )
                     elif val_type is KVTypes.STR_PARTICLE:
                         self.pack_particle(value, source=source)
                 else:
