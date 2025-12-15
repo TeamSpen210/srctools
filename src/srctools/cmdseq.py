@@ -2,36 +2,60 @@
 
 These set the arguments to the compile tools.
 """
-import attrs
-from typing import Union
+from typing import Union, Final
+
 from collections.abc import Sequence
 from enum import Enum
 from struct import Struct, pack, unpack
+import io
 
+import attrs
+
+from .keyvalues import Keyvalues
+from .tokenizer import Tokenizer, Token
 from .types import FileR, FileWBinary
 
 
 ST_COMMAND = Struct('Bi260s260sii260sii')
 ST_COMMAND_PRE_V2 = Struct('Bi260s260sii260si')
 
-SEQ_HEADER = b'Worldcraft Command Sequences\r\n\x1a'
+# We have two formats here, Valve's binary form, and Strata Source's keyvalues form.
+# For keyvalues, we enforce that the root name must start immediately, so we can parse the
+# initial bytes. Since it's got a space we don't have to worry about non-quoted forms.
+SEQ_HEADER_BINARY: Final[bytes] = b'Worldcraft Command Sequences\r\n\x1a'
+SEQ_HEADER_KV: Final[bytes] = b'"command sequences"'
+# This is longer, chop so we can compare.
+SEQ_HEADER_BINARY_A: Final[bytes] = SEQ_HEADER_BINARY[:len(SEQ_HEADER_KV)]
+SEQ_HEADER_BINARY_B: Final[bytes] = SEQ_HEADER_BINARY[len(SEQ_HEADER_KV):]
 
 __all__ = ['SpecialCommand', 'Command', 'parse', 'write']
 
 
 class SpecialCommand(Enum):
-    """Special commands to run instead of the exe."""
+    """Special commands to run instead of an executable.
+
+    Depending on the command, these either take a single :samp:`{filename}` or a :samp:`{source} {destination}` pair.
+    """
+    #: Change the working directory to the specified folder.
     CHANGE_DIR = 256
+    #: Copies the :file:`source` file to the :file:`destination` filename.
     COPY_FILE = 257
+    #: Deletes the specified :file:`filename`.
     DELETE_FILE = 258
+    #: Renames the :file:`source` file to the :file:`destination` filename.
     RENAME_FILE = 259
+    #: Strata Source addition. If :file:`source` exists, copies it to the :file:`destination` filename.
+    STRATA_COPY_FILE_IF_EXISTS = 261
 
 
+# When exporting, the exe field still exists in the binary format. The GUI shows these names, fill
+# in what Hammer shows.
 SPECIAL_NAMES = {
     SpecialCommand.CHANGE_DIR: 'Change Directory',
     SpecialCommand.COPY_FILE: 'Copy File',
     SpecialCommand.DELETE_FILE: 'Delete File',
     SpecialCommand.RENAME_FILE: 'Rename File',
+    SpecialCommand.STRATA_COPY_FILE_IF_EXISTS: 'Copy File if it Exists',
 }
 
 
@@ -113,10 +137,23 @@ def parse(file: FileR[bytes]) -> dict[str, list[Command]]:
     """Read a list of sequences from a file.
 
     This returns a dict mapping names to a list of sequences.
+    The file may either be in the Valve binary format, or Strata's keyvalues format.
     """
-    header = file.read(len(SEQ_HEADER))
-    if header != SEQ_HEADER:
-        raise ValueError('Wrong header: ', header)
+
+    header_a = file.read(len(SEQ_HEADER_KV))
+    if header_a == SEQ_HEADER_KV:
+        # This is a keyvalues file, switch to parsing as that.
+        # The header is a single token, we can push that onto the tokenizer immediately.
+        tok = Tokenizer(
+            io.TextIOWrapper(file),
+            string_bracket=True, allow_escapes=True,
+        )
+        tok.push_back(Token.STRING, 'command sequences')
+        return parse_strata_keyvalues(Keyvalues.parse(tok, getattr(file, 'name', 'CmdSeq.wc')))
+
+    header_b = file.read(len(SEQ_HEADER_BINARY_B))
+    if header_a != SEQ_HEADER_BINARY_A or header_b != SEQ_HEADER_BINARY_B:
+        raise ValueError(f'Invalid header: {header_a + header_b!r}')
 
     [version] = unpack('f', file.read(4))
 
@@ -142,7 +179,7 @@ def parse(file: FileR[bytes]) -> dict[str, list[Command]]:
 
 def write(sequences: dict[str, Sequence[Command]], file: FileWBinary) -> None:
     """Write commands back to a file."""
-    file.write(SEQ_HEADER)
+    file.write(SEQ_HEADER_BINARY)
     file.write(pack('f', 0.2))
 
     file.write(pack('I', len(sequences)))
@@ -176,3 +213,8 @@ def write(sequences: dict[str, Sequence[Command]], file: FileWBinary) -> None:
                 cmd.use_proc_win,
                 cmd.no_wait,
             ))
+
+
+def parse_strata_keyvalues(kv: Keyvalues) -> dict[str, list[Command]]:
+    """Parse Strata Source's alternate Keyvalues file format."""
+    raise NotImplementedError
