@@ -45,6 +45,7 @@ def test_valtype_basic() -> None:
         'npc_sniper',
         targetname='a_sniper',  # target_source
         vscripts='first.nut second',  # vscript_list
+        origin='128 0 96',  # Origin
         angles='0 90 10',  # Angle
         radius=3.8,  # Float
         spawnflags=1024,  # Spawnflags
@@ -66,6 +67,18 @@ def test_valtype_basic() -> None:
         (FileType.MODEL, 'models/combine_soldier.mdl'),
         check_order=False,
     )
+
+
+def test_valtype_axis() -> None:
+    """Test prop_door_rotating, for the AXIS type."""
+    vmf = VMF()
+    vmf.create_ent(
+        'prop_door_rotating',
+        axis='32 0 48, 32 84 48',
+        # Don't set model, we'll test that in class resources.
+    )
+    packlist, files = packing_test(vmf)
+    assert files == []
 
 
 def test_valtype_choreo() -> None:
@@ -95,6 +108,17 @@ def test_valtype_model_sound() -> None:
     packlist, files = packing_test(vmf)
     assert (FileType.MODEL, "models/props/magic.mdl") in files, list(packlist)
     assert (FileType.RAW_SOUND, "sound/explosion.wav") in files, list(packlist)
+
+
+def test_valtype_npc_class() -> None:
+    """Test scripted_target, for the NPC_CLASS type."""
+    vmf = VMF()
+    vmf.create_ent(
+        'scripted_target',
+        m_iszentity='npc_alyx',
+    )
+    packlist, files = packing_test(vmf)
+    assert files == []
 
 
 def test_valtype_soundscript() -> None:
@@ -230,3 +254,43 @@ def test_valtype_decal() -> None:
         (FileType.MATERIAL, "materials/decals/decal_crater001a.vmt"),
         check_order=False,
     )
+
+
+def test_valtype_overlay() -> None:
+    """Test info_overlay, for several vector types."""
+    vmf = VMF()
+    vmf.create_ent(
+        'info_overlay',
+        material="overlays/some_sign",
+        sides='1 82 95',  # sidelist
+        basisorigin='0 0 0',  # vector
+        basisnormal='0 0 1',  # vec_dir
+        uv0='-16 -16 0',  # vec_local
+    )
+    packlist, files = packing_test(vmf)
+    assert files == IsList(
+        (FileType.MATERIAL, "materials/overlays/some_sign.vmt"),
+        check_order=False,
+    )
+
+
+def test_valtype_color1() -> None:
+    """Test env_skypaint, for the COLOR1 type."""
+    vmf = VMF()
+    vmf.create_ent(
+        'env_skypaint',
+        topcolor='1 0 0.2 0.875',
+    )
+    packlist, files = packing_test(vmf)
+    assert files == []
+
+
+def test_valtype_vecline() -> None:
+    """Test phys_motor, for the VECLINE type."""
+    vmf = VMF()
+    vmf.create_ent(
+        'phys_motor',
+        axis='32 0 48, 32 84 48',
+    )
+    packlist, files = packing_test(vmf)
+    assert files == []
