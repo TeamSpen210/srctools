@@ -1465,13 +1465,16 @@ def save_scenes_image_sync(
 ) -> None:
     """Write a new ``scenes.image`` file.
     
-    Binary scenes use a common string pool, meaning that all unparsed scenes must share their pool
-    to be copied over directly.
+    If all unparsed scenes originate from the same scenes.image file, this can directly copy the
+    existing data.
     """
     if isinstance(scenes, dict):
         scene_list = list(scenes.values())
     else:
-        scene_list = list(scenes)
+        # Collect into a dict, then back to a sequence - we don't want to allow duplicates.
+        scene_list = list({entry.checksum: entry for entry in scenes}.values())
+    # The entry CRCs must be sorted, since the game uses a binary search.
+    scene_list.sort(key=lambda entry: entry.checksum)
 
     # First, loop through and see if we do have a string pool to reuse.
     pool: list[str] | None = None
@@ -1480,7 +1483,7 @@ def save_scenes_image_sync(
         if isinstance(entry._data, Scene):
             continue
         data, entry_pool = entry._data
-        if pool is None:
+        if pool is None and not two_pools:
             pool = entry_pool
         elif pool is not entry_pool:
             two_pools = True
@@ -1504,8 +1507,6 @@ def save_scenes_image_sync(
         else:
             # Parse if required, then export.
             entry_to_data[entry] = entry.data.export_binary(add_to_pool)
-    # The entry CRCs must be sorted, since the game uses a binary search.
-    scene_list.sort(key=lambda entry: entry.checksum)
 
     # Finally we can start writing to the file.
     file.write(struct.pack('<4siii', b'VSIF', version, len(scene_list), len(pool)))
