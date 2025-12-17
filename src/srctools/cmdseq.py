@@ -162,12 +162,18 @@ def parse(file: IO[bytes]) -> dict[str, list[Command]]:
     if header_a.lower() == SEQ_HEADER_KV:
         # This is a keyvalues file, switch to parsing as that.
         # The header is a single token, we can push that onto the tokenizer immediately.
-        tok = Tokenizer(
-            io.TextIOWrapper(file),
-            string_bracket=True, allow_escapes=True,
-        )
-        tok.push_back(Token.STRING, 'command sequences')
-        return parse_strata_keyvalues(Keyvalues.parse(tok, getattr(file, 'name', 'CmdSeq.wc')))
+        file_txt = io.TextIOWrapper(file)
+        try:
+            tok = Tokenizer(
+                file_txt,
+                string_bracket=True, allow_escapes=True,
+            )
+            tok.push_back(Token.STRING, 'command sequences')
+            return parse_strata_keyvalues(Keyvalues.parse(tok, getattr(file, 'name', 'CmdSeq.wc')))
+        finally:
+            # The caller opened our file, so we want to return it to their control.
+            # If we don't detach or close, we get a ResourceWarning.
+            file_txt.detach()
 
     header_b = file.read(len(SEQ_HEADER_BINARY_B))
     if header_a != SEQ_HEADER_BINARY_A or header_b != SEQ_HEADER_BINARY_B:
