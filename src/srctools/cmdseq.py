@@ -95,18 +95,22 @@ def pad_string(text: str, length: int) -> bytes:
 @attrs.define
 class Command:
     """A command to run."""
-    #: Either the path to the executable, or one of several special commands.
+    #: Either the path to the executable, or one of several special commands. A few presets
+    #: are also available like ``$vis_exe``.
     exe: Union[str, SpecialCommand]
-    args: str  #: Parameters to pass to the executable or command.
+    #: Parameters to pass to the executable or command.
+    # Can contain various ``$var`` substitutions such as ``$path``, ``$game`` and ``$file``.
+    args: str
 
     #: Whether this command is checked and should run.
     enabled: bool = attrs.field(default=True, kw_only=True)
-    #: If non-None, the command should fail if this file doesn't exist after it runs.
+    #: If non-`None`, the command should fail if this file doesn't exist after it runs.
     ensure_file: Union[str, None] = attrs.field(default=None, kw_only=True)
     #: Determines if the command should be executed directly, or captured in the 'run process'
-    #: window. Obsolete for Hammer versions with ``hammer_run_map_launcher.exe``.
+    #: window. Obsolete for Hammer versions which use :program:`hammer_run_map_launcher.exe`.
     use_proc_win: bool = attrs.field(default=True, kw_only=True)
     #: Indicates whether Hammer should wait for the command to finish before proceeding. Seems nonfunctional.
+    #: This is normally set to non-wait for ``$game_exe`` commands.
     no_wait: bool = attrs.field(default=False, kw_only=True)
 
     def __bool__(self) -> bool:
