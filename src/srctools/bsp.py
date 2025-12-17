@@ -3133,8 +3133,13 @@ class BSP:
                     if vers.version == vers_num:
                         self.static_prop_version = vers
             return
-        struct_size = (len(data) - static_lump.tell()) / prop_count
-        # print(f'Static prop: {prop_count} * {struct_size} bytes')
+        prop_seg_size = len(data) - static_lump.tell()
+        struct_size, remainder = divmod(prop_seg_size, prop_count)
+        if remainder != 0:
+            raise ValueError(
+                f'Static prop lump has invalid size: {prop_seg_size} bytes, '
+                f'but {prop_count} props - this does not divide cleanly.'
+            )
 
         # The prop data itself changes drastically, depending on version.
         # Some numbers are reused, so add the size of the struct to guess the
@@ -3145,7 +3150,8 @@ class BSP:
             except KeyError:
                 raise ValueError(
                     "Don't know a static prop "
-                    f"version={vers_num} with a size of {struct_size} bytes!"
+                    f"version={vers_num} with a size of {struct_size} bytes! "
+                    f"(total={prop_seg_size}, count={prop_count})"
                 ) from None
             if version is StaticPropVersion.V11 and self.version is VERSIONS.BLACK_MESA:
                 # Black Mesa uses a different version.
