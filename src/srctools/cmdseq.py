@@ -29,7 +29,11 @@ SEQ_HEADER_KV: Final[bytes] = b'"command sequences"'
 SEQ_HEADER_BINARY_A: Final[bytes] = SEQ_HEADER_BINARY[:len(SEQ_HEADER_KV)]
 SEQ_HEADER_BINARY_B: Final[bytes] = SEQ_HEADER_BINARY[len(SEQ_HEADER_KV):]
 
-__all__ = ['SpecialCommand', 'Command', 'parse', 'write']
+__all__ = [
+    'SpecialCommand', 'Command',
+    'parse', 'write',
+    'parse_strata_keyvalues', 'build_strata_keyvalues',
+]
 
 
 class SpecialCommand(Enum):
@@ -105,42 +109,42 @@ class Command:
     #: Indicates whether Hammer should wait for the command to finish before proceeding. Seems nonfunctional.
     no_wait: bool = attrs.field(default=False, kw_only=True)
 
-    @classmethod
-    def parse(
-        cls,
-        is_enabled: int,
-        is_special: int,
-        executable: bytes,
-        args: bytes,
-        is_long_filename: int,  # Unused
-        ensure_check: bytes,
-        ensure_file: bytes,
-        use_proc_win: int,
-        no_wait: int = 0,
-    ) -> 'Command':
-        """Parse the command from the structure in the file."""
-        exe: Union[str, SpecialCommand]
-        ensure: Union[str, None]
-        if is_special:
-            exe = SpecialCommand(is_special)
-        else:
-            exe = strip_cstring(executable)
-        if ensure_check:
-            ensure = strip_cstring(ensure_file)
-        else:
-            ensure = None
-
-        return cls(
-            exe,
-            strip_cstring(args),
-            ensure_file=ensure,
-            use_proc_win=bool(use_proc_win),
-            no_wait=bool(no_wait),
-            enabled=bool(is_enabled),
-        )
-
     def __bool__(self) -> bool:
         return self.enabled
+
+
+def _parse_binary_cmd(
+    is_enabled: int,
+    is_special: int,
+    executable: bytes,
+    args: bytes,
+    is_long_filename: int,  # Unused
+    ensure_check: bytes,
+    ensure_file: bytes,
+    use_proc_win: int,
+    # This is not present in the 'v1' format.
+    no_wait: int = 0,
+) -> Command:
+    """Parse a command from the structure in the file."""
+    exe: Union[str, SpecialCommand]
+    ensure: Union[str, None]
+    if is_special:
+        exe = SpecialCommand(is_special)
+    else:
+        exe = strip_cstring(executable)
+    if ensure_check:
+        ensure = strip_cstring(ensure_file)
+    else:
+        ensure = None
+
+    return Command(
+        exe,
+        strip_cstring(args),
+        ensure_file=ensure,
+        use_proc_win=bool(use_proc_win),
+        no_wait=bool(no_wait),
+        enabled=bool(is_enabled),
+    )
 
 
 # IO[bytes] and not a specific protocol, TextIOWrapper calls most of the API.
@@ -178,10 +182,10 @@ def parse(file: IO[bytes]) -> dict[str, list[Command]]:
     for _ in range(seq_count):
         seq_name = strip_cstring(file.read(128))
         [cmd_count] = unpack('I', file.read(4))
+        # noinspection PyProtectedMember
         sequences[seq_name] = [
-            Command.parse(
-                *cmd_struct.unpack(file.read(cmd_struct.size)),
-            )
+            # Use a function unpack here to handle the v1/v2 syntax differences.
+            _parse_binary_cmd(*cmd_struct.unpack(file.read(cmd_struct.size)))
             for i in range(cmd_count)
         ]
     return sequences
