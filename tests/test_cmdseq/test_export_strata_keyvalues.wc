@@ -1,0 +1,110 @@
+"Command Sequences"
+	{
+	"FirstSeq"
+		{
+		"0"
+			{
+			"enabled" "1"
+			"special_cmd" "none"
+			"run" "C:/executable.exe"
+			"params" "parm1 parm2"
+			"ensure_check" "0"
+			"use_process_wnd" "0"
+			}
+		"1"
+			{
+			"enabled" "1"
+			"special_cmd" "change_dir"
+			"params" "destination"
+			"ensure_check" "1"
+			"ensure_fn" "post_exists"
+			"use_process_wnd" "0"
+			"no_wait" "1"
+			}
+		"2"
+			{
+			"enabled" "1"
+			"special_cmd" "copy_file"
+			"params" "src dest"
+			"ensure_check" "0"
+			"use_process_wnd" "0"
+			}
+		}
+	"Second Seq"
+		{
+		"0"
+			{
+			"enabled" "1"
+			"special_cmd" "delete_file"
+			"params" "deleted"
+			"ensure_check" "1"
+			"ensure_fn" "post/file"
+			"use_process_wnd" "0"
+			"no_wait" "1"
+			}
+		"1"
+			{
+			"enabled" "1"
+			"special_cmd" "rename_file"
+			"params" "\"first arg\" second"
+			"ensure_check" "0"
+			"use_process_wnd" "0"
+			}
+		"2"
+			{
+			"enabled" "1"
+			"special_cmd" "copy_file_if_exists"
+			"params" "unimportant dest/folder"
+			"ensure_check" "0"
+			"use_process_wnd" "0"
+			}
+		}
+	"Third"
+		{
+		"0"
+			{
+			"enabled" "0"
+			"special_cmd" "none"
+			"run" "$bsp_exe"
+			"params" "vbsp"
+			"ensure_check" "0"
+			}
+		"1"
+			{
+			"enabled" "0"
+			"special_cmd" "none"
+			"run" "$vis_exe"
+			"params" "vvis"
+			"ensure_check" "0"
+			"no_wait" "1"
+			}
+		"2"
+			{
+			"enabled" "0"
+			"special_cmd" "none"
+			"run" "$postcompiler_exe"
+			"params" "hammeraddons"
+			"ensure_check" "1"
+			"ensure_fn" "hammeraddons.vdf"
+			}
+		"3"
+			{
+			"enabled" "0"
+			"special_cmd" "none"
+			"run" "$light_exe"
+			"params" "vrad"
+			"ensure_check" "0"
+			"use_process_wnd" "0"
+			}
+		"4"
+			{
+			"enabled" "0"
+			"special_cmd" "none"
+			"run" "$game_exe"
+			"params" "p2:ce"
+			"ensure_check" "0"
+			"use_process_wnd" "0"
+			"no_wait" "1"
+			}
+		}
+	}

@@ -11,7 +11,7 @@ import io
 
 import attrs
 
-from . import conv_int
+from . import conv_int, bool_as_int
 from .keyvalues import Keyvalues
 from .tokenizer import Tokenizer, Token
 from .types import FileWBinary
@@ -58,7 +58,7 @@ SPECIAL_NAMES = {
     SpecialCommand.RENAME_FILE: 'Rename File',
     SpecialCommand.STRATA_COPY_FILE_IF_EXISTS: 'Copy File if it Exists',
 }
-NAME_TO_SPECIAL: Mapping[str, Optional[SpecialCommand]] = {
+STRATA_NAME_TO_SPECIAL: Mapping[str, Optional[SpecialCommand]] = {
     'none': None,
     'change_dir': SpecialCommand.CHANGE_DIR,
     'copy_file': SpecialCommand.COPY_FILE,
@@ -66,6 +66,7 @@ NAME_TO_SPECIAL: Mapping[str, Optional[SpecialCommand]] = {
     'rename_file': SpecialCommand.RENAME_FILE,
     'copy_file_if_exists': SpecialCommand.STRATA_COPY_FILE_IF_EXISTS,
 }
+SPECIAL_TO_STRATA_NAME = {cmd: name for name, cmd in STRATA_NAME_TO_SPECIAL.items()}
 
 
 def strip_cstring(data: bytes) -> str:
@@ -225,7 +226,10 @@ def write(sequences: Mapping[str, Sequence[Command]], file: FileWBinary) -> None
 
 
 def parse_strata_keyvalues(kv: Keyvalues) -> dict[str, list[Command]]:
-    """Parse Strata Source's alternate Keyvalues file format."""
+    """Parse Strata Source's alternate Keyvalues file format.
+
+    This is automatically called by the standard `parse` function if the signature is detected.
+    """
     sequences: dict[str, list[Command]] = {}
     for seq_kv in kv.find_children('Command Sequences'):
         seq_list = sequences.setdefault(seq_kv.real_name, [])
@@ -238,7 +242,7 @@ def parse_strata_keyvalues(kv: Keyvalues) -> dict[str, list[Command]]:
                 special_num = int(special_str)
                 special_cmd = None if special_num == 0 else SpecialCommand(special_num)
             else:
-                special_cmd = NAME_TO_SPECIAL[special_str.casefold()]
+                special_cmd = STRATA_NAME_TO_SPECIAL[special_str.casefold()]
             executable = special_cmd if special_cmd is not None else command_kv['run']
             if command_kv.bool('ensure_check'):
                 ensure_file = command_kv['ensure_fn', '']
@@ -254,3 +258,33 @@ def parse_strata_keyvalues(kv: Keyvalues) -> dict[str, list[Command]]:
                 use_proc_win=command_kv.bool('use_process_wnd', True),
             ))
     return sequences
+
+
+def build_strata_keyvalues(sequences: Mapping[str, Sequence[Command]]) -> Keyvalues:
+    """Build Strata Source's keyvalues file format, for export."""
+    root = Keyvalues('Command Sequences', [])
+    for name, commands in sequences.items():
+        command_kv = Keyvalues(name, [])
+        root.append(command_kv)
+        for i, command in enumerate(commands):
+            cmd = Keyvalues(str(i), [
+                Keyvalues('enabled', bool_as_int(command.enabled)),
+            ])
+            command_kv.append(cmd)
+            if isinstance(command.exe, SpecialCommand):
+                cmd.append(Keyvalues('special_cmd', SPECIAL_TO_STRATA_NAME[command.exe]))
+            else:
+                cmd.append(Keyvalues('special_cmd', 'none'))
+                cmd.append(Keyvalues('run', command.exe))
+            cmd.extend([
+                Keyvalues('params', command.args),
+                Keyvalues('ensure_check', bool_as_int(command.ensure_file is not None))
+            ])
+            if command.ensure_file is not None:
+                cmd.append(Keyvalues('ensure_fn', command.ensure_file))
+            # These do nothing, so only export if they have non-default values.
+            if not command.use_proc_win:
+                cmd.append(Keyvalues('use_process_wnd', '0'))
+            if command.no_wait:
+                cmd.append(Keyvalues('no_wait', '1'))
+    return root
