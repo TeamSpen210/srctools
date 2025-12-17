@@ -305,7 +305,8 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
         self.systems = []
         for sys in systems:
             if isinstance(sys, tuple):
-                self.add_sys(*sys)
+                fsys, subfolder = sys
+                self.add_sys(fsys, subfolder)
             else:
                 self.add_sys(sys)
 

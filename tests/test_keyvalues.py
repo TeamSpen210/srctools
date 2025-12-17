@@ -113,7 +113,7 @@ def test_names() -> None:
     with pytest.deprecated_call(match='[rR]oot [kK]eyvalues'):
         prop.name = None  # type: ignore
     with pytest.deprecated_call(match='[rR]oot [kK]eyvalues'):
-        assert prop.name is None
+        assert prop.name is None  # type: ignore
     with pytest.deprecated_call(match='[rR]oot [kK]eyvalues'):
         assert prop.real_name is None
 

@@ -2072,7 +2072,7 @@ class MatrixBase:
         vec._y = (x * self._ab) + (y * self._bb) + (z * self._cb)
         vec._z = (x * self._ac) + (y * self._bc) + (z * self._cc)
 
-    def __matmul__(self, other: 'MatrixBase | AngleBase') -> Self:
+    def __matmul__(self, other: 'Matrix | FrozenMatrix | Angle | FrozenAngle') -> Self:
         if isinstance(other, MatrixBase):
             mat = self.copy()
             mat._mat_mul(other)

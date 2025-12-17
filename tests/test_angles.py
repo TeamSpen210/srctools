@@ -46,12 +46,12 @@ def test_copy(py_c_vec: PyCVec) -> None:
         fang = FrozenAngle(pit, yaw, rol)
         fang2 = FrozenAngle(ang)
         assert_ang(fang2, pit, yaw, rol, type=FrozenAngle)
-        assert fang2 is not ang
+        assert fang2 is not ang  # type: ignore[comparison-overlap]
 
         assert fang.copy() is fang
 
         # Ensure this doesn't mistakenly return the existing one.
-        assert Angle(fang) is not fang
+        assert Angle(fang) is not fang  # type: ignore[comparison-overlap]
         # FrozenAngle should not make a copy.
         # TODO: Cython doesn't let you override tp_new for this yet.
         did_copy = FrozenAngle(fang) is not fang

@@ -344,8 +344,8 @@ def test_fixup_containment() -> None:
     assert ('$true', '0') not in ent.fixup.items()
     assert ('FaLse', object) not in ent.fixup.items()  # type: ignore[comparison-overlap]
     assert ('', 'test') not in ent.fixup.items()
-    assert ('false', ) not in ent.fixup.items()  # type: ignore[comparison-overlap]
-    assert ValueError not in ent.fixup.items()  # type: ignore[comparison-overlap]
+    assert ('false', ) not in ent.fixup.items()  # type: ignore[operator]
+    assert ValueError not in ent.fixup.items()  # type: ignore[operator]
 
 
 def test_fixup_substitution() -> None:
@@ -622,7 +622,7 @@ def test_deprecated_cordonsolid() -> None:
         assert solid.cordon_solid is None
     solid.is_cordon = True
     with pytest.deprecated_call():
-        assert solid.cordon_solid == 1
+        assert solid.cordon_solid == 1  # type: ignore[comparison-overlap]  # None check narrowed
     with pytest.deprecated_call():
         solid.cordon_solid = None
     assert solid.is_cordon is False

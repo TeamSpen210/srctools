@@ -1,7 +1,7 @@
 """Implementations of specific code for each FGD helper type."""
 from typing import ClassVar, Optional, Union, Literal
 from typing_extensions import Self, deprecated
-from collections.abc import Collection, Iterable, Iterator, Mapping
+from collections.abc import Collection, Iterable, Iterator
 
 import attrs
 
@@ -843,7 +843,7 @@ class HelperExtNoInherit(Helper):
     names: set[str] = attrs.Factory(set)
 
     # noinspection PyClassVar
-    _KINDS: ClassVar[Mapping[str, Literal['keyvalue', 'input', 'output']]] = {
+    _KINDS: ClassVar[dict[str, Literal['keyvalue', 'input', 'output']]] = {
         'keyvalue': 'keyvalue',
         'k': 'keyvalue',
         'key': 'keyvalue',

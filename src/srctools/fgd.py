@@ -954,7 +954,7 @@ class Resource:
         return cls(filename, FileType.WEAPON_SCRIPT, tags)
 
 
-@attrs.define(eq=True, repr=False, hash=False)
+@attrs.define(eq=True, repr=False, hash=False, kw_only=True)
 class Helper:
     """Base class for representing helper() commands in the header of an entity.
 

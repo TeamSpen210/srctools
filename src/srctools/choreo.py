@@ -1,6 +1,6 @@
 """Parses VCD choreo scenes, as well as data in scenes.image."""
 from __future__ import annotations
-from typing import ClassVar, Final, NewType
+from typing import ClassVar, Final, NewType, final
 from typing_extensions import Literal, Self, TypeAlias, assert_never
 from collections.abc import Callable, Iterable, Iterator
 from io import BytesIO
@@ -1112,6 +1112,7 @@ class SpeakEvent(Event):
             assert_never(self.caption_type)
 
 
+@final
 @attrs.define(eq=False)
 class Channel:
     """A channel defines a set of events that an actor performs."""
@@ -1165,6 +1166,7 @@ class Channel:
         file.write(f'{indent}}}\n')
 
 
+@final
 @attrs.define(eq=False)
 class Actor:
     """An actor in a choreo scene."""
@@ -1223,6 +1225,7 @@ class Actor:
         file.write(f'{indent}}}\n')
 
 
+@final
 @attrs.define(eq=False, kw_only=True)
 class Scene:
     """A choreo scene."""
@@ -1468,6 +1471,7 @@ def save_scenes_image_sync(
     If all unparsed scenes originate from the same scenes.image file, this can directly copy the
     existing data.
     """
+    scene_list: list[Entry]
     if isinstance(scenes, dict):
         scene_list = list(scenes.values())
     else:
