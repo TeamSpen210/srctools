@@ -2,37 +2,71 @@
 
 These set the arguments to the compile tools.
 """
-import attrs
-from typing import Union
-from collections.abc import Sequence
+from typing import Union, Final, Optional, IO
+
+from collections.abc import Sequence, Mapping
 from enum import Enum
 from struct import Struct, pack, unpack
+import io
 
-from .types import FileR, FileWBinary
+import attrs
+
+from . import conv_int, bool_as_int
+from .keyvalues import Keyvalues
+from .tokenizer import Tokenizer, Token
+from .types import FileWBinary
 
 
 ST_COMMAND = Struct('Bi260s260sii260sii')
 ST_COMMAND_PRE_V2 = Struct('Bi260s260sii260si')
 
-SEQ_HEADER = b'Worldcraft Command Sequences\r\n\x1a'
+# We have two formats here, Valve's binary form, and Strata Source's keyvalues form.
+# For keyvalues, we enforce that the root name must start immediately, so we can parse the
+# initial bytes. Since it's got a space we don't have to worry about non-quoted forms.
+SEQ_HEADER_BINARY: Final[bytes] = b'Worldcraft Command Sequences\r\n\x1a'
+SEQ_HEADER_KV: Final[bytes] = b'"command sequences"'
+# This is longer, chop so we can compare.
+SEQ_HEADER_BINARY_A: Final[bytes] = SEQ_HEADER_BINARY[:len(SEQ_HEADER_KV)]
+SEQ_HEADER_BINARY_B: Final[bytes] = SEQ_HEADER_BINARY[len(SEQ_HEADER_KV):]
 
 __all__ = ['SpecialCommand', 'Command', 'parse', 'write']
 
 
 class SpecialCommand(Enum):
-    """Special commands to run instead of the exe."""
+    """Special commands to run instead of an executable.
+
+    Depending on the command, these either take a single :samp:`{filename}` or a :samp:`{source} {destination}` pair.
+    """
+    #: Change the working directory to the specified folder.
     CHANGE_DIR = 256
+    #: Copies the :file:`source` file to the :file:`destination` filename.
     COPY_FILE = 257
+    #: Deletes the specified :file:`filename`.
     DELETE_FILE = 258
+    #: Renames the :file:`source` file to the :file:`destination` filename.
     RENAME_FILE = 259
+    #: Strata Source addition. If :file:`source` exists, copies it to the :file:`destination` filename.
+    STRATA_COPY_FILE_IF_EXISTS = 261
 
 
+# When exporting, the exe field still exists in the binary format. The GUI shows these names, fill
+# in what Hammer shows.
 SPECIAL_NAMES = {
     SpecialCommand.CHANGE_DIR: 'Change Directory',
     SpecialCommand.COPY_FILE: 'Copy File',
     SpecialCommand.DELETE_FILE: 'Delete File',
     SpecialCommand.RENAME_FILE: 'Rename File',
+    SpecialCommand.STRATA_COPY_FILE_IF_EXISTS: 'Copy File if it Exists',
 }
+STRATA_NAME_TO_SPECIAL: Mapping[str, Optional[SpecialCommand]] = {
+    'none': None,
+    'change_dir': SpecialCommand.CHANGE_DIR,
+    'copy_file': SpecialCommand.COPY_FILE,
+    'delete_file': SpecialCommand.DELETE_FILE,
+    'rename_file': SpecialCommand.RENAME_FILE,
+    'copy_file_if_exists': SpecialCommand.STRATA_COPY_FILE_IF_EXISTS,
+}
+SPECIAL_TO_STRATA_NAME = {cmd: name for name, cmd in STRATA_NAME_TO_SPECIAL.items()}
 
 
 def strip_cstring(data: bytes) -> str:
@@ -109,14 +143,27 @@ class Command:
         return self.enabled
 
 
-def parse(file: FileR[bytes]) -> dict[str, list[Command]]:
+# IO[bytes] and not a specific protocol, TextIOWrapper calls most of the API.
+def parse(file: IO[bytes]) -> dict[str, list[Command]]:
     """Read a list of sequences from a file.
 
     This returns a dict mapping names to a list of sequences.
+    The file may either be in the Valve binary format, or Strata's keyvalues format.
     """
-    header = file.read(len(SEQ_HEADER))
-    if header != SEQ_HEADER:
-        raise ValueError('Wrong header: ', header)
+    header_a = file.read(len(SEQ_HEADER_KV))
+    if header_a.lower() == SEQ_HEADER_KV:
+        # This is a keyvalues file, switch to parsing as that.
+        # The header is a single token, we can push that onto the tokenizer immediately.
+        tok = Tokenizer(
+            io.TextIOWrapper(file),
+            string_bracket=True, allow_escapes=True,
+        )
+        tok.push_back(Token.STRING, 'command sequences')
+        return parse_strata_keyvalues(Keyvalues.parse(tok, getattr(file, 'name', 'CmdSeq.wc')))
+
+    header_b = file.read(len(SEQ_HEADER_BINARY_B))
+    if header_a != SEQ_HEADER_BINARY_A or header_b != SEQ_HEADER_BINARY_B:
+        raise ValueError(f'Invalid header: {header_a + header_b!r}')
 
     [version] = unpack('f', file.read(4))
 
@@ -140,9 +187,9 @@ def parse(file: FileR[bytes]) -> dict[str, list[Command]]:
     return sequences
 
 
-def write(sequences: dict[str, Sequence[Command]], file: FileWBinary) -> None:
+def write(sequences: Mapping[str, Sequence[Command]], file: FileWBinary) -> None:
     """Write commands back to a file."""
-    file.write(SEQ_HEADER)
+    file.write(SEQ_HEADER_BINARY)
     file.write(pack('f', 0.2))
 
     file.write(pack('I', len(sequences)))
@@ -176,3 +223,68 @@ def write(sequences: dict[str, Sequence[Command]], file: FileWBinary) -> None:
                 cmd.use_proc_win,
                 cmd.no_wait,
             ))
+
+
+def parse_strata_keyvalues(kv: Keyvalues) -> dict[str, list[Command]]:
+    """Parse Strata Source's alternate Keyvalues file format.
+
+    This is automatically called by the standard `parse` function if the signature is detected.
+    """
+    sequences: dict[str, list[Command]] = {}
+    for seq_kv in kv.find_children('Command Sequences'):
+        seq_list = sequences.setdefault(seq_kv.real_name, [])
+        # These are named sequentially, if it's not numeric though just use the file order.
+        for command_kv in sorted(seq_kv, key=lambda child: conv_int(child.name, -1)):
+            # This can be a string name, or
+            special_str = command_kv['special_cmd', 'none']
+            special_cmd: Optional[SpecialCommand]
+            if special_str.isdigit():
+                special_num = int(special_str)
+                special_cmd = None if special_num == 0 else SpecialCommand(special_num)
+            else:
+                special_cmd = STRATA_NAME_TO_SPECIAL[special_str.casefold()]
+            executable = special_cmd if special_cmd is not None else command_kv['run']
+            if command_kv.bool('ensure_check'):
+                ensure_file = command_kv['ensure_fn', '']
+            else:
+                ensure_file = None
+
+            seq_list.append(Command(
+                enabled=command_kv.bool('enabled', True),
+                exe=executable,
+                args=command_kv['params', ''],
+                ensure_file=ensure_file,
+                no_wait=command_kv.bool('no_wait'),
+                use_proc_win=command_kv.bool('use_process_wnd', True),
+            ))
+    return sequences
+
+
+def build_strata_keyvalues(sequences: Mapping[str, Sequence[Command]]) -> Keyvalues:
+    """Build Strata Source's keyvalues file format, for export."""
+    root = Keyvalues('Command Sequences', [])
+    for name, commands in sequences.items():
+        command_kv = Keyvalues(name, [])
+        root.append(command_kv)
+        for i, command in enumerate(commands):
+            cmd = Keyvalues(str(i), [
+                Keyvalues('enabled', bool_as_int(command.enabled)),
+            ])
+            command_kv.append(cmd)
+            if isinstance(command.exe, SpecialCommand):
+                cmd.append(Keyvalues('special_cmd', SPECIAL_TO_STRATA_NAME[command.exe]))
+            else:
+                cmd.append(Keyvalues('special_cmd', 'none'))
+                cmd.append(Keyvalues('run', command.exe))
+            cmd.extend([
+                Keyvalues('params', command.args),
+                Keyvalues('ensure_check', bool_as_int(command.ensure_file is not None))
+            ])
+            if command.ensure_file is not None:
+                cmd.append(Keyvalues('ensure_fn', command.ensure_file))
+            # These do nothing, so only export if they have non-default values.
+            if not command.use_proc_win:
+                cmd.append(Keyvalues('use_process_wnd', '0'))
+            if command.no_wait:
+                cmd.append(Keyvalues('no_wait', '1'))
+    return root

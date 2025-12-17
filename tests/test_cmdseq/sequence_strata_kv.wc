@@ -1,0 +1,91 @@
+"Command Sequences"
+{
+	"Test Config"
+	{
+		"1"
+		{
+			"enabled"		"1"
+			"ensure_check"		"0"
+			"params"		"parm1 parm2"
+			"run"		"C:/executable.exe"
+			"special_cmd"		"none"
+		}
+		"2"
+		{
+			"enabled"		"1"
+			"ensure_check"		"1"
+			"ensure_fn"		"post_exists"
+			"params"		"destination"
+			"special_cmd"		"change_dir"
+		}
+		"3"
+		{
+			"enabled"		"1"
+			"ensure_check"		"0"
+			"params"		"src dest"
+			"special_cmd"		"copy_file"
+		}
+		"4"
+		{
+			"enabled"		"1"
+			"ensure_check"		"1"
+			"ensure_fn"		"post/file"
+			"params"		"deleted"
+			"special_cmd"		"delete_file"
+		}
+		"5"
+		{
+			"enabled"		"0"
+			"ensure_check"		"0"
+			"params"		"optional dest"
+			"special_cmd"		"copy_file_if_exists"
+		}
+		"6"
+		{
+			"enabled"		"1"
+			"ensure_check"		"0"
+			"params"		"first second"
+			"special_cmd"		"rename_file"
+		}
+		"7"
+		{
+			"enabled"		"0"
+			"ensure_check"		"0"
+			"params"		"vbsp"
+			"run"		"$bsp_exe"
+			"special_cmd"		"none"
+		}
+		"8"
+		{
+			"enabled"		"0"
+			"ensure_check"		"0"
+			"params"		"vvis"
+			"run"		"$vis_exe"
+			"special_cmd"		"none"
+		}
+		"9"
+		{
+			"enabled"		"0"
+			"ensure_check"		"0"
+			"params"		"hammeraddons"
+			"run"		"$postcompiler_exe"
+			"special_cmd"		"none"
+		}
+		"10"
+		{
+			"enabled"		"0"
+			"ensure_check"		"0"
+			"params"		"vrad"
+			"run"		"$light_exe"
+			"special_cmd"		"none"
+		}
+		"11"
+		{
+			"enabled"		"0"
+			"ensure_check"		"0"
+			"params"		"p2ce"
+			"run"		"$game_exe"
+			"special_cmd"		"none"
+		}
+	}
+}
