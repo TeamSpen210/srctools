@@ -1,10 +1,17 @@
 """Test cmdseq parsing."""
 import io
+import pytest
 
 from pytest_datadir.plugin import LazyDataDir
 from pytest_regressions.file_regression import FileRegressionFixture
 
 from srctools.cmdseq import SpecialCommand, Command, parse, write
+
+
+@pytest.mark.xfail
+def test_parse_binary_v1(lazy_datadir: LazyDataDir) -> None:
+    """Parse the standard binary format, version 1."""
+    raise NotImplementedError
 
 
 def test_parse_binary_v2(lazy_datadir: LazyDataDir) -> None:
@@ -16,18 +23,36 @@ def test_parse_binary_v2(lazy_datadir: LazyDataDir) -> None:
         sequences = parse(f)
     assert sequences == {
         'Test Config': [
-            Command('C:/executable.exe', 'parm1 parm2', enabled=True, ensure_file=None, use_proc_win=False),
-            Command(SpecialCommand.CHANGE_DIR, 'destination', enabled=True, ensure_file='post_exists', use_proc_win=False),
-            Command(SpecialCommand.COPY_FILE, 'src dest', enabled=True, ensure_file=None, use_proc_win=False),
-            Command(SpecialCommand.DELETE_FILE, 'deleted', enabled=True, ensure_file='post/file', use_proc_win=False),
-            Command(SpecialCommand.RENAME_FILE, 'first second', enabled=True, ensure_file=None, use_proc_win=False),
+            Command(
+                'C:/executable.exe', 'parm1 parm2',
+                enabled=True, ensure_file=None, use_proc_win=False
+            ),
+            Command(
+                SpecialCommand.CHANGE_DIR, 'destination',
+                enabled=True, ensure_file='post_exists', use_proc_win=False,
+            ),
+            Command(
+                SpecialCommand.COPY_FILE, 'src dest',
+                enabled=True, ensure_file=None, use_proc_win=False,
+            ),
+            Command(
+                SpecialCommand.DELETE_FILE, 'deleted',
+                enabled=True, ensure_file='post/file', use_proc_win=False,
+            ),
+            Command(
+                SpecialCommand.RENAME_FILE, 'first second',
+                enabled=True, ensure_file=None, use_proc_win=False,
+            ),
             Command('$bsp_exe', 'vbsp', enabled=False, use_proc_win=False),
             Command('$vis_exe', 'vvis', enabled=False, use_proc_win=False),
             Command('$light_exe', 'vrad', enabled=False, use_proc_win=False),
             Command('$game_exe', 'hl2', enabled=False, use_proc_win=False, no_wait=True),
         ],
         'Second Config': [
-            Command('$bsp_exe', '$path/$file with spaces', enabled=False, use_proc_win=False),
+            Command(
+                '$bsp_exe', '$path/$file with spaces',
+                enabled=False, use_proc_win=False,
+            ),
         ],
     }
 
@@ -52,3 +77,49 @@ def test_export_binary(file_regression: FileRegressionFixture) -> None:
     buf = io.BytesIO()
     write(sequences, buf)
     file_regression.check(buf.getvalue(), binary=True, extension='.wc')
+
+
+def test_parse_strata_keyvalues(lazy_datadir: LazyDataDir) -> None:
+    """Parse the Strata Source keyvalues format."""
+    with open(lazy_datadir / 'sequence_strata_kv.wc', 'rb') as f:
+        sequences = parse(f)
+    assert sequences == {
+        'Test Config': [
+            Command(
+                'C:/executable.exe', 'parm1 parm2',
+                enabled=True, ensure_file=None,
+            ),
+            Command(
+                SpecialCommand.CHANGE_DIR, 'destination',
+                enabled=True, ensure_file='post_exists',
+            ),
+            Command(
+                SpecialCommand.COPY_FILE, 'src dest',
+                enabled=True, ensure_file=None,
+            ),
+            Command(
+                SpecialCommand.DELETE_FILE, 'deleted',
+                enabled=True, ensure_file='post/file',
+            ),
+            Command(
+                SpecialCommand.STRATA_COPY_FILE_IF_EXISTS, 'optional dest',
+                enabled=False, ensure_file=None,
+            ),
+            Command(
+                SpecialCommand.RENAME_FILE, 'first second',
+                enabled=True, ensure_file=None,
+            ),
+            Command('$bsp_exe', 'vbsp', enabled=False),
+            Command('$vis_exe', 'vvis', enabled=False),
+            Command('$postcompiler_exe', 'hammeraddons', enabled=False),
+            Command('$light_exe', 'vrad', enabled=False),
+            Command('$game_exe', 'p2ce', enabled=False, no_wait=False),
+        ],
+    }
+
+
+
+@pytest.mark.xfail
+def test_export_strata_keyvalues(file_regression: FileRegressionFixture) -> None:
+    """Test exporting the Strata Source keyvalues format."""
+    raise NotImplementedError

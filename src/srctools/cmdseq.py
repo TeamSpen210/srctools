@@ -2,18 +2,19 @@
 
 These set the arguments to the compile tools.
 """
-from typing import Union, Final
+from typing import Union, Final, Optional, IO
 
-from collections.abc import Sequence
+from collections.abc import Sequence, Mapping
 from enum import Enum
 from struct import Struct, pack, unpack
 import io
 
 import attrs
 
+from . import conv_int
 from .keyvalues import Keyvalues
 from .tokenizer import Tokenizer, Token
-from .types import FileR, FileWBinary
+from .types import FileWBinary
 
 
 ST_COMMAND = Struct('Bi260s260sii260sii')
@@ -56,6 +57,14 @@ SPECIAL_NAMES = {
     SpecialCommand.DELETE_FILE: 'Delete File',
     SpecialCommand.RENAME_FILE: 'Rename File',
     SpecialCommand.STRATA_COPY_FILE_IF_EXISTS: 'Copy File if it Exists',
+}
+NAME_TO_SPECIAL: Mapping[str, Optional[SpecialCommand]] = {
+    'none': None,
+    'change_dir': SpecialCommand.CHANGE_DIR,
+    'copy_file': SpecialCommand.COPY_FILE,
+    'delete_file': SpecialCommand.DELETE_FILE,
+    'rename_file': SpecialCommand.RENAME_FILE,
+    'copy_file_if_exists': SpecialCommand.STRATA_COPY_FILE_IF_EXISTS,
 }
 
 
@@ -133,15 +142,15 @@ class Command:
         return self.enabled
 
 
-def parse(file: FileR[bytes]) -> dict[str, list[Command]]:
+# IO[bytes] and not a specific protocol, TextIOWrapper calls most of the API.
+def parse(file: IO[bytes]) -> dict[str, list[Command]]:
     """Read a list of sequences from a file.
 
     This returns a dict mapping names to a list of sequences.
     The file may either be in the Valve binary format, or Strata's keyvalues format.
     """
-
     header_a = file.read(len(SEQ_HEADER_KV))
-    if header_a == SEQ_HEADER_KV:
+    if header_a.lower() == SEQ_HEADER_KV:
         # This is a keyvalues file, switch to parsing as that.
         # The header is a single token, we can push that onto the tokenizer immediately.
         tok = Tokenizer(
@@ -177,7 +186,7 @@ def parse(file: FileR[bytes]) -> dict[str, list[Command]]:
     return sequences
 
 
-def write(sequences: dict[str, Sequence[Command]], file: FileWBinary) -> None:
+def write(sequences: Mapping[str, Sequence[Command]], file: FileWBinary) -> None:
     """Write commands back to a file."""
     file.write(SEQ_HEADER_BINARY)
     file.write(pack('f', 0.2))
@@ -217,4 +226,31 @@ def write(sequences: dict[str, Sequence[Command]], file: FileWBinary) -> None:
 
 def parse_strata_keyvalues(kv: Keyvalues) -> dict[str, list[Command]]:
     """Parse Strata Source's alternate Keyvalues file format."""
-    raise NotImplementedError
+    sequences: dict[str, list[Command]] = {}
+    for seq_kv in kv.find_children('Command Sequences'):
+        seq_list = sequences.setdefault(seq_kv.real_name, [])
+        # These are named sequentially, if it's not numeric though just use the file order.
+        for command_kv in sorted(seq_kv, key=lambda child: conv_int(child.name, -1)):
+            # This can be a string name, or
+            special_str = command_kv['special_cmd', 'none']
+            special_cmd: Optional[SpecialCommand]
+            if special_str.isdigit():
+                special_num = int(special_str)
+                special_cmd = None if special_num == 0 else SpecialCommand(special_num)
+            else:
+                special_cmd = NAME_TO_SPECIAL[special_str.casefold()]
+            executable = special_cmd if special_cmd is not None else command_kv['run']
+            if command_kv.bool('ensure_check'):
+                ensure_file = command_kv['ensure_fn', '']
+            else:
+                ensure_file = None
+
+            seq_list.append(Command(
+                enabled=command_kv.bool('enabled', True),
+                exe=executable,
+                args=command_kv['params', ''],
+                ensure_file=ensure_file,
+                no_wait=command_kv.bool('no_wait'),
+                use_proc_win=command_kv.bool('use_process_wnd', True),
+            ))
+    return sequences
