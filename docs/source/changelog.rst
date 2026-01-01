@@ -13,6 +13,7 @@ Version (dev)
 * Add support for ``orientedwidthheight()``, ``orientedwidthheighthalf()`` and ``clusteredlight()`` Strata FGD helpers.
 * Add ``noinherit()`` FGD helper, for indicating values to avoid inheriting from base classes.
 * Add support for parsing Strata's Keyvalues-based `~srctools.cmdseq` variant.
+* Allow customising the filename used for injected `~srctools.packlist.PackList` files.
 
 -------------
 Version 2.6.2

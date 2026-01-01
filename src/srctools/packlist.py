@@ -677,10 +677,14 @@ class PackList:
 
         self._files[filename] = PackFile(data_type, filename, data, optional, source)
 
-    def inject_file(self, data: bytes, folder: str, ext: str, *, source: str = 'inject') -> str:
+    def inject_file(
+        self, data: bytes, folder: str, ext: str, *,
+        prefix: str = 'INJECT',
+        source: str = 'inject',
+    ) -> str:
         """Inject a generated file into the map and return the full name.
 
-        The file will be named using the format "INJECT_<hex>".
+        The file will be named using the format :file:`{folder}/{prefix}_{hex}.{ext}`.
         If the same file is requested twice (same folder,
         extension and data), only one will be included.
         """
@@ -694,7 +698,7 @@ class PackList:
         # Also abs() to remove ugly minus signs.
         name_hash = format(abs(hash(data)), 'x')
         while True:
-            full_name = f"{folder}/INJECT_{name_hash}.{ext}"
+            full_name = f"{folder}/{prefix}_{name_hash}.{ext}"
             if full_name not in self._files:
                 break
             name_hash = format(abs(hash(name_hash)), 'x')
@@ -702,7 +706,7 @@ class PackList:
         self._inject_files[folder, ext, data] = full_name
         return full_name
 
-    def inject_vscript(self, code: str, folder: str = 'inject') -> str:
+    def inject_vscript(self, code: str, folder: str = 'inject', prefix: str = 'INJECT') -> str:
         """Specialised variant of inject_file() for VScript code specifically.
 
         This returns the script name suitable for passing to Entity Scripts.
@@ -710,8 +714,9 @@ class PackList:
         return self.inject_file(
             code.encode('ascii'),
             os.path.join('scripts/vscripts', folder), '.nut',
-            # Strip off the scripts/vscripts/ folder since it's implied.
             source='inject_vscript',
+            prefix=prefix,
+            # Strip off the scripts/vscripts/ folder since it's implied.
         )[17:]
 
     def pack_soundscript(self, sound_name: str, *, source: str='') -> None:
