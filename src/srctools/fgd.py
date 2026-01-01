@@ -1302,6 +1302,7 @@ class KVDef(EntAttribute):
         label_spawnflags: bool = True,
         custom_syntax: bool = True,
         old_report: bool = False,
+        escape_quotes: bool = False,
     ) -> None:
         """Write this back out to a FGD file."""
         file.write('\t' + self.name)
@@ -1325,7 +1326,7 @@ class KVDef(EntAttribute):
             # Spawnflags never use names!
             file.write(': ')
             # Name must be present, if not use the raw keyvalue name.
-            _write_longstring(file, custom_syntax, self.disp_name or self.name, indent='\t')
+            _write_longstring(file, escape_quotes, self.disp_name or self.name, indent='\t')
 
         default = self.default
         if not default and self.type is ValueTypes.BOOL:
@@ -1346,7 +1347,7 @@ class KVDef(EntAttribute):
                 file.write(' : : ')
 
         if self.desc:
-            _write_longstring(file, custom_syntax, self.desc, indent='\t')
+            _write_longstring(file, escape_quotes, self.desc, indent='\t')
 
         if isinstance(self._type, ValueTypes) and self._type.has_list:
             file.write(' =\n\t\t[\n')
@@ -1358,7 +1359,7 @@ class KVDef(EntAttribute):
                     name = name.replace('\n', ' ')
                     _write_longstring(
                         file,
-                        custom_syntax,
+                        escape_quotes,
                         f'[{index}] {name}' if label_spawnflags else name,
                         indent='\t\t',
                     )
@@ -1461,6 +1462,7 @@ class IODef(EntAttribute):
         io_type: str,
         tags: Collection[str] = (),
         custom_syntax: bool = True,
+        escape_quotes: bool = False,
     ) -> None:
         """Write this back out to a FGD file.
 
@@ -1481,7 +1483,7 @@ class IODef(EntAttribute):
 
         if self.desc:
             file.write(' : ')
-            _write_longstring(file, custom_syntax, self.desc, indent='\t')
+            _write_longstring(file, escape_quotes, self.desc, indent='\t')
         file.write('\n')
 
 
@@ -2226,6 +2228,7 @@ class EntityDef:
         label_spawnflags: bool = True,
         custom_syntax: bool = True,
         old_report: bool = False,
+        escape_quotes: bool = False,
     ) -> None:
         """Write the entity out to a FGD file.
 
@@ -2242,6 +2245,7 @@ class EntityDef:
             file.write(') ')
 
         kv_order_list: list[str] = []
+        escape_quotes |= custom_syntax
 
         for helper in self.helpers:
             args = helper.export()
@@ -2267,7 +2271,7 @@ class EntityDef:
 
         if self.desc:
             file.write(': ')
-            _write_longstring(file, custom_syntax, self.desc, indent='\t\t')
+            _write_longstring(file, escape_quotes, self.desc, indent='\t\t')
 
         file.write('\n\t[\n')
 
@@ -2282,21 +2286,21 @@ class EntityDef:
 
         for name, kv_map in sorted(self.keyvalues.items(), key=kv_order_key):
             for tags, kv in kv_map.items():
-                kv.export(file, tags, label_spawnflags, custom_syntax, old_report)
+                kv.export(file, tags, label_spawnflags, custom_syntax, old_report, escape_quotes)
 
         if self.inputs:
             file.write('\n\t// Inputs\n')
 
             for inp_map in self.inputs.values():
                 for tags, inp in inp_map.items():
-                    inp.export(file, 'input', tags, custom_syntax)
+                    inp.export(file, 'input', tags, custom_syntax, escape_quotes)
 
         if self.outputs:
             file.write('\n\t// Outputs\n')
 
             for out_map in self.outputs.values():
                 for tags, out in out_map.items():
-                    out.export(file, 'output', tags, custom_syntax)
+                    out.export(file, 'output', tags, custom_syntax, escape_quotes)
 
         if custom_syntax and self.resources != ():
             file.write('\n\t@resources\n\t\t[\n')
@@ -2569,18 +2573,21 @@ class FGD:
     @overload
     def export(
         self, file: FileWText, *,
-        label_spawnflags: bool = True, custom_syntax: bool = True, old_report: bool = False,
+        label_spawnflags: bool = True, custom_syntax: bool = True,
+        old_report: bool = False, escape_quotes: bool = False,
     ) -> None: ...
     @overload
     def export(
         self, *,
-        label_spawnflags: bool = True, custom_syntax: bool = True, old_report: bool = False,
+        label_spawnflags: bool = True, custom_syntax: bool = True,
+        old_report: bool = False, escape_quotes: bool = False,
     ) -> str: ...
     def export(
         self, file: Optional[FileWText] = None, *,
         label_spawnflags: bool = True,
         custom_syntax: bool = True,
         old_report: bool = False,
+        escape_quotes: bool = False,
     ) -> Optional[str]:
         """Write out the FGD file.
 
@@ -2590,12 +2597,15 @@ class FGD:
             This is necessary for HL2's Hammer.
         :param custom_syntax: If disabled, all custom syntax like tags and ``@resources`` will be skipped.
             For tagged values, this can write out duplicate copies from different tags.
+        :param escape_quotes: If enabled, output ``"`` using backslash escapes. If disabled, these
+            are emulated with two single quotes like ``''``. Implied by ``custom_syntax``.
         """
         if file is None:
             string_buf = io.StringIO()
             file = string_buf
         else:
             string_buf = None
+        escape_quotes |= custom_syntax
 
         if self.map_size_min != self.map_size_max:
             file.write(f'@mapsize({self.map_size_min}, {self.map_size_max})\n\n')
@@ -2662,7 +2672,7 @@ class FGD:
 
         for ent_def in self.sorted_ents():
             file.write('\n')
-            ent_def.export(file, label_spawnflags, custom_syntax, old_report)
+            ent_def.export(file, label_spawnflags, custom_syntax, old_report, escape_quotes)
 
         if string_buf is not None:
             return string_buf.getvalue()
