@@ -2432,15 +2432,15 @@ class FGD:
         :param filesystem: The system to lookup files in. This is needed to resolve file inclusions.
             If not passed, file must be a :py:class:filesystem.File` to retrieve this automatically.
         """
-        if filesystem is not None and not isinstance(file, File):
+        if isinstance(file, File):
+            filesystem = file.sys
+        elif filesystem is not None:
             if not file.endswith('.fgd'):
                 file += '.fgd'
             try:
                 file = filesystem[file]
             except KeyError:
                 raise FileNotFoundError(file) from None
-        elif isinstance(file, File):
-            filesystem = file.sys
         else:
             raise TypeError(f'String file path passed ({file!r}), but no filesystem!')
         assert filesystem is not None, (filesystem, file)
