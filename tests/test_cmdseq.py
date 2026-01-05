@@ -1,11 +1,12 @@
 """Test cmdseq parsing."""
+from typing import Literal
 import io
 import pytest
 
 from pytest_datadir.plugin import LazyDataDir
 from pytest_regressions.file_regression import FileRegressionFixture
 
-from srctools.cmdseq import SpecialCommand, Command, parse, write, build_strata_keyvalues
+from srctools.cmdseq import SpecialCommand, Command, parse, write, build_keyvalues
 
 
 @pytest.mark.xfail
@@ -118,8 +119,22 @@ def test_parse_strata_keyvalues(lazy_datadir: LazyDataDir) -> None:
     }
 
 
-def test_export_strata_keyvalues(file_regression: FileRegressionFixture) -> None:
-    """Test exporting the Strata Source keyvalues format."""
+@pytest.mark.xfail
+def test_parse_hammerplusplus_keyvalues(lazy_datadir: LazyDataDir) -> None:
+    """Parse the Hammer++ keyvalues format."""
+    with open(lazy_datadir / 'sequence_hammerplusplus_kv.wc', 'rb') as f:
+        sequences = parse(f)
+
+
+@pytest.mark.parametrize(
+    'file_format', ['strata', 'hammer++'],
+    ids=lambda name: name.replace('+', 'plus')
+)
+def test_export_keyvalues(
+    file_format: Literal['strata', 'hammer++'],
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Test exporting the keyvalues formats."""
     sequences = {
         'FirstSeq': [
             Command(
@@ -151,5 +166,5 @@ def test_export_strata_keyvalues(file_regression: FileRegressionFixture) -> None
             Command('$game_exe', 'p2:ce', enabled=False, use_proc_win=False, no_wait=True),
         ]
     }
-    result = build_strata_keyvalues(sequences).serialise()
+    result = build_keyvalues(file_format, sequences).serialise()
     file_regression.check(result, extension='.wc')

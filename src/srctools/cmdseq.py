@@ -2,7 +2,7 @@
 
 These set the arguments to the compile tools.
 """
-from typing import Union, Final, Optional, IO
+from typing import Union, Final, Optional, IO, Literal
 
 from collections.abc import Sequence, Mapping
 from enum import Enum
@@ -20,9 +20,10 @@ from .types import FileWBinary
 ST_COMMAND = Struct('Bi260s260sii260sii')
 ST_COMMAND_PRE_V2 = Struct('Bi260s260sii260si')
 
-# We have two formats here, Valve's binary form, and Strata Source's keyvalues form.
+# We have three formats here, Valve's binary form, Strata Source's and Hammer++'s keyvalues form.
 # For keyvalues, we enforce that the root name must start immediately, so we can parse the
 # initial bytes. Since it's got a space we don't have to worry about non-quoted forms.
+# The difference between Strata/H++ is minor, we can just check for both keyvalues.
 SEQ_HEADER_BINARY: Final[bytes] = b'Worldcraft Command Sequences\r\n\x1a'
 SEQ_HEADER_KV: Final[bytes] = b'"command sequences"'
 # This is longer, chop so we can compare.
@@ -32,7 +33,7 @@ SEQ_HEADER_BINARY_B: Final[bytes] = SEQ_HEADER_BINARY[len(SEQ_HEADER_KV):]
 __all__ = [
     'SpecialCommand', 'Command',
     'parse', 'write',
-    'parse_strata_keyvalues', 'build_strata_keyvalues',
+    'parse_keyvalues', 'build_keyvalues',
 ]
 
 
@@ -156,20 +157,20 @@ def parse(file: IO[bytes]) -> dict[str, list[Command]]:
     """Read a list of sequences from a file.
 
     This returns a dict mapping names to a list of sequences.
-    The file may either be in the Valve binary format, or Strata's keyvalues format.
+    The file may either be in the Valve binary format, or Strata/Hammer++'s keyvalues format.
     """
     header_a = file.read(len(SEQ_HEADER_KV))
     if header_a.lower() == SEQ_HEADER_KV:
         # This is a keyvalues file, switch to parsing as that.
         # The header is a single token, we can push that onto the tokenizer immediately.
-        file_txt = io.TextIOWrapper(file)
+        file_txt = io.TextIOWrapper(file, encoding='utf8')
         try:
             tok = Tokenizer(
                 file_txt,
                 string_bracket=True, allow_escapes=True,
             )
             tok.push_back(Token.STRING, 'command sequences')
-            return parse_strata_keyvalues(Keyvalues.parse(tok, getattr(file, 'name', 'CmdSeq.wc')))
+            return parse_keyvalues(Keyvalues.parse(tok, getattr(file, 'name', 'CmdSeq.wc')))
         finally:
             # The caller opened our file, so we want to return it to their control.
             # If we don't detach or close, we get a ResourceWarning.
@@ -196,13 +197,13 @@ def parse(file: IO[bytes]) -> dict[str, list[Command]]:
         sequences[seq_name] = [
             # Use a function unpack here to handle the v1/v2 syntax differences.
             _parse_binary_cmd(*cmd_struct.unpack(file.read(cmd_struct.size)))
-            for i in range(cmd_count)
+            for _ in range(cmd_count)
         ]
     return sequences
 
 
 def write(sequences: Mapping[str, Sequence[Command]], file: FileWBinary) -> None:
-    """Write commands back to a file."""
+    """Write commands back to the standard binary file format."""
     file.write(SEQ_HEADER_BINARY)
     file.write(pack('f', 0.2))
 
@@ -239,8 +240,8 @@ def write(sequences: Mapping[str, Sequence[Command]], file: FileWBinary) -> None
             ))
 
 
-def parse_strata_keyvalues(kv: Keyvalues) -> dict[str, list[Command]]:
-    """Parse Strata Source's alternate Keyvalues file format.
+def parse_keyvalues(kv: Keyvalues) -> dict[str, list[Command]]:
+    """Parse Strata Source's or Hammer++'s alternate Keyvalues file format.
 
     This is automatically called by the standard `parse` function if the signature is detected.
     """
@@ -249,8 +250,9 @@ def parse_strata_keyvalues(kv: Keyvalues) -> dict[str, list[Command]]:
         seq_list = sequences.setdefault(seq_kv.real_name, [])
         # These are named sequentially, if it's not numeric though just use the file order.
         for command_kv in sorted(seq_kv, key=lambda child: conv_int(child.name, -1)):
-            # This can be a string name, or
-            special_str = command_kv['special_cmd', 'none']
+            # This can be a string name, or integer values. Strata/H++ outputs the ints.
+            # First is Strata, second is H++.
+            special_str = command_kv['special_cmd', command_kv['specialcmd', 'none']]
             special_cmd: Optional[SpecialCommand]
             if special_str.isdigit():
                 special_num = int(special_str)
@@ -264,7 +266,8 @@ def parse_strata_keyvalues(kv: Keyvalues) -> dict[str, list[Command]]:
                 ensure_file = None
 
             seq_list.append(Command(
-                enabled=command_kv.bool('enabled', True),
+                # First is Strata, second is H++.
+                enabled=command_kv.bool('enabled', command_kv.bool('enable', True)),
                 exe=executable,
                 args=command_kv['params', ''],
                 ensure_file=ensure_file,
@@ -274,26 +277,52 @@ def parse_strata_keyvalues(kv: Keyvalues) -> dict[str, list[Command]]:
     return sequences
 
 
-def build_strata_keyvalues(sequences: Mapping[str, Sequence[Command]]) -> Keyvalues:
-    """Build Strata Source's keyvalues file format, for export."""
+def build_keyvalues(
+    file_format: Literal['strata', 'hammer++'],
+    sequences: Mapping[str, Sequence[Command]],
+) -> Keyvalues:
+    """Build Strata Source's or Hammer++'s keyvalues file format, for export.
+
+    :param file_format: The file format to produce, `"strata"` or `"hammer++"`. Hammer++ does not
+        support the `~Command.ensure_file`, `~Command.use_proc_win` or `~Command.no_wait` attributes.
+    :param sequences: The sequences to build. The keys are the name of the commands.
+    """
+    # Use a Literal so we can add 'stratav2', other branches etc in future.
+    if file_format == 'strata':
+        is_strata = True
+    elif file_format == 'hammer++':
+        is_strata = False
+    else:
+        raise ValueError('Invalid file format:', file_format)
+
     root = Keyvalues('Command Sequences', [])
     for name, commands in sequences.items():
         command_kv = Keyvalues(name, [])
         root.append(command_kv)
         for i, command in enumerate(commands):
             cmd = Keyvalues(str(i), [
-                Keyvalues('enabled', bool_as_int(command.enabled)),
+                Keyvalues('enabled' if is_strata else 'enable', bool_as_int(command.enabled)),
             ])
             command_kv.append(cmd)
-            if isinstance(command.exe, SpecialCommand):
-                cmd.append(Keyvalues('special_cmd', SPECIAL_TO_STRATA_NAME[command.exe]))
+            if is_strata:
+                if isinstance(command.exe, SpecialCommand):
+                    cmd.append(Keyvalues('special_cmd', SPECIAL_TO_STRATA_NAME[command.exe]))
+                else:
+                    cmd.append(Keyvalues('special_cmd', 'none'))
+                    cmd.append(Keyvalues('run', command.exe))
             else:
-                cmd.append(Keyvalues('special_cmd', 'none'))
-                cmd.append(Keyvalues('run', command.exe))
-            cmd.extend([
-                Keyvalues('params', command.args),
-                Keyvalues('ensure_check', bool_as_int(command.ensure_file is not None))
-            ])
+                if isinstance(command.exe, SpecialCommand):
+                    cmd.append(Keyvalues('specialcmd', str(command.exe.value)))
+                else:
+                    cmd.append(Keyvalues('specialcmd', '0'))
+                    cmd.append(Keyvalues('run', command.exe))
+            cmd.append(Keyvalues('params', command.args))
+            if not is_strata:  # H++ doesn't include all of these.
+                continue
+            cmd.append(Keyvalues(
+                'ensure_check',
+                bool_as_int(command.ensure_file is not None)
+            ))
             if command.ensure_file is not None:
                 cmd.append(Keyvalues('ensure_fn', command.ensure_file))
             # These do nothing, so only export if they have non-default values.

@@ -1,0 +1,84 @@
+"Command Sequences"
+	{
+	"FirstSeq"
+		{
+		"0"
+			{
+			"enable" "1"
+			"specialcmd" "0"
+			"run" "C:/executable.exe"
+			"params" "parm1 parm2"
+			}
+		"1"
+			{
+			"enable" "1"
+			"specialcmd" "256"
+			"params" "destination"
+			}
+		"2"
+			{
+			"enable" "1"
+			"specialcmd" "257"
+			"params" "src dest"
+			}
+		}
+	"Second Seq"
+		{
+		"0"
+			{
+			"enable" "1"
+			"specialcmd" "258"
+			"params" "deleted"
+			}
+		"1"
+			{
+			"enable" "1"
+			"specialcmd" "259"
+			"params" "\"first arg\" second"
+			}
+		"2"
+			{
+			"enable" "1"
+			"specialcmd" "261"
+			"params" "unimportant dest/folder"
+			}
+		}
+	"Third"
+		{
+		"0"
+			{
+			"enable" "0"
+			"specialcmd" "0"
+			"run" "$bsp_exe"
+			"params" "vbsp"
+			}
+		"1"
+			{
+			"enable" "0"
+			"specialcmd" "0"
+			"run" "$vis_exe"
+			"params" "vvis"
+			}
+		"2"
+			{
+			"enable" "0"
+			"specialcmd" "0"
+			"run" "$postcompiler_exe"
+			"params" "hammeraddons"
+			}
+		"3"
+			{
+			"enable" "0"
+			"specialcmd" "0"
+			"run" "$light_exe"
+			"params" "vrad"
+			}
+		"4"
+			{
+			"enable" "0"
+			"specialcmd" "0"
+			"run" "$game_exe"
+			"params" "p2:ce"
+			}
+		}
+	}
