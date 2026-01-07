@@ -12,7 +12,8 @@ from srctools.cmdseq import SpecialCommand, Command, parse, write, build_keyvalu
 @pytest.mark.xfail
 def test_parse_binary_v1(lazy_datadir: LazyDataDir) -> None:
     """Parse the standard binary format, version 1."""
-    raise NotImplementedError
+    with open(lazy_datadir / 'sequence_binary_v1.wc', 'rb') as f:
+        sequences = parse(f)
 
 
 def test_parse_binary_v2(lazy_datadir: LazyDataDir) -> None:
@@ -122,16 +123,17 @@ def test_parse_strata_keyvalues(lazy_datadir: LazyDataDir) -> None:
 @pytest.mark.xfail
 def test_parse_hammerplusplus_keyvalues(lazy_datadir: LazyDataDir) -> None:
     """Parse the Hammer++ keyvalues format."""
-    with open(lazy_datadir / 'sequence_hammerplusplus_kv.wc', 'rb') as f:
+    with open(lazy_datadir / 'sequence_hammerplusplus_kv.cfg', 'rb') as f:
         sequences = parse(f)
 
 
 @pytest.mark.parametrize(
-    'file_format', ['strata', 'hammer++'],
-    ids=lambda name: name.replace('+', 'plus')
+    'file_format, extension', [('strata', '.wc'), ('hammer++', '.cfg')],
+    ids=['strata', 'hammerplusplus'],
 )
 def test_export_keyvalues(
     file_format: Literal['strata', 'hammer++'],
+    extension: str,
     file_regression: FileRegressionFixture,
 ) -> None:
     """Test exporting the keyvalues formats."""
@@ -167,4 +169,4 @@ def test_export_keyvalues(
         ]
     }
     result = build_keyvalues(file_format, sequences).serialise()
-    file_regression.check(result, extension='.wc')
+    file_regression.check(result, extension=extension)
