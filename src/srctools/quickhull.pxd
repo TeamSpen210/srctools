@@ -31,7 +31,6 @@ cdef extern from "QuickHull.hpp" namespace "quickhull":
         QuickHull()
         ConvexHull[FloatType] getConvexHull(
             const vector[Vector3[FloatType]]& pointCloud,
-            bint CCW,
-            bint useOriginalIndices
+            bool CCW,
+            bool useOriginalIndices
         )
-

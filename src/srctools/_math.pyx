@@ -276,9 +276,9 @@ cdef AngleBase pick_ang_type(type left, type right):
     # We use the type of the left, falling back to the right
     # if the left isn't a angle.
     if left is FrozenAngle or (right is FrozenAngle and left is not Angle):
-        return <AngleBase>FrozenAngle.__new__(FrozenAngle)
+        return FrozenAngle.__new__(FrozenAngle)
     else:
-        return <AngleBase>Angle.__new__(Angle)
+        return Angle.__new__(Angle)
 
 
 cdef bint vec_check(obj) noexcept:
@@ -794,22 +794,28 @@ cdef char _parse_boolstr(const char *utf8, Py_ssize_t size):
     # '0', 'no', 'false', 'n', 'f'
     # '1', 'yes', 'true', 'y', 't'
     # We do some of the more likely uppercase variants to avoid calling casefold().
+    cdef uint16_t dual;
+    cdef uint32_t quad;
     if size == 1:
         if utf8[0] in (b'0', b'n', b'f', b'N', b'F'):
             return 0
         elif utf8[0] in (b'1', b'y', b't', b'T', b'T'):
             return 1
     elif size == 2:
-        if (<uint16_t *>utf8)[0] in ((<uint16_t *><char *>b'no')[0], (<uint16_t *><char *>b'No')[0]):
+        memcpy(&dual, utf8, sizeof(uint16_t))  # Does unaligned reads safely.
+        if dual in ((<uint16_t *><char *>b'no')[0], (<uint16_t *><char *>b'No')[0]):
             return 0
     elif size == 3: # Null terminated, so actually 4 bytes long.
-        if (<uint32_t *>utf8)[0] in ((<uint32_t *><char *>b'yes\0')[0], (<uint32_t *><char *>b'Yes\0')[0]):
+        memcpy(&quad, utf8, sizeof(uint32_t))
+        if quad in ((<uint32_t *><char *>b'yes\0')[0], (<uint32_t *><char *>b'Yes\0')[0]):
             return 1
     elif size == 4:
-        if (<uint32_t *> utf8)[0] in ((<uint32_t *> <char *> b'true')[0], (<uint32_t *> <char *> b'True')[0]):
+        memcpy(&quad, utf8, sizeof(uint32_t))
+        if quad in ((<uint32_t *> <char *> b'true')[0], (<uint32_t *> <char *> b'True')[0]):
             return 1
     elif size == 5:
-        if (<uint32_t *> utf8)[0] == (<uint32_t *> <char *> b'fals')[0] and utf8[4] == b'e':
+        memcpy(&quad, utf8, sizeof(uint32_t))
+        if quad == (<uint32_t *> <char *> b'fals')[0] and utf8[4] == b'e':
             return 0
     return 2
 
@@ -1476,21 +1482,24 @@ cdef class VecBase:
     @cython.boundscheck(False)
     def other_axes(self, object axis) -> tuple[float, float]:
         """Get the values for the other two axes."""
-        cdef char axis_chr
-        if isinstance(axis, str) and len(<str>axis) == 1:
+        cdef Py_UCS4 axis_chr
+        cdef double a, b
+        if isinstance(axis, str) and axis is not None and len(<str>axis) == 1:
             axis_chr = (<str>axis)[0]
         else:
             raise KeyError(f'Invalid axis: {axis!r}')
         cdef vec_t self_val
         with cython.critical_section(self):
             self_val = self.val
-        if axis_chr == b'x':
-            return self_val.y, self_val.z
-        elif axis_chr == b'y':
-            return self_val.x, self_val.z
-        elif axis_chr == b'z':
-            return self_val.x, self_val.y
-        raise KeyError(f'Invalid axis: {axis!r}')
+        if axis_chr == 'x':
+            a, b = self_val.y, self_val.z
+        elif axis_chr == 'y':
+            a, b = self_val.x, self_val.z
+        elif axis_chr == 'z':
+            a, b = self_val.x, self_val.y
+        else:
+            raise KeyError(f'Invalid axis: {axis!r}')
+        return a, b
 
     def in_bbox(self, a, b):
         """Check if this point is inside the specified bounding box."""
@@ -1588,7 +1597,8 @@ cdef class VecBase:
                 return True
         return False
 
-    # Non-in-place operators. Arg 1 may not be a Vec.
+    # Non-in-place operators. We use the C-API semantics, so obj_a might be a non-vec in the
+    # reflected case.
 
     def __add__(obj_a, obj_b):
         """+ operation.
@@ -1831,11 +1841,11 @@ cdef class VecBase:
                 return NotImplemented
 
             if type(obj_a) is Vec:
-                res_1 = <VecBase>Vec.__new__(Vec)
-                res_2 = <VecBase>Vec.__new__(Vec)
+                res_1 = Vec.__new__(Vec)
+                res_2 = Vec.__new__(Vec)
             else:
-                res_1 = <VecBase>FrozenVec.__new__(FrozenVec)
-                res_2 = <VecBase>FrozenVec.__new__(FrozenVec)
+                res_1 = FrozenVec.__new__(FrozenVec)
+                res_2 = FrozenVec.__new__(FrozenVec)
 
             # We put % first, since Cython then produces a 'divmod' error.
             res_2.val.x = vec.x % other_d
@@ -1854,11 +1864,11 @@ cdef class VecBase:
                 return NotImplemented
 
             if type(obj_b) is Vec:
-                res_1 = <VecBase>Vec.__new__(Vec)
-                res_2 = <VecBase>Vec.__new__(Vec)
+                res_1 = Vec.__new__(Vec)
+                res_2 = Vec.__new__(Vec)
             else:
-                res_1 = <VecBase>FrozenVec.__new__(FrozenVec)
-                res_2 = <VecBase>FrozenVec.__new__(FrozenVec)
+                res_1 = FrozenVec.__new__(FrozenVec)
+                res_2 = FrozenVec.__new__(FrozenVec)
 
             res_2.val.x = other_d % vec.x
             res_1.val.x = other_d // vec.x
@@ -2893,16 +2903,16 @@ cdef class MatrixBase:
             return mat
         elif mat_check(second):
             if isinstance(first, Vec):
-                vec = <VecBase>Vec.__new__(Vec)
+                vec = Vec.__new__(Vec)
                 with cython.critical_section(first):
-                    memcpy(&vec.val, &(<VecBase>first).val, sizeof(vec_t))
+                    vec.val = (<VecBase>first).val
                 with cython.critical_section(second):
                     _vec_rot(&vec.val, (<MatrixBase>second).mat)
                 return vec
             elif isinstance(first, FrozenVec):
-                vec = <VecBase>FrozenVec.__new__(FrozenVec)
+                vec = FrozenVec.__new__(FrozenVec)
                 # Immutable, no lock required.
-                memcpy(&vec.val, &(<VecBase>first).val, sizeof(vec_t))
+                vec.val = (<VecBase>first).val
                 with cython.critical_section(second):
                     _vec_rot(&vec.val, (<MatrixBase>second).mat)
                 return vec
@@ -3340,12 +3350,12 @@ cdef class AngleBase:
             elif isinstance(first, Vec):
                 res = Vec.__new__(Vec)
                 with cython.critical_section(first):
-                    memcpy(&(<Vec>res).val, &(<Vec>first).val, sizeof(vec_t))
+                    (<Vec>res).val = (<Vec>first).val
                 _vec_rot(&(<Vec>res).val, temp2)
                 return res
             elif isinstance(first, FrozenVec):
                 res = FrozenVec.__new__(FrozenVec)
-                memcpy(&(<FrozenVec>res).val, &(<FrozenVec>first).val, sizeof(vec_t))
+                (<FrozenVec>res).val = (<FrozenVec>first).val
                 _vec_rot(&(<FrozenVec>res).val, temp2)
                 return res
 
@@ -3537,9 +3547,9 @@ cdef class Angle(AngleBase):
     @classmethod
     def from_basis(
         cls, *,
-        x: VecBase=None,
-        y: VecBase=None,
-        z: VecBase=None,
+        x: VecBase | None = None,
+        y: VecBase | None = None,
+        z: VecBase | None = None,
     ) -> Angle:
         """Return the rotation which results in the specified local axes.
 
