@@ -89,6 +89,7 @@ exclude = [
 stubPath = "src/"   # Use our module for stubs.
 # We want to do conversions when setting.
 reportPropertyTypeMismatch = false
+disableBytesTypePromotions = true
 pythonVersion = "3.9"
 # We omit PIL in the tools CI, not necessary.
 reportMissingModuleSource = false
@@ -197,6 +198,7 @@ extend-ignore = [
 	"RUF022", # All not sorted
 	"RUF023", # Slots not sorted
 	"RUF059",  # Allow unused vars in unpacks.
+	"RUF067",  # Often have code in __init__
 
 	# Flake8-bugbear:
 	# Loop control var not used, triggers on unpackings.

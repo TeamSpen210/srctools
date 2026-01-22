@@ -9,7 +9,7 @@ not supported, only metdata can be read.
 .. _`Python Imaging Library`: https://pillow.readthedocs.io/en/stable/
 .. _`libsquish`: https://sourceforge.net/projects/libsquish/
 """
-from typing import TYPE_CHECKING, Any, Optional, Union, overload, ClassVar
+from typing import TYPE_CHECKING, Any, Optional, Union, overload, ClassVar, final
 from array import array
 from collections.abc import Iterator, Mapping, Sequence
 from enum import Enum, Flag
@@ -616,6 +616,7 @@ class Frame:
         return img
 
 
+@final
 class VTF:
     """Valve Texture Format files, used in the Source Engine."""
     width: int  #: The width of the texture. This must be a power of two, but does not need to match the height.

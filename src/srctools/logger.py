@@ -4,6 +4,8 @@ Wrapper around logging to provide our own functionality.
 This adds the ability to log using str.format() instead of %.
 """
 from typing import Literal, TYPE_CHECKING, Any, ClassVar, Optional, TextIO, Union, cast, overload
+from typing_extensions import Self
+
 from collections.abc import Callable, Generator, Iterable, Mapping
 from io import StringIO
 from pathlib import Path
@@ -245,7 +247,7 @@ class NullStream(TextIO):
     This is needed for multiprocessing, since it tries to flush stdout.
     That'll fail if it is None.
     """
-    def __enter__(self) -> 'NullStream':
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(

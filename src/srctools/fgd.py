@@ -41,7 +41,7 @@ __all__ = [
     'HelperOrientedBBox', 'HelperOrigin', 'HelperOverlay',
     'HelperOverlayTransition', 'HelperRenderColor', 'HelperRope',
     'HelperSize', 'HelperSphere', 'HelperSprite',
-    'HelperSweptPlayerHull', 'HelperTrack', 'HelperTypes',
+    'HelperSweptPlayerHull', 'HelperTrack',
     'HelperVecLine', 'HelperWorldText',
 
     'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy',

@@ -1,6 +1,6 @@
 """Classes for reading and writing Valve's VPK format, version 1."""
 from typing import Final, Optional, Union
-from typing_extensions import TypeAlias, deprecated
+from typing_extensions import deprecated, Self, TypeAlias
 from collections.abc import Iterable, Iterator
 from enum import Enum
 from types import TracebackType
@@ -526,7 +526,7 @@ class VPK:
             file.seek(struct.calcsize('<II'))  # Skip signature and version
             file.write(struct.pack('<I', dir_len))
 
-    def __enter__(self) -> 'VPK':
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(

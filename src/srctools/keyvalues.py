@@ -1471,7 +1471,7 @@ class _Builder:
         """This allows accessing names dynamically easily, or names which aren't identifiers."""
         return _BuilderElem(self, name)
 
-    def __enter__(self) -> '_Builder':
+    def __enter__(self) -> Self:
         """Start a keyvalue block."""
         return self
 
