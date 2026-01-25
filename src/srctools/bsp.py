@@ -32,6 +32,7 @@ from srctools.tokenizer import Token, Tokenizer, escape_text
 from srctools.vmf import VMF, Entity, Output
 from srctools.vmt import Material
 from srctools.vtf import VTF
+from srctools.dmx import Color
 
 
 __all__ = [
@@ -953,6 +954,8 @@ class Overlay:
         attrs.validators.instance_of(list),
     ))
     render_order: int = attrs.field(default=_ZERO, validator=attrs.validators.in_(range(4)))
+    #: Strata Source addition, a tint for the overlay.
+    tint: Color = attrs.field(default=Color(255, 255, 255), kw_only=True)
     u_min: float = 0.0
     u_max: float = 1.0
     v_min: float = 0.0
@@ -2855,18 +2858,30 @@ class BSP:
 
     def _lmp_read_overlays(self, data: bytes) -> Iterator[Overlay]:
         """Read the overlays lump."""
+        lump_format = (
+            '<i'  # ID
+            # texinfo, face-and-render-order
+            f'{"iHxx" if TEXINFO_IND_TYPE == "i" else "hH"}'
+            f'{OVERLAY_FACE_COUNT}i'  # face array.
+            '4f'  # UV min/max
+        )
+        has_tint = (  # Strata Source addition, rendercolor tinting.
+            self.version == VERSIONS.STRATA_SOURCE and
+            self.lumps[BSP_LUMPS.OVERLAYS].version == 2
+        )
+        if has_tint:
+            lump_format += (
+                '4x'  # Extra padding
+                '18f'  # 4 handle points, origin, normal
+                '4B'  # Render colour
+            )
+        else:
+            lump_format += '18f'  # 4 handle points, origin, normal
+
         # Use zip longest, so we handle cases where these newer auxiliary lumps
         # are empty.
         for block, fades, sys_levels in itertools.zip_longest(
-            struct.iter_unpack(
-                '<i'  # ID
-                # texinfo, face-and-render-order
-                f'{"iHxx" if TEXINFO_IND_TYPE == "i" else "hH"}'
-                f'{OVERLAY_FACE_COUNT}i'  # face array.
-                '4f'  # UV min/max
-                '18f',  # 4 handle points, origin, normal
-                data,
-            ),
+            struct.iter_unpack(lump_format, data),
             struct.iter_unpack('<ff', self.lumps[BSP_LUMPS.OVERLAY_FADES].data),
             struct.iter_unpack('<4B', self.lumps[BSP_LUMPS.OVERLAY_SYSTEM_LEVELS].data),
         ):
@@ -2874,19 +2889,27 @@ class BSP:
                 # Too many of either aux lump, ignore.
                 break
             over_id, texinfo, face_ro = block[:3]
+            # Render order and face count are packed together.
             face_count = face_ro & ((1 << 14) - 1)
             render_order = face_ro >> 14
             if face_count > OVERLAY_FACE_COUNT:
                 raise ValueError(f'{face_ro} exceeds OVERLAY_BSP_FACE_COUNT ({OVERLAY_FACE_COUNT})!')
             faces = list(block[3: 3 + face_count])
-            u_min, u_max, v_min, v_max = block[-22:-18]
-            uv1 = Vec(block[-18:-15])
-            uv2 = Vec(block[-15:-12])
-            uv3 = Vec(block[-12:-9])
-            uv4 = Vec(block[-9:-6])
-            origin = Vec(block[-6:-3])
-            normal = Vec(block[-3:])
-            assert len(block) == 25 + OVERLAY_FACE_COUNT
+            # Trim this off, so we can use constant indexes for the rest.
+            block = block[3 + OVERLAY_FACE_COUNT:]
+            u_min, u_max, v_min, v_max = block[:4]
+            uv1 = Vec(block[4:7])
+            uv2 = Vec(block[7:10])
+            uv3 = Vec(block[10:13])
+            uv4 = Vec(block[13:16])
+            origin = Vec(block[16:19])
+            normal = Vec(block[19:22])
+            if has_tint:
+                tint = Color(block[22], block[23], block[24])
+                assert len(block) == 26, f'{block}, {len(block)} elems'
+            else:
+                tint = Color(255, 255, 255)
+                assert len(block) == 22, f'{block}, {len(block)} elems'
 
             if fades is not None:
                 fade_min, fade_max = fades
@@ -2908,7 +2931,8 @@ class BSP:
                 uv1, uv2, uv3, uv4,
                 fade_min, fade_max,
                 min_cpu, max_cpu,
-                min_gpu, max_gpu
+                min_gpu, max_gpu,
+                tint=tint,
             )
 
     def _lmp_write_overlays(self, overlays: list[Overlay]) -> Iterator[bytes]:
@@ -2937,6 +2961,11 @@ class BSP:
                 *over.uv1, *over.uv2, *over.uv3, *over.uv4,
                 *over.origin, *over.normal,
             )
+            if (
+                self.version == VERSIONS.STRATA_SOURCE and
+                self.lumps[BSP_LUMPS.OVERLAYS].version == 2
+            ):
+                yield struct.pack('3f', *over.tint)
         self.lumps[BSP_LUMPS.OVERLAY_FADES].data = fade_buf.getvalue()
         self.lumps[BSP_LUMPS.OVERLAY_SYSTEM_LEVELS].data = levels_buf.getvalue()
 

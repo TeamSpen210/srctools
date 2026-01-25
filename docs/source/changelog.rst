@@ -15,6 +15,7 @@ Version (dev)
 * Add option to control double-quote escaping behaviour for FGDs, seperately to custom syntax.
 * Add support for parsing Strata's Keyvalues-based `~srctools.cmdseq` variant.
 * Allow customising the filename used for injected `~srctools.packlist.PackList` files.
+* Add support for parsing Strata's tintable overlays BSP format.
 
 -------------
 Version 2.6.2
