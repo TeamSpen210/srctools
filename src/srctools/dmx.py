@@ -111,7 +111,7 @@ class ValueType(Enum):
     """
     MATRIX = 'vmatrix'
     """
-    A translation :py:class:`~srctools.math.FrozenMatrix`. This can be converted from a
+    A transformation :py:class:`~srctools.math.FrozenMatrix`. This can be converted from a
     :py:class:`~srctools.math.Angle`,  :py:class:`~srctools.math.FrozenAngle`,
     :py:class:`~srctools.math.Matrix` or :py:class:`~srctools.math.Matrix`.
     """

@@ -283,7 +283,7 @@ def build_keyvalues(
 ) -> Keyvalues:
     """Build Strata Source's or Hammer++'s keyvalues file format, for export.
 
-    :param file_format: The file format to produce, `"strata"` or `"hammer++"`. Hammer++ does not
+    :param file_format: The file format to produce, ``"strata"`` or ``"hammer++"``. Hammer++ does not
         support the `~Command.ensure_file`, `~Command.use_proc_win` or `~Command.no_wait` attributes.
     :param sequences: The sequences to build. The keys are the name of the commands.
     """

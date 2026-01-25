@@ -456,7 +456,7 @@ Miscellaneous
 
 
 .. py:type:: BrushContents
-    :canonical: srctools.consts.BSPContents
+    :canonical: srctools.const.BSPContents
 
     This enum specifies collision types for brushes. It is reimported in the BSP module for convenience.
 

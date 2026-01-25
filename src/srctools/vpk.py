@@ -73,7 +73,7 @@ def _write_nullstring(file: FileWBinary, string: str) -> None:
 def get_arch_filename(prefix: str = 'pak01', index: Optional[int] = None) -> str:
     """Generate the name for a VPK file.
 
-    Prefix is the name of the file, usually 'pak01'.
+    Prefix is the name of the file, often :file:`pak{01}`.
     index is the index of the data file, or None for the directory.
     """
     if index is None:
@@ -207,8 +207,8 @@ class FileInfo:
         """Replace this file with the given byte data.
 
         :param data: The contents of the file to write.
-        :param arch_index: This is the ``pak_01_000.vpk`` file to put data into
-            (or :obj:`None` for ``_dir``). This is ignored if the VPK is singular.
+        :param arch_index: This is the :file:`pak01_{000}.vpk` file to put data into
+            (or :obj:`None` for :file`_dir.vpk`). This is ignored if the VPK is singular.
 
         - Data written to the directory file is not immediately saved, :py:meth:`VPK.write_dirfile()`
           must subsequently be called to do so.
@@ -253,8 +253,8 @@ class FileInfo:
 class VPK:
     """Represents a VPK archive.
 
-    VPKs can either be a singular file, or a main ``archive_dir.vpk`` with associated numerix
-    ``archive_XXX.vpk`` files containing the data.
+    VPKs can either be a singular file, or a main :file:`{archive}_dir.vpk` with associated numeric
+    :file:`{archive}_XXX.vpk` files containing the data.
     """
     folder: str
     """The directory the VPK is located in, used to find the numeric files."""
@@ -335,7 +335,7 @@ class VPK:
             raise ValueError(f"VPK mode {self.mode.name} does not allow writing!")
 
     @property
-    def path(self) -> Union[str, 'os.PathLike[str]']:  # TODO: Incorrect, Mypy doesn't have 2-type properties.
+    def path(self) -> str:
         """The full path of the directory VPK file, or the single file.
 
         This can be assigned to set :py:attr:`folder` and :py:attr:`filename`.
@@ -350,6 +350,8 @@ class VPK:
     @property
     def filename(self) -> str:
         """The filename of the directory VPK file, or the single file.
+
+        This can be assigned to set :py:attr:`file_prefix`.
         """
         return self._filename
 
@@ -363,10 +365,10 @@ class VPK:
 
     @property
     def file_prefix(self) -> str:
-        """The VPK filename, without ``.vpk``, or ``_dir.vpk`` if a directory.
+        """The VPK filename, without :file:`.vpk`, or :file:`_dir.vpk` if a directory.
 
-        :deprecated: Do not assign to this, it assumes the VPK is always a directory file.\
-        Instead, assign to filename or path.
+        :deprecated: Treat as readonly. Assigning to this assumes the VPK is always a directory \
+        file. Instead, assign to `filename` or `path`.
         """
         if self._dir_prefix is not None:
             return self._dir_prefix

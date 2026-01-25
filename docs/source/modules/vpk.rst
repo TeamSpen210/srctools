@@ -42,6 +42,8 @@ Attributes
 
 	.. autoattribute:: VPK.folder
 
+	.. autoattribute:: VPK.filename
+
 	.. autoattribute:: VPK.path
 
 	.. autoattribute:: VPK.mode

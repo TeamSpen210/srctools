@@ -357,7 +357,7 @@ class StrataInstanceVisibility(Enum):
 class PrismFace:
     """Return value for `VMF.make_prism()` and `VMF.make_hollow()`.
 
-    This can be indexed with an axis-aligned :py:class:`~srctools.Vec` or 3-tuple normal to fetch a side.
+    This can be indexed with an axis-aligned :py:class:`~srctools.math.Vec` or 3-tuple normal to fetch a side.
     """
     solid: 'Solid'  #: The generated brush.
     top: 'Side'  #: The ``+z`` side of the brush.
