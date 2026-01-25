@@ -957,7 +957,7 @@ class Overlay:
     u_max: float = 1.0
     v_min: float = 0.0
     v_max: float = 1.0
-    # Four corner handles of the overlay.
+    #: Four corner handles of the overlay.
     uv1: Vec = attrs.field(factory=lambda: Vec(-16, -16))
     uv2: Vec = attrs.field(factory=lambda: Vec(-16, +16))
     uv3: Vec = attrs.field(factory=lambda: Vec(+16, +16))
@@ -966,11 +966,41 @@ class Overlay:
     fade_min_sq: float = -1.0
     fade_max_sq: float = 0.0
 
-    # If system exceeds these limits, the overlay is skipped. Each is a single byte.
+    #: If system exceeds these limits, the overlay is skipped. Each is a single byte.
     min_cpu: int = attrs.field(default=_ZERO, validator=attrs.validators.in_(range(255)))
     max_cpu: int = attrs.field(default=_ZERO, validator=attrs.validators.in_(range(255)))
     min_gpu: int = attrs.field(default=_ZERO, validator=attrs.validators.in_(range(255)))
     max_gpu: int = attrs.field(default=_ZERO, validator=attrs.validators.in_(range(255)))
+
+    @property
+    def fade_min(self) -> float:
+        """Non-squared version of the fade_min value."""
+        if self.fade_min_sq > 0:
+            return math.sqrt(self.fade_min_sq)
+        else:
+            return self.fade_min_sq  # -1 or 0.
+
+    @fade_min.setter
+    def fade_min(self, value: float) -> None:
+        if value > 0:
+            self.fade_min_sq = value ** 2
+        else:
+            self.fade_min_sq = value
+
+    @property
+    def fade_max(self) -> float:
+        """Non-squared version of the fade_max value."""
+        if self.fade_max_sq > 0:
+            return math.sqrt(self.fade_max_sq)
+        else:
+            return self.fade_max_sq  # -1 or 0.
+
+    @fade_max.setter
+    def fade_max(self, value: float) -> None:
+        if value > 0:
+            self.fade_max_sq = value ** 2
+        else:
+            self.fade_max_sq = value
 
 
 @attrs.define(eq=False)
