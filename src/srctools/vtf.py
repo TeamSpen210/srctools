@@ -545,7 +545,7 @@ class Frame:
         return frombuffer(
             'RGBA',
             (self.width, self.height),
-            self._data,  # type: ignore  # frombuffer() incorrect.
+            self._data,
             'raw',
             'RGBA',
             0,

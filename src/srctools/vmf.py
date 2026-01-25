@@ -2727,7 +2727,7 @@ class Entity(MutableMapping[str, str]):
         editor_color = Vec()
         for item in tree_list:
             name = item.name
-            assert name is not None, repr(item)  # type: ignore[comparison-overlap]  # TODO Remove when root props change.
+            assert name is not None, repr(item)  # TODO Remove when root props change.
             if item.has_children():
                 if name == "solid":
                     solids.append(Solid.parse(vmf_file, item))
