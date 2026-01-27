@@ -947,14 +947,15 @@ class Cubemap:
 _ZERO: int = int('0')
 
 
-@attrs.define(eq=False)
+@attrs.define(eq=False, kw_only=True)
 class Overlay:
     """An overlay embedded in the map."""
     id: int = attrs.field(eq=True)
     origin: Vec
     normal: Vec
+    basis_u: FrozenVec
+    basis_v_flipped: bool = False  # This is calculated from cross(normal, basis_u)
     texture: TexInfo
-    face_count: int
     faces: list[int] = attrs.field(factory=list, validator=attrs.validators.deep_iterable(
         attrs.validators.instance_of(int),
         attrs.validators.instance_of(list),
@@ -966,11 +967,11 @@ class Overlay:
     u_max: float = 1.0
     v_min: float = 0.0
     v_max: float = 1.0
-    #: Four corner handles of the overlay.
-    uv1: Vec = attrs.field(factory=lambda: Vec(-16, -16))
-    uv2: Vec = attrs.field(factory=lambda: Vec(-16, +16))
-    uv3: Vec = attrs.field(factory=lambda: Vec(+16, +16))
-    uv4: Vec = attrs.field(factory=lambda: Vec(+16, -16))
+    #: Four corner handles of the overlay. Z is unused - the basis U/V values are stored here.
+    uv1: FrozenVec = FrozenVec(-16, -16)
+    uv2: FrozenVec = FrozenVec(-16, +16)
+    uv3: FrozenVec = FrozenVec(+16, +16)
+    uv4: FrozenVec = FrozenVec(+16, -16)
 
     fade_min_sq: float = -1.0
     fade_max_sq: float = 0.0
@@ -980,6 +981,12 @@ class Overlay:
     max_cpu: int = attrs.field(default=_ZERO, validator=attrs.validators.in_(range(255)))
     min_gpu: int = attrs.field(default=_ZERO, validator=attrs.validators.in_(range(255)))
     max_gpu: int = attrs.field(default=_ZERO, validator=attrs.validators.in_(range(255)))
+
+    @property
+    def basis_v(self) -> FrozenVec:
+        """The basis V value is calculated from the normal and basis u."""
+        result = FrozenVec.cross(self.normal, self.basis_u)
+        return -result if self.basis_v_flipped else result
 
     @property
     def fade_min(self) -> float:
@@ -2904,12 +2911,15 @@ class BSP:
             # Trim this off, so we can use constant indexes for the rest.
             block = block[3 + max_faces:]
             u_min, u_max, v_min, v_max = block[:4]
-            uv1 = Vec(block[4:7])
-            uv2 = Vec(block[7:10])
-            uv3 = Vec(block[10:13])
-            uv4 = Vec(block[13:16])
+            # The z-value for these are used for other things.
+            uv1 = FrozenVec(block[4], block[5])
+            uv2 = FrozenVec(block[7], block[8])
+            uv3 = FrozenVec(block[10], block[11])
+            uv4 = FrozenVec(block[13], block[14])
             origin = Vec(block[16:19])
             normal = Vec(block[19:22])
+            basis_u = FrozenVec(block[6], block[9], block[12])  # uv1-3 z values.
+            basis_v_flipped = block[15] > 0.5  # 1.0 or 0.0 normally.
             if has_tint:
                 tint = Color(block[22], block[23], block[24], block[25])
                 assert len(block) == 26, f'{block}, {len(block)} elems'
@@ -2918,10 +2928,10 @@ class BSP:
                 assert len(block) == 23, f'{block}, {len(block)} elems'
 
             if fades is not None:
-                fade_min, fade_max = fades
+                fade_min_sq, fade_max_sq = fades
             else:
-                fade_min = -1.0
-                fade_max = 0.0
+                fade_min_sq = -1.0
+                fade_max_sq = 0.0
             if sys_levels is not None:
                 min_cpu, max_cpu, min_gpu, max_gpu = sys_levels
             else:
@@ -2929,15 +2939,19 @@ class BSP:
                 max_cpu = max_gpu = 0
 
             yield Overlay(
-                over_id, origin, normal,
-                self.texinfo[texinfo], face_count,
-                faces, render_order,
-                u_min, u_max,
-                v_min, v_max,
-                uv1, uv2, uv3, uv4,
-                fade_min, fade_max,
-                min_cpu, max_cpu,
-                min_gpu, max_gpu,
+                id=over_id,
+                origin=origin,
+                normal=normal,
+                basis_u=basis_u,
+                basis_v_flipped=basis_v_flipped,
+                texture=self.texinfo[texinfo],
+                faces=faces, render_order=render_order,
+                u_min=u_min, u_max=u_max,
+                v_min=v_min, v_max=v_max,
+                uv1=uv1, uv2=uv2, uv3=uv3, uv4=uv4,
+                fade_min_sq=fade_min_sq, fade_max_sq=fade_max_sq,
+                min_cpu=min_cpu, max_cpu=max_cpu,
+                min_gpu=min_gpu, max_gpu=max_gpu,
                 tint=tint,
             )
 
@@ -2969,7 +2983,10 @@ class BSP:
             yield struct.pack('<4f', over.u_min, over.u_max, over.v_min, over.v_max)
             yield struct.pack(
                 '<18f',
-                *over.uv1, *over.uv2, *over.uv3, *over.uv4,
+                over.uv1.x, over.uv1.y, over.basis_u.x,
+                over.uv2.x, over.uv2.y, over.basis_u.y,
+                over.uv3.x, over.uv3.y, over.basis_u.z,
+                over.uv4.x, over.uv4.y, (1.0 if over.basis_v_flipped else 0.0),
                 *over.origin, *over.normal,
             )
             if has_tint:
