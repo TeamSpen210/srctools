@@ -55,8 +55,6 @@ VITAMIN_MAGIC = b'FART'  # Desolation's branch of Source.
 HEADER_1 = '<4si'  # Header section before the lump list.
 HEADER_LUMP = '<4i'  # Header section for each lump.
 HEADER_2 = '<i'  # Header section after the lumps.
-OVERLAY_FACE_COUNT = 64  # Max number of overlay faces.
-TEXINFO_IND_TYPE = 'h'  # The type used to index into texinfo (i or h).
 
 T = TypeVar('T')
 KeyT = TypeVar('KeyT')  # Needs to be hashable, typecheckers currently don't handle that.
@@ -252,6 +250,9 @@ class LumpDataLayout(TypedDict):
     EDGE: struct.Struct
     PRIMITIVE: struct.Struct
     PRIMINDEX: struct.Struct
+    # Start of overlays, this varies depending on whether texinfo is 2 or 4 bytes.
+    OVERLAY_START: str
+    OVERLAY_FACE_COUNT: int  # Max number of overlay faces.
     NODE: struct.Struct
     LEAF: struct.Struct
     LEAFFACE: struct.Struct
@@ -271,6 +272,8 @@ LUMP_LAYOUT_STANDARD: LumpDataLayout = {
     "PRIMINDEX":        struct.Struct('<H'),
     "NODE":             struct.Struct('<iii6hHHh2x'),
     "LEAF":             struct.Struct('<ihh6h4Hh2x'),  # Version 1
+    "OVERLAY_START":   'IhH',
+    "OVERLAY_FACE_COUNT": 64,
     "LEAFFACE":         struct.Struct('<H'),
     "LEAFBRUSH":        struct.Struct('<H'),
     "LEAF_AREA_OFFSET": 7,
@@ -279,6 +282,7 @@ LUMP_LAYOUT_STANDARD: LumpDataLayout = {
     "STATICPROPLEAF":   struct.Struct('<H'),
 }
 
+TEXINFO_IND_TYPE = 'h'  # The type used to index into texinfo (i or h).
 
 LUMP_LAYOUT_V19: LumpDataLayout = {
     **LUMP_LAYOUT_STANDARD,
@@ -301,6 +305,7 @@ LUMP_LAYOUT_VITAMIN: LumpDataLayout = {
     "FACE": struct.Struct('<5i4iB3x'),
     "BRUSHSIDE": struct.Struct('<IIhBB'),
     "NODE": struct.Struct('<iii6iHHh2x'),
+    "OVERLAY_START": 'IiI',
 }
 
 # https://wiki.stratasource.org/modding/overview/bsp-v25
@@ -315,6 +320,7 @@ LUMP_LAYOUT_STRATA: LumpDataLayout = {
     "LEAF":             struct.Struct('<iii6f4Ii'),  # Version 2
     "LEAFFACE":         struct.Struct('<I'),
     "LEAFBRUSH":        struct.Struct('<I'),
+    "OVERLAY_START": 'IiI',
     "LEAF_AREA_OFFSET": 17,
     "LEAFWATERDATA":    struct.Struct('<ffI'),
     "BRUSHSIDE":        struct.Struct('<IiiHxx'),
@@ -2858,25 +2864,25 @@ class BSP:
 
     def _lmp_read_overlays(self, data: bytes) -> Iterator[Overlay]:
         """Read the overlays lump."""
-        lump_format = (
-            '<i'  # ID
-            # texinfo, face-and-render-order
-            f'{"iHxx" if TEXINFO_IND_TYPE == "i" else "hH"}'
-            f'{OVERLAY_FACE_COUNT}i'  # face array.
-            '4f'  # UV min/max
-        )
         has_tint = (  # Strata Source addition, rendercolor tinting.
             self.version == VERSIONS.STRATA_SOURCE and
             self.lumps[BSP_LUMPS.OVERLAYS].version == 2
         )
+        max_faces = self.lump_layout["OVERLAY_FACE_COUNT"]
         if has_tint:
-            lump_format += (
-                '4x'  # Extra padding
-                '18f'  # 4 handle points, origin, normal
-                '4B'  # Render colour
-            )
+            fmt_1 = ''  # Extra padding
+            fmt_2 = '4B'  # Render colour
         else:
-            lump_format += '18f'  # 4 handle points, origin, normal
+            fmt_1 = fmt_2 = ''
+        lump_format = (
+            # ID, texinfo, face-and-render-order
+            f'{self.lump_layout["OVERLAY_START"]}'
+            f'{max_faces}i'  # face array.
+            f'{fmt_1}'
+            '4f'  # UV min/max
+            '18f'  # 4 handle points, origin, normal
+            f'{fmt_2}'
+        )
 
         # Use zip longest, so we handle cases where these newer auxiliary lumps
         # are empty.
@@ -2892,11 +2898,11 @@ class BSP:
             # Render order and face count are packed together.
             face_count = face_ro & ((1 << 14) - 1)
             render_order = face_ro >> 14
-            if face_count > OVERLAY_FACE_COUNT:
-                raise ValueError(f'{face_ro} exceeds OVERLAY_BSP_FACE_COUNT ({OVERLAY_FACE_COUNT})!')
+            if face_count > max_faces:
+                raise ValueError(f'{face_ro} exceeds OVERLAY_BSP_FACE_COUNT ({max_faces})!')
             faces = list(block[3: 3 + face_count])
             # Trim this off, so we can use constant indexes for the rest.
-            block = block[3 + OVERLAY_FACE_COUNT:]
+            block = block[3 + max_faces:]
             u_min, u_max, v_min, v_max = block[:4]
             uv1 = Vec(block[4:7])
             uv2 = Vec(block[7:10])
@@ -2905,11 +2911,11 @@ class BSP:
             origin = Vec(block[16:19])
             normal = Vec(block[19:22])
             if has_tint:
-                tint = Color(block[22], block[23], block[24])
+                tint = Color(block[22], block[23], block[24], block[25])
                 assert len(block) == 26, f'{block}, {len(block)} elems'
             else:
                 tint = Color(255, 255, 255)
-                assert len(block) == 22, f'{block}, {len(block)} elems'
+                assert len(block) == 23, f'{block}, {len(block)} elems'
 
             if fades is not None:
                 fade_min, fade_max = fades
@@ -2940,32 +2946,34 @@ class BSP:
         add_texinfo = find_or_insert(self.texinfo)
         fade_buf = BytesIO()
         levels_buf = BytesIO()
+        max_faces = self.lump_layout["OVERLAY_FACE_COUNT"]
+        has_tint = (  # Strata Source addition, changes padding too.
+            self.version == VERSIONS.STRATA_SOURCE and
+            self.lumps[BSP_LUMPS.OVERLAYS].version == 2
+        )
         for over in overlays:
             face_cnt = len(over.faces)
-            if face_cnt > OVERLAY_FACE_COUNT:
-                raise ValueError(f'{over.faces} exceeds OVERLAY_BSP_FACE_COUNT ({OVERLAY_FACE_COUNT})!')
+            if face_cnt > max_faces:
+                raise ValueError(f'{over.faces} exceeds OVERLAY_BSP_FACE_COUNT ({max_faces})!')
             fade_buf.write(struct.pack('<ff', over.fade_min_sq, over.fade_max_sq))
             levels_buf.write(struct.pack('<4B', over.min_cpu, over.max_cpu, over.min_gpu, over.max_gpu))
             yield struct.pack(
                 # texinfo, face-and-render-order
-                '<iiHxx' if TEXINFO_IND_TYPE == "i" else '<ihH',
+                '<' + self.lump_layout["OVERLAY_START"],
                 over.id,
                 add_texinfo(over.texture),
                 (over.render_order << 14 | face_cnt),
             )
             # Build the array, then zero fill the remaining space.
-            yield struct.pack(f'<{face_cnt}i {4*(OVERLAY_FACE_COUNT-face_cnt)}x', *over.faces)
+            yield struct.pack(f'<{face_cnt}i {4*(max_faces-face_cnt)}x', *over.faces)
             yield struct.pack('<4f', over.u_min, over.u_max, over.v_min, over.v_max)
             yield struct.pack(
                 '<18f',
                 *over.uv1, *over.uv2, *over.uv3, *over.uv4,
                 *over.origin, *over.normal,
             )
-            if (
-                self.version == VERSIONS.STRATA_SOURCE and
-                self.lumps[BSP_LUMPS.OVERLAYS].version == 2
-            ):
-                yield struct.pack('3f', *over.tint)
+            if has_tint:
+                yield struct.pack('4B', *over.tint)
         self.lumps[BSP_LUMPS.OVERLAY_FADES].data = fade_buf.getvalue()
         self.lumps[BSP_LUMPS.OVERLAY_SYSTEM_LEVELS].data = levels_buf.getvalue()
 
