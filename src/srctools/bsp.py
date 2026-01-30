@@ -2925,7 +2925,7 @@ class BSP:
                 assert len(block) == 26, f'{block}, {len(block)} elems'
             else:
                 tint = Color(255, 255, 255)
-                assert len(block) == 23, f'{block}, {len(block)} elems'
+                assert len(block) == 22, f'{block}, {len(block)} elems'
 
             if fades is not None:
                 fade_min_sq, fade_max_sq = fades
