@@ -8,7 +8,7 @@ from cpython.ref cimport Py_INCREF
 from cpython.unicode cimport PyUnicode_AsUTF8AndSize
 from libc cimport math
 from libc.math cimport M_PI, NAN, cos, isnan, llround, sin, tan
-from libc.stdint cimport uint16_t, uint32_t, uint_fast8_t
+from libc.stdint cimport uint_fast8_t
 from libc.stdio cimport sscanf
 from libc.string cimport memcmp, memcpy, memset
 from libcpp cimport bool
@@ -789,33 +789,27 @@ def cross_vec(left, right):
 
 cdef char _parse_boolstr(const char *utf8, Py_ssize_t size):
     # Do direct comparisons for the various valid booleans. Since we know the size of the buffer,
-    # we know which word to compare to. Casting to integer lets us compare 2/4 character sections
-    # in one go.
+    # we know which word to compare to. The memcmp() can be optimised into 2/4 byte integer compares.
     # '0', 'no', 'false', 'n', 'f'
     # '1', 'yes', 'true', 'y', 't'
     # We do some of the more likely uppercase variants to avoid calling casefold().
-    cdef uint16_t dual;
-    cdef uint32_t quad;
     if size == 1:
         if utf8[0] in (b'0', b'n', b'f', b'N', b'F'):
             return 0
         elif utf8[0] in (b'1', b'y', b't', b'T', b'T'):
             return 1
     elif size == 2:
-        memcpy(&dual, utf8, sizeof(uint16_t))  # Does unaligned reads safely.
-        if dual in ((<uint16_t *><char *>b'no')[0], (<uint16_t *><char *>b'No')[0]):
+        if memcmp(utf8, b'no', 2) == 0 or memcmp(utf8, b'No', 2) == 0 or memcmp(utf8, b'NO', 2) == 0:
             return 0
-    elif size == 3: # Null terminated, so actually 4 bytes long.
-        memcpy(&quad, utf8, sizeof(uint32_t))
-        if quad in ((<uint32_t *><char *>b'yes\0')[0], (<uint32_t *><char *>b'Yes\0')[0]):
+    elif size == 3:
+        # Redundantly compare the null pointer, that way we might be able to do a 32-bit compare.
+        if memcmp(utf8, b'yes\0', 4) == 0 or memcmp(utf8, b'Yes\0', 4) == 0 or memcmp(utf8, b'YES', 4) == 0:
             return 1
     elif size == 4:
-        memcpy(&quad, utf8, sizeof(uint32_t))
-        if quad in ((<uint32_t *> <char *> b'true')[0], (<uint32_t *> <char *> b'True')[0]):
+        if memcmp(utf8, b'true', 4) == 0 or memcmp(utf8, b'True', 4) == 0 or memcmp(utf8, b'TRUE', 4) == 0:
             return 1
     elif size == 5:
-        memcpy(&quad, utf8, sizeof(uint32_t))
-        if quad == (<uint32_t *> <char *> b'fals')[0] and utf8[4] == b'e':
+        if memcmp(utf8, b'false', 5) == 0 or memcmp(utf8, b'False', 5) == 0 or memcmp(utf8, b'FALSE', 5) == 0:
             return 0
     return 2
 

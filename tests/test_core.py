@@ -1,9 +1,10 @@
 """Test functionality in srctools.__init__."""
-from typing import Any, Union
-import pickle
+from typing import Any
 
-from collections.abc import Set as AbstractSet, Callable, KeysView, ItemsView
+from collections.abc import Set as AbstractSet, Callable, Iterable
 from pathlib import Path
+import pickle
+import itertools
 
 from dirty_equals import IsList
 import pytest
@@ -61,8 +62,6 @@ floats = [
     (-23527.9573, -23527.9573),
 ]
 
-false_strings = ['0', 'false', 'no', 'faLse', 'False', 'No', 'NO', 'nO']
-true_strings = ['1', 'true', 'yes', 'True', 'trUe', 'Yes', 'yEs', 'yeS']
 
 non_ints = ['-23894.0', '', 'hello', '5j', '6.2', '0.2', '6.9', None, object()]
 non_floats = ['5j', '', 'hello', '6.2.5', '4F', '100-', None, object(), float]
@@ -74,6 +73,16 @@ def_vals = [
     TrueObject(), FalseObject(), 456.9,
     -4758.97
 ]
+
+
+def case_variants(num: str, *words: str) -> Iterable[str]:
+    """Return all upper/lowercase combinations of the words, and the one non-cased number."""
+    yield num
+    for word in words:
+        for result in itertools.product(
+            *[(char, char.upper()) for char in word]
+        ):
+            yield ''.join(result)
 
 
 def check_empty_iterable(obj: Any, name: str, item: object = 'x') -> None:
@@ -138,9 +147,9 @@ def test_conv_int(func: Callable[..., int]) -> None:
 )
 def test_conv_bool(func: Callable[..., bool]) -> None:
     """Test srctools.conv_bool()."""
-    for val in true_strings:
+    for val in case_variants('1', 't', 'true', 'y', 'yes'):
         assert func(val) is True
-    for val in false_strings:
+    for val in case_variants('0', 'f', 'false', 'n', 'no'):
         assert func(val) is False
 
     # Check that bools pass through
@@ -304,7 +313,7 @@ def test_EmptyMapping_pickle(empty: object, version: int) -> None:
     [EmptyMapping.keys(), EmptyMapping.items()],
     ids=['keys', 'items'],
 )
-def test_EmptyMapping_set_ops(view: Union[KeysView[Any], ItemsView[Any, Any]]) -> None:
+def test_EmptyMapping_set_ops(view: AbstractSet[Any]) -> None:
     """Test EmptyMapping.keys() and items() support set ops."""
     empty: AbstractSet[Any] = set()
     # Ensure it's valid as an items() tuple.
