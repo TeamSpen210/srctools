@@ -5,6 +5,7 @@ import io
 import itertools
 import re
 
+from pytest_datadir.plugin import LazyDataDir
 from pytest_regressions.file_regression import FileRegressionFixture
 import pytest
 
@@ -142,55 +143,9 @@ def test_entity_lookup_io() -> None:
     assert ent.out['onTrIgger', ('pass', )].type is ValueTypes.STRING
 
 
-def test_entity_parse(py_c_token: None) -> None:
+def test_entity_parse(lazy_datadir: LazyDataDir, py_c_token: None) -> None:
     """Verify parsing an entity produces the correct results."""
-    fsys = VirtualFileSystem({'test.fgd': """
-
-@PointClass base(Base1, Base2, Base3) 
-base(Base4, base_5)
-sphere(radii) 
-unknown[+a, -b](a, b, c)
-line[+b](240 180 50, targetname, target)
-autovis(Auto, some, group)
-halfgridsnap // Special, no args
-appliesto(tag1, tag2, !tag3)
-= some_entity: "The description for this prop, which is spread over " 
-+ "multiple lines."
-    [
-    keyvalue1(string): "Name" : "default": "documentation"
-    keyVAlue2(int): "Hi": 4
-    keyvalue1[tag](boolean): "Tagged Name": 0
-    target(target_destination): "An ent"
-    
-    spawnflags(flags) : "Flags" = [
-        2^0 : "A" : 0
-        ^1 : "[2]  B" : 1
-        4 : "[48] C" : 0
-        8 : "D value" : 0 [old, !good]
-        8 : "E" : 1 [new]
-        ^16 : "16bit" : 0
-    ]
-    
-    input Trigger(void): "Trigger the entity."
-    output OnTrigger(void): "Handle triggering."
-    output OnTrigger[adv](float): "Handle triggering, with value. " + 
-        "Second line."
-    
-    choicelist(choices) : "A Choice" : 0 : "Blahdy blah. "
-    + "Another line." = 
-        [
-        0: "First"
-        1: "Second" [new]
-        1: "Old second" [-oLd]
-        2: "Third"
-        "four": "Fourth"
-        ]
-    ]
-@SolidClass = multiline: "Another description "
- + "with the plus at the start" 
-    [
-    ]
-"""})
+    fsys = VirtualFileSystem({'test.fgd': (lazy_datadir / 'entity_parse.fgd').read_text()})
     fgd = FGD()
     fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False)
     ent = fgd['Some_ENtity']
