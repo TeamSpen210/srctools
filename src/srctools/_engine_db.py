@@ -20,8 +20,10 @@ import warnings
 from .binformat import DeferredWrites
 from .const import FileType
 from .types import FileR, FileRSeek, FileWBinary, FileWBinarySeek
-from .fgd import FGD, EntAttribute, EntityDef, EntityTypes, IODef, KVDef, Resource, ValueTypes
-
+from .fgd import (
+    FGD, EntAttribute, EntityDef, EntityTypes, IODef, KVDef, Resource, ValueTypes,
+    KVOption,
+)
 
 from .fgd import _EngineDBProto, _EntityView  # isort: split # noqa
 
@@ -369,19 +371,20 @@ def kv_serialise(kvdef: KVDef, file: FileWBinary, str_dict: BinStrSerialise) -> 
     # Spawnflags have integer names and defaults,
     # choices has string values and no default.
     if kvdef.type is ValueTypes.SPAWNFLAGS:
-        file.write(_fmt_8bit.pack(len(kvdef.flags_list)))
+        opts = kvdef.options or []
+        file.write(_fmt_8bit.pack(len(opts)))
         # spawnflags are a 32-bit int in-game, 64 in Hammer. So 128 is more than sufficient.
-        for mask, name, default, tags in kvdef.flags_list:
-            if tags:
+        for option in opts:
+            if option.tags:
                 raise ValueError('Cannot use tags!')
             # We can write 2^n instead of the full number,
             # since they're all powers of two.
-            power = int(math.log2(mask))
+            power = int(math.log2(option.bitflag))
             assert power < 128, "Spawnflags are too big for packing into a byte!"
-            if default:  # Pack the default as the MSB.
+            if option.default:  # Pack the default as the MSB.
                 power |= 128
             file.write(_fmt_8bit.pack(power))
-            file.write(str_dict(name))
+            file.write(str_dict(option.name))
         return  # Spawnflags doesn't need to write a default.
 
     file.write(str_dict(kvdef.default))
@@ -400,24 +403,23 @@ def kv_unserialise(
     [value_ind, kv_flags] = file.read(2)
     value_type = VALUE_TYPE_ORDER[value_ind]
 
-    val_list: Optional[list[tuple[int, str, bool, frozenset[str]]]]
+    options: Optional[list[KVOption]]
 
     if value_type is ValueTypes.SPAWNFLAGS:
         default = ''  # No default for this type.
         [val_count] = file.read(1)
-        val_list = []
+        options = []
         for _ in range(val_count):
             [power] = file.read(1)
             val_name = from_dict()
-            val_list.append((
-                1 << (power & 127),  # All flags are powers of 2.
-                val_name,
-                (power & 128) != 0,  # Defaults to true/false.
-                TAG_EMPTY,
+            options.append(KVOption(
+                bitflag=1 << (power & 127),  # All flags are powers of 2.
+                name=val_name,
+                default=(power & 128) != 0,  # Defaults to true/false.
             ))
     else:
         default = from_dict()
-        val_list = None
+        options = None
 
     # Bypass __init__, to speed up - we have a lot of these.
     kv = KVDef.__new__(KVDef)
@@ -426,7 +428,7 @@ def kv_unserialise(
     kv.disp_name = disp_name
     kv.default = default
     kv.desc = ''
-    kv.val_list = val_list
+    kv.options = options
     kv.readonly = KV_FLAG_READONLY & kv_flags != 0
     kv.reportable = KV_FLAG_REPORT & kv_flags != 0
     kv.editor_only = KV_FLAG_EDITOR & kv_flags != 0

@@ -14,8 +14,8 @@ from srctools.const import FileType
 from srctools.math import Vec
 from srctools.fgd import (
     FGD, AutoVisgroup, EntityDef, EntityTypes, FGDParseError, HelperExtAppliesTo,
-    HelperHalfGridSnap, HelperLine, HelperModel, HelperSize, HelperSphere, IODef, KVDef,
-    Resource, Snippet, UnknownHelper, ValueTypes,
+    HelperHalfGridSnap, HelperLine, HelperModel, HelperSize, HelperSphere, KVOption, IODef, KVDef,
+    Resource, Snippet, UnknownHelper, ValueTypes
 )
 from srctools.filesys import VirtualFileSystem
 # noinspection PyProtectedMember
@@ -188,13 +188,13 @@ def test_entity_parse(lazy_datadir: LazyDataDir, py_c_token: None) -> None:
         'spawnflags',
         ValueTypes.SPAWNFLAGS,
         'Flags',
-        val_list=[
-            (1, 'A', False, frozenset[str]()),
-            (2, 'B', True, frozenset()),
-            (4, '[48] C', False, frozenset()),
-            (8, 'D value', False, frozenset({'OLD', '!GOOD'})),
-            (8, 'E', True, frozenset({'NEW'})),
-            (2**16, '16bit', False, frozenset()),
+        options=[
+            KVOption.make_flags(1, 'A', False),
+            KVOption.make_flags(2, 'B', True),
+            KVOption.make_flags(4, '[48] C', False),
+            KVOption.make_flags(8, 'D value', False, tags=frozenset({'OLD', '!GOOD'})),
+            KVOption.make_flags(8, 'E', True, tags=frozenset({'NEW'})),
+            KVOption.make_flags(2**16, '16bit', False),
         ],
     )
 
@@ -204,12 +204,12 @@ def test_entity_parse(lazy_datadir: LazyDataDir, py_c_token: None) -> None:
         'A Choice',
         '0',
         'Blahdy blah. Another line.',
-        val_list=[
-            ('0', 'First', frozenset[str]()),
-            ('1', 'Second', frozenset({'NEW'})),
-            ('1', 'Old second', frozenset({'-OLD'})),
-            ('2', 'Third', frozenset()),
-            ('four', 'Fourth', frozenset()),
+        options=[
+            KVOption.make_choices('0', 'First'),
+            KVOption.make_choices('1', 'Second', tags=frozenset({'NEW'})),
+            KVOption.make_choices('1', 'Old second', tags=frozenset({'-OLD'})),
+            KVOption.make_choices('2', 'Third'),
+            KVOption.make_choices('four', 'Fourth'),
         ],
     )
 
@@ -621,6 +621,7 @@ def test_parse_helpers_extension(py_c_token: None, file_regression: FileRegressi
     file_regression.check(fgd.export(), basename="parse_helpers_ext", extension='.fgd')
 
 
+# noinspection PyDeprecation
 def test_parse_helpers_dep_bbox(py_c_token: None) -> None:
     """Previous versions of srctools thought that size() was named bbox(). Check it functions."""
     fsys = VirtualFileSystem({
@@ -786,9 +787,9 @@ def test_snippet_choices(py_c_token: None) -> None:
     """})
     fgd.parse_file(fsys, fsys['snippets.fgd'])
     choices = [
-        ('-1', 'EOF', frozenset({'+SRCTOOLS'})),
-        ('0', 'No', frozenset[str]()),
-        ('1', 'Yes', frozenset()),
+        KVOption.make_choices('-1', 'EOF', tags=frozenset({'+SRCTOOLS'})),
+        KVOption.make_choices('0', 'No'),
+        KVOption.make_choices('1', 'Yes'),
     ]
     assert fgd.snippet_choices == {
         'trinary': [Snippet('TRInary', 'snippets.fgd', 2, choices)]
@@ -800,11 +801,11 @@ def test_snippet_choices(py_c_token: None) -> None:
         default="-1",
         type=ValueTypes.CHOICES,
         desc="desc",
-        val_list=choices,
+        options=choices,
     )
     # It shouldn't be a shared list!
     [snip] = fgd.snippet_choices['trinary']
-    assert kv.val_list is not snip.value
+    assert kv.options is not snip.value
 
 
 def test_snippet_spawnflags(py_c_token: None) -> None:
@@ -832,13 +833,13 @@ def test_snippet_spawnflags(py_c_token: None) -> None:
     fgd.parse_file(fsys, fsys['snippets.fgd'])
 
     spawnflags = [
-        (1, 'Clients (Players/Bots)', True, frozenset({'TF2', 'CSGO', 'CSS', 'MESA'})),
-        (1, 'Clients (Players)', True, frozenset({'!TF2', '!CSGO', '!CSS', '!MESA'})),
-        (2, 'NPCs', False, frozenset({'!ASW'})),
-        (2, 'Marines and Aliens', False, frozenset({'ASW'})),
-        (4, 'func_pushable', False, frozenset()),
-        (8, 'VPhysics Objects', False, frozenset()),
-        (8192, 'Items (weapons, items, projectiles)', False, frozenset({'MBASE'})),
+        KVOption.make_flags(1, 'Clients (Players/Bots)', True, tags=frozenset({'TF2', 'CSGO', 'CSS', 'MESA'})),
+        KVOption.make_flags(1, 'Clients (Players)', True, tags=frozenset({'!TF2', '!CSGO', '!CSS', '!MESA'})),
+        KVOption.make_flags(2, 'NPCs', False, tags=frozenset({'!ASW'})),
+        KVOption.make_flags(2, 'Marines and Aliens', False, tags=frozenset({'ASW'})),
+        KVOption.make_flags(4, 'func_pushable', False),
+        KVOption.make_flags(8, 'VPhysics Objects', False),
+        KVOption.make_flags(8192, 'Items (weapons, items, projectiles)', False, tags=frozenset({'MBASE'})),
     ]
 
     assert fgd.snippet_flags == {
@@ -849,14 +850,14 @@ def test_snippet_spawnflags(py_c_token: None) -> None:
         name="spawnflags",
         disp_name="spawnflags",
         type=ValueTypes.SPAWNFLAGS,
-        val_list=[
+        options=[
             *spawnflags,
-            (16, "Special Stuff", True, frozenset[str]()),
+            KVOption.make_flags(16, "Special Stuff", True),
         ]
     )
     # It shouldn't be a shared list!
     [snip] = fgd.snippet_flags['trigger']
-    assert kv.val_list is not snip.value
+    assert kv.options is not snip.value
 
 
 def test_snippet_keyvalues(py_c_token: None) -> None:
@@ -887,9 +888,9 @@ def test_snippet_keyvalues(py_c_token: None) -> None:
                 disp_name='Start Enabled',
                 default='0',
                 desc='Start it.',
-                val_list=[
-                    ('0', 'Yes', frozenset[str]()),
-                    ('1', 'No', frozenset[str]()),
+                options=[
+                    KVOption.make_choices('0', 'Yes'),
+                    KVOption.make_choices('1', 'No'),
                 ]
             ))
         )],
@@ -915,7 +916,7 @@ def test_snippet_keyvalues(py_c_token: None) -> None:
     ent_kv = fgd.entities['some_ent'].kv['start_enabled', {'-engine'}]
     assert ent_kv == snip_kv
     assert ent_kv is not snip_kv
-    assert ent_kv.val_list is not snip_kv.val_list
+    assert ent_kv.options is not snip_kv.options
 
 
 def test_snippet_io(py_c_token: None) -> None:
@@ -935,7 +936,7 @@ def test_snippet_io(py_c_token: None) -> None:
     assert fgd.snippet_input == {
         'user1': [Snippet(
             'uSer1', 'snippets.fgd', 2,
-            (frozenset(['+TAG']), IODef(
+            (frozenset({'+TAG'}), IODef(
                 name='FireUser1',
                 type=ValueTypes.VOID,
                 desc="Causes this entity's OnUser1 output to be fired.",
@@ -945,7 +946,7 @@ def test_snippet_io(py_c_token: None) -> None:
     assert fgd.snippet_output == {
         'user1': [Snippet(
             'uSer1', 'snippets.fgd', 3,
-            (frozenset(['-TAG']), IODef(
+            (frozenset({'-TAG'}), IODef(
                 name='OnUser1',
                 type=ValueTypes.VOID,
                 desc="Fired in response to FireUser1 input.",
@@ -953,11 +954,13 @@ def test_snippet_io(py_c_token: None) -> None:
         )]
     }
     # Check they were included correctly, but are not shared (since these are mutable).
-    [tags, snip_in] = fgd.snippet_input['user1'][0].value
-    [tags, snip_out] = fgd.snippet_output['user1'][0].value
+    [tags_in, snip_in] = fgd.snippet_input['user1'][0].value
+    [tags_out, snip_out] = fgd.snippet_output['user1'][0].value
     ent = fgd.entities['some_ent']
     ent_inp = ent.inp['fireuser1', {'tag'}]
     ent_out = ent.out['onuser1', ()]
+    assert tags_in == frozenset({'+TAG'})
+    assert tags_out == frozenset({'-TAG'})
     assert ent_inp == snip_in
     assert ent_inp is not snip_in, 'Shared!'
     assert ent_out == snip_out
@@ -1115,12 +1118,12 @@ def test_export_regressions(file_regression: FileRegressionFixture, custom_synta
         'spawnflags',
         ValueTypes.SPAWNFLAGS,
         'Flags',
-        val_list=[
-            (1, 'A', False, frozenset[str]()),
-            (2, 'B', True, frozenset()),
-            (4, 'C', False, frozenset()),
-            (8, 'D value', False, frozenset({'OLD', '!GOOD'})),
-            (8, 'E', True, frozenset({'NEW'})),
+        options=[
+            KVOption.make_flags(1, 'A', False),
+            KVOption.make_flags(2, 'B', True),
+            KVOption.make_flags(4, 'C', False),
+            KVOption.make_flags(8, 'D value', False, tags=frozenset({'OLD', '!GOOD'})),
+            KVOption.make_flags(8, 'E', True, tags=frozenset({'NEW'})),
         ],
     )}
 
@@ -1128,11 +1131,11 @@ def test_export_regressions(file_regression: FileRegressionFixture, custom_synta
         'multichoice',
         ValueTypes.CHOICES,
         'Multiple Choice',
-        val_list=[
-            ('-1', 'Loss', frozenset[str]()),
-            ('0', 'Draw', frozenset()),
-            ('1', 'Win', frozenset()),
-            ('bad', 'Very Bad', frozenset({'NEW'})),
+        options=[
+            KVOption.make_choices('-1', 'Loss'),
+            KVOption.make_choices('0', 'Draw'),
+            KVOption.make_choices('1', 'Win'),
+            KVOption.make_choices('bad', 'Very Bad', tags=frozenset({'NEW'})),
         ],
     )}
 
@@ -1248,12 +1251,12 @@ def test_export_spawnflag_label(file_regression: FileRegressionFixture, label: b
         'spawnflags',
         ValueTypes.SPAWNFLAGS,
         'Flags',
-        val_list=[
-            (1, 'A', False, frozenset[str]()),
-            (2, 'B', True, frozenset()),
-            (4, 'C', False, frozenset()),
-            (8, 'D', False, frozenset()),
-            (8, 'E', True, frozenset({'NEW'})),
+        options=[
+            KVOption.make_flags(1, 'A', False),
+            KVOption.make_flags(2, 'B', True),
+            KVOption.make_flags(4, 'C', False),
+            KVOption.make_flags(8, 'D', False),
+            KVOption.make_flags(8, 'E', True, tags=frozenset({'NEW'})),
         ],
     )}
 
@@ -1282,7 +1285,7 @@ def test_kv_copy(func: Callable[[KVDef], KVDef]) -> None:
     assert duplicate.disp_name == test_kv.disp_name
     assert duplicate.default == test_kv.default
     assert duplicate.desc == test_kv.desc
-    assert duplicate.val_list is None
+    assert duplicate.options is None
     assert not duplicate.readonly
     assert duplicate.reportable
 
@@ -1294,16 +1297,16 @@ def test_kv_copy(func: Callable[[KVDef], KVDef]) -> None:
         desc='Does something else',
         readonly=True,
         reportable=False,
-        val_list=[
-            ('43', 'Fourty-Three', frozenset()),
-            ('44', 'Fourty-Four', frozenset(['a', 'b'])),
-            ('45', 'Fourty-Five', frozenset('-engine')),
+        options=[
+            KVOption.make_choices('43', 'Fourty-Three'),
+            KVOption.make_choices('44', 'Fourty-Four', tags=frozenset(['a', 'b'])),
+            KVOption.make_choices('45', 'Fourty-Five', tags=frozenset('-engine')),
         ]
     )
     duplicate = func(test_kv)
     assert duplicate.type is test_kv.type
-    assert duplicate.val_list is not test_kv.val_list
-    assert duplicate.val_list == test_kv.val_list
+    assert duplicate.options is not test_kv.options
+    assert duplicate.options == test_kv.options
     assert duplicate.readonly
     assert not duplicate.reportable
 

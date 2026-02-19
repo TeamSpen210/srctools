@@ -29,7 +29,7 @@ import srctools
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes', 'AutoVisgroup', 'FGDParseError',
-    'FGD', 'EntityDef', 'KVDef', 'IODef', 'EntAttribute', 'Helper', 'UnknownHelper',
+    'FGD', 'EntityDef', 'KVOption', 'KVDef', 'IODef', 'EntAttribute', 'Helper','UnknownHelper',
     'match_tags', 'validate_tags', 'Resource', 'ResourceCtx', 'Snippet', 'TagsSet',
 
     # From srctools._fgd_helpers
@@ -315,6 +315,27 @@ class HelperTypes(Enum):
         return self.name.startswith('EXT_')
 
 
+@attrs.define(kw_only=True)
+class KVOption:
+    """One of the possible options for choices or spawnflags-type keyvalues."""
+    #: For flag KVs, the bitflag to use. Set to zero and ignored for choices.
+    bitflag: int = 0
+    value: str = ""  #: For choice KVs, the value associated with this option.
+    name: str = ""  #: Display name for the option.
+    default: bool = False  #: For flag KVs, the default state of the flag.
+    tags: TagsSet = frozenset()  #: Tags associated with this option.
+
+    @classmethod
+    def make_choices(cls, value: str, name: str, *, tags: TagsSet = frozenset()) -> Self:
+        """Provide a constructor for choice-type options."""
+        return cls(value=value, name=name, tags=tags)
+
+    @classmethod
+    def make_flags(cls, bitflag: int, name: str, default: bool = True, *, tags: TagsSet = frozenset()) -> Self:
+        """Provide a constructor for flag-type options."""
+        return cls(bitflag=bitflag, name=name, default=default, tags=tags)
+
+
 def add_engine_database(path: Path) -> None:
     """Add an additional binary database. This can override the existing entities."""
     db = _load_engine_db()  # Ensure the first database is initialised and loaded
@@ -509,7 +530,7 @@ def _parse_colon_array(
 def _parse_flags(
     tok: BaseTokenizer, error_desc: str,
     first_value: str, vals: list[str], tags: TagsSet,
-) -> SpawnFlags:
+) -> KVOption:
     """Parse a line into a flags array member."""
     power: float
     if first_value.startswith(("^", "2^")):
@@ -560,16 +581,16 @@ def _parse_flags(
     generated_num = f'[{spawnflag}]'
     if name.startswith(generated_num):
         name = name[len(generated_num):].lstrip()
-    return spawnflag, name, default, tags
+    return KVOption(bitflag=spawnflag, value="", name=name, default=default, tags=tags)
 
 
 def _parse_choices(
     tok: BaseTokenizer, error_desc: str,
     first_value: str, vals: list[str], tags: TagsSet,
-) -> Choices:
+) -> KVOption:
     """Parse a line into a choices array member."""
     if len(vals) == 1:
-        return (first_value, vals[0], tags)
+        return KVOption(value=first_value, name=vals[0], tags=tags)
     elif len(vals) == 0:
         raise tok.error('Expected value for choices, got none (in {})!', error_desc)
     else:
@@ -1075,18 +1096,13 @@ class EntAttribute:
 
 @attrs.define
 class KVDef(EntAttribute):
-    """Represents a keyvalue that may be set on entities
-
-    If the type is choices or spawnflags, ``val_list`` is required:
-    * For choices it's a list of (value, name, tags) tuples.
-    * For spawnflags it's a list of (bitflag, name, default, tags) tuples.
-    """
+    """Represents a keyvalue that may be set on entities."""
     name: str
     _type: Union[ValueTypes, str] = attrs.field(alias='type')
     disp_name: str
     default: str = ''
     desc: str = ''
-    val_list: Union[list[SpawnFlags], list[Choices], None] = None
+    options: Optional[list[KVOption]] = None  #: Only valid for CHOICES or SPAWNFLAGS types, holds the options.
     #: Causes Hammer to prevent this keyvalue from being changed.
     #: Doesn't force the value to the default though.
     readonly: bool = False
@@ -1095,32 +1111,6 @@ class KVDef(EntAttribute):
     reportable: bool = False
     #: Extension, marks keyvalues which are only used to preview things in Hammer.
     editor_only: bool = False
-
-    @property
-    def choices_list(self) -> list[Choices]:
-        """Check that the keyvalues are CHOICES type, and then return val_list.
-
-        This isolates the type ambiguity of the attr.
-        """
-        if self._type is not ValueTypes.CHOICES:
-            raise TypeError
-        if self.val_list is None:
-            lst: list[tuple[str, str, TagsSet]] = []
-            self.val_list = lst
-        return cast('list[Choices]', self.val_list)
-
-    @property
-    def flags_list(self) -> list[SpawnFlags]:
-        """Check that the keyvalues are SPAWNFLAGS type, and then return val_list.
-
-        This isolates the type ambiguity of the attr.
-        """
-        if self._type is not ValueTypes.SPAWNFLAGS:
-            raise TypeError
-        if self.val_list is None:
-            lst: list[SpawnFlags] = []
-            self.val_list = lst
-        return cast('list[SpawnFlags]', self.val_list)
 
     def copy(self) -> KVDef:
         """Create a duplicate of this keyvalue."""
@@ -1131,7 +1121,7 @@ class KVDef(EntAttribute):
             self.default,
             self.desc,
             # Always copy this.
-            self.val_list.copy() if self.val_list else None,
+            self.options.copy() if self.options else None,
             self.readonly,
             self.reportable,
             self.editor_only,
@@ -1146,7 +1136,7 @@ class KVDef(EntAttribute):
             self.disp_name,
             self.default,
             self.desc,
-            self.val_list.copy() if self.val_list else None,
+            self.options.copy() if self.options else None,
             self.readonly,
             self.reportable,
             self.editor_only,
@@ -1154,13 +1144,15 @@ class KVDef(EntAttribute):
 
     def known_options(self) -> Iterator[str]:
         """Use the default value and value list to determine values this can be set to."""
-        if self._type is ValueTypes.CHOICES:
-            options = {val_list[0] for val_list in self.choices_list}
+        if self._type is ValueTypes.CHOICES and self.options is not None:
+            options = {option.value for option in self.options}
             options.add(self.default)
             yield from options
         elif self._type is ValueTypes.SPAWNFLAGS:
-            for bitflag, name, default, tags in self.flags_list:
-                yield str(bitflag)
+            if self.options is not None:
+                for option in self.options:
+                    yield str(option.bitflag)
+            # Default is not used for this.
         else:
             yield self.default
 
@@ -1259,24 +1251,24 @@ class KVDef(EntAttribute):
             elif default.casefold() == 'no':
                 default = '0'
         # Read the choices in the [].
-        val_list: Union[list[Choices], list[SpawnFlags], None]
+        options: Optional[list[KVOption]]
         if isinstance(val_typ, ValueTypes) and val_typ.has_list:
             if has_equal is not Token.EQUALS:
                 raise tok.error('No list provided for "{}" value type!', val_typ.name)
             if val_typ is ValueTypes.CHOICES:
-                val_list = _parse_colon_array(
+                options = _parse_colon_array(
                     tok, error_desc,
                     'choices list', fgd.snippet_choices, _parse_choices,
                 )
             elif val_typ is ValueTypes.SPAWNFLAGS:
-                val_list = _parse_colon_array(
+                options = _parse_colon_array(
                     tok, error_desc,
                     'flags list', fgd.snippet_flags, _parse_flags,
                 )
             else:  # No others have a list.
                 raise AssertionError(val_typ)
         else:
-            val_list = None
+            options = None
             if has_equal is Token.EQUALS:
                 raise tok.error(
                     '"{}" value types can\'t have lists!',
@@ -1289,7 +1281,7 @@ class KVDef(EntAttribute):
             desc=kv_desc,
             disp_name=disp_name,
             default=default,
-            val_list=val_list,
+            options=options,
             readonly=is_readonly,
             reportable=show_in_report,
             editor_only=editor_only,
@@ -1351,36 +1343,37 @@ class KVDef(EntAttribute):
 
         if isinstance(self._type, ValueTypes) and self._type.has_list:
             file.write(' =\n\t\t[\n')
-            if self._type is ValueTypes.SPAWNFLAGS:
+            if self._type is ValueTypes.SPAWNFLAGS and self.options is not None:
                 # Empty tuple handles a None value.
-                for index, name, flag_default, tags in self.flags_list:
-                    file.write(f'\t\t{index}: ')
+                for option in (self.options or []):
+                    file.write(f'\t\t{option.bitflag}: ')
                     # Newlines aren't functional here, just replace.
-                    name = name.replace('\n', ' ')
+                    name = option.name.replace('\n', ' ')
                     _write_longstring(
                         file,
                         escape_quotes,
-                        f'[{index}] {name}' if label_spawnflags else name,
+                        f'[{option.bitflag}] {name}' if label_spawnflags else name,
                         indent='\t\t',
                     )
-                    file.write(' : 1' if flag_default else ' : 0')
-                    if tags and custom_syntax:
-                        file.write(f' [{", ".join(sorted(tags))}]\n')
+                    file.write(' : 1' if option.default else ' : 0')
+                    if option.tags and custom_syntax:
+                        file.write(f' [{", ".join(sorted(option.tags))}]\n')
                     else:
                         file.write('\n')
             elif self._type is ValueTypes.CHOICES:
-                for value, name, tags in self.choices_list:
+                for option in (self.options or []):
                     # Numbers can be unquoted, everything else cannot.
                     try:
-                        float(value)
+                        float(option.value)
+                        value = option.value
                     except ValueError:
-                        value = f'"{value}"'
+                        value = f'"{option.value}"'
 
                     file.write(f'\t\t{value}: ')
                     # Newlines aren't functional here, just replace.
-                    _write_longstring(file, False, name.replace('\n', ' '), indent='\t\t')
-                    if tags and custom_syntax:
-                        file.write(f' [{", ".join(sorted(tags))}]\n')
+                    _write_longstring(file, False, option.name.replace('\n', ' '), indent='\t\t')
+                    if option.tags and custom_syntax:
+                        file.write(f' [{", ".join(sorted(option.tags))}]\n')
                     else:
                         file.write('\n')
             else:
@@ -2210,13 +2203,12 @@ class EntityDef:
                 ):
                     if match_tags(tags, key_tag):
                         category[key] = {frozenset(): value}
-                        if isinstance(value, KVDef) and value.val_list:
+                        if isinstance(value, KVDef) and value.options:
                             # Filter the value list as well, then discard tags.
-                            # Use slicing/negative index to preserve the same number of args
-                            value.val_list = [  # pyright: ignore
-                                (*val, frozenset())
-                                for (*val, tag) in value.val_list
-                                if match_tags(tags, tag)
+                            value.options = [
+                                attrs.evolve(option, tags=frozenset())
+                                for option in value.options
+                                if match_tags(tags, option.tags)
                             ]
                         break
                 else:
@@ -2398,8 +2390,8 @@ class FGD:
     # Snippets are named sections of syntax that can be reused.
     # Each is identified by a source filename, and a lookup key.
     snippet_desc: SnippetDict[str]
-    snippet_choices: SnippetDict[Sequence[Choices]]
-    snippet_flags: SnippetDict[Sequence[SpawnFlags]]
+    snippet_choices: SnippetDict[Sequence[KVOption]]
+    snippet_flags: SnippetDict[Sequence[KVOption]]
     snippet_input: SnippetDict[tuple[TagsSet, IODef]]
     snippet_output: SnippetDict[tuple[TagsSet, IODef]]
     snippet_keyvalue: SnippetDict[tuple[TagsSet, KVDef]]
@@ -2541,12 +2533,11 @@ class FGD:
                         elif kv.type.has_list and ent_kv_map[tag].type is kv.type:
                             # If both are lists of the same type, merge those. This is mainly
                             # for spawnflags.
-                            targ_list = ent_kv_map[tag].val_list
-                            if targ_list is not None and kv.val_list is not None:
-                                for val in kv.val_list:
+                            targ_list = ent_kv_map[tag].options
+                            if targ_list is not None and kv.options is not None:
+                                for val in kv.options:
                                     if val not in targ_list:
-                                        # Type checker can't know type attr indicates val_list type.
-                                        targ_list.append(val)  # type: ignore
+                                        targ_list.append(val)
 
                     if name not in keyvalue_names:
                         base_kv.append(name)

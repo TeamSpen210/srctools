@@ -1,0 +1,60 @@
+@AutoVisgroup = "Auto"
+	[
+	"Auto"
+		[
+		"some_entity"
+		]
+	"some"
+		[
+		"some_entity"
+		]
+	]
+@AutoVisgroup = "some"
+	[
+	"group"
+		[
+		"some_entity"
+		]
+	]
+
+@SolidClass = multiline: "Another description with the plus at the start"
+	[
+	]
+
+@PointClass base(Base1, Base2, Base3, Base4, base_5) 
+	sphere(radii)
+	unknown[+A, -B](a, b, c)
+	line[+B](240 180 50, targetname, target)
+	halfgridsnap
+	appliesto(tag1, tag2, !tag3)
+= some_entity: "The description for this prop, which is spread over multiple lines."
+	[
+	keyvalue1(string): "Name" : "default" : "documentation"
+	keyvalue1[TAG](boolean): "Tagged Name" : 0
+	keyVAlue2(integer): "Hi" : 4
+	target(target_destination): "An ent"
+	spawnflags(flags) =
+		[
+		1: "[1] A" : 0
+		2: "[2] B" : 1
+		4: "[4] [48] C" : 0
+		8: "[8] D value" : 0 [!GOOD, OLD]
+		8: "[8] E" : 1 [NEW]
+		65536: "[65536] 16bit" : 0
+		]
+	choicelist(choices): "A Choice" : 0 : "Blahdy blah. Another line." =
+		[
+		0: "First"
+		1: "Second" [NEW]
+		1: "Old second" [-OLD]
+		2: "Third"
+		"four": "Fourth"
+		]
+
+	// Inputs
+	input Trigger(void) : "Trigger the entity."
+
+	// Outputs
+	output OnTrigger(void) : "Handle triggering."
+	output OnTrigger[ADV](float) : "Handle triggering, with value. Second line."
+	]
