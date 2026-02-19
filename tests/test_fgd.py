@@ -216,7 +216,13 @@ def test_entity_parse(lazy_datadir: LazyDataDir, py_c_token: None) -> None:
     assert ent.kv['strata_flags'] == KVDef(
         'strata_flags',
         ValueTypes.SPAWNFLAGS,
-        'Extra Flags',
+        default='',
+        disp_name='Extra Flags',
+        desc='Description',
+        options=[
+            KVOption.make_flags(1, "Flag", False, desc="Is disabled", tags=frozenset({'+NEW'})),
+            KVOption.make_flags(8, "Another", True, desc="Is enabled"),
+        ],
     )
 
     assert ent.inp['trigger'] == IODef(

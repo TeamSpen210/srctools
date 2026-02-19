@@ -322,6 +322,7 @@ class KVOption:
     bitflag: int = 0
     value: str = ""  #: For choice KVs, the value associated with this option.
     name: str = ""  #: Display name for the option.
+    desc: str = ""  #: Optional description, only available in Strata Source.
     default: bool = False  #: For flag KVs, the default state of the flag.
     tags: TagsSet = frozenset()  #: Tags associated with this option.
 
@@ -331,9 +332,15 @@ class KVOption:
         return cls(value=value, name=name, tags=tags)
 
     @classmethod
-    def make_flags(cls, bitflag: int, name: str, default: bool = True, *, tags: TagsSet = frozenset()) -> Self:
+    def make_flags(
+        cls, bitflag: int, name: str,
+        default: bool = True,
+        *,
+        desc: str = '',
+        tags: TagsSet = frozenset(),
+    ) -> Self:
         """Provide a constructor for flag-type options."""
-        return cls(bitflag=bitflag, name=name, default=default, tags=tags)
+        return cls(bitflag=bitflag, name=name, default=default, desc=desc, tags=tags)
 
 
 def add_engine_database(path: Path) -> None:
@@ -564,24 +571,24 @@ def _parse_flags(
                 error_desc,
             )
     # Spawnflags can have a default, others may not.
-    if len(vals) == 2:
-        default = vals[1].strip() == '1'
-    elif len(vals) == 1:
-        default = True
-    elif len(vals) == 0:
-        raise tok.error('Expected value for spawnflags, got none!')
-    else:
+    if len(vals) > 3:
         raise tok.error(
             'Too many values for spawnflags definition in ({}):\n{}',
             error_desc, vals,
         )
+    elif len(vals) == 0:
+        raise tok.error('Expected value for spawnflags, got none!')
+
     name = vals[0]
+    default = vals[1].strip() == '1' if len(vals) >= 2 else True
+    desc = vals[2] if len(vals) >= 3 else ""
+
     # We optionally prepend [64] to spawnflags to show the numeric value.
     # Make sure we strip those to prevent duplication.
     generated_num = f'[{spawnflag}]'
     if name.startswith(generated_num):
         name = name[len(generated_num):].lstrip()
-    return KVOption(bitflag=spawnflag, value="", name=name, default=default, tags=tags)
+    return KVOption(bitflag=spawnflag, value="", name=name, desc=desc, default=default, tags=tags)
 
 
 def _parse_choices(
@@ -1234,16 +1241,26 @@ class KVDef(EntAttribute):
             has_equal, _ = tok()
         attr_len = len(kv_vals)
         kv_desc = default = ''
-        if attr_len == 3:
-            disp_name, default, kv_desc = kv_vals
-        elif attr_len == 2:
-            disp_name, default = kv_vals
-        elif attr_len == 1:
-            [disp_name] = kv_vals
-        elif attr_len == 0:
-            disp_name = name
+        if val_typ is ValueTypes.SPAWNFLAGS:  # Defaults are not used for these.
+            if attr_len == 2:
+                disp_name, kv_desc = kv_vals
+            elif attr_len == 1:
+                [disp_name] = kv_vals
+            elif attr_len == 0:
+                disp_name = name
+            else:
+                raise tok.error('Too many attributes for flags keyvalue!\n{!r}', kv_vals)
         else:
-            raise tok.error('Too many attributes for keyvalue!\n{!r}', kv_vals)
+            if attr_len == 3:
+                disp_name, default, kv_desc = kv_vals
+            elif attr_len == 2:
+                disp_name, default = kv_vals
+            elif attr_len == 1:
+                [disp_name] = kv_vals
+            elif attr_len == 0:
+                disp_name = name
+            else:
+                raise tok.error('Too many attributes for keyvalue!\n{!r}', kv_vals)
         if val_typ is ValueTypes.BOOL:
             # These are old aliases, change them to proper booleans.
             if default.casefold() == 'yes':
