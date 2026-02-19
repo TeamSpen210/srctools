@@ -1331,8 +1331,8 @@ class KVDef(EntAttribute):
         if self.reportable and not old_report:
             file.write(' report')
 
-        if self._type is not ValueTypes.SPAWNFLAGS:
-            # Spawnflags never use names!
+        if self._type is not ValueTypes.SPAWNFLAGS or self.name.casefold() != 'spawnflags':
+            # Standard Spawnflags never use names!
             file.write(': ')
             # Name must be present, if not use the raw keyvalue name.
             _write_longstring(file, escape_quotes, self.disp_name or self.name, indent='\t')
@@ -1342,7 +1342,10 @@ class KVDef(EntAttribute):
             # This has to be present.
             default = '0'
 
-        if default:
+        if self._type is ValueTypes.SPAWNFLAGS:
+            if self.desc:
+                file.write(' : ')
+        elif default:
             default_str = str(default)
             # We can write unquoted integers, but nothing else.
             if all(x in '0123456789-' for x in default_str):
@@ -1373,6 +1376,9 @@ class KVDef(EntAttribute):
                         indent='\t\t',
                     )
                     file.write(' : 1' if option.default else ' : 0')
+                    if option.desc:
+                        file.write(' : ')
+                        _write_longstring(file, escape_quotes, option.desc, indent='\t\t')
                     if option.tags and custom_syntax:
                         file.write(f' [{", ".join(sorted(option.tags))}]\n')
                     else:

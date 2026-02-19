@@ -50,6 +50,11 @@
 		2: "Third"
 		"four": "Fourth"
 		]
+	strata_flags(flags): "Extra Flags" : "Description" =
+		[
+		1: "[1] Flag" : 0 : "Is disabled" [+NEW]
+		8: "[8] Another" : 1 : "Is enabled"
+		]
 
 	// Inputs
 	input Trigger(void) : "Trigger the entity."
