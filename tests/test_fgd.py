@@ -213,6 +213,12 @@ def test_entity_parse(lazy_datadir: LazyDataDir, py_c_token: None) -> None:
         ],
     )
 
+    assert ent.kv['strata_flags'] == KVDef(
+        'strata_flags',
+        ValueTypes.SPAWNFLAGS,
+        'Extra Flags',
+    )
+
     assert ent.inp['trigger'] == IODef(
         'Trigger',
         ValueTypes.VOID,
@@ -230,6 +236,19 @@ def test_entity_parse(lazy_datadir: LazyDataDir, py_c_token: None) -> None:
     )
 
     assert fgd['multiline'].desc == 'Another description with the plus at the start'
+
+
+def test_entity_roundtrip(
+    py_c_token: None,
+    lazy_datadir: LazyDataDir,
+    file_regression: FileRegressionFixture,
+) -> None:
+    """Verify resaving the entity produces the right result."""
+    fsys = VirtualFileSystem({'test.fgd': (lazy_datadir / 'entity_parse.fgd').read_text()})
+    fgd = FGD()
+    fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False)
+
+    file_regression.check(fgd.export(), basename="test_entity_roundtrip", extension='.fgd')
 
 
 def test_entity_extend(py_c_token: None) -> None:

@@ -37,6 +37,10 @@ appliesto(tag1, tag2, !tag3)
         2: "Third"
         "four": "Fourth"
         ]
+
+    strata_flags(flags): "Extra flags" : "Description" = [
+        1: "Flag": 0 : "Is disabled"
+        8: "Another" : 1 : "Is enabled"
     ]
 @SolidClass = multiline: "Another description "
  + "with the plus at the start"
