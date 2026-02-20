@@ -1,10 +1,11 @@
 """Parse FGD files, used to describe Hammer entities."""
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, Union, cast
-from typing_extensions import Protocol, TypeAlias, overload, Self
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, Union
+from typing_extensions import Protocol, TypeAlias, overload, Self, deprecated
 from collections import ChainMap, defaultdict
 from collections.abc import (
     Callable, Collection, Container, Iterable, Iterator, Mapping, Sequence, Set as AbstractSet,
+    MutableSequence,
 )
 from copy import deepcopy
 from enum import Enum
@@ -49,6 +50,8 @@ __all__ = [
 ]
 
 T = TypeVar('T')
+InnerT = TypeVar('InnerT')
+OuterT = TypeVar('OuterT')
 ValueT_co = TypeVar('ValueT_co', covariant=True)
 FileSysT = TypeVar('FileSysT', bound=FileSystem)
 _fake_vmf = VMF(preserve_ids=False)
@@ -1101,6 +1104,61 @@ class EntAttribute:
             return None
 
 
+# noinspection PyMissingOrEmptyDocstring
+class _MapList(MutableSequence[OuterT], Generic[InnerT, OuterT]):
+    """Temporary class to allow deprecating KVDef.val_list."""
+    def __init__(self, seq: list[InnerT], map_in: Callable[[OuterT], InnerT], map_out: Callable[[InnerT], OuterT]) -> None:
+        self._seq = seq
+        self._import = map_in
+        self._export = map_out
+
+    def __len__(self) -> int:
+        return len(self._seq)
+
+    def insert(self, index: int, value: OuterT) -> None:
+        self._seq.insert(index, self._import(value))
+
+    def append(self, value: OuterT) -> None:
+        self._seq.append(self._import(value))
+
+    def reverse(self) -> None:
+        self._seq.reverse()
+
+    def clear(self) -> None:
+        self._seq.clear()
+
+    def __iter__(self) -> Iterator[OuterT]:
+        return map(self._export, self._seq)
+
+    def __reversed__(self) -> Iterator[OuterT]:
+        return map(self._export, reversed(self._seq))
+
+    @overload
+    def __getitem__(self, index: int) -> OuterT: ...
+    @overload
+    def __getitem__(self, index: slice) -> MutableSequence[OuterT]: ...
+
+    def __getitem__(self, index: Union[int, slice]) -> Union[OuterT, MutableSequence[OuterT]]:
+        if isinstance(index, slice):
+            return [self._export(x) for x in self._seq[index]]
+        else:
+            return self._export(self._seq[index])
+
+    @overload
+    def __setitem__(self, index: int, value: OuterT) -> None: ...
+    @overload
+    def __setitem__(self, index: slice, value: Iterable[OuterT]) -> None: ...
+
+    def __setitem__(self, index: Union[int, slice], value: Union[OuterT, Iterable[OuterT]]) -> None:
+        if isinstance(index, slice):  # Ignore, checker doesn't narrow value
+            self._seq[index] = [self._import(x) for x in value]  # type: ignore
+        else:
+            self._seq[index] = self._import(value)  # type: ignore
+
+    def __delitem__(self, index: Union[int, slice]) -> None:
+        del self._seq[index]
+
+
 @attrs.define
 class KVDef(EntAttribute):
     """Represents a keyvalue that may be set on entities."""
@@ -1148,6 +1206,69 @@ class KVDef(EntAttribute):
             self.reportable,
             self.editor_only,
         )
+
+    @staticmethod
+    def _choice_export(option: KVOption, /) -> Choices:
+        """Converter for val_list and choices_list."""
+        return (option.value, option.name, option.tags)
+
+    @staticmethod
+    def _choice_import(choice: Choices, /) -> KVOption:
+        """Converter for val_list and choices_list."""
+        value, name, tags = choice
+        return KVOption(value=value, name=name, tags=tags)
+
+    @staticmethod
+    def _flag_export(option: KVOption, /) -> SpawnFlags:
+        """Converter for val_list and flags_list."""
+        return (option.bitflag, option.name, option.default, option.tags)
+
+    @staticmethod
+    def _flag_import(flag: SpawnFlags, /) -> KVOption:
+        """Converter for val_list and flags_list."""
+        bitflag, name, default, tags = flag
+        return KVOption(bitflag=bitflag, name=name, default=default, tags=tags)
+
+    @property
+    @deprecated("Use KVDef.options instead.")
+    def val_list(self) -> Union[MutableSequence[SpawnFlags], MutableSequence[Choices]]:
+        """Sequence of `tuple`s holding the valid spawnflag or choices options.
+
+        :deprecated: Use options instead, which stores `KVOption` instances.
+        """
+        if self.options is None:
+            self.options = []
+        if self._type is ValueTypes.CHOICES:
+            return _MapList(self.options, self._choice_import, self._choice_export)
+        elif self._type is ValueTypes.SPAWNFLAGS:
+            return _MapList(self.options, self._flag_import, self._flag_export)
+        raise ValueError(f'Only choices or flags KV types have options, got {self._type!r}')
+
+    @property
+    @deprecated("Use KVDef.options instead.")
+    def choices_list(self) -> MutableSequence[Choices]:
+        """Assert the keyvalues are CHOICES type, then return casted values.
+
+        :deprecated: Use options instead, which stores `KVOption` instances.
+        """
+        if self._type is not ValueTypes.CHOICES:
+            raise TypeError
+        if self.options is None:
+            self.options = []
+        return _MapList(self.options, self._choice_import, self._choice_export)
+
+    @property
+    @deprecated("Use KVDef.options instead.")
+    def flags_list(self) -> MutableSequence[SpawnFlags]:
+        """Assert the keyvalues are SPAWNFLAGS type, then return casted values.
+
+        :deprecated: Use options instead, which stores `KVOption` instances.
+        """
+        if self._type is not ValueTypes.SPAWNFLAGS:
+            raise TypeError
+        if self.options is None:
+            self.options = []
+        return _MapList(self.options, self._flag_import, self._flag_export)
 
     def known_options(self) -> Iterator[str]:
         """Use the default value and value list to determine values this can be set to."""
