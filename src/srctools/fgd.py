@@ -2958,13 +2958,17 @@ class ResourceCtx:
         # Strip extension, and normalise folder separators.
         if mapname.casefold().endswith(('.bsp', '.vmf', '.vmm', '.vmx')):
             mapname = mapname[:-4]
+        # If this is an FGD or Mapping __getitem__ is the appropriate callable, otherwise
+        # it must already be callable.
+        if isinstance(fgd, FGD) or isinstance(fgd, Mapping):
+            getter_func = fgd.__getitem__
+        else:
+            getter_func = fgd
         self.__attrs_init__(  # pyright: ignore
             frozenset({tag.upper() for tag in tags}),
             fsys,
             mapname.replace('\\', '/'),
-            # If this is an FGD or Mapping __getitem__ is the appropriate callable, otherwise
-            # it must already be callable.
-            getattr(fgd, '__getitem__', cast(_GetFGDFunc, fgd)),
+            getter_func,
             funcs,
         )
 
