@@ -50,8 +50,6 @@ __all__ = [
 ]
 
 T = TypeVar('T')
-InnerT = TypeVar('InnerT')
-OuterT = TypeVar('OuterT')
 ValueT_co = TypeVar('ValueT_co', covariant=True)
 FileSysT = TypeVar('FileSysT', bound=FileSystem)
 _fake_vmf = VMF(preserve_ids=False)
@@ -1105,58 +1103,78 @@ class EntAttribute:
 
 
 # noinspection PyMissingOrEmptyDocstring
-class _MapList(MutableSequence[OuterT], Generic[InnerT, OuterT]):
+class _MapList(MutableSequence[T]):
     """Temporary class to allow deprecating KVDef.val_list."""
-    def __init__(self, seq: list[InnerT], map_in: Callable[[OuterT], InnerT], map_out: Callable[[InnerT], OuterT]) -> None:
-        self._seq = seq
+    def __init__(self, parent: KVDef, map_in: Callable[[T], KVOption], map_out: Callable[[KVOption], T]) -> None:
+        self._parent = parent
         self._import = map_in
         self._export = map_out
 
     def __len__(self) -> int:
-        return len(self._seq)
+        if self._parent.options is None:
+            return 0
+        return len(self._parent.options)
 
-    def insert(self, index: int, value: OuterT) -> None:
-        self._seq.insert(index, self._import(value))
+    def insert(self, index: int, value: T) -> None:
+        if self._parent.options is None:
+            self._parent.options = []
+        self._parent.options.insert(index, self._import(value))
 
-    def append(self, value: OuterT) -> None:
-        self._seq.append(self._import(value))
+    def append(self, value: T) -> None:
+        if self._parent.options is None:
+            self._parent.options = [self._import(value)]
+        else:
+            self._parent.options.append(self._import(value))
 
     def reverse(self) -> None:
-        self._seq.reverse()
+        if self._parent.options is not None:
+            self._parent.options.reverse()
 
     def clear(self) -> None:
-        self._seq.clear()
+        self._parent.options = None
 
-    def __iter__(self) -> Iterator[OuterT]:
-        return map(self._export, self._seq)
-
-    def __reversed__(self) -> Iterator[OuterT]:
-        return map(self._export, reversed(self._seq))
-
-    @overload
-    def __getitem__(self, index: int) -> OuterT: ...
-    @overload
-    def __getitem__(self, index: slice) -> MutableSequence[OuterT]: ...
-
-    def __getitem__(self, index: Union[int, slice]) -> Union[OuterT, MutableSequence[OuterT]]:
-        if isinstance(index, slice):
-            return [self._export(x) for x in self._seq[index]]
+    def __iter__(self) -> Iterator[T]:
+        if self._parent.options is not None:
+            return map(self._export, self._parent.options)
         else:
-            return self._export(self._seq[index])
+            return iter(())
 
-    @overload
-    def __setitem__(self, index: int, value: OuterT) -> None: ...
-    @overload
-    def __setitem__(self, index: slice, value: Iterable[OuterT]) -> None: ...
-
-    def __setitem__(self, index: Union[int, slice], value: Union[OuterT, Iterable[OuterT]]) -> None:
-        if isinstance(index, slice):  # Ignore, checker doesn't narrow value
-            self._seq[index] = [self._import(x) for x in value]  # type: ignore
+    def __reversed__(self) -> Iterator[T]:
+        if self._parent.options is not None:
+            return map(self._export, reversed(self._parent.options))
         else:
-            self._seq[index] = self._import(value)  # type: ignore
+            return iter(())
+
+    @overload
+    def __getitem__(self, index: int) -> T: ...
+    @overload
+    def __getitem__(self, index: slice) -> MutableSequence[T]: ...
+
+    def __getitem__(self, index: Union[int, slice]) -> Union[T, MutableSequence[T]]:
+        if self._parent.options is None:
+            raise KeyError(index)
+        elif isinstance(index, slice):
+            return [self._export(x) for x in self._parent.options[index]]
+        else:
+            return self._export(self._parent.options[index])
+
+    @overload
+    def __setitem__(self, index: int, value: T) -> None: ...
+    @overload
+    def __setitem__(self, index: slice, value: Iterable[T]) -> None: ...
+
+    def __setitem__(self, index: Union[int, slice], value: Union[T, Iterable[T]]) -> None:
+        if self._parent.options is None:
+            raise KeyError(index)
+        elif isinstance(index, slice):  # Ignore, checker doesn't narrow value
+            self._parent.options[index] = [self._import(x) for x in value]  # type: ignore
+        else:
+            self._parent.options[index] = self._import(value)  # type: ignore
 
     def __delitem__(self, index: Union[int, slice]) -> None:
-        del self._seq[index]
+        if self._parent.options is None:
+            raise KeyError(index)
+        del self._parent.options[index]
 
 
 @attrs.define
@@ -1239,9 +1257,9 @@ class KVDef(EntAttribute):
         if self.options is None:
             self.options = []
         if self._type is ValueTypes.CHOICES:
-            return _MapList(self.options, self._choice_import, self._choice_export)
+            return _MapList(self, self._choice_import, self._choice_export)
         elif self._type is ValueTypes.SPAWNFLAGS:
-            return _MapList(self.options, self._flag_import, self._flag_export)
+            return _MapList(self, self._flag_import, self._flag_export)
         raise ValueError(f'Only choices or flags KV types have options, got {self._type!r}')
 
     @property
@@ -1253,9 +1271,7 @@ class KVDef(EntAttribute):
         """
         if self._type is not ValueTypes.CHOICES:
             raise TypeError
-        if self.options is None:
-            self.options = []
-        return _MapList(self.options, self._choice_import, self._choice_export)
+        return _MapList(self, self._choice_import, self._choice_export)
 
     @property
     @deprecated("Use KVDef.options instead.")
@@ -1266,9 +1282,7 @@ class KVDef(EntAttribute):
         """
         if self._type is not ValueTypes.SPAWNFLAGS:
             raise TypeError
-        if self.options is None:
-            self.options = []
-        return _MapList(self.options, self._flag_import, self._flag_export)
+        return _MapList(self, self._flag_import, self._flag_export)
 
     def known_options(self) -> Iterator[str]:
         """Use the default value and value list to determine values this can be set to."""
