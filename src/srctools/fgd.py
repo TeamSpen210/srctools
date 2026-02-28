@@ -1262,6 +1262,20 @@ class KVDef(EntAttribute):
             return _MapList(self, self._flag_import, self._flag_export)
         raise ValueError(f'Only choices or flags KV types have options, got {self._type!r}')
 
+    # noinspection PyDeprecation
+    @val_list.setter
+    @deprecated("Use KVDef.options instead.")
+    def val_list(self, value: Union[MutableSequence[SpawnFlags], MutableSequence[Choices], None]) -> None:
+        if value is None:
+            self.options = None
+        elif self._type is ValueTypes.CHOICES:
+            # Type error if value is a MutableSequence[SpawnFlags] - that's fine.
+            self.options = [self._choice_import(tup) for tup in value]  # type: ignore
+        elif self._type is ValueTypes.SPAWNFLAGS:
+            self.options = [self._flag_import(tup) for tup in value]  # type: ignore
+        else:
+            raise ValueError(f'Only choices or flags KV types have options, got {self._type!r}')
+
     @property
     @deprecated("Use KVDef.options instead.")
     def choices_list(self) -> MutableSequence[Choices]:
