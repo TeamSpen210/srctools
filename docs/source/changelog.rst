@@ -20,6 +20,7 @@ Version (dev)
 * Allow customising the filename used for injected `~srctools.packlist.PackList` files.
 * Add support for parsing Strata's tintable overlays BSP format.
 * Rearrange `srctools.bsp.Overlay` attributes, parse basis U/V out of the 4 handle positions.
+* :src-issue:`43`: Fix incorrect export of displacement `triangle_tag` values.
 
 -------------
 Version 2.6.2

@@ -2,6 +2,7 @@
 from typing import Optional
 from enum import Enum
 import re
+import array
 
 from dirty_equals import IsList
 from pytest_regressions.file_regression import FileRegressionFixture
@@ -12,7 +13,7 @@ from srctools.keyvalues import Keyvalues
 from srctools.math import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Matrix, Vec
 from srctools.vmf import (
     VMF, Axis, Entity, Output, Strata2DViewport, Strata3DViewport,
-    StrataInstanceVisibility, conv_kv,
+    StrataInstanceVisibility, conv_kv, DispVertex, TriangleTag, DispFlag,
 )
 
 
@@ -514,10 +515,29 @@ def test_regression(file_regression: FileRegressionFixture) -> None:
         Strata2DViewport('z', 7181, -282.875, 1.0),
     ]
 
-    vmf.add_brush(vmf.make_prism(
+    prism = vmf.make_prism(
         Vec(128, 128, 128), Vec(256, 512, 1024),
         set_points=True,
-    ))
+    )
+    vmf.add_brush(prism)
+    top = prism.top
+    # TODO: Probably should expose a create-displacement method.
+    top.disp_power = 3
+    top.disp_flags = DispFlag.COLL_PHYSICS | DispFlag.COLL_PLAYER_NPC
+    top._disp_verts = [
+        DispVertex(x, y, normal=Vec(0, 0, 1))
+        for y in range(top.disp_size)
+        for x in range(top.disp_size)
+    ]
+    top.disp_pos = Vec()
+    top.disp_allowed_vert = array.array('i', (-1,) * 10)
+    top[1, 1].triangle_a = TriangleTag.STEEP
+    top[1, 1].triangle_b = TriangleTag.WALKABLE
+    for x in range(8):
+        top[x, 0].triangle_a = TriangleTag.STEEP
+        top[x, 7].triangle_b = TriangleTag.STEEP
+        top[0, x].triangle_a = TriangleTag.STEEP
+        top[7, x].triangle_b = TriangleTag.STEEP
     file_regression.check(vmf.export(), extension='.vmf')
 
 

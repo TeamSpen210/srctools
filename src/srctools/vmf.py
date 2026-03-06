@@ -2315,22 +2315,22 @@ class Side:
             f'{ind}\t\t"power" "{self.disp_power}"\n'
             f'{ind}\t\t"startposition" "[{self.disp_pos}]"\n'
             f'{ind}\t\t"flags" "{_DISP_COLL_TO_FLAG[self.disp_flags & DispFlag.COLL_ALL]}"\n'
-            f'{ind}\t\t"elevation" "{self.disp_elevation}"\n'
+            f'{ind}\t\t"elevation" "{format_float(self.disp_elevation)}"\n'
             f'{ind}\t\t"subdiv" "{"1" if DispFlag.SUBDIV in self.disp_flags else "0"}"\n'
         )
 
         size = self.disp_size
-        self._export_disp_rowset('normals', 'normal', buffer, ind, size)
-        self._export_disp_rowset('distances', 'distance', buffer, ind, size)
-        self._export_disp_rowset('offsets', 'offset', buffer, ind, size)
-        self._export_disp_rowset('offset_normals', 'offset_norm', buffer, ind, size)
-        self._export_disp_rowset('alphas', 'alpha', buffer, ind, size)
+        self._export_disp_rowset('normals', 'normal', buffer, ind, size, False)
+        self._export_disp_rowset('distances', 'distance', buffer, ind, size, True)
+        self._export_disp_rowset('offsets', 'offset', buffer, ind, size, False)
+        self._export_disp_rowset('offset_normals', 'offset_norm', buffer, ind, size, False)
+        self._export_disp_rowset('alphas', 'alpha', buffer, ind, size, True)
 
         buffer.write(f'{ind}\t\ttriangle_tags\n{ind}\t\t{{\n')
-        for y in range(size):
+        for y in range(size - 1):  # Tags are quad-based, so ignore the last row/column.
             row = [
                 f'{vert.triangle_a.value} {vert.triangle_b.value}'
-                for vert in self._disp_verts[size * y:size * (y+1)]
+                for vert in self._disp_verts[size * y:(size * y) + (size - 1)]
             ]
             buffer.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
         buffer.write(ind + '\t\t}\n')
@@ -2342,8 +2342,8 @@ class Side:
         buffer.write(f'{ind}\t\t}}\n{ind}\t}}\n')
 
         if disp_multiblend and any(vert.multi_blend for vert in self._disp_verts):
-            self._export_disp_rowset('multiblend', 'multi_blend', buffer, ind, size)
-            self._export_disp_rowset('alphablend', 'multi_alpha', buffer, ind, size)
+            self._export_disp_rowset('multiblend', 'multi_blend', buffer, ind, size, False)
+            self._export_disp_rowset('alphablend', 'multi_alpha', buffer, ind, size, False)
             for i in range(4):
                 buffer.write(f'{ind}\t\tmultiblend_color_{i}\n{ind}\t\t{{\n')
                 for y in range(size):
@@ -2354,14 +2354,14 @@ class Side:
                     buffer.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
                 buffer.write(ind + '\t\t}\n')
 
-    def _export_disp_rowset(self, name: str, membr: str, f: FileWText, ind: str, size: int) -> None:
+    def _export_disp_rowset(self, name: str, membr: str, f: FileWText, ind: str, size: int, strip: bool) -> None:
         """Write out one of the displacement vertex arrays."""
         assert self._disp_verts is not None
         f.write(f'{ind}\t\t{name}\n{ind}\t\t{{\n')
-        rows = [
-            str(getattr(vert, membr))
-            for vert in self._disp_verts
-        ]
+        if strip:
+            rows = [format_float(getattr(vert, membr)) for vert in self._disp_verts]
+        else:
+            rows = [str(getattr(vert, membr)) for vert in self._disp_verts]
         for y in range(size):
             f.write(f'{ind}\t\t"row{y}" "{" ".join(rows[size * y:size * (y+1)])}"\n')
         f.write(f'{ind}\t\t}}\n')
