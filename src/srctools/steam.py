@@ -20,9 +20,9 @@ REG_STEAM = "SOFTWARE\\WOW6432Node\\Valve\\Steam"
 _STEAM_LOCS = [
     Path('C:/Program Files (x86)/Steam/'),  # Win64
     Path('C:/Program Files/Steam/'),  # Win32
-    Path('~/Library/Application Support/Steam/'),  # OS X
-    Path('~/.local/share/Steam/'),  # Linux
-    Path('~/.steam/steam/'),  # Linux, older.
+    Path.home() / 'Library/Application Support/Steam/',  # OS X
+    Path.home() / '.local/share/Steam/',  # Linux
+    Path.home() / '.steam/steam/',  # Linux, older.
 ]
 
 
