@@ -63,6 +63,12 @@ SPECIAL_NAMES = {
     SpecialCommand.RENAME_FILE: 'Rename File',
     SpecialCommand.STRATA_COPY_FILE_IF_EXISTS: 'Copy File if it Exists',
 }
+SPECIAL_IND: Mapping[int, Optional[SpecialCommand]] = {
+    cmd.value: cmd for cmd in SpecialCommand
+} | {
+    0: None,
+    260: SpecialCommand.STRATA_COPY_FILE_IF_EXISTS
+}
 STRATA_NAME_TO_SPECIAL: Mapping[str, Optional[SpecialCommand]] = {
     'none': None,
     'change_dir': SpecialCommand.CHANGE_DIR,
@@ -255,13 +261,20 @@ def parse_keyvalues(kv: Keyvalues) -> dict[str, list[Command]]:
             special_str = command_kv['special_cmd', command_kv['specialcmd', 'none']]
             special_cmd: Optional[SpecialCommand]
             if special_str.isdigit():
-                special_num = int(special_str)
-                special_cmd = None if special_num == 0 else SpecialCommand(special_num)
+                special_cmd = SPECIAL_IND[int(special_str)]
             else:
                 special_cmd = STRATA_NAME_TO_SPECIAL[special_str.casefold()]
             executable = special_cmd if special_cmd is not None else command_kv['run']
+
+            if 'params' in command_kv:  # Strata
+                args = command_kv['params']
+            elif 'parms' in command_kv:  # Hammer++
+                args = command_kv['parms'].replace('\x1b', '"')
+            else:
+                args = ''
+
             if command_kv.bool('ensure_check'):
-                ensure_file = command_kv['ensure_fn', '']
+                ensure_file = command_kv['ensure_fn', ''].replace('\x1b', '"')
             else:
                 ensure_file = None
 
@@ -269,7 +282,7 @@ def parse_keyvalues(kv: Keyvalues) -> dict[str, list[Command]]:
                 # First is Strata, second is H++.
                 enabled=command_kv.bool('enabled', command_kv.bool('enable', True)),
                 exe=executable,
-                args=command_kv['params', ''],
+                args=args,
                 ensure_file=ensure_file,
                 no_wait=command_kv.bool('no_wait'),
                 use_proc_win=command_kv.bool('use_process_wnd', True),
@@ -310,24 +323,28 @@ def build_keyvalues(
                 else:
                     cmd.append(Keyvalues('special_cmd', 'none'))
                     cmd.append(Keyvalues('run', command.exe))
+                cmd.append(Keyvalues('params', command.args))
             else:
                 if isinstance(command.exe, SpecialCommand):
                     cmd.append(Keyvalues('specialcmd', str(command.exe.value)))
                 else:
                     cmd.append(Keyvalues('specialcmd', '0'))
                     cmd.append(Keyvalues('run', command.exe))
-            cmd.append(Keyvalues('params', command.args))
-            if not is_strata:  # H++ doesn't include all of these.
-                continue
+                cmd.append(Keyvalues('parms', command.args.replace('"', '\x1b')))
             cmd.append(Keyvalues(
                 'ensure_check',
                 bool_as_int(command.ensure_file is not None)
             ))
             if command.ensure_file is not None:
-                cmd.append(Keyvalues('ensure_fn', command.ensure_file))
-            # These do nothing, so only export if they have non-default values.
-            if not command.use_proc_win:
-                cmd.append(Keyvalues('use_process_wnd', '0'))
-            if command.no_wait:
-                cmd.append(Keyvalues('no_wait', '1'))
+                file = command.ensure_file
+                if not is_strata:
+                    file = file.replace('"', '\x1b')
+                cmd.append(Keyvalues('ensure_fn', file))
+
+            if is_strata:  # H++ doesn't include thsese.
+                # These do nothing, so only export if they have non-default values.
+                if not command.use_proc_win:
+                    cmd.append(Keyvalues('use_process_wnd', '0'))
+                if command.no_wait:
+                    cmd.append(Keyvalues('no_wait', '1'))
     return root

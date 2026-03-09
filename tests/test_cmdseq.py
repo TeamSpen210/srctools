@@ -14,6 +14,7 @@ def test_parse_binary_v1(lazy_datadir: LazyDataDir) -> None:
     """Parse the standard binary format, version 1."""
     with open(lazy_datadir / 'sequence_binary_v1.wc', 'rb') as f:
         sequences = parse(f)
+    assert sequences == {}
 
 
 def test_parse_binary_v2(lazy_datadir: LazyDataDir) -> None:
@@ -125,6 +126,38 @@ def test_parse_hammerplusplus_keyvalues(lazy_datadir: LazyDataDir) -> None:
     """Parse the Hammer++ keyvalues format."""
     with open(lazy_datadir / 'sequence_hammerplusplus_kv.cfg', 'rb') as f:
         sequences = parse(f)
+    assert sequences == {
+        'Test': [
+            Command(
+                'C:/test/program.exe', 'parm1 "quo{}tes" parm2',
+                enabled=True, ensure_file=None,
+            ),
+            Command(
+                SpecialCommand.CHANGE_DIR, 'change dir',
+                enabled=True, ensure_file=None,
+            ),
+            Command(
+                SpecialCommand.COPY_FILE, 'src dest',
+                enabled=False, ensure_file='post "exist\'',
+            ),
+            Command(
+                SpecialCommand.STRATA_COPY_FILE_IF_EXISTS, 'optional dest',
+                enabled=False, ensure_file=None,
+            ),
+            Command(
+                SpecialCommand.DELETE_FILE, 'dead',
+                enabled=True, ensure_file='death',
+            ),
+            Command(
+                SpecialCommand.RENAME_FILE, '$renamed',
+                enabled=True, ensure_file=None,
+            ),
+            Command('$bsp_exe', 'vbsp', enabled=True),
+            Command('$vis_exe', 'vvis', enabled=True),
+            Command('$light_exe', 'vrad', enabled=True),
+            Command('$game_exe', 'gaming', enabled=True, no_wait=False),
+        ],
+    }
 
 
 @pytest.mark.parametrize(
