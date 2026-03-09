@@ -54,7 +54,6 @@ BSP_MAGIC = b'VBSP'  # All BSP files start with this
 VITAMIN_MAGIC = b'FART'  # Desolation's branch of Source.
 HEADER_1 = '<4si'  # Header section before the lump list.
 HEADER_LUMP = '<4i'  # Header section for each lump.
-HEADER_2 = '<i'  # Header section after the lumps.
 
 T = TypeVar('T')
 KeyT = TypeVar('KeyT')  # Needs to be hashable, typecheckers currently don't handle that.
@@ -1577,7 +1576,7 @@ class BSP:
                 )
                 lump_offsets[lump_id] = offset, length, uncomp_size
 
-            [self.map_revision] = struct_read(HEADER_2, file)
+            [self.map_revision] = struct_read('i', file)
 
             for lump in self.lumps.values():
                 # Now read in each lump.
@@ -1701,7 +1700,7 @@ class BSP:
                 defer.defer(lump_name, HEADER_LUMP, write=True)
 
             # After lump headers, the map revision...
-            file.write(struct.pack(HEADER_2, self.map_revision))
+            file.write(struct.pack('i', self.map_revision))
 
             # Then each lump.
             for lump_name in LUMP_WRITE_ORDER:
