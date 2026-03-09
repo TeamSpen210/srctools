@@ -779,6 +779,10 @@ class VTF:
         vtf.format = fmt = FORMAT_ORDER[high_format]
         vtf.version = version_major, version_minor
         vtf.low_format = low_fmt = FORMAT_ORDER[low_format]
+        vtf.resources = {}
+        vtf.sheet_info = {}
+        vtf.hotspot_info = None
+        vtf.hotspot_flags = 0
 
         if fmt is ImageFormats.NONE:
             raise ValueError('High-res format cannot be missing!')
@@ -792,9 +796,6 @@ class VTF:
 
         low_res_offset = -1
         high_res_offset = -1
-
-        vtf.resources = {}
-        vtf.sheet_info = {}
 
         depth_seq = vtf._depth_range()
 
