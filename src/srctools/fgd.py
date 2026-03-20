@@ -1068,6 +1068,65 @@ class AutoVisgroup:
     ents: set[str] = attrs.field(factory=set, hash=False, eq=False, order=False)
 
 
+@attrs.define(eq=False, kw_only=True)
+class ColorVar:
+    """Strata Source feature, color vars allow tinting overlays and static props.
+
+    This informs Hammer of the vars available in a game, along with the default value
+    to preview the tinting.
+    """
+    name: str
+    long_name: str
+    red: int
+    green: int
+    blue: int
+    tags: TagsSet = frozenset()
+
+    @classmethod
+    def _parse(cls, tok: Tokenizer) -> Self:
+        """Parse a colorvar definition."""
+        # Format: @colorvar name[tags] = 255 255 255: "description"
+        # Tags and description are optional.
+        name = tok.expect(Token.STRING)
+        token, tok_value = tok()
+        if token is Token.BRACK_OPEN:
+            tags = read_tags(tok, Token.BRACK_CLOSE)
+            tok.expect(Token.EQUALS)
+        elif token is Token.EQUALS:
+            tags = frozenset()
+        else:
+            raise tok.error('Expected equals sign, but got {}({})', token, tok_value)
+        try:
+            red = int(tok.expect(Token.STRING))
+            green = int(tok.expect(Token.STRING))
+            blue = int(tok.expect(Token.STRING))
+        except (TypeError, ValueError) as exc:
+            raise tok.error('Invalid colorvar color!') from exc
+        token, tok_value = tok()
+        if token is Token.COLON:
+            long_name = tok.expect(Token.STRING)
+        else:
+            tok.push_back(token, tok_value)
+            long_name = ''
+        return cls(
+            name=name,
+            long_name=long_name,
+            red=red, green=green, blue=blue,
+            tags=tags,
+        )
+
+    def export(self, file: FileWText, custom_syntax: bool = True, escape_quotes: bool = False) -> None:
+        """Write out a colorvar directive."""
+        file.write(f'@colorvar {self.name}')
+        if self.tags and custom_syntax:
+            file.write(f'[{", ".join(sorted(self.tags))}]')
+        file.write(f' = {self.red} {self.green} {self.blue}')
+        if self.long_name:
+            file.write(f': "{_fgd_escape(escape_quotes, self.long_name)}"\n')
+        else:
+            file.write('\n')
+
+
 class EntAttribute:
     """Common base class for IODef and KVDef."""
     name: str
@@ -2552,6 +2611,8 @@ class FGD:
     mat_exclusions: set[PurePosixPath]
     # Additional dirs restricted to specific engines with tags.
     tagged_mat_exclusions: dict[TagsSet, set[PurePosixPath]]
+    # All color vars which are defined.
+    color_vars: dict[tuple[str, TagsSet], ColorVar]
 
     # Automatic visgroups.
     # The way Valve implemented this is rather strange, so we need to match
@@ -2577,6 +2638,7 @@ class FGD:
         self.mat_exclusions = set()
         self.tagged_mat_exclusions = defaultdict(set)
         self.auto_visgroups = {}
+        self.color_vars = {}
 
         self.snippet_desc = {}
         self.snippet_choices = {}
@@ -2773,6 +2835,9 @@ class FGD:
 
         if self.map_size_min != self.map_size_max:
             file.write(f'@mapsize({self.map_size_min}, {self.map_size_max})\n\n')
+
+        for color_var in self.color_vars.values():
+            color_var.export(file, custom_syntax, escape_quotes)
 
         if self.mat_exclusions:
             file.write('@MaterialExclusion\n\t[\n')
@@ -2971,6 +3036,10 @@ class FGD:
 
                 elif token_value == '@snippet':
                     Snippet.parse(self, file.path, tokeniser)
+                elif token_value == '@colorvar':
+                    # noinspection PyProtectedMember
+                    color_var = ColorVar._parse(tokeniser)
+                    self.color_vars[color_var.name, color_var.tags] = color_var
 
                 # Entity definition...
                 elif token_value[:1] == '@':
