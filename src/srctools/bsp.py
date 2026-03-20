@@ -22,7 +22,7 @@ import attrs
 from srctools import AtomicWriter, StringPath, conv_int, logger
 from srctools.binformat import (
     DeferredWrites, compress_lzma, decompress_lzma, find_or_extend, find_or_insert,
-    read_array, struct_read, write_array,
+    read_array, struct_read, write_array, strip_cstring, pad_cstring,
 )
 from srctools.const import BSPContents as BrushContents, SurfFlags, add_unknown
 from srctools.filesys import FileSystem
@@ -62,6 +62,7 @@ VecT = TypeVar('VecT', bound=Union[Vec, FrozenVec])
 # Game lump IDs
 LMP_ID_STATIC_PROPS = b'sprp'
 LMP_ID_DETAIL_PROPS = b'dprp'
+LMP_ID_COLOR_VARS = b'clvr'
 
 LOGGER = logger.get_logger(__name__)
 
@@ -341,7 +342,7 @@ LUMP_WRITE_ORDER.append(BSP_LUMPS.PAKFILE)
 LUMP_REBUILD_ORDER: list[Union[bytes, BSP_LUMPS]] = [
     BSP_LUMPS.PAKFILE,
     BSP_LUMPS.CUBEMAPS,
-    LMP_ID_STATIC_PROPS,  # References visleafs.
+    LMP_ID_STATIC_PROPS,  # References visleafs, colorvars
     LMP_ID_DETAIL_PROPS,
 
     BSP_LUMPS.MODELS,  # Brushmodels reference their vis tree, faces, and the entity they're tied to.
@@ -362,10 +363,11 @@ LUMP_REBUILD_ORDER: list[Union[bytes, BSP_LUMPS]] = [
     BSP_LUMPS.VERTEXES,
     BSP_LUMPS.VISIBILITY,
 
-    BSP_LUMPS.OVERLAYS,  # Adds texinfo entries.
+    BSP_LUMPS.OVERLAYS,  # Adds texinfo entries, references colorvars
 
     BSP_LUMPS.TEXINFO,  # Adds texdata -> texdata_string_data entries.
     BSP_LUMPS.TEXDATA_STRING_DATA,
+    LMP_ID_COLOR_VARS,
 ]
 
 
@@ -1505,6 +1507,8 @@ class BSP:
     # Game lumps
     props: ParsedLump[list['StaticProp']] = ParsedLump(LMP_ID_STATIC_PROPS)
     detail_props: ParsedLump[list['DetailProp']] = ParsedLump(LMP_ID_DETAIL_PROPS)
+    #: Strata Source specific, 'color variables' used in props and overlays.
+    color_vars: ParsedLump[list[str]] = ParsedLump(LMP_ID_COLOR_VARS)
 
     @property
     def is_vitamin(self) -> bool:
@@ -2889,6 +2893,22 @@ class BSP:
                 round(cube.origin.z),
                 cube.size,
             )
+
+    def _lmp_read_color_vars(self, vers_num: int, data: bytes) -> Iterator[str]:
+        """Read the Strata Source color vars lump."""
+        if vers_num != 0:
+            raise ValueError(f'Unknown version number {vers_num}')
+        buf = BytesIO(data)
+        buf.seek(0)
+        [count] = struct_read('I', buf)
+        for _ in range(count):
+            yield strip_cstring(buf.read(64))
+
+    def _lmp_write_color_vars(self) -> Iterator[bytes]:
+        """Write the Strata Source color vars lump."""
+        yield struct.pack('I', len(self.color_vars))
+        for var in self.color_vars:
+            yield pad_cstring(var, 64)
 
     def _lmp_init_overlays(self) -> list[Overlay]:
         """Make a blank overlay lump."""
