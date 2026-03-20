@@ -1343,7 +1343,7 @@ class ParsedLump(Generic[T]):
         self.__objclass__ = owner
         self._read = getattr(owner, '_lmp_read_' + func_suffix)
         self._check = getattr(owner, '_lmp_check_' + func_suffix, None)
-        self._default = getattr(owner, '_lump_init_' + func_suffix)
+        self._default = getattr(owner, '_lump_init_' + func_suffix, None)
         # noinspection PyProtectedMember
         owner._save_funcs[self.lump] = getattr(owner, '_lmp_write_' + func_suffix)
 
