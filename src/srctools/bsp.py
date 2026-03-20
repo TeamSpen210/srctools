@@ -482,6 +482,9 @@ class StaticPropFlags(Flag):
     NO_SHADOW_DEPTH = 0x100
     NO_LIGHTMAP = 0x100
     BOUNCED_LIGHTING = 0x0400  #: Bounce lighting off the prop.
+    #: Strata Source edition, uses a 'color var' for the tint.
+    #: This is automatically set/unset depending on the `StaticProp.color_var` attribute during export.
+    STRATA_COLORVAR_TINT = 0x800
 
     # Add _BIT_XX members, so any bit combo can be preserved.
     add_unknown(locals(), long=True)
@@ -1235,6 +1238,9 @@ class StaticProp:
     tint: Vec = attrs.field(factory=lambda: Vec(255, 255, 255))
     #: Also known as "Render FX", the alpha value used for the prop.
     renderfx: int = 255
+    #: Strata Source edition. If set, this overrides the tint with a game-specified value.
+    #: Mutually exclusive with the regular tint.
+    color_var: str | None = attrs.field(kw_only=True, default=None)
     disable_on_xbox: bool = False
 
     lightmap_x: int = 32
@@ -1313,6 +1319,19 @@ def runlength_encode(data: Union[bytes, bytearray]) -> bytearray:
         pos = zero_end
 
     return result
+
+
+def pack_colorvar(index: int) -> tuple[int, int, int]:
+    """Pack a colorvar index into the rendercolor tint."""
+    return (
+        index & 0xFF,
+        (index >> 8) & 0xFF,
+        (index >> 16) & 0xFF,
+    )
+
+def unpack_colorvar(red: int, green: int, blue: int) -> int:
+    """Unpack a colorvar index from rendercolor tint."""
+    return red | green << 8 | blue << 16
 
 
 class ParsedLump(Generic[T]):
@@ -3355,12 +3374,9 @@ class BSP:
             # The 2013 SDK doesn't have rendercolour, but Mesa does.
             if vers_num >= 7 and not version.is_sdk_2013:
                 r, g, b, renderfx = struct_read('<BBBB', static_lump)
-                # Alpha isn't used.
-                tint = Vec(r, g, b)
             else:
                 # No tint.
-                tint = Vec(255, 255, 255)
-                renderfx = 255
+                r = g = b = renderfx = 255
 
             disable_on_xbox = False
             if vers_num >= 9 and not version.is_lightmap:
@@ -3374,9 +3390,14 @@ class BSP:
             flags = StaticPropFlags(flags)
 
             scaling = Vec(1.0, 1.0, 1.0)
+            color_var = None
             if version is StaticPropVersion.V_STRATA_V13:
                 # Three floats for non-uniform scaling
                 [scaling.x, scaling.y, scaling.z] = struct_read("<fff", static_lump)
+                # Additionally, color vars might be present.
+                if StaticPropFlags.STRATA_COLORVAR_TINT in flags:
+                    color_var = self.color_vars[unpack_colorvar(r, g, b)]
+                    r = g = b = 255  # Substitute a dummy color.
             elif vers_num >= 11:
                 # One float for uniform scaling
                 [scaling.x] = struct_read("<f", static_lump)
@@ -3405,10 +3426,11 @@ class BSP:
                 max_cpu_level,
                 min_gpu_level,
                 max_gpu_level,
-                tint,
+                Vec(r, g, b),
                 renderfx,
                 disable_on_xbox,
                 lightmap_x, lightmap_y,
+                color_var=color_var,
             )
 
     def _lmp_write_props(self, props: list['StaticProp']) -> bytes:
@@ -3431,6 +3453,13 @@ class BSP:
         vers_num = self.static_prop_version.version
         if version.is_lightmap:
             vers_num = 7
+
+        if version is StaticPropVersion.V_STRATA_V13:
+            add_colorvar = find_or_insert(self.color_vars)
+        else:
+            def add_colorvar(var: str) -> int:
+                """Should not be used."""
+                raise NotImplementedError(var)
 
         # Now write out the sections.
         prop_lump = BytesIO()
@@ -3495,14 +3524,15 @@ class BSP:
                     prop.lightmap_x, prop.lightmap_y,
                 ))
 
+            if version is StaticPropVersion.V_STRATA_V13 and prop.color_var:
+                prop.flags |= StaticPropFlags.STRATA_COLORVAR_TINT
+                r, g, b = pack_colorvar(add_colorvar(prop.color_var))
+            else:
+                prop.flags &= ~StaticPropFlags.STRATA_COLORVAR_TINT
+                r, g, b = int(prop.tint.x), int(prop.tint.y), int(prop.tint.z)
+
             if vers_num >= 7 and not version.is_sdk_2013:
-                prop_lump.write(struct.pack(
-                    '<BBBB',
-                    int(prop.tint.x),
-                    int(prop.tint.y),
-                    int(prop.tint.z),
-                    prop.renderfx,
-                ))
+                prop_lump.write(struct.pack('<BBBB',r, g, b, prop.renderfx))
 
             if vers_num >= 9 and not version.is_lightmap:
                 # The 1-byte bool gets expanded to the full 4-byte size.
