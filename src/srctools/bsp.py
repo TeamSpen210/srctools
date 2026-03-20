@@ -1334,6 +1334,7 @@ class ParsedLump(Generic[T]):
         # Args are (BSP, version, data) if game lump, else (BSP, data).
         self._read: Optional[Callable[..., T]] = None
         self._check: Optional[Callable[[BSP, T], None]] = None
+        self._default: Optional[Callable[[], T]] = None
         assert self.lump in LUMP_REBUILD_ORDER, self.lump
 
     def __set_name__(self, owner: type['BSP'], name: str) -> None:
@@ -1342,6 +1343,7 @@ class ParsedLump(Generic[T]):
         self.__objclass__ = owner
         self._read = getattr(owner, '_lmp_read_' + func_suffix)
         self._check = getattr(owner, '_lmp_check_' + func_suffix, None)
+        self._default = getattr(owner, '_lump_init_' + func_suffix)
         # noinspection PyProtectedMember
         owner._save_funcs[self.lump] = getattr(owner, '_lmp_write_' + func_suffix)
 
@@ -1367,11 +1369,25 @@ class ParsedLump(Generic[T]):
         if self._read is None:
             raise TypeError('ParsedLump.__set_name__ was never called!')
         if isinstance(self.lump, BSP_LUMPS):
-            data = instance.lumps[self.lump].data
+            try:
+                data = instance.lumps[self.lump].data
+            except KeyError:
+                if self._default is not None:
+                    # noinspection PyProtectedMember
+                    instance._parsed_lumps[self.lump] = result = self._default()
+                    return result
+                raise
             LOGGER.debug('Load game lump {} ({} bytes)', self.lump, len(data))
             result = self._read(instance, data)
         else:  # Game lump
-            gm_lump = instance.game_lumps[self.lump]
+            try:
+                gm_lump = instance.game_lumps[self.lump]
+            except KeyError:
+                if self._default is not None:
+                    # noinspection PyProtectedMember
+                    instance._parsed_lumps[self.lump] = result = self._default()
+                    return result
+                raise
             LOGGER.debug('Load game lump {} v{} ({} bytes)', self.lump, gm_lump.version, len(gm_lump.data))
             result = self._read(instance, gm_lump.version, gm_lump.data)
         if inspect.isgenerator(result):  # Convenience, yield to accumulate into a list.
@@ -2827,6 +2843,12 @@ class BSP:
         phys_buf.write(struct.pack('<iiii', -1, 0, 0, 0))
         self.lumps[BSP_LUMPS.PHYSCOLLIDE].data = phys_buf.getvalue()
 
+    def _lmp_init_pakfile(self) -> ZipFile:
+        """Create a new packfile."""
+        zipfile = ZipFile(BytesIO(), mode='a')
+        zipfile.filename = os.fspath(self.filename)
+        return zipfile
+
     def _lmp_read_pakfile(self, data: bytes) -> ZipFile:
         """Read the raw binary as writable zip archive."""
         zipfile = ZipFile(BytesIO(data), mode='a')
@@ -2867,6 +2889,10 @@ class BSP:
                 round(cube.origin.z),
                 cube.size,
             )
+
+    def _lmp_init_overlays(self) -> list[Overlay]:
+        """Make a blank overlay lump."""
+        return []
 
     def _lmp_read_overlays(self, data: bytes) -> Iterator[Overlay]:
         """Read the overlays lump."""
@@ -3186,6 +3212,10 @@ class BSP:
         Deprecated, ``bsp.props`` is stored and resaved.
         """
         self.props = props
+
+    def _lmp_init_props(self) -> list[StaticProp]:
+        """Create a blank static prop lump."""
+        return []
 
     def _lmp_read_props(self, vers_num: int, data: bytes) -> Iterator['StaticProp']:
         # The version of the static prop format - different features.
