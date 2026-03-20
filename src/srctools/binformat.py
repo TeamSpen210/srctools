@@ -18,7 +18,7 @@ __all__ = [
     'SIZES',
     'SIZE_CHAR', 'SIZE_DOUBLE', 'SIZE_FLOAT', 'SIZE_INT', 'SIZE_LONG', 'SIZE_SHORT',
     'struct_read', 'read_nullstr', 'read_nullstr_array', 'read_offset_array',
-    'read_array', 'write_array',
+    'read_array', 'write_array', 'strip_cstring', 'pad_cstring',
     'str_readvec', 'ST_VEC',
     'checksum', 'EMPTY_CHECKSUM',
     'find_or_insert', 'find_or_extend',
@@ -164,6 +164,26 @@ def write_array(fmt: Union[str, Struct], data: Collection[int]) -> bytes:
         endianness = ''
 
     return Struct(endianness + fmt * len(data)).pack(*data)
+
+
+def strip_cstring(data: bytes) -> str:
+    """Strip strings to the first null, and convert to ascii.
+
+    In some file formats Valve left uninitalised memory after the terminator,
+    which this discards.
+    """
+    pos = data.find(b'\0')
+    if pos != -1:
+        return data[:pos].decode('ascii')
+    else:
+        return data.decode('ascii')
+
+
+def pad_cstring(text: str, length: int) -> bytes:
+    """Convert the specified string to ASCII, and pad to fill the specified byte array."""
+    if len(text) > length:
+        raise ValueError(f'{text!r} is longer than {length}!')
+    return text.encode('ascii') + b'\0' * (length - len(text))
 
 
 def str_readvec(file: FileR[bytes]) -> Vec:

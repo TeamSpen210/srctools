@@ -12,6 +12,7 @@ import io
 import attrs
 
 from . import conv_int, bool_as_int
+from .binformat import strip_cstring, pad_cstring
 from .keyvalues import Keyvalues
 from .tokenizer import Tokenizer, Token
 from .types import FileWBinary
@@ -78,25 +79,6 @@ STRATA_NAME_TO_SPECIAL: Mapping[str, Optional[SpecialCommand]] = {
     'copy_file_if_exists': SpecialCommand.STRATA_COPY_FILE_IF_EXISTS,
 }
 SPECIAL_TO_STRATA_NAME = {cmd: name for name, cmd in STRATA_NAME_TO_SPECIAL.items()}
-
-
-def strip_cstring(data: bytes) -> str:
-    """Strip strings to the first null, and convert to ascii.
-
-    The CmdSeq files appear to often have junk data in the unused
-    sections after the null byte, where C code doesn't touch.
-    """
-    if b'\0' in data:
-        return data[:data.index(b'\0')].decode('ascii')
-    else:
-        return data.decode('ascii')
-
-
-def pad_string(text: str, length: int) -> bytes:
-    """Pad the string to the specified length and convert."""
-    if len(text) > length:
-        raise ValueError(f'{text!r} is longer than {length}!')
-    return text.encode('ascii') + b'\0' * (length - len(text))
 
 
 @attrs.define
@@ -216,7 +198,7 @@ def write(sequences: Mapping[str, Sequence[Command]], file: FileWBinary) -> None
     file.write(pack('I', len(sequences)))
 
     for name, commands in sequences.items():
-        file.write(pad_string(name, 128))
+        file.write(pad_cstring(name, 128))
         file.write(pack('I', len(commands)))
         for cmd in commands:
             if isinstance(cmd.exe, SpecialCommand):
@@ -227,7 +209,7 @@ def write(sequences: Mapping[str, Sequence[Command]], file: FileWBinary) -> None
                 exe = cmd.exe
 
             if cmd.ensure_file is not None:
-                ensure_file = pad_string(cmd.ensure_file, 260)
+                ensure_file = pad_cstring(cmd.ensure_file, 260)
                 has_ensure_file = 1
             else:
                 ensure_file = bytes(260)
@@ -236,8 +218,8 @@ def write(sequences: Mapping[str, Sequence[Command]], file: FileWBinary) -> None
             file.write(ST_COMMAND.pack(
                 cmd.enabled,
                 special,
-                pad_string(exe, 260),
-                pad_string(cmd.args, 260),
+                pad_cstring(exe, 260),
+                pad_cstring(cmd.args, 260),
                 True,  # is_long_filename
                 has_ensure_file,
                 ensure_file,
