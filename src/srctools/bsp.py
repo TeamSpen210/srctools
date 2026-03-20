@@ -482,7 +482,7 @@ class StaticPropFlags(Flag):
     NO_SHADOW_DEPTH = 0x100
     NO_LIGHTMAP = 0x100
     BOUNCED_LIGHTING = 0x0400  #: Bounce lighting off the prop.
-    #: Strata Source edition, uses a 'color var' for the tint.
+    #: Strata Source addition, uses a 'color var' for the tint.
     #: This is automatically set/unset depending on the `StaticProp.color_var` attribute during export.
     STRATA_COLORVAR_TINT = 0x800
 
@@ -951,6 +951,13 @@ class Cubemap:
 _ZERO: int = int('0')
 
 
+# Bitflag values for overlays. We reconstruct during export.
+# Whether basis V is flipped. Pre-Strata formats store this as (uv4.z == 1.0)
+_OVERLAY_FLAG_BASIS_V_FLIPPED = 1
+# Use a 'color var' for the tint.
+_OVERLAY_FLAG_COLORVAR_TINT = 2
+
+
 @attrs.define(eq=False, kw_only=True)
 class Overlay:
     """An overlay embedded in the map."""
@@ -958,7 +965,9 @@ class Overlay:
     origin: Vec
     normal: Vec
     basis_u: FrozenVec
-    basis_v_flipped: bool = False  # This is calculated from cross(normal, basis_u)
+    #: The basis V value is calculated from ``cross(normal, basis_u)``.
+    #: This indicates if it should then be inverted.
+    basis_v_flipped: bool = False
     texture: TexInfo
     faces: list[int] = attrs.field(factory=list, validator=attrs.validators.deep_iterable(
         attrs.validators.instance_of(int),
@@ -966,7 +975,11 @@ class Overlay:
     ))
     render_order: int = attrs.field(default=_ZERO, validator=attrs.validators.in_(range(4)))
     #: Strata Source addition, a tint for the overlay.
-    tint: Color = attrs.field(default=Color(255, 255, 255), kw_only=True)
+    tint: Color = Color(255, 255, 255)
+    #: Strata Source addition. If set, this overrides the tint with a game-specified value.
+    #: Mutually exclusive with the regular tint.
+    color_var: str | None = None
+
     u_min: float = 0.0
     u_max: float = 1.0
     v_min: float = 0.0
@@ -1238,7 +1251,7 @@ class StaticProp:
     tint: Vec = attrs.field(factory=lambda: Vec(255, 255, 255))
     #: Also known as "Render FX", the alpha value used for the prop.
     renderfx: int = 255
-    #: Strata Source edition. If set, this overrides the tint with a game-specified value.
+    #: Strata Source addition. If set, this overrides the tint with a game-specified value.
     #: Mutually exclusive with the regular tint.
     color_var: str | None = attrs.field(kw_only=True, default=None)
     disable_on_xbox: bool = False
@@ -2935,11 +2948,15 @@ class BSP:
 
     def _lmp_read_overlays(self, data: bytes) -> Iterator[Overlay]:
         """Read the overlays lump."""
-        has_tint = (  # Strata Source addition, rendercolor tinting.
-            self.version == VERSIONS.STRATA_SOURCE and
-            self.lumps[BSP_LUMPS.OVERLAYS].version == 2
-        )
+        is_strata = self.version == VERSIONS.STRATA_SOURCE
+        version = self.lumps[BSP_LUMPS.OVERLAYS].version
+        if is_strata and version == 3:
+            # This is significantly different.
+            yield from self._lmp_read_overlays_strata_v3(data)
+            return
         max_faces = self.lump_layout["OVERLAY_FACE_COUNT"]
+        has_tint = is_strata and version == 2
+
         if has_tint:
             fmt_1 = ''  # Extra padding
             fmt_2 = '4B'  # Render colour
@@ -3021,14 +3038,20 @@ class BSP:
 
     def _lmp_write_overlays(self, overlays: list[Overlay]) -> Iterator[bytes]:
         """Write out all overlays."""
+
+        is_strata = self.version == VERSIONS.STRATA_SOURCE
+        version = self.lumps[BSP_LUMPS.OVERLAYS].version
+        if is_strata and version == 3:
+            # This is significantly different.
+            yield from self._lmp_write_overlays_strata_v3(overlays)
+            return
+        max_faces = self.lump_layout["OVERLAY_FACE_COUNT"]
+        has_tint = is_strata and version == 2
+
         add_texinfo = find_or_insert(self.texinfo)
         fade_buf = BytesIO()
         levels_buf = BytesIO()
-        max_faces = self.lump_layout["OVERLAY_FACE_COUNT"]
-        has_tint = (  # Strata Source addition, changes padding too.
-            self.version == VERSIONS.STRATA_SOURCE and
-            self.lumps[BSP_LUMPS.OVERLAYS].version == 2
-        )
+
         for over in overlays:
             face_cnt = len(over.faces)
             if face_cnt > max_faces:
@@ -3055,6 +3078,96 @@ class BSP:
             )
             if has_tint:
                 yield struct.pack('4B', *over.tint)
+        self.lumps[BSP_LUMPS.OVERLAY_FADES].data = fade_buf.getvalue()
+        self.lumps[BSP_LUMPS.OVERLAY_SYSTEM_LEVELS].data = levels_buf.getvalue()
+
+    def _lmp_read_overlays_strata_v3(self, data: bytes) -> Iterator[Overlay]:
+        """Read the Strata version of the overlay lump, which has been rearranged.
+
+        It's variable-size, depending on the number of faces.
+        """
+        buf = BytesIO(data)
+        buf.seek(0)
+        iter_fades = struct.iter_unpack('<ff', self.lumps[BSP_LUMPS.OVERLAY_FADES].data)
+        iter_levels = struct.iter_unpack('<4B', self.lumps[BSP_LUMPS.OVERLAY_SYSTEM_LEVELS].data)
+        [count] = struct_read('I', buf)
+        for _ in range(count):
+            (
+                over_id, flags, texinfo,
+                render_order, face_count,
+                u_min, u_max, v_min, v_max,
+            ) = struct_read('<iIiHi4f', buf)
+            uv1 = FrozenVec(struct_read('2f', buf))
+            uv2 = FrozenVec(struct_read('2f', buf))
+            uv3 = FrozenVec(struct_read('2f', buf))
+            uv4 = FrozenVec(struct_read('2f', buf))
+            basis_u = FrozenVec(struct_read('3f', buf))
+            origin = Vec(struct_read('3f', buf))
+            normal = Vec(struct_read('3f', buf))
+            r, g, b, a = buf.read(4)
+            if _OVERLAY_FLAG_COLORVAR_TINT & flags:
+                tint = Color(255, 255, 255, a)
+                color_var = self.color_vars[unpack_colorvar(r, g, b)]
+            else:
+                tint = Color(r, g, b, a)
+                color_var = None
+
+            faces = list(struct_read(f'<{face_count}I', buf))
+
+            fade_min_sq, fade_max_sq = next(iter_fades, (-1.0, 0.0))
+            min_cpu, max_cpu, min_gpu, max_gpu = next(iter_levels, (0, 0, 0, 0))
+
+            yield Overlay(
+                id=over_id,
+                origin=origin,
+                normal=normal,
+                basis_u=basis_u,
+                basis_v_flipped=(flags & _OVERLAY_FLAG_BASIS_V_FLIPPED) != 0,
+                texture=self.texinfo[texinfo],
+                faces=faces, render_order=render_order,
+                u_min=u_min, u_max=u_max,
+                v_min=v_min, v_max=v_max,
+                uv1=uv1, uv2=uv2, uv3=uv3, uv4=uv4,
+                fade_min_sq=fade_min_sq, fade_max_sq=fade_max_sq,
+                min_cpu=min_cpu, max_cpu=max_cpu,
+                min_gpu=min_gpu, max_gpu=max_gpu,
+                tint=tint,
+                color_var=color_var,
+            )
+
+    def _lmp_write_overlays_strata_v3(self, overlays: list[Overlay]) -> Iterator[bytes]:
+        """Write out the Strata version of the overlay lump."""
+        add_texinfo = find_or_insert(self.texinfo)
+        add_colorvar = find_or_insert(self.color_vars)
+        fade_buf = BytesIO()
+        levels_buf = BytesIO()
+
+        yield struct.pack('<I', len(overlays))
+
+        for over in overlays:
+            fade_buf.write(struct.pack('<ff', over.fade_min_sq, over.fade_max_sq))
+            levels_buf.write(struct.pack('<4B', over.min_cpu, over.max_cpu, over.min_gpu, over.max_gpu))
+            flags = _OVERLAY_FLAG_BASIS_V_FLIPPED if over.basis_v_flipped else 0
+            if over.color_var:
+                flags |= _OVERLAY_FLAG_COLORVAR_TINT
+                r, g, b = pack_colorvar(add_colorvar(over.color_var))
+                a = over.tint.a
+            else:
+                r, g, b, a = over.tint
+
+            yield struct.pack(
+                '<iIiHi4f8f9f4B',
+                over.id, flags, add_texinfo(over.texture),
+                over.render_order, len(over.faces),
+                over.u_min, over.u_max, over.v_min, over.v_max,
+                over.uv1.x, over.uv1.y,
+                over.uv2.x, over.uv2.y,
+                over.uv3.x, over.uv3.y,
+                over.uv4.x, over.uv4.y,
+                *over.basis_u, *over.origin, *over.normal,
+                r, g, b, a,
+            )
+            yield struct.pack(f'<{len(over.faces)}I', over.faces)
         self.lumps[BSP_LUMPS.OVERLAY_FADES].data = fade_buf.getvalue()
         self.lumps[BSP_LUMPS.OVERLAY_SYSTEM_LEVELS].data = levels_buf.getvalue()
 
