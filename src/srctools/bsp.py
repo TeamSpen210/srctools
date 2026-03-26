@@ -2195,10 +2195,11 @@ class BSP:
                 dynamic_shadows = not (prim_num & 0x8000)
                 vitamin_flags = 0
 
-                # If orig faces is provided, that is the original face
+                # If orig faces is provided and non-empty, that is the original face
                 # we were created from. Additionally, it seems the original
                 # face data has invalid texinfo, so copy ours on top of it.
-                if orig_faces is not None:
+                # VBSP++ with -cullverts also strips the lump, so it'll be empty in that case.
+                if orig_faces:
                     orig_face = orig_faces[orig_face_ind]
                     orig_face.texinfo = texinfo = self.texinfo[texinfo_ind]
                     try:
