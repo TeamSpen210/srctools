@@ -287,6 +287,8 @@ class HelperTypes(Enum):
     STRATA_FLAT_OBB = 'orientedwidthheight'
     #: Strata Source addition, an oriented 2D bbox using half width/height values.
     STRATA_HALF_FLAT_OBB = 'orientedwidthheighthalf'
+    #: Strata Source addition, an oriented 3D bounding box.
+    STRATA_HALF_OBB = 'orientedboundingbox'
 
     ENT_LIGHT_CONE_BLACK_MESA = 'lightconenew'  #: New helper added in Black Mesa.
     ENT_STRATA_CLUSTERED_LIGHT = 'clusteredlight'  #: Helper for Strata's clustered lights.

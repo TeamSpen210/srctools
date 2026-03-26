@@ -12,7 +12,7 @@ Version (dev)
 * Add :mod:`srctools.sndscape`, for parsing soundscape scripts.
 * Changed `PackList.load_choreo_scenes() <srctools.packlist.PackList.load_choreo_scenes>` to warn if ``scenes.image`` is not found.
 * Change type for FGD keyvalue options to :class:`~srctools.fgd.KVOption`. Previous tuple attributes are deprecated.
-* Add support for ``orientedwidthheight()``, ``orientedwidthheighthalf()`` and ``clusteredlight()`` Strata FGD helpers.
+* Add support for ``orientedwidthheight()``, ``orientedwidthheighthalf()``, ``orientedboundingbox()`` and ``clusteredlight()`` Strata FGD helpers.
 * Add support for descriptions in spawnflags - displayed in Strata Source.
 * Add ``noinherit()`` FGD helper, for indicating values to avoid inheriting from base classes.
 * Add option to control double-quote escaping behaviour for FGDs, seperately to custom syntax.
