@@ -371,9 +371,9 @@ class Keyvalues:
         flags: Mapping[str, bool] = EmptyMapping,
         newline_keys: bool = False,
         newline_values: bool = True,
+        single_line: bool = False,
         periodic_callback: Optional[Callable[[], object]] = None,
         allow_escapes: bool = True,
-        single_line: bool = False,
     ) -> "Keyvalues": ...
     @staticmethod
     @overload
@@ -406,13 +406,13 @@ class Keyvalues:
         input.
 
         :param file_contents: should be an iterable of strings (like a file object) or a
-          single string. Alternatively, file_contents may be an already created tokenizer.
+          single string. Alternatively, ``file_contents`` may be an already created tokenizer.
         :param filename: If set this should be the source of the text for debug purposes. If not
           supplied, the ``name`` attribute of ``file_contents`` will be used if present.
         :param flags: This should be a mapping for additional ``[flag]`` suffixes to accept.
         :param single_line: If this is set, allow multiple keyvalues to be on the same line.
           This means unterminated strings will be caught late (if at all), but it allows parsing
-          some generated data blocks inside things like `.PHY` files.
+          some generated data blocks inside things like :file:`.PHY` files.
         :param newline_keys: This specifies if newline characters are allowed in keys.
           Keys are prohibited by default, since this is fairly useless. If a quote character is
           omitted accidentally, this check is likely to quickly catch the error.
