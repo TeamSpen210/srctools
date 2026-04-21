@@ -23,6 +23,7 @@ _STEAM_LOCS = [
     Path('~/Library/Application Support/Steam/'),  # OS X
     Path('~/.local/share/Steam/'),  # Linux
     Path('~/.steam/steam/'),  # Linux, older.
+    Path('~/.steam/debian-installation/') #Debian
 ]
 
 
