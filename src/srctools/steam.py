@@ -2,6 +2,7 @@
 from typing import Optional
 from collections.abc import Collection, Mapping
 from pathlib import Path
+import os
 import sys
 
 import attrs
@@ -18,12 +19,17 @@ __all__ = [
 REG_STEAM = "SOFTWARE\\WOW6432Node\\Valve\\Steam"
 # Known Steam install locations.
 _STEAM_LOCS = [
-    Path('C:/Program Files (x86)/Steam/'),  # Win64
-    Path('C:/Program Files/Steam/'),  # Win32
-    Path('~/Library/Application Support/Steam/'),  # OS X
-    Path('~/.local/share/Steam/'),  # Linux
-    Path('~/.steam/steam/'),  # Linux, older.
-    Path('~/.steam/debian-installation/') #Debian
+    Path('C:', 'Program Files (x86)', 'Steam'),  # Win64
+    Path('C:', 'Program Files', 'Steam'),  # Win32
+    Path('~', 'Library', 'Application Support', 'Steam'),  # OS X
+    # Various linux locations
+    Path('~', "snap", "steam", "common", ".local", "share", "Steam"),  # snap install
+    Path('~', "snap", "steam", "common", ".steam", "steam"),  # snap symlink
+    Path('~', ".var", "app", "com.valvesoftware.Steam", ".local", "share", "Steam"),  # flatpak install
+    Path('~', ".var", "app", "com.valvesoftware.Steam", ".steam", "steam"),  # flatpak symlink
+    Path('~', ".local", "share", "Steam"),  # expected install (HOME)
+    Path('~', ".steam", "steam"),  # expected symlink
+    Path('~', '.steam', 'debian-installation'),  #Debian
 ]
 
 
@@ -75,6 +81,12 @@ def get_steam_install_path() -> Path:
                 return Path(QueryValueEx(key, "InstallPath")[0])
         except OSError:
             pass  # Try default locations.
+
+    if 'XDG_DATA_HOME' in os.environ:
+        possible_loc = Path(os.environ['XDG_DATA_HOME'], 'Steam')
+        if possible_loc.exists():
+            return possible_loc
+
     for possible_loc in _STEAM_LOCS:
         possible_loc = possible_loc.expanduser()
         if possible_loc.exists():
