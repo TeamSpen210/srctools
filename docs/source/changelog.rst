@@ -18,7 +18,8 @@ Version (dev)
 * Add option to control double-quote escaping behaviour for FGDs, seperately to custom syntax.
 * Add support for parsing Strata's Keyvalues-based `~srctools.cmdseq` variant.
 * Allow customising the filename used for injected `~srctools.packlist.PackList` files.
-* Add support for parsing Strata's v2 tintable overlays BSP format.
+* Add support for parsing Strata's 'colorvars' system.
+* Add support for parsing Strata's v2 and v3 tintable overlays BSP format.
 * Rearrange `srctools.bsp.Overlay` attributes, parse basis U/V out of the 4 handle positions.
 * :src-issue:`43`: Fix incorrect export of displacement `triangle_tag` values.
 * :src-issue:`44`: Fix :meth:`VTF.read() <srctools.vtf.VTF.read>` not initalising `~srctools.vtf.VTF.hotspot_info` and `~srctools.vtf.VTF.hotspot_flags`.
