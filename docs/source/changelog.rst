@@ -6,7 +6,7 @@ Changelog
     :backlinks: none
 
 -------------
-Version (dev)
+Version 2.7.0
 -------------
 
 * Add :mod:`srctools.sndscape`, for parsing soundscape scripts.
