@@ -978,7 +978,7 @@ class Overlay:
     tint: Color = Color(255, 255, 255)
     #: Strata Source addition. If set, this overrides the tint with a game-specified value.
     #: Mutually exclusive with the regular tint.
-    color_var: str | None = None
+    color_var: Optional[str] = None
 
     u_min: float = 0.0
     u_max: float = 1.0
@@ -1253,7 +1253,7 @@ class StaticProp:
     renderfx: int = 255
     #: Strata Source addition. If set, this overrides the tint with a game-specified value.
     #: Mutually exclusive with the regular tint.
-    color_var: str | None = attrs.field(kw_only=True, default=None)
+    color_var: Optional[str] = attrs.field(kw_only=True, default=None)
     disable_on_xbox: bool = False
 
     lightmap_x: int = 32
@@ -3581,7 +3581,7 @@ class BSP:
         if version is StaticPropVersion.V_STRATA_V13:
             add_colorvar = find_or_insert(self.color_vars, identity)
         else:
-            def add_colorvar(var: str) -> int:
+            def add_colorvar(var: str, /) -> int:
                 """Should not be used."""
                 raise NotImplementedError(var)
 

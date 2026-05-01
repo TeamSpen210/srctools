@@ -220,6 +220,5 @@ keep-runtime-typing = true
 extend-immutable-calls = [
 	"srctools.math.FrozenVec", "srctools.math.FrozenAngle", "srctools.math.FrozenMatrix",
 	"typing.cast", "srctools.logger.get_logger",
-	"srctools.choreo.CurveEdge",
-	"srctools.vmf.Vec4"
+	"srctools.choreo.CurveEdge", "srctools.dmx.Color", "srctools.vmf.Vec4",
 ]

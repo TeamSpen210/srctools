@@ -13,6 +13,8 @@ extend-ignore = [
 	"PLC2801",
 	# Private functions are exposed for testing specific parts of the implementation
 	"PLC2701",
+	# We test objects return the same value as we stored.
+	"RUF069",
 ]
 # Enable pytest-specific checks.
 extend-select = ["PT"]

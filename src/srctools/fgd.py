@@ -3236,7 +3236,7 @@ HELPER_IMPL: dict[HelperTypes, type[Helper]] = {}
 # reloaded it'll be using the old classes, breaking our registration.
 try:
     del sys.modules['srctools._fgd_helpers']
-    delattr(srctools, '_fgd_helpers')  # No static analysis of this.
+    del srctools._fgd_helpers  # noqa
 except (KeyError, AttributeError):
     pass
 
