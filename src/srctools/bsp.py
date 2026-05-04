@@ -2937,10 +2937,10 @@ class BSP:
         for _ in range(count):
             yield strip_cstring(buf.read(64))
 
-    def _lmp_write_color_vars(self) -> Iterator[bytes]:
+    def _lmp_write_color_vars(self, color_vars: list[str]) -> Iterator[bytes]:
         """Write the Strata Source color vars lump."""
-        yield struct.pack('I', len(self.color_vars))
-        for var in self.color_vars:
+        yield struct.pack('I', len(color_vars))
+        for var in color_vars:
             yield pad_cstring(var, 64)
 
     def _lmp_init_color_vars(self) -> list[bytes]:
