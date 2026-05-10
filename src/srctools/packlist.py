@@ -1594,6 +1594,9 @@ class PackList:
                 try:
                     with self.fsys[file.filename].open_str('utf8') as f:
                         scene = choreo_scenes.Scene.parse_text(Tokenizer(f))
+                except FileNotFoundError:
+                    LOGGER.warning('Choreo scene "{}" does not exist!', file.filename)
+                    return
                 except (TokenSyntaxError, UnicodeDecodeError) as exc:
                     LOGGER.warning(
                         'Choreo scene "{}" cannot be parsed:\n{}',
