@@ -1354,7 +1354,8 @@ class ParsedLump(Generic[T]):
     The lump is then cleared of data.
     When the BSP is saved, the lump data is then constructed.
 
-    If the lump name is bytes, it's a game lump identifier.
+    If the lump name is bytes, it's a game lump identifier. These are treated as optional, if the
+    parsed value is empty.
     """
     lump: Union[bytes, BSP_LUMPS]
     to_clear: Sequence[Union[bytes, BSP_LUMPS]]
@@ -1432,7 +1433,10 @@ class ParsedLump(Generic[T]):
             if isinstance(lump, BSP_LUMPS):
                 instance.lumps[lump].data = b''
             else:
-                instance.game_lumps[lump].data = b''
+                try:
+                    instance.game_lumps[lump].data = b''
+                except KeyError:
+                    pass
         return result
 
     def __set__(self, instance: Optional['BSP'], value: T) -> None:
@@ -1446,7 +1450,10 @@ class ParsedLump(Generic[T]):
             if isinstance(lump, BSP_LUMPS):
                 instance.lumps[lump].data = b''
             else:
-                instance.game_lumps[lump].data = b''
+                try:
+                    instance.game_lumps[lump].data = b''
+                except KeyError:
+                    pass
         instance._parsed_lumps[self.lump] = value  # noqa
 
 
@@ -1712,23 +1719,35 @@ class BSP:
             try:
                 data = self._parsed_lumps.pop(lump_or_game)
             except KeyError:
-                pass
+                continue
+
+            lump_result = self._save_funcs[lump_or_game](self, data)
+            # Convenience, yield to accumulate into bytes.
+            if inspect.isgenerator(lump_result):
+                buf = BytesIO()
+                for chunk in lump_result:
+                    buf.write(chunk)
+                result = buf.getvalue()
+            elif isinstance(lump_result, bytes):
+                result = lump_result
             else:
-                lump_result = self._save_funcs[lump_or_game](self, data)
-                # Convenience, yield to accumulate into bytes.
-                if inspect.isgenerator(lump_result):
-                    buf = BytesIO()
-                    for chunk in lump_result:
-                        buf.write(chunk)
-                    result = buf.getvalue()
-                elif isinstance(lump_result, bytes):
-                    result = lump_result
-                else:
-                    raise ValueError(lump_result)
-                if isinstance(lump_or_game, BSP_LUMPS):
-                    self.lumps[lump_or_game].data = result
-                else:
-                    self.game_lumps[lump_or_game].data = result
+                raise ValueError(lump_result)
+            # All standard lumps must be present, but game lumps are optional.
+            # So if they're blank, it's fine if they're missing. It's not clear what version
+            # to use, so error if the lump is new.
+            if isinstance(lump_or_game, BSP_LUMPS):
+                self.lumps[lump_or_game].data = result
+                continue
+            try:
+                self.game_lumps[lump_or_game].data = result
+            except KeyError:
+                if data:
+                    # Could use save func generator return value to pass back the version?
+                    raise ValueError(
+                        f'Lump {lump_or_game} has data, but is not present in the BSP!'
+                    ) from None
+                # Else it's empty - fine if we just omit it.
+
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
         with AtomicWriter(filename or self.filename, is_bytes=True) as file:

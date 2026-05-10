@@ -6,6 +6,12 @@ Changelog
     :backlinks: none
 
 -------------
+Version (dev)
+-------------
+
+* When exporting BSPs, treat game lumps are optional, omit if empty.
+
+-------------
 Version 2.7.0
 -------------
 
