@@ -282,15 +282,15 @@ class Material(MutableMapping[str, str]):
 
         raise tok.error('EOF without closed block!')
 
-    def export(self, f: FileWText) -> None:
+    def export(self, f: FileWText, quote=False) -> None:
         """Write the material back to a file."""
         f.write(self.shader + '\n\t{\n')
         for param in self._params.values():
             name = param.name
             value = param.value
-            if any(c in BARE_DISALLOWED for c in name):
+            if any(c in BARE_DISALLOWED for c in name) or quote:
                 name = f'"{name}"'
-            if not value or any(c in BARE_DISALLOWED for c in value):
+            if not value or any(c in BARE_DISALLOWED for c in value) or quote:
                 value = f'"{value}"'
             f.write(f'\t{name} {value}\n')
         for block in self.blocks:
