@@ -196,7 +196,7 @@ ESCAPE_MULTILINE_RE = re.compile('|'.join(
 ))
 
 #: Characters not allowed for bare strings. These must be quoted.
-BARE_DISALLOWED: Final = frozenset('"\'{};,=[]()\r\n\t ')
+BARE_DISALLOWED: Final = frozenset('"\'{};,=[]()/\r\n\t ')
 
 
 class BaseTokenizer(abc.ABC):
