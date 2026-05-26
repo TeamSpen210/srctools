@@ -890,6 +890,7 @@ class VTF:
         version: Optional[tuple[int, int]] = None,
         sheet_seq_version: int = 1,
         asw_or_later: bool = True,
+        compute_mipmap: bool = True,
         mip_filter: FilterMode = FilterMode.BILINEAR,
     ) -> None:
         """Write out the VTF file to this.
@@ -975,7 +976,8 @@ class VTF:
         deferred.set_data('header_size', file.tell())
 
         # Now for the main body.
-        self.compute_mipmaps(mip_filter)
+        if compute_mipmap:
+            self.compute_mipmaps(mip_filter)
         self._low_res.load()
 
         if res_list is not None:  # IE version >= 7.3
