@@ -199,6 +199,7 @@ extend-ignore = [
 	"RUF023", # Slots not sorted
 	"RUF059",  # Allow unused vars in unpacks.
 	"RUF067",  # Often have code in __init__
+	"RUF069",  # Allow direct flow equality checks.
 
 	# Flake8-bugbear:
 	# Loop control var not used, triggers on unpackings.
@@ -220,6 +221,5 @@ keep-runtime-typing = true
 extend-immutable-calls = [
 	"srctools.math.FrozenVec", "srctools.math.FrozenAngle", "srctools.math.FrozenMatrix",
 	"typing.cast", "srctools.logger.get_logger",
-	"srctools.choreo.CurveEdge",
-	"srctools.vmf.Vec4"
+	"srctools.choreo.CurveEdge", "srctools.dmx.Color", "srctools.vmf.Vec4",
 ]

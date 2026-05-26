@@ -1,7 +1,7 @@
 # Static analysis test requirements.
 types-Pillow>=10.2.0
 types-pyinstaller>=6.11.0
-mypy == 1.19.1
-pyright == 1.1.407
-ruff == 0.15.4
+mypy == 1.20.2
+pyright == 1.1.409
+ruff == 0.15.12
 exceptiongroup >= 1.2.0  # For 3.9/3.10 typing

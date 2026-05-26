@@ -5,7 +5,7 @@ from collections.abc import Collection, Iterable, Iterator
 
 import attrs
 
-from srctools import conv_float
+from srctools import conv_float, conv_int
 from srctools.fgd import EntityDef, Helper, HelperTypes, TagsSet
 from srctools.math import Vec, format_float
 
@@ -909,6 +909,36 @@ class HelperExtStrataFlatOBB(Helper):
 class HelperExtStrataHalfFlatOBB(HelperExtStrataFlatOBB):
     """A 2D oriented bounding box, specified by a half-width/height. Used to visualise portal entities."""
     TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.STRATA_HALF_FLAT_OBB
+
+
+@attrs.define
+class HelperExtStrataOrientedBBox(Helper):
+    """An oriented bounding box, with half-sizes in 3 dimensions."""
+    TYPE: ClassVar[Optional[HelperTypes]] = HelperTypes.STRATA_HALF_OBB
+
+    width: Union[str, int]
+    height: Union[str, int]
+    depth: Union[str, int]
+
+    @classmethod
+    def parse(cls, args: list[str], tags: TagsSet) -> Self:
+        arg_count = len(args)
+        width: Union[str, int] = 16
+        height: Union[str, int] = 16
+        depth: Union[str, int] = 16
+        if arg_count >= 1:
+            width = conv_int(args[0], args[0])
+        if arg_count >= 2:
+            height = conv_int(args[1], args[1])
+        if arg_count == 3:
+            depth = conv_int(args[2], args[2])
+        if arg_count > 3:
+            raise ValueError(f'Expected 0-3 arguments, got {args!r}!')
+        return cls(width, height, depth, tags=tags)
+
+    def export(self) -> list[str]:
+        """Produce the arguments for orientedboundingbox()."""
+        return [str(self.width), str(self.height), str(self.depth)]
 
 
 @attrs.define

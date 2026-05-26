@@ -65,6 +65,8 @@ def test_export(file_regression: FileRegressionFixture, version: StaticPropVersi
         lightmap_x=48,
         lightmap_y=32,
     )]
+    if version is StaticPropVersion.V_STRATA_V13:
+        bsp.props[0].color_var = 'paint_stick'
 
     data = bsp._lmp_write_props(bsp.props)
     file_regression.check(data, extension='.lmp', binary=True)

@@ -1,9 +1,9 @@
 """Implements a documenter for Enum classes."""
 from collections import defaultdict
-from collections.abc import Iterable
+from collections.abc import Iterable, Callable
 from inspect import Signature
 
-from typing import Any
+from typing import Any, ClassVar
 from dataclasses import dataclass
 import enum
 import functools
@@ -40,14 +40,14 @@ class EnumDocumenter(ClassDocumenter):
     objtype = 'srcenum'
     directivetype = ClassDocumenter.objtype
     priority = 10 + ClassDocumenter.priority
-    option_spec = {
+    option_spec: ClassVar[dict[str, Callable[[str], object]]] = {
         **ClassDocumenter.option_spec,
         # If value is blank (=None), treat as set
         'hex': lambda value: conv_bool(value, True),
     }
     del option_spec['show-inheritance']
 
-    def __init__(self, *args) -> None:
+    def __init__(self, *args: Any) -> None:
         """Force-enable show-inheritance, we want to show it's an enum."""
         super().__init__(*args)
         self.options = self.options.copy()
@@ -112,7 +112,7 @@ class EnumMemberDocumenter(AttributeDocumenter):
             self.object = NoReprString(hex(self.object))
         super().add_directive_header(sig)
 
-    def add_content(self, *args, **kwargs) -> None:
+    def add_content(self, *args: Any, **kwargs: Any) -> None:
         sourcename = self.get_sourcename()
         info = enum_aliases(self.parent)
         try:

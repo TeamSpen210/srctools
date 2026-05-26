@@ -73,6 +73,12 @@ Structure tools
 
 .. autofunction:: read_offset_array
 
+--------------
+
+.. autofunction:: strip_cstring
+
+.. autofunction:: pad_cstring
+
 
 ===============
 Array Insertion

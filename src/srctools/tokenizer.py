@@ -413,9 +413,8 @@ class BaseTokenizer(abc.ABC):
 
         if next_token is not token:
             raise self.error(
-                'Expected {}, but got {}!',
-                token,
-                next_token,
+                'Expected {}, but got {}({!r})!',
+                token, next_token, value,
             )
         return value
 

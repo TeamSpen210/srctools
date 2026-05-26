@@ -22,7 +22,7 @@ import attrs
 from srctools import AtomicWriter, StringPath, conv_int, logger
 from srctools.binformat import (
     DeferredWrites, compress_lzma, decompress_lzma, find_or_extend, find_or_insert,
-    read_array, struct_read, write_array,
+    read_array, struct_read, write_array, strip_cstring, pad_cstring,
 )
 from srctools.const import BSPContents as BrushContents, SurfFlags, add_unknown
 from srctools.filesys import FileSystem
@@ -62,6 +62,7 @@ VecT = TypeVar('VecT', bound=Union[Vec, FrozenVec])
 # Game lump IDs
 LMP_ID_STATIC_PROPS = b'sprp'
 LMP_ID_DETAIL_PROPS = b'dprp'
+LMP_ID_COLOR_VARS = b'clvr'
 
 LOGGER = logger.get_logger(__name__)
 
@@ -341,7 +342,7 @@ LUMP_WRITE_ORDER.append(BSP_LUMPS.PAKFILE)
 LUMP_REBUILD_ORDER: list[Union[bytes, BSP_LUMPS]] = [
     BSP_LUMPS.PAKFILE,
     BSP_LUMPS.CUBEMAPS,
-    LMP_ID_STATIC_PROPS,  # References visleafs.
+    LMP_ID_STATIC_PROPS,  # References visleafs, colorvars
     LMP_ID_DETAIL_PROPS,
 
     BSP_LUMPS.MODELS,  # Brushmodels reference their vis tree, faces, and the entity they're tied to.
@@ -362,10 +363,11 @@ LUMP_REBUILD_ORDER: list[Union[bytes, BSP_LUMPS]] = [
     BSP_LUMPS.VERTEXES,
     BSP_LUMPS.VISIBILITY,
 
-    BSP_LUMPS.OVERLAYS,  # Adds texinfo entries.
+    BSP_LUMPS.OVERLAYS,  # Adds texinfo entries, references colorvars
 
     BSP_LUMPS.TEXINFO,  # Adds texdata -> texdata_string_data entries.
     BSP_LUMPS.TEXDATA_STRING_DATA,
+    LMP_ID_COLOR_VARS,
 ]
 
 
@@ -480,6 +482,9 @@ class StaticPropFlags(Flag):
     NO_SHADOW_DEPTH = 0x100
     NO_LIGHTMAP = 0x100
     BOUNCED_LIGHTING = 0x0400  #: Bounce lighting off the prop.
+    #: Strata Source addition, uses a 'color var' for the tint.
+    #: This is automatically set/unset depending on the `StaticProp.color_var` attribute during export.
+    STRATA_COLORVAR_TINT = 0x800
 
     # Add _BIT_XX members, so any bit combo can be preserved.
     add_unknown(locals(), long=True)
@@ -946,6 +951,13 @@ class Cubemap:
 _ZERO: int = int('0')
 
 
+# Bitflag values for overlays. We reconstruct during export.
+# Whether basis V is flipped. Pre-Strata formats store this as (uv4.z == 1.0)
+_OVERLAY_FLAG_BASIS_V_FLIPPED = 1
+# Use a 'color var' for the tint.
+_OVERLAY_FLAG_COLORVAR_TINT = 2
+
+
 @attrs.define(eq=False, kw_only=True)
 class Overlay:
     """An overlay embedded in the map."""
@@ -953,7 +965,9 @@ class Overlay:
     origin: Vec
     normal: Vec
     basis_u: FrozenVec
-    basis_v_flipped: bool = False  # This is calculated from cross(normal, basis_u)
+    #: The basis V value is calculated from ``cross(normal, basis_u)``.
+    #: This indicates if it should then be inverted.
+    basis_v_flipped: bool = False
     texture: TexInfo
     faces: list[int] = attrs.field(factory=list, validator=attrs.validators.deep_iterable(
         attrs.validators.instance_of(int),
@@ -961,7 +975,11 @@ class Overlay:
     ))
     render_order: int = attrs.field(default=_ZERO, validator=attrs.validators.in_(range(4)))
     #: Strata Source addition, a tint for the overlay.
-    tint: Color = attrs.field(default=Color(255, 255, 255), kw_only=True)
+    tint: Color = Color(255, 255, 255)
+    #: Strata Source addition. If set, this overrides the tint with a game-specified value.
+    #: Mutually exclusive with the regular tint.
+    color_var: Optional[str] = None
+
     u_min: float = 0.0
     u_max: float = 1.0
     v_min: float = 0.0
@@ -1233,6 +1251,9 @@ class StaticProp:
     tint: Vec = attrs.field(factory=lambda: Vec(255, 255, 255))
     #: Also known as "Render FX", the alpha value used for the prop.
     renderfx: int = 255
+    #: Strata Source addition. If set, this overrides the tint with a game-specified value.
+    #: Mutually exclusive with the regular tint.
+    color_var: Optional[str] = attrs.field(kw_only=True, default=None)
     disable_on_xbox: bool = False
 
     lightmap_x: int = 32
@@ -1313,6 +1334,19 @@ def runlength_encode(data: Union[bytes, bytearray]) -> bytearray:
     return result
 
 
+def pack_colorvar(index: int) -> tuple[int, int, int]:
+    """Pack a colorvar index into the rendercolor tint."""
+    return (
+        index & 0xFF,
+        (index >> 8) & 0xFF,
+        (index >> 16) & 0xFF,
+    )
+
+def unpack_colorvar(red: int, green: int, blue: int) -> int:
+    """Unpack a colorvar index from rendercolor tint."""
+    return red | green << 8 | blue << 16
+
+
 class ParsedLump(Generic[T]):
     """Allows access to parsed versions of lumps.
 
@@ -1320,7 +1354,8 @@ class ParsedLump(Generic[T]):
     The lump is then cleared of data.
     When the BSP is saved, the lump data is then constructed.
 
-    If the lump name is bytes, it's a game lump identifier.
+    If the lump name is bytes, it's a game lump identifier. These are treated as optional, if the
+    parsed value is empty.
     """
     lump: Union[bytes, BSP_LUMPS]
     to_clear: Sequence[Union[bytes, BSP_LUMPS]]
@@ -1334,6 +1369,7 @@ class ParsedLump(Generic[T]):
         # Args are (BSP, version, data) if game lump, else (BSP, data).
         self._read: Optional[Callable[..., T]] = None
         self._check: Optional[Callable[[BSP, T], None]] = None
+        self._default: Optional[Callable[[BSP], T]] = None
         assert self.lump in LUMP_REBUILD_ORDER, self.lump
 
     def __set_name__(self, owner: type['BSP'], name: str) -> None:
@@ -1342,6 +1378,7 @@ class ParsedLump(Generic[T]):
         self.__objclass__ = owner
         self._read = getattr(owner, '_lmp_read_' + func_suffix)
         self._check = getattr(owner, '_lmp_check_' + func_suffix, None)
+        self._default = getattr(owner, '_lmp_init_' + func_suffix, None)
         # noinspection PyProtectedMember
         owner._save_funcs[self.lump] = getattr(owner, '_lmp_write_' + func_suffix)
 
@@ -1367,11 +1404,25 @@ class ParsedLump(Generic[T]):
         if self._read is None:
             raise TypeError('ParsedLump.__set_name__ was never called!')
         if isinstance(self.lump, BSP_LUMPS):
-            data = instance.lumps[self.lump].data
+            try:
+                data = instance.lumps[self.lump].data
+            except KeyError:
+                if self._default is not None:
+                    # noinspection PyProtectedMember
+                    instance._parsed_lumps[self.lump] = result = self._default(instance)
+                    return result
+                raise
             LOGGER.debug('Load game lump {} ({} bytes)', self.lump, len(data))
             result = self._read(instance, data)
         else:  # Game lump
-            gm_lump = instance.game_lumps[self.lump]
+            try:
+                gm_lump = instance.game_lumps[self.lump]
+            except KeyError:
+                if self._default is not None:
+                    # noinspection PyProtectedMember
+                    instance._parsed_lumps[self.lump] = result = self._default(instance)
+                    return result
+                raise
             LOGGER.debug('Load game lump {} v{} ({} bytes)', self.lump, gm_lump.version, len(gm_lump.data))
             result = self._read(instance, gm_lump.version, gm_lump.data)
         if inspect.isgenerator(result):  # Convenience, yield to accumulate into a list.
@@ -1382,7 +1433,10 @@ class ParsedLump(Generic[T]):
             if isinstance(lump, BSP_LUMPS):
                 instance.lumps[lump].data = b''
             else:
-                instance.game_lumps[lump].data = b''
+                try:
+                    instance.game_lumps[lump].data = b''
+                except KeyError:
+                    pass
         return result
 
     def __set__(self, instance: Optional['BSP'], value: T) -> None:
@@ -1396,7 +1450,10 @@ class ParsedLump(Generic[T]):
             if isinstance(lump, BSP_LUMPS):
                 instance.lumps[lump].data = b''
             else:
-                instance.game_lumps[lump].data = b''
+                try:
+                    instance.game_lumps[lump].data = b''
+                except KeyError:
+                    pass
         instance._parsed_lumps[self.lump] = value  # noqa
 
 
@@ -1489,6 +1546,8 @@ class BSP:
     # Game lumps
     props: ParsedLump[list['StaticProp']] = ParsedLump(LMP_ID_STATIC_PROPS)
     detail_props: ParsedLump[list['DetailProp']] = ParsedLump(LMP_ID_DETAIL_PROPS)
+    #: Strata Source specific, 'color variables' used in props and overlays.
+    color_vars: ParsedLump[list[str]] = ParsedLump(LMP_ID_COLOR_VARS)
 
     @property
     def is_vitamin(self) -> bool:
@@ -1660,23 +1719,35 @@ class BSP:
             try:
                 data = self._parsed_lumps.pop(lump_or_game)
             except KeyError:
-                pass
+                continue
+
+            lump_result = self._save_funcs[lump_or_game](self, data)
+            # Convenience, yield to accumulate into bytes.
+            if inspect.isgenerator(lump_result):
+                buf = BytesIO()
+                for chunk in lump_result:
+                    buf.write(chunk)
+                result = buf.getvalue()
+            elif isinstance(lump_result, bytes):
+                result = lump_result
             else:
-                lump_result = self._save_funcs[lump_or_game](self, data)
-                # Convenience, yield to accumulate into bytes.
-                if inspect.isgenerator(lump_result):
-                    buf = BytesIO()
-                    for chunk in lump_result:
-                        buf.write(chunk)
-                    result = buf.getvalue()
-                elif isinstance(lump_result, bytes):
-                    result = lump_result
-                else:
-                    raise ValueError(lump_result)
-                if isinstance(lump_or_game, BSP_LUMPS):
-                    self.lumps[lump_or_game].data = result
-                else:
-                    self.game_lumps[lump_or_game].data = result
+                raise ValueError(lump_result)
+            # All standard lumps must be present, but game lumps are optional.
+            # So if they're blank, it's fine if they're missing. It's not clear what version
+            # to use, so error if the lump is new.
+            if isinstance(lump_or_game, BSP_LUMPS):
+                self.lumps[lump_or_game].data = result
+                continue
+            try:
+                self.game_lumps[lump_or_game].data = result
+            except KeyError:
+                if data:
+                    # Could use save func generator return value to pass back the version?
+                    raise ValueError(
+                        f'Lump {lump_or_game} has data, but is not present in the BSP!'
+                    ) from None
+                # Else it's empty - fine if we just omit it.
+
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
         with AtomicWriter(filename or self.filename, is_bytes=True) as file:
@@ -2179,10 +2250,11 @@ class BSP:
                 dynamic_shadows = not (prim_num & 0x8000)
                 vitamin_flags = 0
 
-                # If orig faces is provided, that is the original face
+                # If orig faces is provided and non-empty, that is the original face
                 # we were created from. Additionally, it seems the original
                 # face data has invalid texinfo, so copy ours on top of it.
-                if orig_faces is not None:
+                # VBSP++ with -cullverts also strips the lump, so it'll be empty in that case.
+                if orig_faces:
                     orig_face = orig_faces[orig_face_ind]
                     orig_face.texinfo = texinfo = self.texinfo[texinfo_ind]
                     try:
@@ -2827,6 +2899,12 @@ class BSP:
         phys_buf.write(struct.pack('<iiii', -1, 0, 0, 0))
         self.lumps[BSP_LUMPS.PHYSCOLLIDE].data = phys_buf.getvalue()
 
+    def _lmp_init_pakfile(self) -> ZipFile:
+        """Create a new packfile."""
+        zipfile = ZipFile(BytesIO(), mode='a')
+        zipfile.filename = os.fspath(self.filename)
+        return zipfile
+
     def _lmp_read_pakfile(self, data: bytes) -> ZipFile:
         """Read the raw binary as writable zip archive."""
         zipfile = ZipFile(BytesIO(data), mode='a')
@@ -2868,13 +2946,41 @@ class BSP:
                 cube.size,
             )
 
+    def _lmp_read_color_vars(self, vers_num: int, data: bytes) -> Iterator[str]:
+        """Read the Strata Source color vars lump."""
+        if vers_num != 0:
+            raise ValueError(f'Unknown version number {vers_num}')
+        buf = BytesIO(data)
+        buf.seek(0)
+        [count] = struct_read('I', buf)
+        for _ in range(count):
+            yield strip_cstring(buf.read(64))
+
+    def _lmp_write_color_vars(self, color_vars: list[str]) -> Iterator[bytes]:
+        """Write the Strata Source color vars lump."""
+        yield struct.pack('I', len(color_vars))
+        for var in color_vars:
+            yield pad_cstring(var, 64)
+
+    def _lmp_init_color_vars(self) -> list[bytes]:
+        """Make a blank colorvar lump."""
+        return []
+
+    def _lmp_init_overlays(self) -> list[Overlay]:
+        """Make a blank overlay lump."""
+        return []
+
     def _lmp_read_overlays(self, data: bytes) -> Iterator[Overlay]:
         """Read the overlays lump."""
-        has_tint = (  # Strata Source addition, rendercolor tinting.
-            self.version == VERSIONS.STRATA_SOURCE and
-            self.lumps[BSP_LUMPS.OVERLAYS].version == 2
-        )
+        is_strata = self.version == VERSIONS.STRATA_SOURCE
+        version = self.lumps[BSP_LUMPS.OVERLAYS].version
+        if is_strata and version == 3:
+            # This is significantly different.
+            yield from self._lmp_read_overlays_strata_v3(data)
+            return
         max_faces = self.lump_layout["OVERLAY_FACE_COUNT"]
+        has_tint = is_strata and version == 2
+
         if has_tint:
             fmt_1 = ''  # Extra padding
             fmt_2 = '4B'  # Render colour
@@ -2956,14 +3062,20 @@ class BSP:
 
     def _lmp_write_overlays(self, overlays: list[Overlay]) -> Iterator[bytes]:
         """Write out all overlays."""
+
+        is_strata = self.version == VERSIONS.STRATA_SOURCE
+        version = self.lumps[BSP_LUMPS.OVERLAYS].version
+        if is_strata and version == 3:
+            # This is significantly different.
+            yield from self._lmp_write_overlays_strata_v3(overlays)
+            return
+        max_faces = self.lump_layout["OVERLAY_FACE_COUNT"]
+        has_tint = is_strata and version == 2
+
         add_texinfo = find_or_insert(self.texinfo)
         fade_buf = BytesIO()
         levels_buf = BytesIO()
-        max_faces = self.lump_layout["OVERLAY_FACE_COUNT"]
-        has_tint = (  # Strata Source addition, changes padding too.
-            self.version == VERSIONS.STRATA_SOURCE and
-            self.lumps[BSP_LUMPS.OVERLAYS].version == 2
-        )
+
         for over in overlays:
             face_cnt = len(over.faces)
             if face_cnt > max_faces:
@@ -2990,6 +3102,102 @@ class BSP:
             )
             if has_tint:
                 yield struct.pack('4B', *over.tint)
+        self.lumps[BSP_LUMPS.OVERLAY_FADES].data = fade_buf.getvalue()
+        self.lumps[BSP_LUMPS.OVERLAY_SYSTEM_LEVELS].data = levels_buf.getvalue()
+
+    def _lmp_read_overlays_strata_v3(self, data: bytes) -> Iterator[Overlay]:
+        """Read the Strata version of the overlay lump, which has been rearranged.
+
+        It's variable-size, depending on the number of faces.
+        """
+        buf = BytesIO(data)
+        buf.seek(0)
+        iter_fades = struct.iter_unpack('<ff', self.lumps[BSP_LUMPS.OVERLAY_FADES].data)
+        iter_levels = struct.iter_unpack('<4B', self.lumps[BSP_LUMPS.OVERLAY_SYSTEM_LEVELS].data)
+        [over_count, face_size] = struct_read('II', buf)
+        face_array: list[int] = list(struct_read(f'<{face_size}I', buf))
+        for _ in range(over_count):
+            (
+                over_id, texinfo, flags,
+                render_order, face_offset, face_count,
+                u_min, u_max, v_min, v_max,
+            ) = struct_read('<iIHHii4f', buf)
+            uv1 = FrozenVec(struct_read('2f', buf))
+            uv2 = FrozenVec(struct_read('2f', buf))
+            uv3 = FrozenVec(struct_read('2f', buf))
+            uv4 = FrozenVec(struct_read('2f', buf))
+            basis_u = FrozenVec(struct_read('3f', buf))
+            origin = Vec(struct_read('3f', buf))
+            normal = Vec(struct_read('3f', buf))
+            r, g, b, a = buf.read(4)
+            if _OVERLAY_FLAG_COLORVAR_TINT & flags:
+                tint = Color(255, 255, 255, a)
+                color_var = self.color_vars[unpack_colorvar(r, g, b)]
+            else:
+                tint = Color(r, g, b, a)
+                color_var = None
+
+            fade_min_sq, fade_max_sq = next(iter_fades, (-1.0, 0.0))
+            min_cpu, max_cpu, min_gpu, max_gpu = next(iter_levels, (0, 0, 0, 0))
+
+            yield Overlay(
+                id=over_id,
+                origin=origin,
+                normal=normal,
+                basis_u=basis_u,
+                basis_v_flipped=(flags & _OVERLAY_FLAG_BASIS_V_FLIPPED) != 0,
+                texture=self.texinfo[texinfo],
+                faces=face_array[face_offset:face_offset + face_count],
+                render_order=render_order,
+                u_min=u_min, u_max=u_max,
+                v_min=v_min, v_max=v_max,
+                uv1=uv1, uv2=uv2, uv3=uv3, uv4=uv4,
+                fade_min_sq=fade_min_sq, fade_max_sq=fade_max_sq,
+                min_cpu=min_cpu, max_cpu=max_cpu,
+                min_gpu=min_gpu, max_gpu=max_gpu,
+                tint=tint,
+                color_var=color_var,
+            )
+
+    def _lmp_write_overlays_strata_v3(self, overlays: list[Overlay]) -> Iterator[bytes]:
+        """Write out the Strata version of the overlay lump."""
+        faces_array: list[int] = []
+
+        add_texinfo = find_or_insert(self.texinfo)
+        add_colorvar = find_or_insert(self.color_vars, identity)
+        add_faces = find_or_extend(faces_array, identity)
+        fade_buf = BytesIO()
+        levels_buf = BytesIO()
+        over_buf = BytesIO()
+
+        for over in overlays:
+            fade_buf.write(struct.pack('<ff', over.fade_min_sq, over.fade_max_sq))
+            levels_buf.write(struct.pack('<4B', over.min_cpu, over.max_cpu, over.min_gpu, over.max_gpu))
+            flags = _OVERLAY_FLAG_BASIS_V_FLIPPED if over.basis_v_flipped else 0
+            if over.color_var:
+                flags |= _OVERLAY_FLAG_COLORVAR_TINT
+                r, g, b = pack_colorvar(add_colorvar(over.color_var))
+                a = over.tint.a
+            else:
+                r, g, b, a = over.tint
+
+            over_buf.write(struct.pack(
+                '<iIHHii4f8f9f4B',
+                over.id, add_texinfo(over.texture), flags,
+                over.render_order, add_faces(over.faces), len(over.faces),
+                over.u_min, over.u_max, over.v_min, over.v_max,
+                over.uv1.x, over.uv1.y,
+                over.uv2.x, over.uv2.y,
+                over.uv3.x, over.uv3.y,
+                over.uv4.x, over.uv4.y,
+                *over.basis_u, *over.origin, *over.normal,
+                r, g, b, a,
+            ))
+
+        yield struct.pack('<II', len(overlays), len(faces_array))
+        yield write_array('I', faces_array)
+        yield over_buf.getvalue()
+
         self.lumps[BSP_LUMPS.OVERLAY_FADES].data = fade_buf.getvalue()
         self.lumps[BSP_LUMPS.OVERLAY_SYSTEM_LEVELS].data = levels_buf.getvalue()
 
@@ -3187,6 +3395,10 @@ class BSP:
         """
         self.props = props
 
+    def _lmp_init_props(self) -> list[StaticProp]:
+        """Create a blank static prop lump."""
+        return []
+
     def _lmp_read_props(self, vers_num: int, data: bytes) -> Iterator['StaticProp']:
         # The version of the static prop format - different features.
         if vers_num > 13:
@@ -3305,12 +3517,9 @@ class BSP:
             # The 2013 SDK doesn't have rendercolour, but Mesa does.
             if vers_num >= 7 and not version.is_sdk_2013:
                 r, g, b, renderfx = struct_read('<BBBB', static_lump)
-                # Alpha isn't used.
-                tint = Vec(r, g, b)
             else:
                 # No tint.
-                tint = Vec(255, 255, 255)
-                renderfx = 255
+                r = g = b = renderfx = 255
 
             disable_on_xbox = False
             if vers_num >= 9 and not version.is_lightmap:
@@ -3324,9 +3533,14 @@ class BSP:
             flags = StaticPropFlags(flags)
 
             scaling = Vec(1.0, 1.0, 1.0)
+            color_var = None
             if version is StaticPropVersion.V_STRATA_V13:
                 # Three floats for non-uniform scaling
                 [scaling.x, scaling.y, scaling.z] = struct_read("<fff", static_lump)
+                # Additionally, color vars might be present.
+                if StaticPropFlags.STRATA_COLORVAR_TINT in flags:
+                    color_var = self.color_vars[unpack_colorvar(r, g, b)]
+                    r = g = b = 255  # Substitute a dummy color.
             elif vers_num >= 11:
                 # One float for uniform scaling
                 [scaling.x] = struct_read("<f", static_lump)
@@ -3355,10 +3569,11 @@ class BSP:
                 max_cpu_level,
                 min_gpu_level,
                 max_gpu_level,
-                tint,
+                Vec(r, g, b),
                 renderfx,
                 disable_on_xbox,
                 lightmap_x, lightmap_y,
+                color_var=color_var,
             )
 
     def _lmp_write_props(self, props: list['StaticProp']) -> bytes:
@@ -3381,6 +3596,13 @@ class BSP:
         vers_num = self.static_prop_version.version
         if version.is_lightmap:
             vers_num = 7
+
+        if version is StaticPropVersion.V_STRATA_V13:
+            add_colorvar = find_or_insert(self.color_vars, identity)
+        else:
+            def add_colorvar(var: str, /) -> int:
+                """Should not be used."""
+                raise NotImplementedError(var)
 
         # Now write out the sections.
         prop_lump = BytesIO()
@@ -3445,14 +3667,15 @@ class BSP:
                     prop.lightmap_x, prop.lightmap_y,
                 ))
 
+            if version is StaticPropVersion.V_STRATA_V13 and prop.color_var:
+                prop.flags |= StaticPropFlags.STRATA_COLORVAR_TINT
+                r, g, b = pack_colorvar(add_colorvar(prop.color_var))
+            else:
+                prop.flags &= ~StaticPropFlags.STRATA_COLORVAR_TINT
+                r, g, b = int(prop.tint.x), int(prop.tint.y), int(prop.tint.z)
+
             if vers_num >= 7 and not version.is_sdk_2013:
-                prop_lump.write(struct.pack(
-                    '<BBBB',
-                    int(prop.tint.x),
-                    int(prop.tint.y),
-                    int(prop.tint.z),
-                    prop.renderfx,
-                ))
+                prop_lump.write(struct.pack('<BBBB',r, g, b, prop.renderfx))
 
             if vers_num >= 9 and not version.is_lightmap:
                 # The 1-byte bool gets expanded to the full 4-byte size.
