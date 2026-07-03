@@ -1117,14 +1117,17 @@ class ColorVar:
             tags=tags,
         )
 
-    def export(self, file: FileWText, custom_syntax: bool = True, escape_quotes: bool = False) -> None:
+    def export(self, file: FileWText, custom_syntax: bool = True) -> None:
         """Write out a colorvar directive."""
         file.write(f'@colorvar {self.name}')
         if self.tags and custom_syntax:
             file.write(f'[{", ".join(sorted(self.tags))}]')
         file.write(f' = {self.red} {self.green} {self.blue}')
         if self.long_name:
-            file.write(f': "{_fgd_escape(escape_quotes, self.long_name)}"\n')
+            # This is a Strata extension, escapes are always allowed.
+            file.write(f': "{escape_text(self.long_name)}"\n')
+        else:
+            file.write('\n')
         else:
             file.write('\n')
 
@@ -2838,8 +2841,10 @@ class FGD:
         if self.map_size_min != self.map_size_max:
             file.write(f'@mapsize({self.map_size_min}, {self.map_size_max})\n\n')
 
-        for color_var in self.color_vars.values():
-            color_var.export(file, custom_syntax, escape_quotes)
+        if self.color_vars:
+            for color_var in self.color_vars.values():
+                color_var.export(file, custom_syntax)
+            file.write('\n')
 
         if self.mat_exclusions:
             file.write('@MaterialExclusion\n\t[\n')
