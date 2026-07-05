@@ -2093,29 +2093,33 @@ class BSP:
 
     def _lmp_read_surfedges(self, edge_inds: bytes) -> Iterator[Edge]:
         verts: list[Vec] = self.vertexes
-        edges = [
-            Edge(verts[a], verts[b])
-            for a, b in self.lump_layout['EDGE'].iter_unpack(self.lumps[BSP_LUMPS.EDGES].data)
-        ]
+
+        # The first edge is never actually used, since -0 = 0. Just completely skip over it -
+        # VBSP++ in particular will just set it to use invalid vert indices of 0xFFFF.
+        vert_iter = self.lump_layout['EDGE'].iter_unpack(self.lumps[BSP_LUMPS.EDGES].data)
+        next(vert_iter)
+        edges = [Edge(verts[a], verts[b]) for a, b in vert_iter]
+
         for [ind] in struct.iter_unpack('i', edge_inds):
-            if ind < 0:  # If negative, the vertexes are reversed order.
-                yield edges[-ind].opposite
+            # If negative, the vertexes are reversed order.
+            # Subtract 1 to account for the skipped first edge above.
+            if ind < 0:
+                yield edges[(-ind) - 1].opposite
+            elif ind > 0:
+                yield edges[ind - 1]
             else:
-                yield edges[ind]
+                raise ValueError('Edge index should not be zero!')
 
     def _lmp_write_surfedges(self, surf_edges: list[Edge]) -> bytes:
         """Reconstruct the surfedges and edges lumps."""
+        edge_layout = self.lump_layout['EDGE']
         edge_buf = BytesIO()
         surf_buf = BytesIO()
 
-        # The first edge is never actually used, since -0 = 0. Set it to be 0 0 0, adding that if
-        # not present.
-        try:
-            first_vert = self.vertexes[self.vertexes.index(Vec())]
-        except (IndexError, ValueError):
-            first_vert = Vec()
-            self.vertexes.append(first_vert)
-        edges: list[Edge] = [Edge(first_vert, first_vert)]
+        # The first edge is never actually used, since -0 = 0. We'll write it manually,
+        # leave it out of the list,  but adjust the indices as if it was here.
+        edges: list[Edge] = []
+        edge_buf.write(bytes(edge_layout.size))
 
         # We cannot share vertexes or edges, it breaks VRAD!
         add_edge = find_or_insert(edges)
@@ -2125,15 +2129,16 @@ class BSP:
             # Check to see if this edge is already defined.
             # positive indexes are in forward order, negative
             # allows us to refer to a reversed definition.
+            # Add 1 to account for the missing first edge above.
             if isinstance(edge, RevEdge):
-                ind = -add_edge(edge.opposite)
+                ind = -(add_edge(edge.opposite) + 1)
             else:
-                ind = add_edge(edge)
+                ind = add_edge(edge) + 1
             surf_buf.write(struct.pack('i', ind))
 
         for edge in edges:
             assert not isinstance(edge, RevEdge), edge
-            edge_buf.write(self.lump_layout['EDGE'].pack(add_vert(edge.a), add_vert(edge.b)))
+            edge_buf.write(edge_layout.pack(add_vert(edge.a), add_vert(edge.b)))
 
         self.lumps[BSP_LUMPS.EDGES].data = edge_buf.getvalue()
         return surf_buf.getvalue()

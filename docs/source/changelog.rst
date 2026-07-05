@@ -10,6 +10,7 @@ Version (dev)
 -------------
 
 * When exporting BSPs, treat game lumps are optional, omit if empty.
+* Ignore the first edge defined in BSPs, which should never be accessed.
 
 -------------
 Version 2.7.0
