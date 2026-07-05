@@ -172,7 +172,7 @@ class ImageFormats(Enum):
     @property
     def is_compressed(self) -> bool:
         """Checks if the format is compressed in 4x4 blocks."""
-        return self.name.startswith('DXT') or self.name in ('ATI1N', 'ATI2N')
+        return self in _FORMAT_COMPRESSED
 
     @property
     def is_transparent(self) -> bool:
@@ -238,6 +238,15 @@ _FORMAT_TRANSPARENT = {
     ImageFormats.DXT1_ONEBITALPHA, ImageFormats.DXT5,
 } - {ImageFormats.BGRX5551, ImageFormats.BGRX8888}
 
+# Formats which are compressed
+_FORMAT_COMPRESSED = (
+    ImageFormats.DXT1,
+    ImageFormats.DXT1_ONEBITALPHA,
+    ImageFormats.DXT3,
+    ImageFormats.DXT5,
+    ImageFormats.ATI1N,
+    ImageFormats.ATI2N
+)
 
 class VTFFlags(Flag):
     """The various image flags that may be set."""
@@ -881,6 +890,7 @@ class VTF:
         version: Optional[tuple[int, int]] = None,
         sheet_seq_version: int = 1,
         asw_or_later: bool = True,
+        compute_mipmap: bool = True,
         mip_filter: FilterMode = FilterMode.BILINEAR,
     ) -> None:
         """Write out the VTF file to this.
@@ -966,7 +976,8 @@ class VTF:
         deferred.set_data('header_size', file.tell())
 
         # Now for the main body.
-        self.compute_mipmaps(mip_filter)
+        if compute_mipmap:
+            self.compute_mipmaps(mip_filter)
         self._low_res.load()
 
         if res_list is not None:  # IE version >= 7.3
