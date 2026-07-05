@@ -1128,8 +1128,6 @@ class ColorVar:
             file.write(f': "{escape_text(self.long_name)}"\n')
         else:
             file.write('\n')
-        else:
-            file.write('\n')
 
 
 class EntAttribute:
