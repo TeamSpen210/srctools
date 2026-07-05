@@ -11,6 +11,8 @@ Version (dev)
 
 * When exporting BSPs, treat game lumps are optional, omit if empty.
 * Ignore the first edge defined in BSPs, which should never be accessed.
+* Automatically create folders for cache filenames provided to :meth:`<Packlist.load_soundscript_manifest()> srctools.packlist.Packlist.load_soundscript_manifest`,
+  `PackList.load_choreo_scenes() <srctools.packlist.PackList.load_choreo_scenes>` and `PackList.load_soundscape_manifest() <srctools.packlist.PackList.load_soundscape_manifest>`.
 
 -------------
 Version 2.7.0
