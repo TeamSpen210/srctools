@@ -1,4 +1,4 @@
-# cython: language_level=3, embedsignature=True, auto_pickle=False
+# cython: language_level=3, embedsignature=True, auto_pickle=False, freethreading_compatible=True
 # cython: binding=True
 """Cython version of the Tokenizer class."""
 from cpython.mem cimport PyMem_Free, PyMem_Malloc, PyMem_Realloc
@@ -108,9 +108,9 @@ cdef object FILE_BUFFER = 1024
 cdef class BaseTokenizer:
     """Provides an interface for processing text into tokens.
 
-     It then provides tools for using those to parse data.
-     This is an abstract class, a subclass must be used to provide a source
-     for the tokens.
+    It then provides tools for using those to parse data.
+    This is an abstract class, a subclass must be used to provide a source
+    for the tokens.
     """
     # Class to call when errors occur...
     cdef object error_type
@@ -133,30 +133,30 @@ cdef class BaseTokenizer:
                 # Call repr() then strip the b'', so we get the
                 # automatic escaping of unprintable characters.
                 fname = (<str>repr(fname))[2:-1]
-            self.filename = str(fname)
-        else:
-            self.filename = None
+            filename = str(fname)
 
         if error is None:
-            self.error_type = TokenSyntaxError
+            error = TokenSyntaxError
         else:
             if not issubclass(error, TokenSyntaxError):
                 raise TypeError(f'Invalid error instance "{type(error).__name__}"' '!')
-            self.error_type = error
 
-        self.pushback = []
-        self.line_num = 1
-        self.flags = {
-            'string_brackets': 0,
-            'string_parens': 1,
-            'allow_escapes': 0,
-            'colon_operator': 0,
-            'plus_operator': 0,
-            'allow_star_comments': 0,
-            'preserve_comments': 0,
-            'file_input': 0,
-            'last_was_cr': 0,
-        }
+        with cython.critical_section(self):
+            self.filename = filename
+            self.error_type = error
+            self.pushback = []
+            self.line_num = 1
+            self.flags = {
+                'string_brackets': 0,
+                'string_parens': 1,
+                'allow_escapes': 0,
+                'colon_operator': 0,
+                'plus_operator': 0,
+                'allow_star_comments': 0,
+                'preserve_comments': 0,
+                'file_input': 0,
+                'last_was_cr': 0,
+            }
 
     def __reduce__(self):
         """Disallow pickling Tokenizers.
@@ -168,6 +168,7 @@ cdef class BaseTokenizer:
         raise TypeError('Cannot pickle Tokenizers!')
 
     @property
+    @cython.critical_section
     def filename(self):
         """Retrieve the filename used in error messages."""
         return self.filename
@@ -176,7 +177,8 @@ cdef class BaseTokenizer:
     def filename(self, fname):
         """Change the filename used in error messages."""
         if fname is None:
-            self.filename = None
+            with cython.critical_section(self):
+                self.filename = None
         else:
             with cython.optimize.unpack_method_calls(False):
                 fname = os_fspath(fname)
@@ -185,9 +187,11 @@ cdef class BaseTokenizer:
                 # Call repr() then strip the b'', so we get the
                 # automatic escaping of unprintable characters.
                 fname = (<str> repr(fname))[2:-1]
-            self.filename = str(fname)
+            with cython.critical_section(self):
+                self.filename = str(fname)
 
     @property
+    @cython.critical_section
     def error_type(self):
         """Return the TokenSyntaxError subclass raised when errors occur."""
         return self.error_type
@@ -197,7 +201,8 @@ cdef class BaseTokenizer:
         """Alter the TokenSyntaxError subclass raised when errors occur."""
         if not issubclass(value, TokenSyntaxError):
             raise TypeError(f'The error type must be a TokenSyntaxError subclass, not {type(value).__name__}!.')
-        self.error_type = value
+        with cython.critical_section(self):
+            self.error_type = value
 
     def error(self, message, *args):
         """Raise a syntax error exception.
@@ -264,11 +269,11 @@ cdef class BaseTokenizer:
     @cython.optimize.unpack_method_calls(False)
     cdef inline _error(self, message: str):
         """C-private self.error()."""
-        return self.error_type(
-            message,
-            self.filename,
-            self.line_num,
-        )
+        with cython.critical_section(self):
+            filename = self.filename
+            line_num = self.line_num
+            error_type = self.error_type
+        return error_type(message, filename, line_num)
 
     def __call__(self):
         """Return the next token, value pair."""
@@ -279,8 +284,9 @@ cdef class BaseTokenizer:
         
         This also implements pushback.
         """
-        if self.pushback:
-            return self.pushback.pop()
+        with cython.critical_section(self):
+            if self.pushback:
+                return self.pushback.pop()
 
         return self._get_token()
 
@@ -342,7 +348,8 @@ cdef class BaseTokenizer:
         else:
             raise ValueError(f'Unknown token {tok!r}')
 
-        self.pushback.append((tok, value))
+        with cython.critical_section(self):
+            self.pushback.append((tok, value))
 
     def peek(self, bint consume_newlines: bool = False):
         """Peek at the next token, without removing it from the stream.
@@ -359,10 +366,12 @@ cdef class BaseTokenizer:
                 tokens.append(tok_and_val)
                 if tok_and_val[0] is not NEWLINE:
                     tokens.reverse()
-                    self.pushback.extend(tokens)
+                    with cython.critical_section(self):
+                        self.pushback.extend(tokens)
                     return tok_and_val
         else:
-            self.pushback.append(tok_and_val)
+            with cython.critical_section(self):
+                self.pushback.append(tok_and_val)
             return tok_and_val
 
     def skipping_newlines(self):
@@ -422,15 +431,18 @@ cdef class Tokenizer(BaseTokenizer):
     # The in-progress string we're constructing, or NULL when we finished.
     cdef PyUnicodeWriter* writer
 
+    @cython.critical_section
     def __cinit__(self):
         self.writer = NULL
 
+    @cython.critical_section
     def __dealloc__(self):
         if self.writer != NULL:
             # The compat version needs the null check.
             PyUnicodeWriter_Discard(self.writer)
             self.writer = NULL
 
+    @cython.critical_section
     def __init__(
         self,
         data not None,
@@ -510,6 +522,7 @@ cdef class Tokenizer(BaseTokenizer):
             self.char_index -= 1
 
     @property
+    @cython.critical_section
     def periodic_callback(self):
         """If set, is called periodically when parsing lines. Useful to abort parsing operations."""
         return self._periodic_callback
@@ -517,7 +530,8 @@ cdef class Tokenizer(BaseTokenizer):
     @periodic_callback.setter
     def periodic_callback(self, callback):
         if callback is None or callable(callback):
-            self._periodic_callback = callback
+            with cython.critical_section(self):
+                self._periodic_callback = callback
         raise TypeError(f"periodic_callback must be a callable or None, got {callback!r}")
 
     @property
@@ -541,51 +555,62 @@ cdef class Tokenizer(BaseTokenizer):
         return self.flags.string_parens
 
     @string_parens.setter
+    @cython.critical_section
     def string_parens(self, bint value) -> None:
         self.flags.string_parens = value
 
     @property
+    @cython.critical_section
     def allow_escapes(self) -> bool:
         """Controls whether backslash escapes will be parsed."""
         return self.flags.allow_escapes
 
     @allow_escapes.setter
+    @cython.critical_section
     def allow_escapes(self, bint value) -> None:
         self.flags.allow_escapes = value
 
     @property
+    @cython.critical_section
     def allow_star_comments(self) -> bool:
         """Controls whether /**/ style comments will be enabled."""
         return self.flags.allow_star_comments
 
     @allow_star_comments.setter
+    @cython.critical_section
     def allow_star_comments(self, bint value) -> None:
         self.flags.allow_star_comments = value
 
     @property
+    @cython.critical_section
     def preserve_comments(self) -> bool:
         """Controls whether comments will be output as tokens."""
         return self.flags.preserve_comments
 
     @preserve_comments.setter
+    @cython.critical_section
     def preserve_comments(self, bint value) -> None:
         self.flags.preserve_comments = value
 
     @property
+    @cython.critical_section
     def colon_operator(self) -> bool:
         """Controls whether : characters are treated as a COLON token, or part of strings."""
         return self.flags.colon_operator
 
     @colon_operator.setter
+    @cython.critical_section
     def colon_operator(self, bint value) -> None:
         self.flags.colon_operator = value
 
     @property
+    @cython.critical_section
     def plus_operator(self) -> bool:
         """Controls whether + characters are treated as a PLUS token, or part of strings."""
         return self.flags.plus_operator
 
     @plus_operator.setter
+    @cython.critical_section
     def plus_operator(self, bint value) -> None:
         self.flags.plus_operator = value
 
@@ -608,6 +633,7 @@ cdef class Tokenizer(BaseTokenizer):
     # We check all the getitem[] accesses, so don't have Cython recheck.
     @cython.boundscheck(False)
     @cython.wraparound(False)
+    @cython.critical_section
     cdef (Py_UCS4, bint) _next_char(self):
         """Return the next character, and a flag to indicate if more characters are present."""
         cdef str chunk
@@ -674,6 +700,7 @@ cdef class Tokenizer(BaseTokenizer):
         if self._periodic_callback is not None and self.line_num % 10 == 0:
             self._periodic_callback()
 
+    @cython.critical_section
     cdef next_token(self):
         """Return the next token, value pair - this is the C version."""
         cdef:
@@ -987,10 +1014,12 @@ cdef class IterTokenizer(BaseTokenizer):
     code.
     """
     cdef public object source
+    @cython.critical_section
     def __init__(self, source, filename='', error=None) -> None:
         BaseTokenizer.__init__(self, filename, error)
         self.source = iter(source)
 
+    @cython.critical_section
     def __repr__(self):
         if self.error_type is TokenSyntaxError:
             return f'{self.__class__.__name__}({self.source!r}, {self.filename!r})'
@@ -1001,6 +1030,7 @@ cdef class IterTokenizer(BaseTokenizer):
         """Compute the next token."""
         return self.next_token()
 
+    @cython.critical_section
     cdef next_token(self):
         """Implement pushback directly for efficiency."""
         if self.pushback:
@@ -1032,6 +1062,7 @@ cdef class _NewlinesIter:
     def __iter__(self):
         return self
 
+    @cython.critical_section
     def __next__(self):
         while True:
             tok_and_val = self.tok.next_token()
@@ -1072,6 +1103,7 @@ cdef class BlockIter:
     def __iter__(self):
         return self
 
+    @cython.critical_section
     def __next__(self):
         if self.expect_brace:
             self.expect_brace = False

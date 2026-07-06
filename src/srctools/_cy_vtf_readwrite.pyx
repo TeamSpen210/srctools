@@ -1,5 +1,11 @@
-# cython: language_level=3, boundscheck=False, wraparound=False
-"""Functions for reading/writing VTF data."""
+# cython: language_level=3, boundscheck=False, wraparound=False, freethreading_compatible=True
+"""Functions for reading/writing VTF data.
+
+This is an implementation detail of the VTF module - access functionality through there.
+"""
+# We don't need to lock anything - memoryviews already ensure their object cannot resize.
+# All that could happen is pixel data being corrupted - any locking should happen with the VTF
+# object.
 from cython.parallel cimport parallel, prange
 from libc.stdint cimport uint8_t as byte, uint_fast8_t as fastbyte, uint_fast16_t
 from libc.string cimport memcpy, memset, strcmp
