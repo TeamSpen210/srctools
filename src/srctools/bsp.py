@@ -462,7 +462,10 @@ _STATIC_PROP_VERSIONS: Mapping[tuple[int, int], StaticPropVersion] = {
 class StaticPropFlags(Flag):
     """Bitflags specified for static props.
 
-    These are actually split over two flag fields, but are merged here for simplicity.
+    The flags can appear in three locations, this enum merges all into a single one to simplify.
+    Originally, flags were a single byte. Once that was used up, TF2 moved it to an integer.
+    But for Portal 2 and later or Black Mesa, the original byte is used along with an additional
+    integer.
     """
     NONE = 0
 
@@ -476,15 +479,18 @@ class StaticPropFlags(Flag):
     NO_PER_VERTEX_LIGHTING = 0x40
     NO_SELF_SHADOWING = 0x80
 
+    #: This is TF2-exclusive. Determines if lightmaps are allowed for this prop.
+    NO_PER_TEXEL_LIGHTING = 0x100
+
     # These are set in the secondary flags section.
     #: Disable affecting projected texture lighting.
     #: In games supporting lightmapped props (TF2), this instead disables per-luxel lighting.
-    NO_SHADOW_DEPTH = 0x100
-    NO_LIGHTMAP = 0x100
-    BOUNCED_LIGHTING = 0x0400  #: Bounce lighting off the prop.
+    NO_SHADOW_DEPTH = 0x1 << 32
+    NO_LIGHTMAP = 0x1 << 32
+    BOUNCED_LIGHTING = 0x04 << 32  #: Bounce lighting off the prop.
     #: Strata Source addition, uses a 'color var' for the tint.
     #: This is automatically set/unset depending on the `StaticProp.color_var` attribute during export.
-    STRATA_COLORVAR_TINT = 0x800
+    STRATA_COLORVAR_TINT = 0x08 << 32
 
     # Add _BIT_XX members, so any bit combo can be preserved.
     add_unknown(locals(), long=True)
@@ -495,9 +501,14 @@ class StaticPropFlags(Flag):
         return self.value & 0xFF
 
     @property
+    def value_tf2(self) -> int:
+        """Return the data for TF2's flag integer."""
+        return self.value & 0xFFFFFFFF
+
+    @property
     def value_sec(self) -> int:
-        """Return the data for the secondary flag byte."""
-        return self.value >> 8
+        """Return the data for the secondary flag integer."""
+        return self.value >> 32
 
 
 class VisLeafFlags(Flag):
@@ -3513,7 +3524,7 @@ class BSP:
                 min_gpu_level = max_gpu_level = 0
 
             if version.is_lightmap:
-                # Regular flags byte above is totally ignored!
+                # Flags were moved here, the 'normal' byte is ignored padding.
                 [flags, lightmap_x, lightmap_y] = struct_read('<IHH', static_lump)
             else:
                 # FGD default.
@@ -3533,7 +3544,7 @@ class BSP:
 
             if vers_num >= 10 or version is StaticPropVersion.V_LIGHTMAP_MESA:
                 # Extra flags, post-CSGO, also in Black Mesa.
-                flags |= struct_read('<I', static_lump)[0] << 8
+                flags |= struct_read('<I', static_lump)[0] << 32
 
             flags = StaticPropFlags(flags)
 
@@ -3668,7 +3679,7 @@ class BSP:
             if version.is_lightmap:
                 prop_lump.write(struct.pack(
                     '<IHH',
-                    prop.flags.value,
+                    prop.flags.value_tf2,
                     prop.lightmap_x, prop.lightmap_y,
                 ))
 

@@ -13,6 +13,7 @@ Version (dev)
 * Ignore the first edge defined in BSPs, which should never be accessed.
 * Automatically create folders for cache filenames provided to :meth:`<Packlist.load_soundscript_manifest()> srctools.packlist.Packlist.load_soundscript_manifest`,
   `PackList.load_choreo_scenes() <srctools.packlist.PackList.load_choreo_scenes>` and `PackList.load_soundscape_manifest() <srctools.packlist.PackList.load_soundscape_manifest>`.
+* Fix parsing of BSP static prop flags in TF2.
 
 -------------
 Version 2.7.0
