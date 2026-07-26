@@ -284,7 +284,7 @@ class Material(MutableMapping[str, str]):
 
     def export(self, f: FileWText) -> None:
         """Write the material back to a file."""
-        f.write(self.shader + '\n\t{\n')
+        f.write(self.shader + '\n{\n')
         for param in self._params.values():
             name = param.name
             value = param.value
@@ -296,11 +296,11 @@ class Material(MutableMapping[str, str]):
         for block in self.blocks:
             block.serialise(f, start_indent='\t')
         if self.proxies:
-            f.write('\n\tProxies\n\t\t{\n')
+            f.write('\n\tProxies\n\t{\n')
             for block in self.proxies:
                 block.serialise(f, start_indent='\t\t')
-            f.write('\t\t}\n')
-        f.write('\t}\n')
+            f.write('\t}\n')
+        f.write('}\n')
 
     def apply_patches(
         self,
