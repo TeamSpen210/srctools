@@ -11,7 +11,7 @@ Version (dev)
 
 * When exporting BSPs, treat game lumps are optional, omit if empty.
 * Ignore the first edge defined in BSPs, which should never be accessed.
-* Automatically create folders for cache filenames provided to :meth:`<Packlist.load_soundscript_manifest()> srctools.packlist.Packlist.load_soundscript_manifest`,
+* Automatically create folders for cache filenames provided to :meth:`Packlist.load_soundscript_manifest() <srctools.packlist.PackList.load_soundscript_manifest>`,
   `PackList.load_choreo_scenes() <srctools.packlist.PackList.load_choreo_scenes>` and `PackList.load_soundscape_manifest() <srctools.packlist.PackList.load_soundscape_manifest>`.
 * Fix parsing of BSP static prop flags in TF2.
 * Fix writing Strata's 'colorvars' system.
@@ -33,9 +33,9 @@ Version 2.7.0
 * Add support for parsing Strata's 'colorvars' system.
 * Add support for parsing Strata's v2 and v3 tintable overlays BSP format.
 * Rearrange `srctools.bsp.Overlay` attributes, parse basis U/V out of the 4 handle positions.
-* :src-issue:`43`: Fix incorrect export of displacement `triangle_tag` values.
+* :src-issue:`43`: Fix incorrect export of displacement `triangle_tag <srctools.vmf.DispVertex.triangle_a>` values.
 * :src-issue:`44`: Fix :meth:`VTF.read() <srctools.vtf.VTF.read>` not initalising `~srctools.vtf.VTF.hotspot_info` and `~srctools.vtf.VTF.hotspot_flags`.
-* Account for VBSP++'s :option:`--cullverts` parameter, which discards the original faces lump.
+* Account for VBSP++'s :option:`!--cullverts` parameter, which discards the original faces lump.
 
 -------------
 Version 2.6.2
