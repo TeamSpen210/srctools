@@ -14,6 +14,8 @@ Version (dev)
 * Automatically create folders for cache filenames provided to :meth:`<Packlist.load_soundscript_manifest()> srctools.packlist.Packlist.load_soundscript_manifest`,
   `PackList.load_choreo_scenes() <srctools.packlist.PackList.load_choreo_scenes>` and `PackList.load_soundscape_manifest() <srctools.packlist.PackList.load_soundscape_manifest>`.
 * Fix parsing of BSP static prop flags in TF2.
+* Fix writing Strata's 'colorvars' system.
+* :src-issue:`50`: Support outputs with wildcards in :meth:`VMF.iter_inputs() <srctools.vmf.VMF.iter_inputs>`.
 
 -------------
 Version 2.7.0
