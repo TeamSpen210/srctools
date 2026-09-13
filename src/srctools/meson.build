@@ -56,6 +56,7 @@ if get_option('build_extensions')
             '_math_matrix.cpp',
         ),
         override_options: ['cython_language=cpp'],
+        c_args: ['-DCYTHON_USE_TYPE_SPECS=1'], # Required for PyPy
         link_with: [lib_quickhull],
         include_directories: [inc_quickhull, inc_pycapi_compat],
 
@@ -70,6 +71,7 @@ if get_option('build_extensions')
             '_tokenizer.pyx',
         ),
         include_directories: inc_pycapi_compat,
+        c_args: ['-DCYTHON_USE_TYPE_SPECS=1'],
 
         dependencies: dep_py,
         install: true,
@@ -82,6 +84,7 @@ if get_option('build_extensions')
             '_cy_vtf_readwrite.pyx',
         ),
         override_options: ['cython_language=cpp'],
+        c_args: ['-DCYTHON_USE_TYPE_SPECS=1'],
         link_with: [lib_squish],
         include_directories: [inc_libsquish, inc_pycapi_compat],
 
