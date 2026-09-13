@@ -1753,9 +1753,9 @@ class BSP:
                 self.game_lumps[lump_or_game].data = result
             except KeyError:
                 if data:
-                    # Could use save func generator return value to pass back the version?
+                    # Could use save func's generator return value to pass back the version?
                     raise ValueError(
-                        f'Lump {lump_or_game} has data, but is not present in the BSP!'
+                        f'Lump {lump_or_game!r} has data, but is not present in the BSP!'
                     ) from None
                 # Else it's empty - fine if we just omit it.
 
