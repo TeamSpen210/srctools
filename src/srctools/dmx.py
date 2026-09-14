@@ -1800,6 +1800,7 @@ class Element(Mapping[str, Attribute]):
                             file.write(pack('<i', -1))
                         elif subelem.is_stub:
                             file.write(pack('<i', -2))
+                            file.write(str(subelem.uuid).encode('ascii') + b'\0')
                         else:
                             file.write(pack('<i', elem_to_ind[subelem.uuid]))
                 else:
