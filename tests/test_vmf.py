@@ -485,6 +485,27 @@ def test_output_parse() -> None:
     )
 
 
+def test_iter_input() -> None:
+    """Test VMF.iter_inputs()"""
+    vmf = VMF()
+    out1 = Output('OnBlah', 'entityA', 'Ignite')
+    out2 = Output('OnKilled', 'happyB', 'Wake')
+    out3 = Output('OnTrigger', 'longNameWith*', 'ClearParent')
+    out4 = Output('OnTrigger', 'entityB', 'Kill')
+
+    ent1 = vmf.create_ent('info_target')
+    ent1.outputs = [out1, out2]
+    ent2 = vmf.create_ent('info_target')
+    ent2.outputs = [out3, out4]
+
+    assert set(vmf.iter_inputs('')) == set()
+    assert set(vmf.iter_inputs('entityB')) == {out4}
+    assert set(vmf.iter_inputs('ENti*')) == {out1, out4}
+    assert set(vmf.iter_inputs('*Yb')) == {out2, out4}
+    assert set(vmf.iter_inputs('*y*')) == {out1, out2, out4}
+    assert set(vmf.iter_inputs('longNameWithWild')) == {out3}
+
+
 def test_blank_vmf(file_regression: FileRegressionFixture) -> None:
     """Test parsing a blank file produces a default VMF."""
     vmf = VMF.parse(Keyvalues.root())

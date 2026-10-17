@@ -1,4 +1,7 @@
-"""Functions for reading/writing VTF data."""
+"""Functions for reading/writing VTF data.
+
+This is an implementation detail of the VTF module - access functionality through there.
+"""
 # We don't implement DXT saving, since that's highly complicated (and would be very slow).
 # Wherever possible, use memoryview slicing to copy channels all in one go. This is much faster
 # than a loop.

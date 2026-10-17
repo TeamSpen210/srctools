@@ -1035,15 +1035,20 @@ class VMF:
     def iter_inputs(self, name: str) -> Iterator['Output']:
         """Loop through all :class:`Outputs <srctools.vmf.Output>` which target the named entity.
 
-        ``*`` can be used at the beginning or end of the name for a wildcard search.
+        * An empty name always yields no entities.
+        * ``*`` can be used at the beginning or end of the ``name`` for a wildcard search.
+        * If ``name`` has no wildcards, then wildcards in the outputs will also match.
         """
+        if not name:
+            return
+
         name = name.casefold()
-        wild_start = name[:1] == '*'
-        wild_end = name[-1:] == '*'
+        wild_start = name.startswith('*')
+        wild_end = name.endswith('*')
         if wild_start:
-            name = name[1:]
+            name = name.removeprefix('*')
         if wild_end:
-            name = name[:-1]
+            name = name.removesuffix('*')
         for ent in self.entities:
             for out in ent.outputs:
                 targ = out.target.casefold()
@@ -1061,11 +1066,13 @@ class VMF:
                     else:
                         if targ == name:  # target
                             yield out
+                        elif targ.endswith('*') and name.startswith(targ[:-1]): # target and output*
+                            yield out
 
     def search(self, name: str) -> Iterator['Entity']:
         """Yield all entities that fit this search string.
 
-        This can be the exact targetname, end-* matching,
+        This can be the exact targetname, ``end-*`` wildcard matching,
         or the exact classname.
 
         Entities added or renamed after iteration begins will not be detected.
@@ -1767,8 +1774,8 @@ class DispVertex:
     offset: Vec = attrs.field(factory=Vec, validator=attrs.validators.instance_of(Vec))
     offset_norm: Vec = attrs.field(factory=Vec, validator=attrs.validators.instance_of(Vec))
     alpha: float = 0.0
-    # The pair of triangle tags for the quad in the +ve direction
-    # from us. This means the last row/column's triangles are ignored.
+    #: The pair of triangle tags for the quad in the +ve direction
+    #: from us. This means the last row/column's triangles are ignored.
     triangle_a: TriangleTag = TriangleTag.FLAT
     triangle_b: TriangleTag = TriangleTag.FLAT
 
@@ -2727,7 +2734,7 @@ class Entity(MutableMapping[str, str]):
         editor_color = Vec()
         for item in tree_list:
             name = item.name
-            assert name is not None, repr(item)  # TODO Remove when root props change.
+            assert name is not None, repr(item)  # type: ignore[comparison-overlap]  # TODO Remove when root props change.
             if item.has_children():
                 if name == "solid":
                     solids.append(Solid.parse(vmf_file, item))

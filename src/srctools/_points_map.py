@@ -83,10 +83,11 @@ class PointsMap(MutableMapping[AnyVec, ValueT], Generic[ValueT]):
             self[key] = value
 
     def __repr__(self) -> str:
-        if self._dist_sq != (1e-6 ** 2):
-            return f'PointsMap({list(self.items())!r}, epsilon={math.sqrt(self._dist_sq)})'
-        else:
+        dist = math.sqrt(self._dist_sq)
+        if math.isclose(dist, 1e-6):
             return f'PointsMap({list(self.items())!r})'
+        else:
+            return f'PointsMap({list(self.items())!r}, epsilon={dist})'
 
     def get_all(self, item: AnyVec, /) -> Iterator[ValueT]:
         """Iterate over all items matching this position."""

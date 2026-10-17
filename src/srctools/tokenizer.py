@@ -14,10 +14,15 @@ token/value pair. Lookahead is supported, accessed by the
 the current line number as data is read, letting you :pycode:`raise BaseTokenizer.error(...)` to easily
 produce an exception listing the relevant line number and filename.
 
-Character escapes matches :sdk-2013:`utlbuffer.cpp <tier1/utlbuffer.cpp#L57-L69>` in the SDK.
+Character escapes match :sdk-2013:`utlbuffer.cpp <tier1/utlbuffer.cpp#L57-L69>` in the SDK.
 Specifically, the following characters are escaped:
 ``\\\\n``, ``\\\\t``, ``\\\\v``, ``\\\\b``, ``\\\\r``, ``\\\\f``, ``\\\\a``, ``\\``, ``?``, ``'`` and ``"``.
 ``/`` and ``?`` are accepted as escapes, but not produced since they're unambiguous.
+
+.. caution::
+    The tokenizer is not threadsafe - the intended use is in a single thread, likely as a local
+    variable in a parsing function, then to be discarded once complete.
+
 """
 from typing import TYPE_CHECKING, Final, NoReturn, Optional, Union
 from typing_extensions import Self, TypeAlias, overload

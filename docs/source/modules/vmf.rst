@@ -35,7 +35,7 @@ VMFs store string values in several locations, which are commonly treated as oth
 parsed as necessary. To make this easier to deal with, several data types are automatically converted
 when passed to relevant functions.
 
-.. py:type:: ValidKVs
+.. py:class:: ValidKVs
 
     Parameters with this type automatically convert values to a string.
 
@@ -292,7 +292,7 @@ and stored under a `fixup <Entity.fixup>` attribute.
     .. automethod:: bool
     .. automethod:: vec
 
-.. py:type:: FixupValue
+.. py:class:: FixupValue
 
     Opaque value storing a key/value pair plus the index.
     Can be passed to fixups to attempt to preserve the index.
@@ -305,7 +305,7 @@ Several features are provided to help locate entities in a similar way to the ga
 .. attribute:: VMF.by_class
     :type: MutableMapping[str, AbstractSet[str]]
 
-.. attribute:: VMF.target
+.. attribute:: VMF.by_target
     :type: MutableMapping[str, AbstractSet[str]]
 
 .. automethod:: VMF.search

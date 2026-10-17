@@ -256,18 +256,20 @@ class ManifestedFiles(Generic[ParsedT]):
 
     def load_cache(self, filename: Union[str, 'os.PathLike[str]']) -> None:
         """Load the cache data. If the file is invalid, this does nothing."""
+        path = Path(filename)
+        path.parent.mkdir(parents=True, exist_ok=True)
         try:
-            with open(filename, 'rb') as f:
+            with open(path, 'rb') as f:
                 root, file_type, file_version = Element.parse(f)
         except FileNotFoundError:
             return
         except (OSError, ValueError):
-            LOGGER.warning('Could not parse cache file "{}"!', filename)
+            LOGGER.warning('Could not parse cache file "{}"!', path)
             return
         if file_type != 'SrcPacklistCache' or file_version != 1:
             LOGGER.warning(
                 'Unknown cache file "{}" with type {} v{}!',
-                filename, file_type, file_version,
+                path, file_type, file_version,
             )
             return
         for file_elem in root['files'].iter_elem():
@@ -1594,6 +1596,9 @@ class PackList:
                 try:
                     with self.fsys[file.filename].open_str('utf8') as f:
                         scene = choreo_scenes.Scene.parse_text(Tokenizer(f))
+                except FileNotFoundError:
+                    LOGGER.warning('Choreo scene "{}" does not exist!', file.filename)
+                    return
                 except (TokenSyntaxError, UnicodeDecodeError) as exc:
                     LOGGER.warning(
                         'Choreo scene "{}" cannot be parsed:\n{}',
