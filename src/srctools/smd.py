@@ -590,7 +590,7 @@ class Mesh:
                         )
                     )
                     if len(vert.links) > 1:
-                        file.write(b'%i' % (len(vert.links), ))
+                        file.write(b' %i' % (len(vert.links), ))
                         for bone, weight in vert.links:
                             file.write(b' %i %.6f' % (bone_indexes[bone], weight))
                     file.write(b'\n')
