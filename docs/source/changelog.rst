@@ -9,6 +9,7 @@ Changelog
 Version (dev)
 -------------
 
+* :class:`~srctools.fsys.RawFileSystem` is now case-insensitive even if the OS is case-sensitive.
 * When exporting BSPs, treat game lumps are optional, omit if empty.
 * Ignore the first edge defined in BSPs, which should never be accessed.
 * Automatically create folders for cache filenames provided to :meth:`Packlist.load_soundscript_manifest() <srctools.packlist.PackList.load_soundscript_manifest>`,

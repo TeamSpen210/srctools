@@ -13,7 +13,7 @@ supported.
 * :py:class:`File` represents a file found inside any of the filesystems. It is not publically
   constructible.
 * :py:class:`RawFileSystem` provides access to a directory, optionally prohibiting access to parent
-  folders.
+  folders. This case-insensitive even if the OS is case-sensitive.
 * :py:class:`ZipFileSystem` and :py:class:`VPKFileSystem` provide access to their respective
   archives.
 * :py:class:`VirtualFileSystem` redirects to a mapping object, for fake file contents already
@@ -28,6 +28,7 @@ from typing import Any, BinaryIO, Final, Generic, Optional, TextIO, Union, cast
 from typing_extensions import Self, TypeVar, deprecated
 from collections.abc import Iterator, Mapping, Callable
 from zipfile import ZipFile, ZipInfo
+from pathlib import Path
 import io
 import os
 
@@ -52,6 +53,9 @@ CACHE_KEY_INVALID: Final = -1
 # This is the type of File._data. It should only be used by subclasses.
 # TODO: File[Self] doesn't work with this in Pyright.
 _FileDataT = TypeVar('_FileDataT', default=Any)
+
+# Whether the current OS is case-sensitive.
+IS_CASE_SENSITIVE: Final = os.path.normcase('Aa') == 'Aa'
 
 
 def get_filesystem(path: str) -> 'FileSystem[Any]':
@@ -527,6 +531,8 @@ class RawFileSystem(FileSystem[str]):
     def __init__(self, path: StringPath, constrain_path: bool = True) -> None:
         super().__init__(os.path.abspath(path))
         self.constrain_path = constrain_path
+        # Cache all resolved paths.
+        self._resolved: dict[Path, Path] = {}
 
     def __repr__(self) -> str:
         return (
@@ -539,7 +545,43 @@ class RawFileSystem(FileSystem[str]):
         abs_path = os.path.abspath(os.path.join(self.path, path))
         if self.constrain_path and not abs_path.startswith(self.path):
             raise RootEscapeError(self.path, path)
-        return abs_path
+        if not IS_CASE_SENSITIVE or os.path.exists(abs_path):
+            # If case-insensitive, this is always the correct path.
+            # Alternatively we're lucky and it's valid already.
+            return abs_path
+        # Otherwise, do the hard step, search for a matching file for each level.
+        return self._resolve_case(Path(self.path, path)).as_posix()
+
+    def _resolve_case(self, path: Path) -> Path:
+        """Search for a matching file for each level, recursively."""
+        try:
+            resolved = self._resolved[path]
+        except KeyError:
+            pass
+        else:
+            # If it doesn't exist, we need to search again.
+            if resolved.exists():
+                return resolved
+            else:
+                del self._resolved[path]
+
+        # Recursively resolve the parent first.
+        parent = path.parent
+        if parent == path:
+            return path  # Base case, already the root
+        parent = self._resolve_case(parent)
+
+        # Then iterate through children, finding any that case-insensitively match
+        tail = path.name.casefold()
+        try:
+            for child in parent.iterdir():
+                if child.name.casefold() == tail:
+                    self._resolved[path] = child
+                    return child
+        except NotADirectoryError:
+            pass
+        # Didn't find or something isn't a directory, just return the original.
+        return path
 
     def walk_folder(self, folder: str = '') -> Iterator[File[Self]]:
         """Yield files in a folder."""
