@@ -2,7 +2,7 @@
 
 This has a minimum distance, where points closer than that are treated equal.
 """
-from typing import Any, Union, TypeVar, Generic, cast
+from typing import Any, TypeVar, Generic, cast
 from collections.abc import Iterable, Iterator, Mapping, MutableMapping, ValuesView, ItemsView
 from copy import deepcopy
 import itertools
@@ -49,7 +49,7 @@ class PointsMap(MutableMapping[AnyVec, ValueT], Generic[ValueT]):
     _dist_sq: float
     def __init__(
         self,
-        contents: Union[Mapping[AnyVec, ValueT], Iterable[tuple[AnyVec, ValueT]]] = (),
+        contents: Mapping[AnyVec, ValueT] | Iterable[tuple[AnyVec, ValueT]] = (),
         epsilon: float = 1e-6,
     ) -> None:
         """Create a PointsMap.

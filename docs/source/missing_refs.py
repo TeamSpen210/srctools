@@ -1,6 +1,5 @@
 """Handle missing references in documentation.."""
 from collections.abc import Iterator
-from typing import Optional
 from pathlib import Path
 import re
 
@@ -41,7 +40,7 @@ def on_missing_reference(
     env: BuildEnvironment,
     node: pending_xref,
     contnode: Element,
-) -> Optional[Element]:
+) -> Element | None:
     """Handle missing references."""
     # If this is a typing_extensions object, redirect to typing.
     # Most things there are backports, so the stdlib docs should have an entry.

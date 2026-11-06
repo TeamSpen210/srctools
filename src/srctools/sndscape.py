@@ -1,5 +1,5 @@
 """Parses soundscape files, which define sets of soundscripts/raw sounds to play."""
-from typing import Union, Optional, NoReturn
+from typing import NoReturn
 
 from enum import Enum
 import abc
@@ -45,7 +45,7 @@ class SoundRule(abc.ABC):
     #:    This is the index of an entity referenced by the ``env_soundscape``.
     #: A vector
     #:    This is a fixed position in world, only useful for map-specific soundscapes.
-    position: Union[PosType, int, Vec] = PosType.AMBIENT
+    position: PosType | int | Vec = PosType.AMBIENT
     #: Modulates the volume of the sound.
     volume: Interval[Volume] = (VOL_NORM, VOL_NORM)
     #: Alters the pitch of the sound when played.
@@ -56,7 +56,7 @@ class SoundRule(abc.ABC):
     no_restore: bool = False
 
     @classmethod
-    def _parse_pos(cls, kv: Keyvalues) -> Union[PosType, int, Vec]:
+    def _parse_pos(cls, kv: Keyvalues) -> PosType | int | Vec:
         """Parse the position option."""
         if 'origin' in kv:
             return Vec.from_str(kv['origin'])
@@ -169,9 +169,9 @@ class SubScape:
     # allowing picking which entities in ``env_soundscape`` it uses.
     pos_offset: int = 0
     #: If set, overrides all positions to use this entity index.
-    pos_override: Optional[int] = None
+    pos_override: int | None = None
     #: If set, overrides non-positioned sounds to instead to use this position.
-    ambient_pos_override: Optional[int] = None
+    ambient_pos_override: int | None = None
 
     @classmethod
     def parse(cls, kv: Keyvalues) -> 'SubScape':
@@ -217,15 +217,15 @@ class Soundscape:
 
     # Scalar options set by the scape.
     #: Sets the DSP preset while this soundscape is active.
-    dsp: Optional[int] = None
+    dsp: int | None = None
     #: Sets the spatial DSP preset while this soundscape is active.
-    dsp_spatial: Optional[int] = None
+    dsp_spatial: int | None = None
     #: Controls the volume of all DSP effects.
     dsp_volume: float = 1.0
     #: If non-zero, overrides the duration of the crossfade between this and the previous soundscape.
     fadetime: float = 0.0
     #: Makes a specific soundmixer active, to override sound priority.
-    soundmixer: Optional[str] = None
+    soundmixer: str | None = None
 
     @classmethod
     def parse(cls, file: Keyvalues) -> dict[str, 'Soundscape']:

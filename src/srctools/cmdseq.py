@@ -2,7 +2,7 @@
 
 These set the arguments to the compile tools.
 """
-from typing import Union, Final, Optional, IO, Literal
+from typing import Final, IO, Literal
 
 from collections.abc import Sequence, Mapping
 from enum import Enum
@@ -64,13 +64,13 @@ SPECIAL_NAMES = {
     SpecialCommand.RENAME_FILE: 'Rename File',
     SpecialCommand.STRATA_COPY_FILE_IF_EXISTS: 'Copy File if it Exists',
 }
-SPECIAL_IND: Mapping[int, Optional[SpecialCommand]] = {
+SPECIAL_IND: Mapping[int, SpecialCommand | None] = {
     cmd.value: cmd for cmd in SpecialCommand
 } | {
     0: None,
     260: SpecialCommand.STRATA_COPY_FILE_IF_EXISTS
 }
-STRATA_NAME_TO_SPECIAL: Mapping[str, Optional[SpecialCommand]] = {
+STRATA_NAME_TO_SPECIAL: Mapping[str, SpecialCommand | None] = {
     'none': None,
     'change_dir': SpecialCommand.CHANGE_DIR,
     'copy_file': SpecialCommand.COPY_FILE,
@@ -86,7 +86,7 @@ class Command:
     """A command to run."""
     #: Either the path to the executable, or one of several special commands. A few presets
     #: are also available like ``$vis_exe``.
-    exe: Union[str, SpecialCommand]
+    exe: str | SpecialCommand
     #: Parameters to pass to the executable or command.
     # Can contain various ``$var`` substitutions such as ``$path``, ``$game`` and ``$file``.
     args: str
@@ -94,7 +94,7 @@ class Command:
     #: Whether this command is checked and should run.
     enabled: bool = attrs.field(default=True, kw_only=True)
     #: If non-`None`, the command should fail if this file doesn't exist after it runs.
-    ensure_file: Union[str, None] = attrs.field(default=None, kw_only=True)
+    ensure_file: str | None = attrs.field(default=None, kw_only=True)
     #: Determines if the command should be executed directly, or captured in the 'run process'
     #: window. Obsolete for Hammer versions which use :program:`hammer_run_map_launcher.exe`.
     use_proc_win: bool = attrs.field(default=True, kw_only=True)
@@ -119,8 +119,8 @@ def _parse_binary_cmd(
     no_wait: int = 0,
 ) -> Command:
     """Parse a command from the structure in the file."""
-    exe: Union[str, SpecialCommand]
-    ensure: Union[str, None]
+    exe: str | SpecialCommand
+    ensure: str | None
     if is_special:
         exe = SpecialCommand(is_special)
     else:
@@ -241,7 +241,7 @@ def parse_keyvalues(kv: Keyvalues) -> dict[str, list[Command]]:
             # This can be a string name, or integer values. Strata/H++ outputs the ints.
             # First is Strata, second is H++.
             special_str = command_kv['special_cmd', command_kv['specialcmd', 'none']]
-            special_cmd: Optional[SpecialCommand]
+            special_cmd: SpecialCommand | None
             if special_str.isdigit():
                 special_cmd = SPECIAL_IND[int(special_str)]
             else:

@@ -1,6 +1,7 @@
 """Classes for reading and writing Valve's VPK format, version 1."""
-from typing import Final, Optional, Union
-from typing_extensions import deprecated, Self, TypeAlias
+from typing import Final, Self, TypeAlias
+from typing_extensions import deprecated
+
 from collections.abc import Iterable, Iterator
 from enum import Enum
 from types import TracebackType
@@ -21,7 +22,7 @@ __all__ = [
 ]
 VPK_SIG: Final = 0x55aa1234  #: The first byte of VPK files.
 DIR_ARCH_INDEX: Final = 0x7fff  #: The file index used to indicate data is contained in the directory file.
-FileName: TypeAlias = Union[str, tuple[str, str], tuple[str, str, str]]
+FileName: TypeAlias = str | tuple[str, str] | tuple[str, str, str]
 
 
 class OpenModes(Enum):
@@ -70,7 +71,7 @@ def _write_nullstring(file: FileWBinary, string: str) -> None:
         file.write(b' \x00')
 
 
-def get_arch_filename(prefix: str = 'pak01', index: Optional[int] = None) -> str:
+def get_arch_filename(prefix: str = 'pak01', index: int | None = None) -> str:
     """Generate the name for a VPK file.
 
     Prefix is the name of the file, often :file:`pak{01}`.
@@ -152,7 +153,7 @@ class FileInfo:
     _filename: str = attrs.field(on_setattr=attrs.setters.frozen)
     ext: str = attrs.field(on_setattr=attrs.setters.frozen)
     crc: int  #: CRC checksum for this file.
-    arch_index: Optional[int]  #: pack_01_000.vpk file to use, or None for _dir.
+    arch_index: int | None  #: pack_01_000.vpk file to use, or None for _dir.
     offset: int  # Offset into the archive file, including directory data if in _dir
     arch_len: int  #: Number of bytes in archive files
     start_data: bytes  #: The bytes saved into the directory header.
@@ -203,7 +204,7 @@ class FileInfo:
                     )
         return chk == self.crc
 
-    def write(self, data: bytes, arch_index: Optional[int] = None) -> None:
+    def write(self, data: bytes, arch_index: int | None = None) -> None:
         """Replace this file with the given byte data.
 
         :param data: The contents of the file to write.
@@ -264,7 +265,7 @@ class VPK:
 
     # If None, this is a singular VPK. Otherwise it is the filename without _dir.vpk, prefixed
     # ready for finding numeric files.
-    _dir_prefix: Optional[str]
+    _dir_prefix: str | None
 
     # fileinfo[extension][directory][filename]
     _fileinfo: dict[str, dict[str, dict[str, FileInfo]]]
@@ -277,7 +278,7 @@ class VPK:
     - Append mode will also create the directory, but not wipe the file.
     """
 
-    dir_limit: Optional[int]
+    dir_limit: int | None
     """
     The maximum amount of data for files saved to the dir file.
 
@@ -296,10 +297,10 @@ class VPK:
 
     def __init__(
         self,
-        dir_file: Union[str, 'os.PathLike[str]'],
+        dir_file: str | os.PathLike[str],
         *,
-        mode: Union[OpenModes, str] = 'r',
-        dir_data_limit: Optional[int] = 1024,
+        mode: OpenModes | str = 'r',
+        dir_data_limit: int | None = 1024,
         version: int = 1,
     ) -> None:
         """Create a VPK file.
@@ -343,7 +344,7 @@ class VPK:
         return os.path.join(self.folder, self._filename)
 
     @path.setter
-    def path(self, path: Union[str, 'os.PathLike[str]']) -> None:
+    def path(self, path: str | os.PathLike[str]) -> None:
         """Set the location and folder from the directory VPK file."""
         self.folder, self.filename = os.path.split(path)
 
@@ -533,9 +534,9 @@ class VPK:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_value: Optional[BaseException],
-        exc_trace: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        exc_trace: TracebackType | None,
     ) -> None:
         """When exiting a context sucessfully, the index will be saved."""
         if exc_type is None and self.mode.writable:
@@ -610,7 +611,7 @@ class VPK:
                 for info in files.values():
                     yield info.filename
 
-    def _iter_folders(self, ext: Optional[str]) -> Iterable[dict[str, dict[str, FileInfo]]]:
+    def _iter_folders(self, ext: str | None) -> Iterable[dict[str, dict[str, FileInfo]]]:
         """Yield the folder dicts matching the specified extension."""
         if ext is not None:
             try:
@@ -620,7 +621,7 @@ class VPK:
         else:
             return self._fileinfo.values()
 
-    def folders(self, *, ext: Optional[str] = None) -> Iterator[str]:
+    def folders(self, *, ext: str | None = None) -> Iterator[str]:
         """Yield the names of folders present in this VPK.
 
         If an extension is specified, only folders containing files with that extension
@@ -637,7 +638,7 @@ class VPK:
                 result.update(folder.keys())
             yield from result
 
-    def fileinfos(self, *, ext: Optional[str] = None, folder: str = '') -> Iterator[FileInfo]:
+    def fileinfos(self, *, ext: str | None = None, folder: str = '') -> Iterator[FileInfo]:
         """Yield file info objects from this VPK.
 
         If an extension or folder is specified, only files with this extension
@@ -719,7 +720,7 @@ class VPK:
         filename: FileName,
         data: bytes,
         root: str = '',
-        arch_index: Optional[int] = 0,
+        arch_index: int | None = 0,
     ) -> None:
         """Add the given data to the VPK.
 

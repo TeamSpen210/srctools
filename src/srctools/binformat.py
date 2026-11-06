@@ -2,9 +2,9 @@
 The binformat module contains functionality for handling binary formats, \
 esentially expanding on :external:mod:`struct`'s functionality.
 """
-from typing import Any, Callable, Final, Optional, TypeVar, Union, overload, cast
+from typing import Any, Final, TypeVar, overload, cast
 from binascii import crc32
-from collections.abc import Collection, Hashable, Mapping
+from collections.abc import Callable, Collection, Hashable, Mapping
 from struct import Struct
 import functools
 import itertools
@@ -59,7 +59,7 @@ T = TypeVar("T")
 _cached_struct = functools.lru_cache()(Struct)
 
 
-def struct_read(fmt: Union[Struct, str], file: FileR[bytes]) -> tuple[Any, ...]:
+def struct_read(fmt: Struct | str, file: FileR[bytes]) -> tuple[Any, ...]:
     """Read a structure from the file, automatically computing the required number of bytes."""
     if not isinstance(fmt, Struct):
         fmt = _cached_struct(fmt)
@@ -69,8 +69,8 @@ def struct_read(fmt: Union[Struct, str], file: FileR[bytes]) -> tuple[Any, ...]:
 @overload
 def read_nullstr(file: FileR[bytes], pos: None = None, encoding: str = 'ascii') -> str: ...
 @overload
-def read_nullstr(file: FileRSeek[bytes], pos: Optional[int], encoding: str = 'ascii') -> str: ...
-def read_nullstr(file: FileR[bytes], pos: Optional[int] = None, encoding: str = 'ascii') -> str:
+def read_nullstr(file: FileRSeek[bytes], pos: int | None, encoding: str = 'ascii') -> str: ...
+def read_nullstr(file: FileR[bytes], pos: int | None = None, encoding: str = 'ascii') -> str:
     """Read a null-terminated string from the file.
 
     If the position is ``0``, this will instead immediately return an empty string. If set to any
@@ -121,7 +121,7 @@ def read_offset_array(file: FileRSeek[bytes], count: int, encoding: str = 'ascii
     return arr
 
 
-def read_array(fmt: Union[str, Struct], data: bytes) -> list[int]:
+def read_array(fmt: str | Struct, data: bytes) -> list[int]:
     """Read a buffer containing a stream of integers.
 
     The format string should be one of the integer format characters, optionally prefixed by an
@@ -146,7 +146,7 @@ def read_array(fmt: Union[str, Struct], data: bytes) -> list[int]:
     return list(Struct(endianness + fmt * count).unpack_from(data))
 
 
-def write_array(fmt: Union[str, Struct], data: Collection[int]) -> bytes:
+def write_array(fmt: str | Struct, data: Collection[int]) -> bytes:
     """Build a packed array of integers.
 
     The format string should be one of the integer format characters, optionally prefixed by an
@@ -298,7 +298,7 @@ class DeferredWrites:
         # Then the bytes to write there.
         self.data: dict[Hashable, bytes] = {}
 
-    def defer(self, key: Hashable, fmt: Union[str, Struct], write: bool = False) -> None:
+    def defer(self, key: Hashable, fmt: str | Struct, write: bool = False) -> None:
         """Mark that data of the specified format is going to be written here.
 
         :param key: Any hashable object, used to identify this location later.
@@ -313,7 +313,7 @@ class DeferredWrites:
         if write:
             self.file.write(bytes(fmt.size))  # Empty bytes
 
-    def set_data(self, key: Hashable, *data: Union[int, str, bytes, float]) -> None:
+    def set_data(self, key: Hashable, *data: int | str | bytes | float) -> None:
         """Specify the data for the given key.
 
         :param key: Any hashable object, used to identify the location and format.

@@ -1,5 +1,5 @@
 """Various useful constants and enums."""
-from typing import Any, Union
+from typing import Any
 from collections.abc import MutableMapping
 from enum import Enum, Flag
 import sys
@@ -11,7 +11,7 @@ __all__ = [
 ]
 
 
-def add_unknown(ns: MutableMapping[str, Any], long: Union[int, bool] = False) -> None:
+def add_unknown(ns: MutableMapping[str, Any], long: int | bool = False) -> None:
     """Adds dummy members for :external:class:`enum.Flag` to allow all bits to be set.
 
     It should be called at the end of the class body, like so::

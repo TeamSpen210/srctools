@@ -1,6 +1,5 @@
 """Helpers for performing tests."""
-from typing import Optional, TypeVar, Union, Protocol
-from typing_extensions import TypeAlias
+from typing import Protocol, TypeVar, TypeAlias
 from collections.abc import Callable, Generator, Iterable, Iterator
 import builtins
 import itertools
@@ -50,9 +49,9 @@ PyCVec: TypeAlias = tuple[
     Callable[..., tuple[float, float, float]
 ]]
 T = TypeVar('T')
-VecClass: TypeAlias = Union[type[Py_Vec], type[Py_FrozenVec]]
-AngleClass: TypeAlias = Union[type[Py_Angle], type[Py_FrozenAngle]]
-MatrixClass: TypeAlias = Union[type[Py_Matrix], type[Py_FrozenMatrix]]
+VecClass: TypeAlias = type[Py_Vec] | type[Py_FrozenVec]
+AngleClass: TypeAlias = type[Py_Angle] | type[Py_FrozenAngle]
+MatrixClass: TypeAlias = type[Py_Matrix] | type[Py_FrozenMatrix]
 
 
 def iter_vec(nums: Iterable[T]) -> Iterator[tuple[T, T, T]]:
@@ -76,7 +75,7 @@ def assert_ang(
     pitch: float = 0.0, yaw: float = 0.0, roll: float = 0.0,
     msg: object = '',
     tol: float = EPSILON,
-    type: Optional[type] = None,
+    type: type | None = None,
 ) -> None:
     """Asserts that an Angle is equal to the provided angles."""
     # Don't show in pytest tracebacks.
@@ -124,7 +123,7 @@ def assert_vec(
     x: float = 0.0, y: float = 0.0, z: float = 0.0,
     msg: object = '',
     tol: float = EPSILON,
-    type: Optional[type] = None,
+    type: type | None = None,
 ) -> None:
     """Asserts that Vec is equal to (x,y,z)."""
     # Don't show in pytest tracebacks.
@@ -162,7 +161,7 @@ def assert_vec_vec(
     desired: vec_mod.VecBase,
     msg: object = '',
     tol: float = EPSILON,
-    type: Optional[type] = None,
+    type: type | None = None,
 ) -> None:
     """Assert one vec is equal to the expected one."""
     __tracebackhide__ = True
@@ -171,7 +170,7 @@ def assert_vec_vec(
 
 def assert_rot(
     rot: vec_mod.MatrixBase, exp_rot: vec_mod.MatrixBase,
-    msg: object = '', type: Optional[type] = None,
+    msg: object = '', type: type | None = None,
 ) -> None:
     """Asserts that the two rotations are the same."""
     # Don't show in pytest tracebacks.

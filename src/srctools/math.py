@@ -22,12 +22,13 @@ but not vice-versa.
  - :pycode:`Matrix @ Matrix` → ``Matrix``
 """
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Final, NamedTuple, Optional, SupportsFloat,
+    TYPE_CHECKING, Any, ClassVar, Final, NamedTuple, SupportsFloat,
     SupportsIndex, TypeVar, Union, cast,
 )
 from typing_extensions import (
-    Literal, Protocol, Self, TypeAlias, TypeGuard, deprecated, final, overload,
+    Protocol, deprecated,
 )
+from typing import Literal, Self, TypeAlias, TypeGuard, final, overload
 from collections.abc import Callable, Iterable, Iterator
 import contextlib
 import math
@@ -66,9 +67,9 @@ def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float)
 
 def parse_vec_str(
     val: Union[str, 'VecBase', 'AngleBase'],
-    x: Union[X, float] = 0.0, y: Union[Y, float] = 0.0, z: Union[Z, float] = 0.0,
+    x: X | float = 0.0, y: Y | float = 0.0, z: Z | float = 0.0,
     # Could more properly be tuple[f,f,f] | tuple[X, Y, Z], but that needs better typevar + default handling.
-) -> tuple[Union[X, float], Union[Y, float], Union[Z, float]]:
+) -> tuple[X | float, Y | float, Z | float]:
     """Convert a string in the form ``(4 6 -4)`` into a set of floats.
 
     If the string is unparsable or an invalid type, this uses the defaults :pycode:`(x, y, z)` (which don't have to be floats).
@@ -142,7 +143,7 @@ def format_float(x: float, places: int = 6) -> str:
     return '0' if result == '-0' else result
 
 
-def _coerce_float(value: Union[float, SupportsFloat, SupportsIndex]) -> float:
+def _coerce_float(value: float | SupportsFloat | SupportsIndex) -> float:
     """Convert numeric values to floats."""
     # Fast path, already a float.
     if isinstance(value, float):
@@ -203,7 +204,7 @@ class _InvAxis(Protocol):
     @overload
     def __getitem__(self, item: tuple[str, str]) -> str: ...
 
-    def __getitem__(self, item: Union[tuple[str, str], str]) -> Union[tuple[str, str], str]: ...
+    def __getitem__(self, item: tuple[str, str] | str) -> tuple[str, str] | str: ...
 
 
 # Use template code to reduce duplication in the various magic number methods.
@@ -475,7 +476,7 @@ class VecBase:
         Pass either several Vecs, or an iterable of Vecs.
         Returns a ``(min, max)`` :external:py:class:`tuple`.
         """
-        points: Union[tuple[Iterable[VecBase]], tuple[VecBase, ...]] = points_arg
+        points: tuple[Iterable[VecBase]] | tuple[VecBase, ...] = points_arg
         points_iter: Iterator[VecBase]
         # Allow passing a single iterable, but also handle a single Vec.
         # The error messages match those produced by `min`/`max`.
@@ -599,11 +600,11 @@ class VecBase:
     # to annotate them in a way a type-checker can understand.
     # These are immediately overwritten.
     if TYPE_CHECKING:
-        def __add__(self, other: Union['VecBase', Tuple3, int, float]) -> Self: ...
-        def __radd__(self, other: Union['VecBase', Tuple3, int, float]) -> Self: ...
+        def __add__(self, other: 'VecBase' | Tuple3 | int | float) -> Self: ...
+        def __radd__(self, other: 'VecBase' | Tuple3 | int | float) -> Self: ...
 
-        def __sub__(self, other: Union['VecBase', Tuple3, int, float]) -> Self: ...
-        def __rsub__(self, other: Union['VecBase', Tuple3, int, float]) -> Self: ...
+        def __sub__(self, other: 'VecBase' | Tuple3 | int | float) -> Self: ...
+        def __rsub__(self, other: 'VecBase' | Tuple3 | int | float) -> Self: ...
 
         def __mul__(self, other: float) -> Self: ...
         def __rmul__(self, other: float) -> Self: ...
@@ -842,8 +843,8 @@ class VecBase:
     def clamped(self, /, *, mins: AnyVec, maxs: AnyVec) -> Self: ...
     def clamped(
         self, *args: AnyVec,
-        mins: Optional[AnyVec] = None,
-        maxs: Optional[AnyVec] = None,
+        mins: AnyVec | None = None,
+        maxs: AnyVec | None = None,
     ) -> Self:
         """Return a copy of this vector, constrained by the given min/max values.
 
@@ -967,7 +968,7 @@ class VecBase:
         yield self._y
         yield self._x
 
-    def __getitem__(self, ind: Union[str, int]) -> float:
+    def __getitem__(self, ind: str | int) -> float:
         """Allow reading values by index instead of name if desired.
 
         This accepts either ``0``, ``1``, ``2`` or ``x``, ``y``, ``z`` to read values.
@@ -1132,34 +1133,34 @@ class FrozenVec(VecBase):
 
     @classmethod
     @overload
-    def with_axes(cls, axis1: str, val1: Union[Numeric, VecBase]) -> 'FrozenVec': ...
+    def with_axes(cls, axis1: str, val1: Numeric | VecBase) -> 'FrozenVec': ...
 
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[Numeric, VecBase],
-        axis2: str, val2: Union[Numeric, VecBase],
+        axis1: str, val1: Numeric | VecBase,
+        axis2: str, val2: Numeric | VecBase,
     ) -> 'FrozenVec': ...
 
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[Numeric, VecBase],
-        axis2: str, val2: Union[Numeric, VecBase],
-        axis3: str, val3: Union[Numeric, VecBase],
+        axis1: str, val1: Numeric | VecBase,
+        axis2: str, val2: Numeric | VecBase,
+        axis3: str, val3: Numeric | VecBase,
     ) -> 'FrozenVec': ...
 
     @classmethod
     def with_axes(
         cls,
         axis1: str,
-        val1: Union[Numeric, VecBase],
-        axis2: Optional[str] = None,
-        val2: Union[Numeric, VecBase] = 0.0,
-        axis3: Optional[str] = None,
-        val3: Union[Numeric, VecBase] = 0.0,
+        val1: Numeric | VecBase,
+        axis2: str | None = None,
+        val2: Numeric | VecBase = 0.0,
+        axis3: str | None = None,
+        val3: Numeric | VecBase = 0.0,
     ) -> 'FrozenVec':
         """Create a Vector, given a number of axes and corresponding values.
 
@@ -1339,34 +1340,34 @@ class Vec(VecBase):
 
     @classmethod
     @overload
-    def with_axes(cls, axis1: str, val1: Union[Numeric, VecBase]) -> 'Vec': ...
+    def with_axes(cls, axis1: str, val1: Numeric | VecBase) -> 'Vec': ...
 
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[Numeric, VecBase],
-        axis2: str, val2: Union[Numeric, VecBase],
+        axis1: str, val1: Numeric | VecBase,
+        axis2: str, val2: Numeric | VecBase,
     ) -> 'Vec': ...
 
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[Numeric, VecBase],
-        axis2: str, val2: Union[Numeric, VecBase],
-        axis3: str, val3: Union[Numeric, VecBase],
+        axis1: str, val1: Numeric | VecBase,
+        axis2: str, val2: Numeric | VecBase,
+        axis3: str, val3: Numeric | VecBase,
     ) -> 'Vec': ...
 
     @classmethod
     def with_axes(
         cls,
         axis1: str,
-        val1: Union[Numeric, VecBase],
-        axis2: Optional[str] = None,
-        val2: Union[Numeric, VecBase] = 0.0,
-        axis3: Optional[str] = None,
-        val3: Union[Numeric, VecBase] = 0.0,
+        val1: Numeric | VecBase,
+        axis2: str | None = None,
+        val2: Numeric | VecBase = 0.0,
+        axis3: str | None = None,
+        val3: Numeric | VecBase = 0.0,
     ) -> 'Vec':
         """Create a Vector, given a number of axes and corresponding values.
 
@@ -1416,8 +1417,8 @@ class Vec(VecBase):
         )
 
     if TYPE_CHECKING:
-        def __iadd__(self, other: Union['VecBase', Tuple3, int, float]) -> Self: ...
-        def __isub__(self, other: Union['VecBase', Tuple3, int, float]) -> Self: ...
+        def __iadd__(self, other: 'VecBase' | Tuple3 | int | float) -> Self: ...
+        def __isub__(self, other: 'VecBase' | Tuple3 | int | float) -> Self: ...
         def __imul__(self, other: float) -> Self: ...
         def __itruediv__(self, other: float) -> Self: ...
         def __ifloordiv__(self, other: float) -> Self: ...
@@ -1467,7 +1468,7 @@ class Vec(VecBase):
         """
         return _mk_vec, (self.x, self.y, self.z)
 
-    def __setitem__(self, ind: Union[str, int], val: Numeric) -> None:
+    def __setitem__(self, ind: str | int, val: Numeric) -> None:
         """Allow editing values by index instead of name if desired.
 
         This accepts either ``0``, ``1``, ``2`` or ``x``, ``y``, ``z`` to edit values.
@@ -1577,7 +1578,7 @@ class Vec(VecBase):
     def localise(
         self,
         origin: AnyVec,
-        angles: Union[AnyAngle, AnyMatrix, None] = None,
+        angles: AnyAngle | AnyMatrix | None = None,
     ) -> None:
         """Shift this point to be local to the given position and angles.
 
@@ -1734,8 +1735,8 @@ class MatrixBase:
     def from_angle(
         cls,
         pitch: Union['AngleBase', float],
-        yaw: Optional[float] = None,
-        roll: Optional[float] = None,
+        yaw: float | None = None,
+        roll: float | None = None,
     ) -> Self:
         """Return the rotation representing an Euler angle.
 
@@ -1972,9 +1973,9 @@ class MatrixBase:
     @classmethod
     def from_basis(
         cls, *,
-        x: Optional[VecUnion] = None,
-        y: Optional[VecUnion] = None,
-        z: Optional[VecUnion] = None,
+        x: VecUnion | None = None,
+        y: VecUnion | None = None,
+        z: VecUnion | None = None,
     ) -> Self:
         """Construct a matrix from existing basis vectors.
 
@@ -2323,9 +2324,9 @@ class AngleBase:
     @classmethod
     def from_basis(
         cls, *,
-        x: Optional[VecUnion] = None,
-        y: Optional[VecUnion] = None,
-        z: Optional[VecUnion] = None,
+        x: VecUnion | None = None,
+        y: VecUnion | None = None,
+        z: VecUnion | None = None,
     ) -> Self:
         """Return the rotation which results in the specified local axes.
 
@@ -2432,7 +2433,7 @@ class AngleBase:
         yield self._yaw
         yield self._pitch
 
-    def __getitem__(self, ind: Union[str, int]) -> float:
+    def __getitem__(self, ind: str | int) -> float:
         """Allow reading values by index instead of name if desired.
 
         This accepts the following indexes to read values:
@@ -2502,7 +2503,7 @@ class AngleBase:
 
     # No ordering, there isn't any sensible relationship.
 
-    def __mul__(self, other: Union[int, float]) -> Self:
+    def __mul__(self, other: int | float) -> Self:
         """Angle * float multiplies each value."""
         if isinstance(other, (int, float)):
             return type(self)(
@@ -2512,7 +2513,7 @@ class AngleBase:
             )
         return NotImplemented
 
-    def __rmul__(self, other: Union[int, float]) -> Self:
+    def __rmul__(self, other: int | float) -> Self:
         """Angle * float multiplies each value."""
         if isinstance(other, (int, float)):
             return type(self)(
@@ -2552,7 +2553,7 @@ class AngleBase:
     @overload
     def __rmatmul__(self, other: VecT) -> VecT: ...
 
-    def __rmatmul__(self, other: 'AngleBase | Tuple3 | VecT') -> Union[Vec, FrozenVec, VecT, Self]:
+    def __rmatmul__(self, other: 'AngleBase | Tuple3 | VecT') -> Vec | FrozenVec | VecT | Self:
         """Vec @ Angle rotates the first by the second."""
         if isinstance(other, (Vec, FrozenVec)):
             return other @ Py_Matrix.from_angle(self)
@@ -2571,9 +2572,9 @@ class FrozenAngle(AngleBase):
 
     def __new__(
         cls,
-        pitch: Union[int, float, Iterable[Union[int, float]]] = 0.0,
-        yaw: Union[int, float] = 0.0,
-        roll: Union[int, float] = 0.0,
+        pitch: int | float | Iterable[int | float] = 0.0,
+        yaw: int | float = 0.0,
+        roll: int | float = 0.0,
     ) -> 'FrozenAngle':
         """Create a FrozenAngle.
 
@@ -2604,34 +2605,34 @@ class FrozenAngle(AngleBase):
 
     @classmethod
     @overload
-    def with_axes(cls, axis1: str, val1: Union[Numeric, AngleBase]) -> 'FrozenAngle': ...
+    def with_axes(cls, axis1: str, val1: Numeric | AngleBase) -> 'FrozenAngle': ...
 
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[Numeric, AngleBase],
-        axis2: str, val2: Union[Numeric, AngleBase],
+        axis1: str, val1: Numeric | AngleBase,
+        axis2: str, val2: Numeric | AngleBase,
     ) -> 'FrozenAngle': ...
 
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[Numeric, AngleBase],
-        axis2: str, val2: Union[Numeric, AngleBase],
-        axis3: str, val3: Union[Numeric, AngleBase],
+        axis1: str, val1: Numeric | AngleBase,
+        axis2: str, val2: Numeric | AngleBase,
+        axis3: str, val3: Numeric | AngleBase,
     ) -> 'FrozenAngle': ...
 
     @classmethod
     def with_axes(
         cls,
         axis1: str,
-        val1: Union[Numeric, AngleBase],
-        axis2: Optional[str] = None,
-        val2: Union[Numeric, AngleBase] = 0.0,
-        axis3: Optional[str] = None,
-        val3: Union[Numeric, AngleBase] = 0.0,
+        val1: Numeric | AngleBase,
+        axis2: str | None = None,
+        val2: Numeric | AngleBase = 0.0,
+        axis3: str | None = None,
+        val3: Numeric | AngleBase = 0.0,
     ) -> 'FrozenAngle':
         """Create an Angle, given a number of axes and corresponding values.
 
@@ -2729,9 +2730,9 @@ class Angle(AngleBase):
     # noinspection PyMissingConstructor
     def __init__(
         self,
-        pitch: Union[int, float, Iterable[Union[int, float]]] = 0.0,
-        yaw: Union[int, float] = 0.0,
-        roll: Union[int, float] = 0.0,
+        pitch: int | float | Iterable[int | float] = 0.0,
+        yaw: int | float = 0.0,
+        roll: int | float = 0.0,
     ) -> None:
         """Create an Angle.
 
@@ -2809,15 +2810,15 @@ class Angle(AngleBase):
 
     @classmethod
     @overload
-    def with_axes(cls, axis1: str, val1: Union[Numeric, AngleBase]) -> 'Angle':
+    def with_axes(cls, axis1: str, val1: Numeric | AngleBase) -> 'Angle':
         ...
 
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[Numeric, AngleBase],
-        axis2: str, val2: Union[Numeric, AngleBase],
+        axis1: str, val1: Numeric | AngleBase,
+        axis2: str, val2: Numeric | AngleBase,
     ) -> 'Angle':
         ...
 
@@ -2825,9 +2826,9 @@ class Angle(AngleBase):
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[Numeric, AngleBase],
-        axis2: str, val2: Union[Numeric, AngleBase],
-        axis3: str, val3: Union[Numeric, AngleBase],
+        axis1: str, val1: Numeric | AngleBase,
+        axis2: str, val2: Numeric | AngleBase,
+        axis3: str, val3: Numeric | AngleBase,
     ) -> 'Angle':
         ...
 
@@ -2835,11 +2836,11 @@ class Angle(AngleBase):
     def with_axes(
         cls,
         axis1: str,
-        val1: Union[Numeric, AngleBase],
-        axis2: Optional[str] = None,
-        val2: Union[Numeric, AngleBase] = 0.0,
-        axis3: Optional[str] = None,
-        val3: Union[Numeric, AngleBase] = 0.0,
+        val1: Numeric | AngleBase,
+        axis2: str | None = None,
+        val2: Numeric | AngleBase = 0.0,
+        axis3: str | None = None,
+        val3: Numeric | AngleBase = 0.0,
     ) -> 'Angle':
         """Create an Angle, given a number of axes and corresponding values.
 
@@ -2861,7 +2862,7 @@ class Angle(AngleBase):
                 ang[axis3] = val3[axis3] if isinstance(val3, AngleBase) else val3
         return ang
 
-    def __setitem__(self, ind: Union[str, int], value: Numeric) -> None:
+    def __setitem__(self, ind: str | int, value: Numeric) -> None:
         """Allow editing values by index instead of name if desired.
 
         This accepts the following indexes to edit values:
@@ -2880,7 +2881,7 @@ class Angle(AngleBase):
         else:
             raise KeyError(f'Invalid axis: {ind!r}')
 
-    def __imul__(self, other: Union[int, float]) -> Self:
+    def __imul__(self, other: int | float) -> Self:
         """Angle ``*=`` float multiplies each value."""
         if isinstance(other, (int, float)):
             self._pitch = self._pitch * other % 360.0 % 360.0
@@ -2890,7 +2891,7 @@ class Angle(AngleBase):
         return NotImplemented
 
     # noinspection PyProtectedMember
-    def __imatmul__(self, other: Union[AngleBase, MatrixBase]) -> Self:
+    def __imatmul__(self, other: AngleBase | MatrixBase) -> Self:
         """Angle ``@`` Angle or Angle ``@`` Matrix rotates the first by the second."""
         if isinstance(other, AngleBase):
             mat = Py_Matrix.from_angle(self)

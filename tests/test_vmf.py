@@ -1,5 +1,4 @@
 """Tests for the VMF library."""
-from typing import Optional
 from enum import Enum
 import re
 import array
@@ -26,8 +25,8 @@ def assert_output(
     delay: float = 0.0,
     *,
     times: int = -1,
-    inst_out: Optional[str] = None,
-    inst_in: Optional[str] = None,
+    inst_out: str | None = None,
+    inst_in: str | None = None,
     comma_sep: bool = False,
 ) -> None:
     """Assert that the output matches the provided values."""

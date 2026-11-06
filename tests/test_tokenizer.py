@@ -1,5 +1,4 @@
-from typing import Any, Union, cast, TypedDict, Literal
-from typing_extensions import TypeAlias
+from typing import Any, cast, TypeAlias, TypedDict, Literal
 
 from collections.abc import Callable, Iterable, Iterator
 from enum import Enum
@@ -28,7 +27,7 @@ IS_CPYTHON = platform.python_implementation() == 'CPython'
 ESCAPE_CHARS = "\n \t \v \b \r \f \a \\ \""
 ESCAPE_ENCODED = r'\n \t \v \b \r \f \a \\ \"'
 
-TokenList: TypeAlias = list[Union[Token, tuple[Token, str]]]
+TokenList: TypeAlias = list[Token | tuple[Token, str]]
 
 # The correct result of parsing prop_parse_test.
 # Either the token, or token + value (which must be correct).
@@ -1126,7 +1125,7 @@ def test_block_iter(py_c_token: type[Tokenizer]) -> None:
 def test_subclass_base(Tok: type[BaseTokenizer]) -> None:
     """Test subclassing of the base tokenizer."""
     class Sub(Tok):  # type: ignore  # Non-literal base class.
-        def __init__(self, tok: Iterable[Union[Token, tuple[Token, str]]]) -> None:
+        def __init__(self, tok: Iterable[Token | tuple[Token, str]]) -> None:
             super().__init__('filename', TokenSyntaxError)
             self.__tokens = iter(tok)
 

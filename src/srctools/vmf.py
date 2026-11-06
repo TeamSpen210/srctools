@@ -1,7 +1,7 @@
 """Reads and writes VMF map files, providing various tools to make it easier to modify."""
 
-from typing import TYPE_CHECKING, Any, Final, Optional, Protocol, TypeVar, Union, overload
-from typing_extensions import Literal, TypeAlias, deprecated
+from typing import TYPE_CHECKING, Any, Final, Protocol, TypeVar, Literal, TypeAlias, overload
+from typing_extensions import deprecated
 from array import ArrayType as Array
 from collections import defaultdict
 from collections.abc import (
@@ -57,7 +57,7 @@ T = TypeVar('T')
 # Types we allow for setting keyvalues. These we can stringify into something
 # matching Valve's usual encoding.
 # Other types are just str()ed, which might produce a bad result.
-_ValidKVBasics = Union[str, int, bool, float, Vec, FrozenVec, AnyAngle, AnyMatrix]
+_ValidKVBasics: TypeAlias = str | int | bool | float | Vec | FrozenVec | AnyAngle | AnyMatrix
 
 
 class _ValidKVEnum(Protocol):
@@ -67,7 +67,7 @@ class _ValidKVEnum(Protocol):
         return ""
 
 
-ValidKVs: TypeAlias = Union[_ValidKVBasics, _ValidKVEnum]
+ValidKVs: TypeAlias = _ValidKVBasics | _ValidKVEnum
 Axis: TypeAlias = Literal['x', 'y', 'z']
 ValidKV_T = TypeVar('ValidKV_T', bound=ValidKVs)
 # We include strings here to catch subclasses.
@@ -306,7 +306,7 @@ def make_overlay(
     )
 
 
-def localise_overlay(over: 'Entity', origin: AnyVec, angles: Union[AnyAngle, AnyMatrix, None] = None) -> None:
+def localise_overlay(over: 'Entity', origin: AnyVec, angles: AnyAngle | AnyMatrix | None = None) -> None:
     """Rotate an overlay like what is done in instances."""
     orient = to_matrix(angles)
     if angles is not None:  # Skip if known to be identity matrix.
@@ -399,7 +399,7 @@ class Strata2DViewport:
     @classmethod
     def from_vector(cls, pos: Vec, zoom: float = 1.0) -> 'Strata2DViewport':
         """Determine the appropriate axis from the position vector."""
-        chosen_axis: Optional[Axis] = None
+        chosen_axis: Axis | None = None
         axis: Axis
         for axis in ('x', 'y', 'z'):
             if pos[axis] in (0.0, -65536.0, 65536.0):
@@ -446,14 +446,14 @@ class Strata3DViewport:
         buffer.write('\t\t}\n')
 
 
-def _parse_strata_viewport(kvs: Keyvalues) -> Optional[list[Union[Strata2DViewport, Strata3DViewport]]]:
+def _parse_strata_viewport(kvs: Keyvalues) -> list[Strata2DViewport | Strata3DViewport] | None:
     """Look for and parse the Strata viewport definitions."""
     try:
         vp_block = kvs.find_key('views')
     except LookupError:
         return None
 
-    ports: list[Union[Strata2DViewport, Strata3DViewport]] = []
+    ports: list[Strata2DViewport | Strata3DViewport] = []
     default_2d: Axis
 
     for key, default_2d in [  # type: ignore[assignment]  # Doesn't infer literal
@@ -483,7 +483,7 @@ def _parse_strata_viewport(kvs: Keyvalues) -> Optional[list[Union[Strata2DViewpo
 def _mapinfo_int(
     map_info: Mapping[str, str],
     key: str,
-    value: Optional[int],
+    value: int | None,
     default: int,
 ) -> int:
     """Handle reading a value from the map_info dictionary."""
@@ -504,7 +504,7 @@ def _mapinfo_int(
 def _mapinfo_bool(
     map_info: Mapping[str, str],
     key: str,
-    value: Optional[bool],
+    value: bool | None,
     default: bool,
 ) -> bool:
     """Handle reading a value from the map_info dictionary."""
@@ -547,7 +547,7 @@ class VMF:
     #: to iterate though all entities with a specific name, though `VMF.search()` is preferred
     #: since that handles wildcards and other lookups. This mapping automatically updates when
     #: an entity is added/removed or its name is changed.
-    by_target: MutableMapping[Optional[str], CopySet['Entity']]
+    by_target: MutableMapping[str | None, CopySet['Entity']]
     #: The list of all entities in the map.
     entities: list['Entity']
     #: The list of all world brushes in the map.
@@ -579,9 +579,9 @@ class VMF:
     active_cam: int
     quickhide_count: int
     #: Records the last state of the instance viewing mode. If `None`, no value is saved in the file.
-    strata_instance_vis: Optional[StrataInstanceVisibility]
+    strata_instance_vis: StrataInstanceVisibility | None
     #: Records the current state of all 2D and 3D viewports. If `None`, no value is saved in the file.
-    strata_viewports: Optional[list[Union[Strata2DViewport, Strata3DViewport]]]
+    strata_viewports: list[Strata2DViewport | Strata3DViewport] | None
 
     # Ignore our own deprecation helper function.
     # noinspection PyDeprecation
@@ -590,20 +590,20 @@ class VMF:
         map_info: Mapping[str, str] = EmptyMapping,
         preserve_ids: bool = False,
         *,
-        format_version: Optional[int] = None,
-        hammer_version: Optional[int] = None,
-        hammer_build: Optional[int] = None,
-        is_prefab: Optional[bool] = None,
-        cordon_enabled: Optional[bool] = None,
-        map_version: Optional[int] = None,
-        show_grid: Optional[bool] = None,
-        show_3d_grid: Optional[bool] = None,
-        snap_grid: Optional[bool] = None,
-        show_logic_grid: Optional[bool] = None,
-        grid_spacing: Optional[int] = None,
-        active_cam: Optional[int] = None,
-        quickhide_count: Optional[int] = None,
-        strata_inst_visibility: Optional[StrataInstanceVisibility] = None,
+        format_version: int | None = None,
+        hammer_version: int | None = None,
+        hammer_build: int | None = None,
+        is_prefab: bool | None = None,
+        cordon_enabled: bool | None = None,
+        map_version: int | None = None,
+        show_grid: bool | None = None,
+        show_3d_grid: bool | None = None,
+        snap_grid: bool | None = None,
+        show_logic_grid: bool | None = None,
+        grid_spacing: int | None = None,
+        active_cam: int | None = None,
+        quickhide_count: int | None = None,
+        strata_inst_visibility: StrataInstanceVisibility | None = None,
     ) -> None:
         """Create a VMF.
 
@@ -636,7 +636,7 @@ class VMF:
 
         # Allow quick searching for particular groups, without checking
         # the whole map
-        self.by_target: MutableMapping[Optional[str], CopySet[Entity]] = defaultdict(CopySet)
+        self.by_target: MutableMapping[str | None, CopySet[Entity]] = defaultdict(CopySet)
         self.by_class: MutableMapping[str, CopySet[Entity]] = defaultdict(CopySet)
 
         self.entities = []
@@ -673,7 +673,7 @@ class VMF:
         self.strata_instance_vis = strata_inst_visibility
         self.strata_viewports = None
 
-    def add_brush(self, item: Union['Solid', PrismFace]) -> None:
+    def add_brush(self, item: 'Solid | PrismFace') -> None:
         """Add a world brush to this map."""
         if isinstance(item, PrismFace):
             item = item.solid
@@ -759,7 +759,7 @@ class VMF:
     def create_visgroup(
         self,
         name: str,
-        color: Union[Vec, tuple[int, int, int]] = (255, 255, 255),
+        color: Vec | tuple[int, int, int] = (255, 255, 255),
     ) -> 'VisGroup':
         """Convenience method for creating visgroups."""
         vis = VisGroup(self, name, -1, Vec(color))
@@ -789,7 +789,7 @@ class VMF:
                 man.allow_duplicates = val
 
     @staticmethod
-    def parse(tree: Union[Keyvalues, str], preserve_ids: bool = False) -> 'VMF':
+    def parse(tree: Keyvalues | str, preserve_ids: bool = False) -> 'VMF':
         """Convert a keyvalues tree into VMF classes."""
         if not isinstance(tree, Keyvalues):
             # if not a tree, try to read the file
@@ -886,11 +886,11 @@ class VMF:
 
     def export(
         self,
-        dest_file: Optional[FileWText] = None, *,
+        dest_file: FileWText | None = None, *,
         inc_version: bool = True,
         minimal: bool = False,
         disp_multiblend: bool = True,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Serialises the object's contents into a VMF file.
 
         - If no file is given the map will be returned as a string.
@@ -1097,8 +1097,8 @@ class VMF:
 
     def make_prism(
         self,
-        p1: Union[Vec, FrozenVec],
-        p2: Union[Vec, FrozenVec],
+        p1: Vec | FrozenVec,
+        p2: Vec | FrozenVec,
         mat: str = 'tools/toolsnodraw',
         set_points: bool = False,
     ) -> PrismFace:
@@ -1253,8 +1253,8 @@ class VMF:
 
     def make_hollow(
         self,
-        p1: Union[Vec, FrozenVec],
-        p2: Union[Vec, FrozenVec],
+        p1: Vec | FrozenVec,
+        p2: Vec | FrozenVec,
         thick: float = 16,
         mat: str = 'tools/toolsnodraw',
         inner_mat: str = '',
@@ -1497,7 +1497,7 @@ class VisGroup:
 
     def copy(
         self,
-        vmf: Optional[VMF] = None,
+        vmf: VMF | None = None,
         group_mapping: MutableMapping[int, int] = EmptyMapping,
         des_id: int = -1,
     ) -> 'VisGroup':
@@ -1537,7 +1537,7 @@ class Solid:
     #: not be compiled into the final map.
     hidden: bool = False
     #: If set, this brush is grouped in the group with this ID.
-    group_id: Optional[int] = None
+    group_id: int | None = None
     #: Determines whether this brush has been hidden via a user-authored visgroup.
     vis_shown: bool = True
     #: Determines whether this brush has been hidden via a builtin "Auto" visgroup.
@@ -1555,7 +1555,7 @@ class Solid:
     def copy(
         self,
         des_id: int = -1,
-        vmf_file: Optional[VMF] = None,
+        vmf_file: VMF | None = None,
         side_mapping: MutableMapping[int, int] = EmptyMapping,
         keep_vis: bool = True,
     ) -> 'Solid':
@@ -1697,7 +1697,7 @@ class Solid:
             bbox_min.min(side_min)
         return bbox_min, bbox_max
 
-    def get_origin(self, bbox_min: Optional[Vec] = None, bbox_max: Optional[Vec] = None) -> Vec:
+    def get_origin(self, bbox_min: Vec | None = None, bbox_max: Vec | None = None) -> Vec:
         """Calculates a vector representing the exact center of this brush."""
         if bbox_min is None or bbox_max is None:
             bbox_min, bbox_max = self.get_bbox()
@@ -1708,7 +1708,7 @@ class Solid:
         for s in self.sides:
             s.translate(diff)
 
-    def localise(self, origin: AnyVec, angles: Union[AnyAngle, AnyMatrix, None] = None) -> None:
+    def localise(self, origin: AnyVec, angles: AnyAngle | AnyMatrix | None = None) -> None:
         """Shift this brush by the given origin/angles."""
         angles = to_matrix(angles)  # Only do this once.
         for s in self.sides:
@@ -1728,14 +1728,14 @@ class Solid:
 
     @property
     @deprecated('Use is_cordon instead', category=DeprecationWarning)
-    def cordon_solid(self) -> Optional[int]:
+    def cordon_solid(self) -> int | None:
         """Deprecated old version of :py:attr:`is_cordon`."""
         return 1 if self.is_cordon else None
 
     # noinspection PyDeprecation
     @cordon_solid.setter
     @deprecated('Use is_cordon instead', category=DeprecationWarning)
-    def cordon_solid(self, value: Optional[int]) -> None:
+    def cordon_solid(self, value: int | None) -> None:
         """Deprected old version of :py:attr:`is_cordon`."""
         self.is_cordon = bool(value)
 
@@ -1782,7 +1782,7 @@ class DispVertex:
     # These are for multiblend displacements, added in ASW+.
     multi_blend: Vec4 = Vec4()
     multi_alpha: Vec4 = Vec4()
-    multi_colors: Optional[list[Vec]] = attrs.field(default=None, validator=attrs.validators.optional(
+    multi_colors: list[Vec] | None = attrs.field(default=None, validator=attrs.validators.optional(
         attrs.validators.deep_iterable(attrs.validators.instance_of(Vec), _list4_validator)
     ))
 
@@ -1826,7 +1826,7 @@ class UVAxis:
         return Vec(self.x, self.y, self.z)
 
     @deprecated("Use localise() instead, this doesn't produce correct results.")
-    def rotate(self, angles: Union[AnyAngle, AnyMatrix]) -> 'UVAxis':
+    def rotate(self, angles: AnyAngle | AnyMatrix) -> 'UVAxis':
         """Rotate the axis by some orientation.
 
         This doesn't alter texture offsets.
@@ -1840,7 +1840,7 @@ class UVAxis:
             self.scale,
         )
 
-    def localise(self, origin: AnyVec, angles: Union[AnyAngle, AnyMatrix]) -> 'UVAxis':
+    def localise(self, origin: AnyVec, angles: AnyAngle | AnyMatrix) -> 'UVAxis':
         """Rotate and translate the texture coordinates."""
         vec = self.vec() @ angles
 
@@ -1904,16 +1904,16 @@ class Side:
     ham_rot: float
     uaxis: UVAxis
     vaxis: UVAxis
-    strata_points: Optional[list[Vec]]
+    strata_points: list[Vec] | None
 
     #: The number of subdivisions for a displacement, ranging from 0-4.
     #: If zero, the brush is not a displacement and the other values are ignored.
     disp_power: DispPower
-    disp_pos: Optional[Vec]
+    disp_pos: Vec | None
     disp_elevation: float
     disp_flags: DispFlag
-    disp_allowed_vert: Optional['Array[int]']
-    _disp_verts: Optional[list[DispVertex]]
+    disp_allowed_vert: 'Array[int] | None'  # Runtime generic in 3.12+
+    _disp_verts: list[DispVertex] | None
 
     def __init__(
         self,
@@ -1924,8 +1924,8 @@ class Side:
         smoothing: int = 0,
         mat: str = 'tools/toolsnodraw',
         rotation: float = 0,
-        uaxis: Optional[UVAxis] = None,
-        vaxis: Optional[UVAxis] = None,
+        uaxis: UVAxis | None = None,
+        vaxis: UVAxis | None = None,
         disp_power: DispPower = 0,
     ) -> None:
         """Planes must be a list of 3 Vecs or 3-tuples."""
@@ -2174,7 +2174,7 @@ class Side:
 
     def _parse_strata_points(self, block: Keyvalues) -> None:
         """Parse Strata Source's additional vertices block."""
-        points: list[Optional[Vec]] = [None] * block.int('numpts')
+        points: list[Vec | None] = [None] * block.int('numpts')
         for child in block:
             if child.name == 'point':
                 ind_str, pos_str = child.value.split(' ', 1)
@@ -2233,7 +2233,7 @@ class Side:
     def copy(
         self,
         des_id: int = -1,
-        vmf_file: Optional[VMF] = None,
+        vmf_file: VMF | None = None,
         side_mapping: MutableMapping[int, int] = EmptyMapping,
     ) -> 'Side':
         """Duplicate this brush side.
@@ -2437,7 +2437,7 @@ class Side:
         self.uaxis.offset -= Vec.dot(u_axis, diff) / self.uaxis.scale
         self.vaxis.offset -= Vec.dot(v_axis, diff) / self.vaxis.scale
 
-    def localise(self, origin: AnyVec, angles: Union[AnyMatrix, AnyAngle, None] = None) -> None:
+    def localise(self, origin: AnyVec, angles: AnyMatrix | AnyAngle | None = None) -> None:
         """Shift the face by the given origin and angles.
 
         This preserves texture offsets.
@@ -2579,7 +2579,7 @@ class Entity(MutableMapping[str, str]):
     Supports ``ent[key]`` operations to read and write keyvalues.
     To read instance ``$replace`` values operate on ``entity.fixup[var]``.
     """
-    _fixup: Optional['EntityFixup']
+    _fixup: 'EntityFixup | None'
     outputs: list['Output']
     solids: list[Solid]
     id: int
@@ -2606,8 +2606,8 @@ class Entity(MutableMapping[str, str]):
         vis_ids: Iterable[int] = (),
         vis_shown: bool = True,
         vis_auto_shown: bool = True,
-        logical_pos: Optional[str] = None,
-        editor_color: Union[Vec, tuple[int, int, int]] = (255, 255, 255),
+        logical_pos: str | None = None,
+        editor_color: Vec | tuple[int, int, int] = (255, 255, 255),
         comments: str = '',
     ) -> None:
         """Construct an entity from scratch."""
@@ -2680,7 +2680,7 @@ class Entity(MutableMapping[str, str]):
     def copy(
         self,
         des_id: int = -1,
-        vmf_file: Optional[VMF] = None,
+        vmf_file: VMF | None = None,
         side_mapping: MutableMapping[int, int] = EmptyMapping,
         keep_vis: bool = True,
     ) -> 'Entity':
@@ -2985,9 +2985,9 @@ class Entity(MutableMapping[str, str]):
     @overload
     def __getitem__(self, key: str) -> str: ...
     @overload
-    def __getitem__(self, key: tuple[str, T]) -> Union[str, T]: ...
+    def __getitem__(self, key: tuple[str, T]) -> str | T: ...
 
-    def __getitem__(self, key: Union[str, tuple[str, T]]) -> Union[str, T]:
+    def __getitem__(self, key: str | tuple[str, T]) -> str | T:
         """Allow using [] syntax to search for keyvalues.
 
         - This will return '' if the value is not present.
@@ -2997,7 +2997,7 @@ class Entity(MutableMapping[str, str]):
         - A tuple can be passed for the default to be set, inside the
           [] syntax.
         """
-        default: Union[str, T]
+        default: str | T
         if isinstance(key, tuple):
             key, default = key
         else:
@@ -3062,7 +3062,7 @@ class Entity(MutableMapping[str, str]):
             else:
                 self._keys[key] = str(self.map.node_id.get_id(node_id))
 
-    def __delitem__(self, key: Union[str, tuple[str, ...]]) -> None:
+    def __delitem__(self, key: str | tuple[str, ...]) -> None:
         """Delete the specified keyvalue. Does nothing if not present.
 
         The ``classname`` keyvalue cannot be deleted.
@@ -3096,9 +3096,9 @@ class Entity(MutableMapping[str, str]):
     @overload
     def get(self, key: str, /) -> str: ...
     @overload
-    def get(self, key: str, /, default: Union[str, T]) -> Union[str, T]: ...
+    def get(self, key: str, /, default: str | T) -> str | T: ...
 
-    def get(self, key: str, /, default: Union[str, T] = '') -> Union[str, T]:
+    def get(self, key: str, /, default: str | T = '') -> str | T:
         """Find a keyvalue, returning a default if not found.
 
         - By default this will return '' if the value is not present.
@@ -3116,9 +3116,9 @@ class Entity(MutableMapping[str, str]):
     @overload
     def pop(self, key: str, /, default: str) -> str: ...
     @overload
-    def pop(self, key: str, /, default: T) -> Union[str, T]: ...
+    def pop(self, key: str, /, default: T) -> str | T: ...
 
-    def pop(self, key: str, /, default: Union[str, T] = '') -> Union[str, T]:
+    def pop(self, key: str, /, default: str | T = '') -> str | T:
         """Find a keyvalue, removing it if found.
 
         - By default this will return '' if the value is not present.
@@ -3208,9 +3208,9 @@ class EntityFixup(MutableMapping[str, str]):
     # for the type annotations.
     __slots__ = ['_fixup', '_matcher']
 
-    def __init__(self, fixup: Union[Iterable[FixupValue], 'EntityFixup'] = ()) -> None:
+    def __init__(self, fixup: 'Iterable[FixupValue] | EntityFixup' = ()) -> None:
         self._fixup: dict[str, FixupValue] = {}
-        self._matcher: Optional[Pattern[str]] = None
+        self._matcher: Pattern[str] | None = None
         # In _fixup each variable is stored as a tuple of (var_name,
         # value, index) with keys equal to the casefolded var name.
         # var_name is kept to allow restoring the original case when exporting.
@@ -3234,9 +3234,9 @@ class EntityFixup(MutableMapping[str, str]):
     def get(self, var: str) -> str: ...
     # noinspection PyMethodOverriding
     @overload
-    def get(self, var: str, default: Union[str, T]) -> Union[str, T]: ...
+    def get(self, var: str, default: str | T) -> str | T: ...
 
-    def get(self, var: str, default: Union[str, T] = '') -> Union[str, T]:
+    def get(self, var: str, default: str | T = '') -> str | T:
         """Get the value of an instance ``$replace`` variable.
 
         If not found, the default will be returned (an empty string).
@@ -3284,9 +3284,9 @@ class EntityFixup(MutableMapping[str, str]):
     def setdefault(self, var: str, /, default: str = ...) -> str: ...
     # noinspection PyMethodOverriding
     @overload
-    def setdefault(self, var: str, /, default: ValidKV_T) -> Union[str, ValidKV_T]: ...
+    def setdefault(self, var: str, /, default: ValidKV_T) -> str | ValidKV_T: ...
 
-    def setdefault(self, var: str, /, default: Union[ValidKV_T, str] = '') -> Union[str, ValidKV_T]:
+    def setdefault(self, var: str, /, default: ValidKV_T | str = '') -> str | ValidKV_T:
         """Return ``$key``, but if not present set it to the default and return that."""
         if var[0] == '$':
             var = var[1:]
@@ -3305,9 +3305,9 @@ class EntityFixup(MutableMapping[str, str]):
     def __getitem__(self, key: str) -> str: ...
 
     @overload
-    def __getitem__(self, key: tuple[str, T]) -> Union[str, T]: ...
+    def __getitem__(self, key: tuple[str, T]) -> str | T: ...
 
-    def __getitem__(self, key: Union[tuple[str, T], str]) -> Union[str, T]:
+    def __getitem__(self, key: tuple[str, T] | str) -> str | T:
         """Retrieve keys via :pycode:`fixup[key]` or :pycode:`fixup[key, default]`.
 
         See :meth:`EntityFixup.get()`.
@@ -3399,7 +3399,7 @@ class EntityFixup(MutableMapping[str, str]):
     def substitute(
         self,
         text: str,
-        default: Optional[str] = None,
+        default: str | None = None,
         *,
         allow_invert: bool = False,
     ) -> str:
@@ -3455,7 +3455,7 @@ class EntityFixup(MutableMapping[str, str]):
 
         return self._matcher.sub(replacer, text)
 
-    def int(self, key: str, def_: Union[builtins.int, T] = 0) -> Union[builtins.int, T]:
+    def int(self, key: str, def_: builtins.int | T = 0) -> builtins.int | T:
         """Return the value of an integer key.
 
         Equivalent to :pycode:`int(fixup[key])`, but with a default value if missing or
@@ -3466,7 +3466,7 @@ class EntityFixup(MutableMapping[str, str]):
         except (ValueError, TypeError):
             return def_
 
-    def float(self, key: str, def_: Union[builtins.float, T] = 0.0) -> Union[builtins.float, T]:
+    def float(self, key: str, def_: builtins.float | T = 0.0) -> builtins.float | T:
         """Return the value of an integer key.
 
         Equivalent to :pycode:`float(fixup[key])`, but with a default value if missing or
@@ -3477,7 +3477,7 @@ class EntityFixup(MutableMapping[str, str]):
         except (ValueError, TypeError):
             return def_
 
-    def bool(self, key: str, def_: Union[builtins.bool, T] = False) -> Union[builtins.bool, T]:
+    def bool(self, key: str, def_: builtins.bool | T = False) -> builtins.bool | T:
         """Return a fixup interpreted as a boolean.
 
         Valid values are the same as `srctools.conv_bool`.
@@ -3572,7 +3572,7 @@ class EntityGroup:
             editor_block.vec('color', 255, 255, 255),
         )
 
-    def copy(self, vmf: Optional[VMF] = None) -> 'EntityGroup':
+    def copy(self, vmf: VMF | None = None) -> 'EntityGroup':
         """Duplicate an entity group."""
         if vmf is None:
             vmf = self.vmf
@@ -3626,9 +3626,9 @@ class Output:
     """Parameters to give the input, or ``""`` for none."""
     delay: float
     """The number of seconds before the output should fire."""
-    inst_out: Optional[str]
+    inst_out: str | None
     """The local entity for an instance output (``instance:name;Output``)"""
-    inst_in: Optional[str]
+    inst_in: str | None
     """The local entity we are really triggering in instance inputs (``instance:name;Input``)"""
     comma_sep: bool
     """Use a comma as a separator, instead of the :py:const:`~srctools.vmf.Output.SEP` character."""
@@ -3641,15 +3641,15 @@ class Output:
     def __init__(
         self,
         out: str,
-        targ: Union[Entity, str],
+        targ: Entity | str,
         inp: str,
         param: 'ValidKVs' = '',
         delay: float = 0.0,
         *,
         times: int = -1,
         only_once: bool = False,
-        inst_out: Optional[str] = None,
-        inst_in: Optional[str] = None,
+        inst_out: str | None = None,
+        inst_in: str | None = None,
         comma_sep: bool = False,
     ) -> None:
         self.output = out
@@ -3734,7 +3734,7 @@ class Output:
         )
 
     @staticmethod
-    def parse_name(name: str) -> tuple[Optional[str], str]:
+    def parse_name(name: str) -> tuple[str | None, str]:
         """Extract the instance name from values of the form::
 
             instance:local_name;Command

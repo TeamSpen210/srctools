@@ -2,9 +2,9 @@
 
 Data from a read BSP is lazily parsed when each section is accessed.
 """
-from typing import Any, Callable, ClassVar, Generic, Optional, TypeVar, Union, overload
+from typing import Any, ClassVar, Generic, Optional, TypeVar, Union, overload
 from typing_extensions import TypedDict, deprecated
-from collections.abc import Generator, Iterator, Mapping, Sequence
+from collections.abc import Callable, Generator, Iterator, Mapping, Sequence
 from enum import Enum, Flag
 from io import BytesIO
 from weakref import WeakKeyDictionary
@@ -57,7 +57,7 @@ HEADER_LUMP = '<4i'  # Header section for each lump.
 
 T = TypeVar('T')
 KeyT = TypeVar('KeyT')  # Needs to be hashable, typecheckers currently don't handle that.
-VecT = TypeVar('VecT', bound=Union[Vec, FrozenVec])
+VecT = TypeVar('VecT', bound=Vec | FrozenVec)
 
 # Game lump IDs
 LMP_ID_STATIC_PROPS = b'sprp'
@@ -339,7 +339,7 @@ LUMP_WRITE_ORDER.append(BSP_LUMPS.PAKFILE)
 # When remaking the lumps from trees of objects,
 # they need to be done in the correct order so stuff referring
 # to other trees can add their data.
-LUMP_REBUILD_ORDER: list[Union[bytes, BSP_LUMPS]] = [
+LUMP_REBUILD_ORDER: list[bytes | BSP_LUMPS] = [
     BSP_LUMPS.PAKFILE,
     BSP_LUMPS.CUBEMAPS,
     LMP_ID_STATIC_PROPS,  # References visleafs, colorvars
@@ -704,9 +704,9 @@ class TexInfo:
     def set(
         self,
         bsp: 'BSP', mat: str,
-        reflectivity: Optional[Vec] = None,
+        reflectivity: Vec | None = None,
         width: int = 0, height: int = 0,
-        fsys: Optional[FileSystem] = None,
+        fsys: FileSystem | None = None,
     ) -> None:
         """Set the material used for this texinfo.
 
@@ -741,7 +741,7 @@ class Plane:
     normal: Vec = attrs.field(on_setattr=_normal_setattr)
     dist: float = attrs.field(converter=float, validator=attrs.validators.instance_of(float))
     # Should not be set by external code, could get out of sync.
-    _type: Optional[PlaneType] = attrs.field(init=False, default=None)
+    _type: PlaneType | None = attrs.field(init=False, default=None)
 
     del _normal_setattr
 
@@ -767,7 +767,7 @@ class Plane:
         """Return the inverse of this plane."""
         return Plane(-self.normal, -self.dist)
 
-    def intersect_line(self, a: VecT, b: Union[Vec, FrozenVec]) -> Optional[VecT]:
+    def intersect_line(self, a: VecT, b: Vec | FrozenVec) -> VecT | None:
         """Given a line segment, calculate the point where it intersects the plane."""
         off = b - a
         denom = off.dot(self.normal)
@@ -867,7 +867,7 @@ class Face:
     same_dir_as_plane: bool
     on_node: bool
     edges: list[Edge]
-    texinfo: Optional[TexInfo]
+    texinfo: TexInfo | None
     _dispinfo_ind: int  # TODO
     surf_fog_volume_id: int
     light_styles: bytes
@@ -879,7 +879,7 @@ class Face:
     primitives: list[Primitive]
     dynamic_shadows: bool
     smoothing_groups: int
-    hammer_id: Optional[int]  #: The original ID of the Hammer face.
+    hammer_id: int | None  #: The original ID of the Hammer face.
     vitamin_flags: int  #: VitaminSource-specific flags.
 
 
@@ -989,7 +989,7 @@ class Overlay:
     tint: Color = Color(255, 255, 255)
     #: Strata Source addition. If set, this overrides the tint with a game-specified value.
     #: Mutually exclusive with the regular tint.
-    color_var: Optional[str] = None
+    color_var: str | None = None
 
     u_min: float = 0.0
     u_max: float = 1.0
@@ -1130,7 +1130,7 @@ class VisTree:
         """:deprecated: Alias for :py:attr:`tree.plane.dist <Plane.dist>`."""
         return self.plane.dist
 
-    def test_point(self, point: Vec) -> Optional[VisLeaf]:
+    def test_point(self, point: Vec) -> VisLeaf | None:
         """Test the given point against us, returning the hit leaf or None."""
         # Quick early out.
         if not point.in_bbox(self.mins, self.maxes):
@@ -1197,7 +1197,7 @@ class BModel:
 
     # If solid, the .phy file-like physics data.
     # This is a text section, and a list of blocks.
-    phys_keyvalues: Optional[Keyvalues] = None
+    phys_keyvalues: Keyvalues | None = None
     _phys_solids: list[bytes] = attrs.field(factory=list)
 
     def clear_physics(self) -> None:
@@ -1236,7 +1236,7 @@ class StaticProp:
     #: Scaling factor for the prop, only available in CSGO and derived mods. Strata Source
     #: additionally adds the ability to scale independently in each axis. Either type can be set -
     #: only the X axis is used if only uniform scaling is supported.
-    scaling: Union[Vec, float] = attrs.field(factory=lambda: Vec(1.0, 1.0, 1.0))
+    scaling: Vec | float = attrs.field(factory=lambda: Vec(1.0, 1.0, 1.0))
     #: When compiled, VBSP uses the model geometry to statically determine the visleafs the model
     #: occupies and stores them here.
     visleafs: set[VisLeaf] = attrs.field(factory=set, repr=False)
@@ -1264,7 +1264,7 @@ class StaticProp:
     renderfx: int = 255
     #: Strata Source addition. If set, this overrides the tint with a game-specified value.
     #: Mutually exclusive with the regular tint.
-    color_var: Optional[str] = attrs.field(kw_only=True, default=None)
+    color_var: str | None = attrs.field(kw_only=True, default=None)
     disable_on_xbox: bool = False
 
     lightmap_x: int = 32
@@ -1283,7 +1283,7 @@ def identity(x: T) -> T:
 
 
 def runlength_decode(
-    data: Union[bytes, bytearray],
+    data: bytes | bytearray,
     start: int = 0, max_clusters: int = -1,
 ) -> bytearray:
     """Decode the run-length encoded viscluster flags in the visibility lump."""
@@ -1315,7 +1315,7 @@ def runlength_decode(
     return result[:ret_bytes]
 
 
-def runlength_encode(data: Union[bytes, bytearray]) -> bytearray:
+def runlength_encode(data: bytes | bytearray) -> bytearray:
     """Re-compress the run-length encoded viscluster flags in the visibility lump."""
     result = bytearray()
     pos = 0
@@ -1368,19 +1368,19 @@ class ParsedLump(Generic[T]):
     If the lump name is bytes, it's a game lump identifier. These are treated as optional, if the
     parsed value is empty.
     """
-    lump: Union[bytes, BSP_LUMPS]
-    to_clear: Sequence[Union[bytes, BSP_LUMPS]]
+    lump: bytes | BSP_LUMPS
+    to_clear: Sequence[bytes | BSP_LUMPS]
     __name__: str
 
-    def __init__(self, lump: Union[bytes, BSP_LUMPS], *extra: Union[bytes, BSP_LUMPS]) -> None:
+    def __init__(self, lump: bytes | BSP_LUMPS, *extra: bytes | BSP_LUMPS) -> None:
         self.lump = lump
         self.to_clear = (lump, *extra)
         self.__name__ = ''
         # May also be a Generator[X] if T = List[X]
         # Args are (BSP, version, data) if game lump, else (BSP, data).
-        self._read: Optional[Callable[..., T]] = None
-        self._check: Optional[Callable[[BSP, T], None]] = None
-        self._default: Optional[Callable[[BSP], T]] = None
+        self._read: Callable[..., T] | None = None
+        self._check: Callable[[BSP, T], None] | None = None
+        self._default: Callable[[BSP], T] | None = None
         assert self.lump in LUMP_REBUILD_ORDER, self.lump
 
     def __set_name__(self, owner: type['BSP'], name: str) -> None:
@@ -1397,11 +1397,11 @@ class ParsedLump(Generic[T]):
         return f'<srctools.BSP.{self.__name__} member>'
 
     @overload
-    def __get__(self, instance: None, owner: Optional[type] = None) -> 'ParsedLump[T]': ...
+    def __get__(self, instance: None, owner: type | None = None) -> 'ParsedLump[T]': ...
     @overload
-    def __get__(self, instance: 'BSP', owner: Optional[type] = None) -> T: ...
+    def __get__(self, instance: 'BSP', owner: type | None = None) -> T: ...
 
-    def __get__(self, instance: Optional['BSP'], owner: Optional[type] = None) -> Union['ParsedLump[T]', T]:
+    def __get__(self, instance: Optional['BSP'], owner: type | None = None) -> Union['ParsedLump[T]', T]:
         """Read the lump, then discard."""
         if instance is None:  # Accessed on the class.
             return self
@@ -1474,11 +1474,11 @@ class BSP:
     # Parsed lump -> func which remakes the raw data. Any = ParsedLump's T, but
     # that can't bind here.
     _save_funcs: ClassVar[dict[
-        Union[bytes, BSP_LUMPS],
-        Callable[['BSP', Any], Union[bytes, Generator[bytes, None, None]]]
+        bytes | BSP_LUMPS,
+        Callable[['BSP', Any], bytes | Generator[bytes, None, None]]
     ]] = {}
     #: The version ID in the file. Will be a :py:class:`VERSIONS` enum if known, otherwise an integer.
-    version: Union[VERSIONS, int]
+    version: VERSIONS | int
     #: A srctools-specific version to identify some games with unique handling. Inferred from the
     #: version ID if specified there.
     game_ver: GameVersion
@@ -1489,19 +1489,19 @@ class BSP:
     def __init__(
         self,
         filename: StringPath,
-        version: Union[VERSIONS, GameVersion, None] = None,
+        version: VERSIONS | GameVersion | None = None,
     ) -> None:
         """Create and load a BSP."""
         self.filename = filename
         self.map_revision = -1  # The map's revision count
         self.lumps: dict[BSP_LUMPS, Lump] = {}
-        self._parsed_lumps: dict[Union[bytes, BSP_LUMPS], Any] = {}
+        self._parsed_lumps: dict[bytes | BSP_LUMPS, Any] = {}
         self.game_lumps: dict[bytes, GameLump] = {}
         self.header_off = 0
         # Tracks if the ent lump is using the new x1D output separators,
         # or the old comma separators. If no outputs are present there's no
         # way to determine this.
-        self.out_comma_sep: Optional[bool] = None
+        self.out_comma_sep: bool | None = None
         self.static_prop_version: StaticPropVersion = StaticPropVersion.UNKNOWN
         # This internally stores the texdata values texinfo refers to. Users
         # don't interact directly, instead they use the create_texinfo / texinfo.set()
@@ -1541,7 +1541,7 @@ class BSP:
     water_leaf_info: ParsedLump[list[LeafWaterInfo]] = ParsedLump(BSP_LUMPS.LEAFWATERDATA)
     nodes: ParsedLump[list[VisTree]] = ParsedLump(BSP_LUMPS.NODES)
     # This is None if VVIS has not been run.
-    visibility: ParsedLump[Optional[Visibility]] = ParsedLump(BSP_LUMPS.VISIBILITY)
+    visibility: ParsedLump[Visibility | None] = ParsedLump(BSP_LUMPS.VISIBILITY)
 
     vertexes: ParsedLump[list[Vec]] = ParsedLump(BSP_LUMPS.VERTEXES)
     surfedges: ParsedLump[list[Edge]] = ParsedLump(BSP_LUMPS.SURFEDGES, BSP_LUMPS.EDGES)
@@ -1565,7 +1565,7 @@ class BSP:
         """Vitaminsource has a lot of structure changes."""
         return self.game_ver is GameVersion.VITAMINSOURCE
 
-    def read(self, expected_version: Union[VERSIONS, GameVersion, None] = None) -> None:
+    def read(self, expected_version: VERSIONS | GameVersion | None = None) -> None:
         """Load all data."""
         self.lumps.clear()
         self.game_lumps.clear()
@@ -1723,7 +1723,7 @@ class BSP:
             # This is not valid any longer.
             game_lump.data = b''
 
-    def save(self, filename: Optional[str] = None) -> None:
+    def save(self, filename: str | None = None) -> None:
         """Write the BSP back into the given file."""
         # First, go through lumps the user has accessed, and rebuild their data.
         for lump_or_game in LUMP_REBUILD_ORDER:
@@ -1962,9 +1962,9 @@ class BSP:
         flags: SurfFlags = SurfFlags.NONE,
         *,
         copy_from: Optional['TexInfo'] = None,
-        reflectivity: Optional[AnyVec] = None,
+        reflectivity: AnyVec | None = None,
         width: int = 0, height: int = 0,
-        fsys: Optional[FileSystem] = None,
+        fsys: FileSystem | None = None,
     ) -> 'TexInfo':
         """Create or find a texinfo entry with the specified values.
 
@@ -2041,7 +2041,7 @@ class BSP:
 
         Always returns :obj:`True` if visibility data has not been computed (``self.visibility is None``).
         """
-        vis: Optional[Visibility] = self.visibility
+        vis: Visibility | None = self.visibility
         if vis is None:
             return True, True
         byte_ind, bit_ind = divmod(leaf2.cluster_id, 8)
@@ -2052,15 +2052,15 @@ class BSP:
 
     def set_potentially_visible(
         self, leaf1: VisLeaf, leaf2: VisLeaf,
-        visible: Optional[bool] = None,
-        audible: Optional[bool] = None,
+        visible: bool | None = None,
+        audible: bool | None = None,
     ) -> None:
         """Override whether the first leaf can see/hear the second.
 
         If either parameter is :obj:`None` that value is left unaltered.
         Does nothing if :attr:`BSP.visibility` is None.
         """
-        vis: Optional[Visibility] = self.visibility
+        vis: Visibility | None = self.visibility
         if vis is None:
             return  # No data. TODO: Maybe init?
         if visible is None and audible is None:
@@ -2197,7 +2197,7 @@ class BSP:
         self.lumps[BSP_LUMPS.PRIMINDICES].data = write_array(self.lump_layout['PRIMINDEX'], indices)
         self.lumps[BSP_LUMPS.PRIMVERTS].data = b''.join(verts)
 
-    def _read_faces_common(self, data: bytes, orig_faces: Optional[list['Face']]) -> Iterator['Face']:
+    def _read_faces_common(self, data: bytes, orig_faces: list['Face'] | None) -> Iterator['Face']:
         """Read one of the faces arrays.
 
         For ORIG_FACES, _orig_faces is None and that entry is ignored.
@@ -2214,7 +2214,7 @@ class BSP:
         else:
             hammer_ids = []
 
-        hammer_id: Optional[int]
+        hammer_id: int | None
 
         for i, face_data in enumerate(
             self.lump_layout['FACE'].iter_unpack(data),
@@ -2302,7 +2302,7 @@ class BSP:
 
     def _write_faces_common(
         self, faces: list['Face'],
-        get_orig_face: Optional[Callable[['Face'], int]],
+        get_orig_face: Callable[['Face'], int] | None,
     ) -> bytes:
         """Reconstruct one of the faces arrays.
 
@@ -2637,7 +2637,7 @@ class BSP:
                     leaf.water_id, leaf.flags.value,
                 ))
             else:
-                leafdata: tuple[Union[int, bytes], ...] = (
+                leafdata: tuple[int | bytes, ...] = (
                     leaf.contents.value, leaf.cluster_id,
                     (leaf.area << self.lump_layout['LEAF_AREA_OFFSET'] | leaf.flags.value),
                     int(leaf.mins.x), int(leaf.mins.y), int(leaf.mins.z),
@@ -2657,7 +2657,7 @@ class BSP:
         self.lumps[BSP_LUMPS.LEAFMINDISTTOWATER].data = write_array('<H', min_water_dists)
         return buf.getvalue()
 
-    def _lmp_read_visibility(self, data: bytes) -> Optional[Visibility]:
+    def _lmp_read_visibility(self, data: bytes) -> Visibility | None:
         """Read VVIS data."""
         if not data:
             return None  # VVIS hasn't run.
@@ -2672,7 +2672,7 @@ class BSP:
             vis.potentially_audible.append(runlength_decode(data, pas_offset, cluster_count))
         return vis
 
-    def _lmp_write_visibility(self, vis: Optional[Visibility]) -> bytes:
+    def _lmp_write_visibility(self, vis: Visibility | None) -> bytes:
         """Reconstruct the VVIS data."""
         if vis is None:
             return b''  # VVIS hasn't run.
@@ -3254,7 +3254,7 @@ class BSP:
         No brushes are read.
         """
         vmf = VMF()
-        cur_ent: Optional[Entity] = None  # None when between brackets.
+        cur_ent: Entity | None = None  # None when between brackets.
         seen_spawn = False  # The first entity is worldspawn.
 
         # We have to use the tokenizer to handle newlines inside quotes.
@@ -3344,7 +3344,7 @@ class BSP:
 
     @staticmethod
     @deprecated('Modify bsp.ents instead', category=None)
-    def write_ent_data(vmf: VMF, use_comma_sep: Optional[bool] = None, *, _show_dep: bool = True) -> bytes:
+    def write_ent_data(vmf: VMF, use_comma_sep: bool | None = None, *, _show_dep: bool = True) -> bytes:
         """Generate the entity data lump.
 
         Deprecated, read and write :py:attr:`BSP.ents` instead.

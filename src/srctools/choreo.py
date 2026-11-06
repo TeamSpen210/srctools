@@ -1,7 +1,6 @@
 """Parses VCD choreo scenes, as well as data in scenes.image."""
 from __future__ import annotations
-from typing import ClassVar, Final, NewType, final
-from typing_extensions import Literal, Self, TypeAlias, assert_never
+from typing import ClassVar, Final, NewType, final, Literal, Self, TypeAlias, assert_never
 from collections.abc import Callable, Iterable, Iterator
 from io import BytesIO
 import enum

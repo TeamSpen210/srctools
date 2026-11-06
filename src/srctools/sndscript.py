@@ -1,8 +1,7 @@
 """Reads and writes Soundscripts."""
-from typing import Callable, Optional, TypeVar, Union
-from typing_extensions import TypeAlias
+from typing import TypeAlias, TypeVar
 
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping
 import enum
 import struct
 import re
@@ -22,8 +21,8 @@ __all__ = [
 ]
 
 EnumT = TypeVar('EnumT')
-Interval: TypeAlias = tuple[Union[float, EnumT], Union[float, EnumT]]
-LevelInterval: TypeAlias = tuple[Union[int, 'Level'], Union[int, 'Level']]
+Interval: TypeAlias = tuple[float | EnumT, float | EnumT]
+LevelInterval: TypeAlias = tuple['int | Level', 'int | Level']
 
 
 #: Possible sound characters.
@@ -187,7 +186,7 @@ class Level(enum.Enum):
         return self.name
 
     @classmethod
-    def parse(cls, text: str) -> Union[int, 'Level']:
+    def parse(cls, text: str) -> 'int | Level':
         """Parse a soundlevel string, which might be a ``SNDLVL`` name or a number."""
         text = text.upper()
         try:
@@ -263,7 +262,7 @@ class Level(enum.Enum):
             return f'{low}, {high}'
 
 
-SOUND_LEVELS: Mapping[str, Union[float, Level]] = {
+SOUND_LEVELS: Mapping[str, float | Level] = {
     level.name.upper(): level
     for level in Level
 } | {
@@ -275,8 +274,8 @@ SOUND_LEVELS: Mapping[str, Union[float, Level]] = {
 def parse_split_float(
     kv: Keyvalues,
     key: str,
-    enum: Callable[[str], Union[float, EnumT]],
-    default: Union[float, EnumT],
+    enum: Callable[[str], float | EnumT],
+    default: float | EnumT,
 ) -> Interval[EnumT]:
     """Parse pairs of float/enum values from keyvalues.
 
@@ -299,8 +298,8 @@ def parse_split_float(
 
 def split_float(
     value: str,
-    enum: Callable[[str], Union[float, EnumT]],
-    default: Union[float, EnumT],
+    enum: Callable[[str], float | EnumT],
+    default: float | EnumT,
 ) -> Interval[EnumT]:
     """Handle values which can be a low, high pair of numbers or enum constants.
 
@@ -440,28 +439,28 @@ class Sound:
     name: str
     sounds: list[str] = attrs.Factory(list)
     volume: Interval[Volume] = (VOL_NORM, VOL_NORM)
-    channel: Union[int, Channel] = Channel.DEFAULT
+    channel: int | Channel = Channel.DEFAULT
     level: LevelInterval = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
     pitch: Interval[Pitch] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM)
 
-    _stack_start: Optional[Keyvalues] = None
-    _stack_update: Optional[Keyvalues] = None
-    _stack_stop: Optional[Keyvalues] = None
+    _stack_start: Keyvalues | None = None
+    _stack_update: Keyvalues | None = None
+    _stack_stop: Keyvalues | None = None
     force_v2: bool = False
 
     def __init__(
         self,
         name: str,
         sounds: list[str],
-        volume: Union[Interval[Volume], float, Volume] = (VOL_NORM, VOL_NORM),
-        channel: Union[int, Channel] = Channel.DEFAULT,
-        level: Union[LevelInterval, int, Level] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM),
-        pitch: Union[Interval[Pitch], float, Pitch] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM),
+        volume: Interval[Volume] | float | Volume = (VOL_NORM, VOL_NORM),
+        channel: int | Channel = Channel.DEFAULT,
+        level: LevelInterval | int | Level = (Level.SNDLVL_NORM, Level.SNDLVL_NORM),
+        pitch: Interval[Pitch] | float | Pitch = (Pitch.PITCH_NORM, Pitch.PITCH_NORM),
 
         # Operator stacks
-        stack_start: Optional[Keyvalues] = None,
-        stack_update: Optional[Keyvalues] = None,
-        stack_stop: Optional[Keyvalues] = None,
+        stack_start: Keyvalues | None = None,
+        stack_update: Keyvalues | None = None,
+        stack_stop: Keyvalues | None = None,
         force_v2: bool = False,
     ) -> None:
         """Create a soundscript."""
@@ -568,7 +567,7 @@ class Sound:
                     wavs.append(subprop.value)
 
         channel_str = sound_kv['channel', 'CHAN_AUTO'].upper()
-        channel: Union[int, Channel]
+        channel: int | Channel
         if channel_str.startswith('CHAN_'):
             channel = Channel(channel_str)
         else:
@@ -576,9 +575,9 @@ class Sound:
 
         sound_version = sound_kv.int('soundentry_version', 1)
 
-        start_stack: Optional[Keyvalues]
-        update_stack: Optional[Keyvalues]
-        stop_stack: Optional[Keyvalues]
+        start_stack: Keyvalues | None
+        update_stack: Keyvalues | None
+        stop_stack: Keyvalues | None
         if 'operator_stacks' in sound_kv:
             if sound_version == 1:
                 raise ValueError(

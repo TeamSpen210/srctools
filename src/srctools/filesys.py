@@ -24,8 +24,8 @@ supported.
 See the :py:class:`srctools.game.Game` class for parsing ``gameinfo.txt`` files into filesystems.
 To mount a :py:class:`~srctools.bsp.BSP` file, use ``ZipFileSystem(bsp.pakfile)``.
 """
-from typing import Any, BinaryIO, Final, Generic, Optional, TextIO, Union, cast
-from typing_extensions import Self, TypeVar, deprecated
+from typing import Any, BinaryIO, Final, Generic, Self, TextIO, cast
+from typing_extensions import TypeVar, deprecated
 from collections.abc import Iterator, Mapping, Callable
 from zipfile import ZipFile, ZipInfo
 from pathlib import Path
@@ -174,12 +174,12 @@ class FileSystem(Generic[_FileDataT]):
 
     def read_kv1(
         self,
-        path: Union[str, File[Self]],
+        path: str | File[Self],
         encoding: str = 'utf8',
         *,
         newline_keys: bool = False,
         newline_values: bool = True,
-        periodic_callback: Optional[Callable[[], object]] = None,
+        periodic_callback: Callable[[], object] | None = None,
         allow_escapes: bool = True,
         single_line: bool = False,
     ) -> Keyvalues:
@@ -268,7 +268,7 @@ class FileSystem(Generic[_FileDataT]):
         """Iterate over all files in the specified subfolder, yielding each."""
         raise NotImplementedError
 
-    def open_str(self, name: Union[str, File[Self]], encoding: str = 'utf8') -> TextIO:
+    def open_str(self, name: str | File[Self], encoding: str = 'utf8') -> TextIO:
         """Open a file in unicode mode or raise :py:class:`FileNotFoundError`.
 
         This should be closed when done.
@@ -278,7 +278,7 @@ class FileSystem(Generic[_FileDataT]):
         """
         raise NotImplementedError
 
-    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:
+    def open_bin(self, name: str | File[Self]) -> BinaryIO:
         """Open a file in bytes mode or raise :py:class:`FileNotFoundError`.
 
         This should be closed when done.
@@ -304,7 +304,7 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
     #: The child filesystems, as (filesystem, subfolder) tuples.
     systems: list[tuple[FileSystem[Any], str]]
 
-    def __init__(self, *systems: Union[FileSystem[Any], tuple[FileSystem[Any], str]]) -> None:
+    def __init__(self, *systems: FileSystem[Any] | tuple[FileSystem[Any], str]) -> None:
         super().__init__('')
         self.systems = []
         for sys in systems:
@@ -366,7 +366,7 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
             return File(self, full_name, file_info)
         raise FileNotFoundError(name)
 
-    def open_str(self, name: Union[str, File[Self]], encoding: str = 'utf8') -> TextIO:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def open_str(self, name: str | File[Self], encoding: str = 'utf8') -> TextIO:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Open a file in unicode mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -375,7 +375,7 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
             return self._get_data(name).open_str(encoding)
         return self._get_file(name).open_str(encoding)
 
-    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def open_bin(self, name: str | File[Self]) -> BinaryIO:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Open a file in bytes mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -432,10 +432,10 @@ class VirtualFileSystem(FileSystem[str]):
     The encoding arg specifies how text data is presented if :py:meth:`~FileSystem.open_bin()`
     is called.
     """
-    _mapping: Mapping[str, tuple[str, Union[str, bytes, bytearray, memoryview]]]
+    _mapping: Mapping[str, tuple[str, str | bytes | bytearray | memoryview]]
     bytes_encoding: str  #: Encoding used to convert text data for :py:meth:`~FileSystem.open_bin()`.
 
-    def __init__(self, mapping: Mapping[str, Union[str, bytes, bytearray, memoryview]], encoding: str = 'utf8') -> None:
+    def __init__(self, mapping: Mapping[str, str | bytes | bytearray | memoryview], encoding: str = 'utf8') -> None:
         super().__init__('<virtual>')
         self._mapping = {
             self._clean_path(filename): (filename, data)
@@ -456,14 +456,14 @@ class VirtualFileSystem(FileSystem[str]):
         return hash(self.bytes_encoding) ^ hash(tuple(self._mapping.values()))
 
     @classmethod
-    def _clean_path(cls, path: Union[str, File[Self]]) -> str:
+    def _clean_path(cls, path: str | File[Self]) -> str:
         """Convert paths to one representation."""
         if isinstance(path, File):
             cls._get_data(path)  # Check ownership.
             path = path.path
         return os.path.normpath(path).replace('\\', '/').casefold()
 
-    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def open_bin(self, name: str | File[Self]) -> BinaryIO:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Return a bytes buffer for a 'file'."""
         try:
             filename, data = self._mapping[self._clean_path(name)]
@@ -475,7 +475,7 @@ class VirtualFileSystem(FileSystem[str]):
 
     def open_str(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
-        name: Union[str, File[Self]],
+        name: str | File[Self],
         encoding: str = 'utf8',
     ) -> TextIO:
         """Return a string buffer for a 'file'.
@@ -594,7 +594,7 @@ class RawFileSystem(FileSystem[str]):
                 ).replace('\\', '/')
                 yield File(self, rel_path, rel_path)
 
-    def open_str(self, name: Union[str, File[Self]], encoding: str = 'utf8') -> TextIO:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def open_str(self, name: str | File[Self], encoding: str = 'utf8') -> TextIO:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Open a file in unicode mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -603,7 +603,7 @@ class RawFileSystem(FileSystem[str]):
             name = self._get_data(name)
         return open(self._resolve_path(name), encoding=encoding)
 
-    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def open_bin(self, name: str | File[Self]) -> BinaryIO:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Open a file in bytes mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -634,7 +634,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
     """Accesses files in a zip file."""
     zip: ZipFile  #: The open zipfile object.
 
-    def __init__(self, path: StringPath, zipfile: Optional[ZipFile] = None) -> None:
+    def __init__(self, path: StringPath, zipfile: ZipFile | None = None) -> None:
         super().__init__(path)
 
         self.zip = zipfile if zipfile is not None else ZipFile(path)
@@ -655,7 +655,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
             if filename.startswith(folder):
                 yield File(self, fileinfo.filename, fileinfo)
 
-    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def open_bin(self, name: str | File[Self]) -> BinaryIO:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Open a file in bytes mode or raise FileNotFoundError.
 
         The filesystem needs to be open while accessing this.
@@ -676,7 +676,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
 
     def open_str(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
-        name: Union[str, File[Self]],
+        name: str | File[Self],
         encoding: str = 'utf8',
     ) -> io.TextIOWrapper:
         """Open a file in unicode mode or raise FileNotFoundError.
@@ -735,7 +735,7 @@ class VPKFileSystem(FileSystem[VPKFile]):
             if file.dir.startswith(folder):
                 yield File(self, file.filename, file)
 
-    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def open_bin(self, name: str | File[Self]) -> BinaryIO:  # pyright: ignore[reportIncompatibleMethodOverride]
         """Open a file in bytes mode or raise FileNotFoundError."""
         # Extract our VPK info directly.
         if isinstance(name, File):
@@ -749,7 +749,7 @@ class VPKFileSystem(FileSystem[VPKFile]):
 
     def open_str(  # pyright: ignore[reportIncompatibleMethodOverride]
         self,
-        name: Union[str, File[Self]],
+        name: str | File[Self],
         encoding: str = 'utf8',
     ) -> TextIO:
         """Open a file in unicode mode or raise FileNotFoundError."""

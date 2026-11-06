@@ -21,10 +21,10 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
-    - name: Set up Python 3.13
+    - name: Set up Python 3.15
       uses: actions/setup-python@v5
       with:
-        python-version: '3.13'
+        python-version: '3.15'
         cache: 'pip'
         cache-dependency-path: |
           test-requirements.txt
@@ -46,14 +46,6 @@ jobs:
       if: (success() || failure()) && steps.install_deps.outcome == 'success'
 
     # Check every version.
-    - name: MyPy - Python 3.9
-      run: |
-        mypy --python-version 3.9 src/srctools/ type_tests/
-      if: (success() || failure()) && steps.install_deps.outcome == 'success'
-    - name: MyPy - Python 3.10
-      run: |
-        mypy --python-version 3.10 src/srctools/ type_tests/
-      if: (success() || failure()) && steps.install_deps.outcome == 'success'
     - name: MyPy - Python 3.11
       run: |
         mypy --python-version 3.11 src/srctools/ type_tests/
@@ -70,15 +62,11 @@ jobs:
       run: |
         mypy --python-version 3.14 src/srctools/ type_tests/
       if: (success() || failure()) && steps.install_deps.outcome == 'success'
+    - name: MyPy - Python 3.15
+      run: |
+        mypy --python-version 3.15 src/srctools/ type_tests/
+      if: (success() || failure()) && steps.install_deps.outcome == 'success'
 
-    - name: Pyright - Python 3.9
-      run: |
-        pyright --pythonversion 3.9
-      if: (success() || failure()) && steps.install_deps.outcome == 'success'
-    - name: Pyright - Python 3.10
-      run: |
-        pyright --pythonversion 3.10
-      if: (success() || failure()) && steps.install_deps.outcome == 'success'
     - name: Pyright - Python 3.11
       run: |
         pyright --pythonversion 3.11
@@ -94,4 +82,8 @@ jobs:
     - name: Pyright - Python 3.14
       run: |
         pyright --pythonversion 3.14
+      if: (success() || failure()) && steps.install_deps.outcome == 'success'
+    - name: Pyright - Python 3.15
+      run: |
+        pyright --pythonversion 3.15
       if: (success() || failure()) && steps.install_deps.outcome == 'success'

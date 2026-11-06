@@ -3,8 +3,8 @@
 This lists keyvalue/io types and names available for every entity classname.
 The dump does not contain help descriptions to keep the data small.
 """
-from typing import TYPE_CHECKING, Final, Optional, Union
-from typing_extensions import TypeAlias
+from typing import TYPE_CHECKING, Final, Optional
+from typing import TypeAlias
 from collections import Counter
 from collections.abc import Callable, Collection, Iterable, Mapping, Set as AbstractSet
 from enum import IntFlag
@@ -276,14 +276,14 @@ class EngineDB(_EngineDBProto):
     """Unserialised database, which will be parsed progressively as required."""
     def __init__(
         self,
-        ent_map: dict[str, Union[EntityDef, int]],
+        ent_map: dict[str, EntityDef | int],
         base_strings: list[str],
         unparsed: list[tuple[Iterable[str], bytes]],
     ) -> None:
         self.ent_map = ent_map
         self.unparsed = unparsed
         self.base_strings = base_strings
-        self.fgd: Optional[FGD] = None
+        self.fgd: FGD | None = None
 
     def get_classnames(self) -> AbstractSet[str]:
         """Get the classnames in the database."""
@@ -403,7 +403,7 @@ def kv_unserialise(
     [value_ind, kv_flags] = file.read(2)
     value_type = VALUE_TYPE_ORDER[value_ind]
 
-    options: Optional[list[KVOption]]
+    options: list[KVOption] | None
 
     if value_type is ValueTypes.SPAWNFLAGS:
         default = ''  # No default for this type.
@@ -606,7 +606,7 @@ def compute_ent_strings(ents: Iterable[EntityDef]) -> tuple[
         return b'\x00\x00'
 
     # Disable warnings, we don't want a warning both here and when it is actually serialised.
-    ent: Optional[EntityDef] = None
+    ent: EntityDef | None = None
     with warnings.catch_warnings():
         for ent in ents:
             # We don't care about the contents, so just let it overwrite itself to save reallocating
@@ -803,7 +803,7 @@ def unserialise(file: FileRSeek[bytes]) -> _EngineDBProto:
         raise TypeError(f'Unknown format version {format_version}, expected {BIN_FORMAT_VERSION}!')
 
     block_classnames: list[list[str]] = []
-    ent_map: dict[str, Union[EntityDef, int]] = {}
+    ent_map: dict[str, EntityDef | int] = {}
     unparsed: list[tuple[Iterable[str], bytes]] = []
     positions: list[tuple[list[str], int, int]] = []
 

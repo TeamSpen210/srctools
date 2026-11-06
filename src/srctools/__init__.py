@@ -1,5 +1,4 @@
-from typing import TYPE_CHECKING, Any, Final, Generic, NoReturn, Optional, TypeVar, Union, overload
-from typing_extensions import Literal, TypeAlias
+from typing import TYPE_CHECKING, Any, Final, Generic, NoReturn, TypeVar, overload, Literal, TypeAlias
 from collections import deque
 from collections.abc import (
     Container, ItemsView, Iterable, Iterator, KeysView, Mapping, MutableMapping, Sequence,
@@ -45,7 +44,7 @@ _FILE_CHARS = frozenset(
     '-_ .|'
 )
 ValT = TypeVar('ValT')
-StringPath: TypeAlias = Union[str, _os.PathLike[str]]
+StringPath: TypeAlias = str | _os.PathLike[str]
 
 
 def clean_line(line: str) -> str:
@@ -165,10 +164,10 @@ BOOL_LOOKUP: Final[Mapping[str, bool]] = {
 
 
 @overload
-def conv_bool(val: Union[str, bool, None]) -> bool: ...
+def conv_bool(val: str | bool | None) -> bool: ...
 @overload
-def conv_bool(val: Union[str, bool, None], default: ValT) -> Union[ValT, bool]: ...
-def conv_bool(val: Union[str, bool, None], default: Union[ValT, bool] = False) -> Union[ValT, bool]:
+def conv_bool(val: str | bool | None, default: ValT) -> ValT | bool: ...
+def conv_bool(val: str | bool | None, default: ValT | bool = False) -> ValT | bool:
     """Converts a string to a boolean, using a default if it fails.
 
     Accepts any of ``0``, ``1``, ``false``, ``true``, ``yes``, ``no``.
@@ -195,10 +194,10 @@ def conv_bool(val: Union[str, bool, None], default: Union[ValT, bool] = False) -
 
 
 @overload
-def conv_float(val: Union[int, float, str]) -> float: ...
+def conv_float(val: int | float | str) -> float: ...
 @overload
-def conv_float(val: Union[int, float, str], default: ValT) -> Union[ValT, float]: ...
-def conv_float(val: Union[int, float, str], default: Union[ValT, float] = 0.0) -> Union[ValT, float]:
+def conv_float(val: int | float | str, default: ValT) -> ValT | float: ...
+def conv_float(val: int | float | str, default: ValT | float = 0.0) -> ValT | float:
     """Converts a string to a float, using a default if it fails.
 
     The value may also be an integer or float, which is also converted.
@@ -210,10 +209,10 @@ def conv_float(val: Union[int, float, str], default: Union[ValT, float] = 0.0) -
 
 
 @overload
-def conv_int(val: Union[int, float, str]) -> int: ...
+def conv_int(val: int | float | str) -> int: ...
 @overload
-def conv_int(val: Union[int, float, str], default: ValT) -> Union[ValT, int]: ...
-def conv_int(val: Union[int, float, str], default: Union[ValT, int] = 0) -> Union[ValT, int]:
+def conv_int(val: int | float | str, default: ValT) -> ValT | int: ...
+def conv_int(val: int | float | str, default: ValT | int = 0) -> ValT | int:
     """Converts a string to an integer, using a default if it fails.
 
     The value may also be an integer or float, which is also converted.
@@ -263,7 +262,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     def get(self, key: Any, /) -> None: ...
     @overload  # Stricter than Mapping.get() - that allows default=ValueT=Any, but we always return the default.
     def get(self, key: Any, /, default: ValT) -> ValT: ...
-    def get(self, key: Any, /, default: Optional[ValT] = None) -> Optional[ValT]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def get(self, key: Any, /, default: ValT | None = None) -> ValT | None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """get() always returns the default item."""
         return default
 
@@ -299,7 +298,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     @overload
     def setdefault(self, key: Any, /, default: ValT) -> ValT: ...
 
-    def setdefault(self, key: Any, /, default: Optional[ValT] = None) -> Optional[ValT]:  # pyright: ignore[reportIncompatibleMethodOverride]
+    def setdefault(self, key: Any, /, default: ValT | None = None) -> ValT | None:  # pyright: ignore[reportIncompatibleMethodOverride]
         """setdefault() always returns the default item, but does not store it."""
         return default
 
@@ -465,9 +464,9 @@ class AtomicWriter(Generic[IOKindT]):
     """
     filename: Path
     encoding: str
-    _temp_name: Optional[Path]
+    _temp_name: Path | None
     is_bytes: bool
-    temp: Optional[IOKindT]
+    temp: IOKindT | None
 
     @overload
     def __init__(
@@ -525,9 +524,9 @@ class AtomicWriter(Generic[IOKindT]):
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_value: Optional[BaseException],
-        tback: Optional[TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_value: BaseException | None,
+        tback: TracebackType | None,
     ) -> None:
         # Delegate down to close the file like normal.
         if self.temp is not None:

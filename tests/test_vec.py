@@ -1,8 +1,7 @@
 """Test the Vector object."""
-from collections.abc import Callable, Mapping
+from typing import Literal, TypeAlias, cast
 
-from typing import Union, cast
-from typing_extensions import Literal, TypeAlias
+from collections.abc import Callable, Mapping
 from fractions import Fraction
 from pathlib import Path
 from random import Random
@@ -315,7 +314,7 @@ def test_with_axes_conv(frozen_thawed_vec: VecClass) -> None:
 @pytest.mark.parametrize('clsname', ['Vec', 'FrozenVec', 'Angle', 'FrozenAngle'])
 def test_vec_ang_stringification(py_c_vec: PyCVec, clsname: str) -> None:
     """Test string methods for both angles and vectors."""
-    cls: Union[VecClass, AngleClass] = getattr(vec_mod, clsname)
+    cls: VecClass | AngleClass = getattr(vec_mod, clsname)
     # Test:
     # Zeros, float in each pos, rounding down to int, up to int, format with more decimal places,
     # format with less.

@@ -1,5 +1,5 @@
 """Reads the GameInfo file to determine where Source game data is stored."""
-from typing import Final, Optional, Union
+from typing import Final
 from collections.abc import Sequence, Iterable
 from pathlib import Path
 import itertools
@@ -22,11 +22,11 @@ LOGGER = get_logger(__name__)
 class Game:
     """Represents the data in GameInfo."""
     path: Path
-    game_name: Optional[str]
-    app_id: Optional[str]
-    tools_id: Optional[str]
-    additional_content: Optional[str]
-    fgd_loc: Optional[str]
+    game_name: str | None
+    app_id: str | None
+    tools_id: str | None
+    additional_content: str | None
+    fgd_loc: str | None
     search_paths: list[Path]
     #: Mount configurations used in Strata Source.
     #: Allows loading searchpaths from other games, based on appid.
@@ -34,7 +34,7 @@ class Game:
 
     def __init__(
         self,
-        path: Union[str, Path],
+        path: str | Path,
         encoding: str = 'utf8',
     ) -> None:
         """Parse a game from a folder.
@@ -313,7 +313,7 @@ class Game:
         return folder
 
 
-def find_gameinfo(argv: Optional[list[str]] = None) -> Game:
+def find_gameinfo(argv: list[str] | None = None) -> Game:
     """Locate the game we're in, if launched as a compiler.
 
     This checks the following:

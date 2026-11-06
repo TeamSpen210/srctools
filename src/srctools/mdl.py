@@ -1,5 +1,5 @@
 """Parses Source models, to extract metadata."""
-from typing import Any, Optional, TypeVar, Union, cast
+from typing import Any, TypeVar, cast
 from collections.abc import Iterable, Iterator
 from enum import Enum, Flag as FlagEnum
 from pathlib import PurePosixPath
@@ -308,7 +308,7 @@ class IncludedMDL:
 class SeqEvent:
     """An event that occurs at some point in an animation sequence."""
     # AnimEvents for known common ones, str for dynamic NPC-specific events.
-    type: Union[AnimEvents, str]
+    type: AnimEvents | str
     cycle: float  # Point within the animation that it's triggered.
     options: str  # Additional event-specific data.
 
@@ -665,7 +665,7 @@ class Model:
                 event_end = f.tell()
 
                 # There are two event systems.
-                event_type: Union[AnimEvents, str]
+                event_type: AnimEvents | str
                 if event_flags == 1 << 10:
                     # New system, name in the file.
                     event_name = read_nullstr(f, event_start + event_nameloc)
@@ -804,7 +804,7 @@ class Model:
             single_line=True,
         )
 
-    def iter_textures(self, skins: Optional[Iterable[int]] = None) -> Iterator[str]:
+    def iter_textures(self, skins: Iterable[int] | None = None) -> Iterator[str]:
         """Yield textures used by this model.
 
         Skins if given should be a set of skin indexes, which constrains the

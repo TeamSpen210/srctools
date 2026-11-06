@@ -58,8 +58,8 @@ Keyvalues with children can be indexed by their names, or by a
 
 Handling ``\\n``, ``\\t``, ``\\"``, and ``\\\\`` escape characters can be enabled.
 """
-from typing import Any, ClassVar, Final, Optional, Protocol, TypeVar, Union, cast, overload
-from typing_extensions import ContextManager, Literal, TypeAlias, deprecated, Self
+from typing import Any, ClassVar, Final, Protocol, TypeVar, Literal, TypeAlias, Self, cast, overload
+from typing_extensions import ContextManager, deprecated
 from collections.abc import Callable, Iterable, Iterator, Mapping
 import builtins  # Keyvalues.bool etc shadows these.
 import io
@@ -84,8 +84,8 @@ __all__ = ['KeyValError', 'NoKeyError', 'LeafKeyvalueError', 'Keyvalues', 'escap
 # Sentinel value to indicate that no default was given to find_key()
 _NO_KEY_FOUND: str = cast(str, object())
 
-_KV_Value = Union[list['Keyvalues'], str, Any]
-_As_Dict_Ret: TypeAlias = Union[str, dict[str, '_As_Dict_Ret']]
+_KV_Value: TypeAlias = list['Keyvalues'] | str | Any
+_As_Dict_Ret: TypeAlias = str | dict[str, '_As_Dict_Ret']
 
 T = TypeVar('T')
 
@@ -118,12 +118,12 @@ class NoKeyError(LookupError):
     """Raised if a key is not found when searching with
     :py:meth:`~Keyvalues.find_key()`, :py:meth:`~Keyvalues.find_block()`, etc."""
     key: str  #: The key that was missing.
-    line_num: Optional[int]  #: The line number where the block is defined, if known.
-    filename: Optional[str]  #: The filename where the block is defined, if known.
+    line_num: int | None  #: The line number where the block is defined, if known.
+    filename: str | None  #: The filename where the block is defined, if known.
     def __init__(
         self, key: str,
-        line_num: Optional[int] = None,
-        filename: Optional[str] = None,
+        line_num: int | None = None,
+        filename: str | None = None,
     ) -> None:
         super().__init__(key)
         self.key = key
@@ -158,9 +158,9 @@ class _FilenameSetter(ContextManager[str, None]):
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[types.TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: types.TracebackType | None,
     ) -> None:
         if exc_val is None:
             return
@@ -186,9 +186,9 @@ class LeafKeyvalueError(ValueError):
     """
     leaf: 'Keyvalues'  #: The keyvalue being used.
     operation: str  #: Name of the operation being performed.
-    line_num: Optional[int]  #: The line number where the leaf is defined, if known.
-    filename: Optional[str]  #: The filename where the leaf is defined, if known.
-    def __init__(self, leaf: 'Keyvalues', operation: str, filename: Optional[str] = None) -> None:
+    line_num: int | None  #: The line number where the leaf is defined, if known.
+    filename: str | None  #: The filename where the leaf is defined, if known.
+    def __init__(self, leaf: 'Keyvalues', operation: str, filename: str | None = None) -> None:
         super().__init__(operation)
         self.leaf = leaf
         self.operation = operation
@@ -233,34 +233,34 @@ class Keyvalues:
     """
     # Helps decrease memory footprint with lots of Keyvalues values.
     __slots__ = ('_folded_name', '_real_name', '_value', 'line_num')
-    _folded_name: Optional[str]
-    _real_name: Optional[str]
+    _folded_name: str | None
+    _real_name: str | None
     _value: _KV_Value
     #: If parsed from a file, the line number this keyvalue starts on. This allows providing a
     #: source location for missing-value exceptions.
-    line_num: Optional[int]
+    line_num: int | None
 
     @overload
     def __init__(
         self,
         name: str,
-        value: Union[list['Keyvalues'], str],
-        line_num: Optional[int] = None,
+        value: list['Keyvalues'] | str,
+        line_num: int | None = None,
     ) -> None: ...
     @overload
     @deprecated("Use Keyvalues.root() to construct.", category=None)
     def __init__(
         self,
         name: None,
-        value: Union[list['Keyvalues'], str],
-        line_num: Optional[int] = None,
+        value: list['Keyvalues'] | str,
+        line_num: int | None = None,
     ) -> None: ...
 
     def __init__(
         self,
-        name: Optional[str],
-        value: Union[list['Keyvalues'], str],
-        line_num: Optional[int] = None,
+        name: str | None,
+        value: list['Keyvalues'] | str,
+        line_num: int | None = None,
     ) -> None:
         """Create a new keyvalues instance."""
         if name is None:
@@ -337,7 +337,7 @@ class Keyvalues:
             self._real_name = sys.intern(new_name)
             self._folded_name = sys.intern(new_name.casefold())
 
-    def edit(self, name: Optional[str] = None, value: Union[str, list['Keyvalues'], None] = None) -> 'Keyvalues':
+    def edit(self, name: str | None = None, value: str | list['Keyvalues'] | None = None) -> 'Keyvalues':
         """Simultaneously modify the name and value."""
         if name is not None:
             self._real_name = name
@@ -366,13 +366,13 @@ class Keyvalues:
     @staticmethod
     @overload
     def parse(
-        file_contents: Union[str, Iterable[str]],
+        file_contents: str | Iterable[str],
         filename: StringPath = '', *,
         flags: Mapping[str, bool] = EmptyMapping,
         newline_keys: bool = False,
         newline_values: bool = True,
         single_line: bool = False,
-        periodic_callback: Optional[Callable[[], object]] = None,
+        periodic_callback: Callable[[], object] | None = None,
         allow_escapes: bool = True,
     ) -> "Keyvalues": ...
     @staticmethod
@@ -388,12 +388,12 @@ class Keyvalues:
     ) -> "Keyvalues": ...
     @staticmethod
     def parse(
-        file_contents: Union[str, BaseTokenizer, Iterable[str]],
+        file_contents: str | BaseTokenizer | Iterable[str],
         filename: StringPath = '', *,
         flags: Mapping[str, bool] = EmptyMapping,
         newline_keys: bool = False,
         newline_values: bool = True,
-        periodic_callback: Optional[Callable[[], object]] = None,
+        periodic_callback: Callable[[], object] | None = None,
         allow_escapes: bool = True,
         single_line: bool = False,
         single_block: bool = False,
@@ -750,13 +750,13 @@ class Keyvalues:
     @overload
     def _get_value(self, key: str, /) -> builtins.str: ...
     @overload
-    def _get_value(self, key: str, default: T, /) -> Union[builtins.str, T]: ...
+    def _get_value(self, key: str, default: T, /) -> builtins.str | T: ...
     def _get_value(
         self,
         key: str,
-        default: Union[builtins.str, T] = _NO_KEY_FOUND,
+        default: builtins.str | T = _NO_KEY_FOUND,
         /,
-    ) -> Union[builtins.str, T]:
+    ) -> builtins.str | T:
         """Obtain the value of the child Keyvalue with a given name.
 
         Effectively :py:meth:`find_key()` but doesn't make a new keyvalue.
@@ -786,9 +786,9 @@ class Keyvalues:
     @overload
     def int(self, key: str) -> builtins.int: ...
     @overload
-    def int(self, key: str, def_: T) -> Union[builtins.int, T]: ...
+    def int(self, key: str, def_: T) -> builtins.int | T: ...
 
-    def int(self, key: str, def_: Union[builtins.int, T] = 0) -> Union[builtins.int, T]:
+    def int(self, key: str, def_: builtins.int | T = 0) -> builtins.int | T:
         """Return the value of an integer key.
 
         Equivalent to ``int(kv[key])``, but with a default value if missing or
@@ -806,9 +806,9 @@ class Keyvalues:
     @overload
     def float(self, key: str) -> builtins.float: ...
     @overload
-    def float(self, key: str, def_: T) -> Union[builtins.float, T]: ...
+    def float(self, key: str, def_: T) -> builtins.float | T: ...
 
-    def float(self, key: str, def_: Union[builtins.float, T] = 0.0) -> Union[builtins.float, T]:
+    def float(self, key: str, def_: builtins.float | T = 0.0) -> builtins.float | T:
         """Return the value of an integer key.
 
         Equivalent to ``float(kv[key])``, but with a default value if missing or
@@ -826,9 +826,9 @@ class Keyvalues:
     @overload
     def bool(self, key: str) -> builtins.bool: ...
     @overload
-    def bool(self, key: str, def_: T) -> Union[builtins.bool, T]: ...
+    def bool(self, key: str, def_: T) -> builtins.bool | T: ...
 
-    def bool(self, key: str, def_: Union[builtins.bool, T] = False) -> Union[builtins.bool, T]:
+    def bool(self, key: str, def_: builtins.bool | T = False) -> builtins.bool | T:
         """Return the value of a boolean key.
 
         The value may be case-insensitively ``true``, ``false``, ``1``, ``0``, ``T``,
@@ -861,7 +861,7 @@ class Keyvalues:
         except NoKeyError:  # key not present, defaults.
             return _Vec(x, y, z)
 
-    def set_key(self, path: Union[tuple[str, ...], str], value: str) -> None:
+    def set_key(self, path: tuple[str, ...] | str, value: str) -> None:
         """Set the value of a key deep in the tree hierarchy.
 
         - If any of the hierarchy do not exist (or do not have children), blank keyvalues will be added automatically.
@@ -925,7 +925,7 @@ class Keyvalues:
     @overload
     def as_array(self, *, conv: Callable[[str], T]) -> list[T]: ...
 
-    def as_array(self, *, conv: Callable[[str], T] = cast(Any, str)) -> Union[list[T], list[str]]:
+    def as_array(self, *, conv: Callable[[str], T] = cast(Any, str)) -> list[T] | list[str]:
         """Convert a keyvalue block into a list of values.
 
         If the keyvalue is a single keyvalue, the single value will be
@@ -1032,17 +1032,12 @@ class Keyvalues:
     @overload
     def __getitem__(self, index: str) -> str: ...
     @overload
-    def __getitem__(self, index: tuple[str, T]) -> Union[str, T]: ...
+    def __getitem__(self, index: tuple[str, T]) -> str | T: ...
 
     def __getitem__(
         self,
-        index: Union[
-            str,
-            builtins.int,
-            slice,
-            tuple[str, Union[str, T]],
-        ],
-    ) -> Union['Keyvalues', list['Keyvalues'], str, T]:
+        index: str | builtins.int | slice | tuple[str, str | T],
+    ) -> 'Keyvalues | list[Keyvalues] | str | T':
         """Allow indexing the children directly.
 
         - If given an index, it will return the keyvalues in that position.
@@ -1071,12 +1066,12 @@ class Keyvalues:
     @overload
     def __setitem__(self, index: builtins.int, value: 'Keyvalues') -> None: ...
     @overload
-    def __setitem__(self, index: str, value: Union[str, 'Keyvalues']) -> None: ...
+    def __setitem__(self, index: str, value: 'str | Keyvalues') -> None: ...
 
     def __setitem__(
         self,
-        index: Union[builtins.int, slice, str],
-        value: Union['Keyvalues', Iterable['Keyvalues'], str],
+        index: builtins.int | slice | str,
+        value: 'Keyvalues | Iterable[Keyvalues] | str',
     ) -> None:
         """Allow setting the values of the children directly.
 
@@ -1123,7 +1118,7 @@ class Keyvalues:
         else:
             raise TypeError(f'Unknown key type: {index!r}')
 
-    def __delitem__(self, index: Union[builtins.int, slice, str]) -> None:
+    def __delitem__(self, index: builtins.int | slice | str) -> None:
         """Delete the given keyvalues index.
 
         - If given an integer, it will delete by position.
@@ -1197,7 +1192,7 @@ class Keyvalues:
         else:
             raise LeafKeyvalueError(self, 'extend')
 
-    def append(self, other: Union[Iterable['Keyvalues'], 'Keyvalues']) -> None:
+    def append(self, other: 'Iterable[Keyvalues] | Keyvalues') -> None:
         """Append another keyvalue to this one.
 
         Deprecated behaviour: Accept an iterable of keyvalues or a root keyvalue
@@ -1248,7 +1243,7 @@ class Keyvalues:
         folded_names = [name.casefold() for name in names]
         new_list = []
         # Optional only here because _folded_name may be None - it'll never actually be there.
-        merge: dict[Optional[str], Keyvalues] = {
+        merge: dict[str | None, Keyvalues] = {
             name: Keyvalues(name, [])
             for name in folded_names
         }
@@ -1313,12 +1308,12 @@ class Keyvalues:
 
     def serialise(
         self,
-        file: Optional[_SupportsWrite] = None,
+        file: _SupportsWrite | None = None,
         /, *,
         indent: str = '\t',
         indent_braces: builtins.bool = True,
         start_indent: str = '',
-    ) -> Optional[str]:
+    ) -> str | None:
         """Serialise the keyvalues data to a file, or return as a string if no file is provided.
 
         This does not handle cyclic loops in the tree.
@@ -1330,7 +1325,7 @@ class Keyvalues:
         :param start_indent: The initial starting indentation. Useful to allow serialising
                inside an existing file, or to add a prefix like comment delimiters.
         """
-        buffer: Optional[io.StringIO] = None
+        buffer: io.StringIO | None = None
         if file is None:
             file = buffer = io.StringIO()
 
@@ -1477,9 +1472,9 @@ class _Builder:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[types.TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: types.TracebackType | None,
     ) -> None:
         """Ends the keyvalue block."""
         pass
@@ -1517,9 +1512,9 @@ class _BuilderElem:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[types.TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: types.TracebackType | None,
     ) -> None:
         """End a keyvalue block."""
         self._builder._parents.pop()

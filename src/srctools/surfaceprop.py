@@ -1,6 +1,6 @@
 """Parse surfaceproperties files, to determine surface physics.
 """
-from typing import TYPE_CHECKING, Optional, TypeVar
+from typing import TYPE_CHECKING, TypeVar
 from enum import Enum
 
 import attrs
@@ -108,36 +108,36 @@ class SurfaceProp:
         def __init__(
             self,
             name: str,
-            parent: Optional['SurfaceProp'] = None,
+            parent: 'SurfaceProp | None' = None,
             *,
-            density: Optional[float] = None,
-            elasticity: Optional[float] = None,
-            friction: Optional[float] = None,
-            dampening: Optional[float] = None,
-            thickness: Optional[float] = None,
+            density: float | None = None,
+            elasticity: float | None = None,
+            friction: float | None = None,
+            dampening: float | None = None,
+            thickness: float | None = None,
 
-            snd_stepleft: Optional[str] = None,
-            snd_stepright: Optional[str] = None,
-            snd_bulletimpact: Optional[str] = None,
-            snd_scraperough: Optional[str] = None,
-            snd_scrapesmooth: Optional[str] = None,
-            snd_impacthard: Optional[str] = None,
-            snd_impactsoft: Optional[str] = None,
-            snd_strain: Optional[str] = None,
-            snd_break: Optional[str] = None,
-            snd_roll: Optional[str] = None,
-            snd_shake: Optional[str] = None,
+            snd_stepleft: str | None = None,
+            snd_stepright: str | None = None,
+            snd_bulletimpact: str | None = None,
+            snd_scraperough: str | None = None,
+            snd_scrapesmooth: str | None = None,
+            snd_impacthard: str | None = None,
+            snd_impactsoft: str | None = None,
+            snd_strain: str | None = None,
+            snd_break: str | None = None,
+            snd_roll: str | None = None,
+            snd_shake: str | None = None,
 
-            audio_reflectivity: Optional[float] = None,
-            audio_hardness_factor: Optional[float] = None,
-            audio_roughness_factor: Optional[float] = None,
-            scrape_rough_threshold: Optional[float] = None,
-            impact_hard_threshold: Optional[float] = None,
-            hard_velocity_threshold: Optional[float] = None,
+            audio_reflectivity: float | None = None,
+            audio_hardness_factor: float | None = None,
+            audio_roughness_factor: float | None = None,
+            scrape_rough_threshold: float | None = None,
+            impact_hard_threshold: float | None = None,
+            hard_velocity_threshold: float | None = None,
 
-            gamematerial: Optional[SurfChar] = None,
-            jump_factor: Optional[float] = None,
-            max_speed_factor: Optional[float] = None,
+            gamematerial: SurfChar | None = None,
+            jump_factor: float | None = None,
+            max_speed_factor: float | None = None,
             climbable: bool = False,
         ) -> None:
             """Create a surfaceprop definition.
@@ -145,7 +145,7 @@ class SurfaceProp:
             If parent is passed, it will be used for any unset values.
             """
     else:
-        def __init__(self, name: str, parent: Optional['SurfaceProp'] = None, **kwargs: object) -> None:
+        def __init__(self, name: str, parent: 'SurfaceProp | None' = None, **kwargs: object) -> None:
             """Create a surfaceprop definition.
 
             If parent is passed, it will be used for any unset values.
@@ -178,7 +178,7 @@ class SurfaceProp:
     @staticmethod
     def parse_file(
         props: Keyvalues,
-        prev: Optional[dict[str, 'SurfaceProp']] = None,
+        prev: dict[str, 'SurfaceProp'] | None = None,
     ) -> dict[str, 'SurfaceProp']:
         """Parse surfaceproperties from a file.
 
@@ -203,7 +203,7 @@ class SurfaceProp:
             except IndexError:  # Not in keyvalues.
                 base = default
 
-            game_mat: Optional[SurfChar]
+            game_mat: SurfChar | None
             try:
                 game_mat = SurfChar(prop['gamematerial'])
             except (LookupError, ValueError):
@@ -243,7 +243,7 @@ class SurfaceProp:
         return prev
 
     @staticmethod
-    def parse_manifest(fsys: FileSystem[T], file: Optional[File[FileSystem[T]]] = None) -> dict[str, 'SurfaceProp']:
+    def parse_manifest(fsys: FileSystem[T], file: File[FileSystem[T]] | None = None) -> dict[str, 'SurfaceProp']:
         """Load surfaceproperties from a manifest.
 
         :file:`scripts/surfaceproperties_manifest.txt` will be used if a file is

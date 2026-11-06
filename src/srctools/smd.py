@@ -1,5 +1,5 @@
 """Parses SMD model/animation data."""
-from typing import Any, ClassVar, Optional, Union
+from typing import Any, ClassVar
 from typing_extensions import Protocol
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Sequence
@@ -28,9 +28,9 @@ class Bone:
     """Represents a single bone."""
     __slots__ = ('name', 'parent')
     name: str
-    parent: Optional['Bone']
+    parent: 'Bone | None'
 
-    def __init__(self, name: str, parent: Optional['Bone']) -> None:
+    def __init__(self, name: str, parent: 'Bone | None') -> None:
         self.name = name
         self.parent = parent
 
@@ -143,7 +143,7 @@ class Vertex:
             deepcopy(self.links, memodict),
         )
 
-    def with_pos(self, pos: Vec, norm: Optional[Vec] = None) -> 'Vertex':
+    def with_pos(self, pos: Vec, norm: Vec | None = None) -> 'Vertex':
         """Copy this vertex, changing the position."""
         if norm is None:
             norm = self.norm
@@ -242,7 +242,7 @@ class Triangle:
 
 class ParseError(Exception):
     """Invalid model format."""
-    def __init__(self, line_num: Union[int, str], msg: str, *args: object) -> None:
+    def __init__(self, line_num: int | str, msg: str, *args: object) -> None:
         super().__init__(f'{line_num}: {msg.format(*args)}')
 
 
@@ -321,8 +321,8 @@ class Mesh:
         """
         file_iter = _clean_file(file)
 
-        bones: Optional[dict[int, Bone]] = None
-        anim: Optional[dict[int, list[BoneFrame]]] = None
+        bones: dict[int, Bone] | None = None
+        anim: dict[int, list[BoneFrame]] | None = None
         tri: list[Triangle] = []
 
         line_num = 1
@@ -417,7 +417,7 @@ class Mesh:
     ) -> dict[int, list[BoneFrame]]:
         """Parse the 'skeleton' section of SMDs."""
         frames: dict[int, list[BoneFrame]] = {}
-        time: Optional[int] = None
+        time: int | None = None
         for line_num, line in file_iter:
             if line.startswith((b'//', b'#', b';')):
                 continue
@@ -599,9 +599,9 @@ class Mesh:
     def append_model(
         self,
         mdl: 'Mesh',
-        rotation: Union[Angle, Matrix, Vec, None] = None,
-        offset: Optional[Vec] = None,
-        scale: Union[float, Vec] = 1.0,
+        rotation: Angle | Matrix | Vec | None = None,
+        offset: Vec | None = None,
+        scale: float | Vec = 1.0,
     ) -> None:
         """Append another model's geometry onto this one.
 

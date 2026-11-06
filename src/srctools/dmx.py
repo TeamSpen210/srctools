@@ -14,8 +14,11 @@ To parse a DMX file, it must be opened in binary mode (the kind will be detected
 The format name/version are stored in the header, allowing indicating the kind of data stored in
 the file.
 """
-from typing import IO, TYPE_CHECKING, Any, Final, Generic, NamedTuple, Optional, Union, cast
-from typing_extensions import Literal, TypeAlias, TypeVar, deprecated, overload
+from typing import (
+    IO, TYPE_CHECKING, Any, Final, Generic, NamedTuple, Literal, TypeAlias,
+    cast, overload
+)
+from typing_extensions import TypeVar, deprecated
 from collections.abc import (
     Callable, Iterable, Iterator, KeysView, Mapping, MutableMapping, Sequence, ValuesView,
 )
@@ -184,7 +187,7 @@ class Quaternion(NamedTuple):
     #     return f'({self[0]} {self[1]:.6g} {self[2]:.6g} {self[3]:.6g})'
 
 
-def _clamp_color(x: Union[int, float]) -> int:
+def _clamp_color(x: int | float) -> int:
     """Clamp colors to 0-255."""
     return max(0, min(255, round(x)))
 
@@ -236,26 +239,20 @@ Vec3 = FrozenVec  #: :deprecated: Use :py:class:`srctools.math.FrozenVec`.
 
 
 _Element: TypeAlias = 'Element'  # Forward ref.
-Value: TypeAlias = Union[
-    int, float, bool, str, bytes,
-    Color, Time,
-    Vec2, FrozenVec, Vec4,
-    FrozenAngle,
-    Quaternion,
-    FrozenMatrix,
-    _Element,
-]
-ValueList = Union[
-    list[int], list[float], list[bool], list[str], list[bytes],
-    list[Color], list[Time],
-    list[Vec2], list[FrozenVec], list[Vec4],
-    list[FrozenAngle],
-    list[Quaternion],
-    list[FrozenMatrix],
-    list[_Element],
-]
+Value: TypeAlias = (
+    int | float | bool | str | bytes
+    | Color | Time |
+    Vec2 | FrozenVec | Vec4 |
+    FrozenAngle | Quaternion | FrozenMatrix | _Element
+)
+ValueList = (
+    list[int] | list[float] | list[bool] | list[str] | list[bytes],
+    list[Color] | list[Time],
+    list[Vec2] | list[FrozenVec] | list[Vec4],
+    list[FrozenAngle] | list[Quaternion] | list[FrozenMatrix] | list[_Element]
+)
 # Additional values we convert to valid types.
-ConvValue: TypeAlias = Union[Value, Vec, Matrix, Angle]
+ConvValue: TypeAlias = Value | Vec | Matrix | Angle
 
 ValueT = TypeVar('ValueT', bound=Value, default=Any)
 
@@ -372,14 +369,14 @@ class _ValProps:
         @property
         def val_int(self) -> int: return 0
         @val_int.setter
-        def val_int(self, value: Union[int, float]) -> None: ...
+        def val_int(self, value: int | float) -> None: ...
 
         val_float: float
 
         @property
         def val_time(self) -> Time: return Time(0.0)
         @val_time.setter
-        def val_time(self, value: Union[float, Time]) -> None: ...
+        def val_time(self, value: float | Time) -> None: ...
 
         @property
         def val_bool(self) -> bool: return False
@@ -389,27 +386,27 @@ class _ValProps:
         @property
         def val_vec2(self) -> Vec2: return Vec2(0.0, 0.0)
         @val_vec2.setter
-        def val_vec2(self, value: Union[Vec2, tuple[float, float], Iterable[float]]) -> None: ...
+        def val_vec2(self, value: Vec2 | tuple[float, float] | Iterable[float]) -> None: ...
 
         @property
         def val_vec3(self) -> FrozenVec: return FrozenVec()
         @val_vec3.setter
-        def val_vec3(self, value: Union[Vec, FrozenVec, tuple[float, float, float], Iterable[float]]) -> None: ...
+        def val_vec3(self, value: Vec | FrozenVec | tuple[float, float, float] | Iterable[float]) -> None: ...
 
         @property
         def val_vec4(self) -> Vec4: return Vec4(0.0, 0.0, 0.0, 1.0)
         @val_vec4.setter
-        def val_vec4(self, value: Union[Vec4, tuple[float, float, float, float], Iterable[float]]) -> None: ...
+        def val_vec4(self, value: Vec4 | tuple[float, float, float, float] | Iterable[float]) -> None: ...
 
         @property
         def val_color(self) -> Color: return Color(0, 0, 0)
         @val_color.setter
-        def val_color(self, value: Union[Color, tuple[int, int, int, int], Iterable[int]]) -> None: ...
+        def val_color(self, value: Color | tuple[int, int, int, int] | Iterable[int]) -> None: ...
 
         @property
         def val_colour(self) -> Color: return Color(0, 0, 0)
         @val_colour.setter
-        def val_colour(self, value: Union[Color, tuple[int, int, int, int], Iterable[int]]) -> None: ...
+        def val_colour(self, value: Color | tuple[int, int, int, int] | Iterable[int]) -> None: ...
 
         @property
         def val_str(self) -> str: return ''
@@ -424,12 +421,12 @@ class _ValProps:
         @property
         def val_ang(self) -> FrozenAngle: return FrozenAngle()
         @val_ang.setter
-        def val_ang(self, value: Union[Angle, FrozenAngle, tuple[float, float, float], Iterable[float]]) -> None: ...
+        def val_ang(self, value: Angle | FrozenAngle | tuple[float, float, float] | Iterable[float]) -> None: ...
 
         @property
         def val_angle(self) -> FrozenAngle: return FrozenAngle()
         @val_angle.setter
-        def val_angle(self, value: Union[Angle, FrozenAngle, tuple[float, float, float], Iterable[float]]) -> None: ...
+        def val_angle(self, value: Angle | FrozenAngle | tuple[float, float, float] | Iterable[float]) -> None: ...
 
         val_quat: Quaternion
         val_quaternion: Quaternion
@@ -437,12 +434,12 @@ class _ValProps:
         @property
         def val_mat(self) -> FrozenMatrix: return FrozenMatrix()
         @val_mat.setter
-        def val_mat(self, value: Union[Matrix, FrozenMatrix, Angle, FrozenAngle]) -> None: ...
+        def val_mat(self, value: Matrix | FrozenMatrix | Angle | FrozenAngle) -> None: ...
 
         @property
         def val_matrix(self) -> FrozenMatrix: return FrozenMatrix()
         @val_matrix.setter
-        def val_matrix(self, value: Union[Matrix, FrozenMatrix, Angle, FrozenAngle]) -> None: ...
+        def val_matrix(self, value: Matrix | FrozenMatrix | Angle | FrozenAngle) -> None: ...
 
         val_bytes: bytes
         val_bin: bytes
@@ -514,97 +511,97 @@ class Attribute(_ValProps, Generic[ValueT]):
     __slots__ = ['name', '_typ', '_value']
     name: str
     _typ: ValueType
-    _value: Union[ValueT, list[ValueT]]
+    _value: ValueT | list[ValueT]
 
     # Overload with ValueType -> type matchup.
     @overload
     def __init__(
         self: 'Attribute[Element]', name: str, val_type: Literal[ValueType.ELEMENT],
-        value: Union['Element', list['Element']],
+        value: 'Element | list[Element]',
     ) -> None: ...
 
     @overload
     def __init__(
         self: 'Attribute[int]', name: str, val_type: Literal[ValueType.INTEGER],
-        value: Union[int, list[int]],
+        value: int | list[int],
     ) -> None: ...
 
     @overload
     def __init__(
         self: 'Attribute[float]', name: str, val_type: Literal[ValueType.FLOAT],
-        value: Union[float, list[float]],
+        value: float | list[float],
     ) -> None: ...
 
     @overload
     def __init__(
         self: 'Attribute[bool]', name: str, val_type: Literal[ValueType.BOOL],
-        value: Union[bool, list[bool]],
+        value: bool | list[bool],
     ) -> None: ...
 
     @overload
     def __init__(
         self: 'Attribute[str]', name: str, val_type: Literal[ValueType.STR],
-        value: Union[str, list[str]],
+        value: str | list[str],
     ) -> None: ...
 
     @overload
     def __init__(
         self: 'Attribute[bytes]', name: str, val_type: Literal[ValueType.BIN],
-        value: Union[str, list[str]],
+        value: str | list[str],
     ) -> None: ...
 
     @overload
     def __init__(
         self: 'Attribute[Time]', name: str, val_type: Literal[ValueType.TIME],
-        value: Union[Time, list[Time]],
+        value: Time | list[Time],
     ) -> None: ...
 
     @overload
     def __init__(
         self: 'Attribute[Color]', name: str, val_type: Literal[ValueType.COLOR],
-        value: Union[Color, list[Color]],
+        value: Color | list[Color],
     ) -> None: ...
 
     @overload
     def __init__(
         self: 'Attribute[Vec2]', name: str, val_type: Literal[ValueType.VEC2],
-        value: Union[Vec2, list[Vec2]],
+        value: Vec2 | list[Vec2],
     ) -> None: ...
 
     @overload
     def __init__(
         self: 'Attribute[FrozenVec]', name: str, val_type: Literal[ValueType.VEC3],
-        value: Union[FrozenVec, list[FrozenVec]],
+        value: FrozenVec | list[FrozenVec],
     ) -> None: ...
 
     @overload
     def __init__(
         self: 'Attribute[Vec4]', name: str, val_type: Literal[ValueType.VEC4],
-        value: Union[Vec4, list[Vec4]],
+        value: Vec4 | list[Vec4],
     ) -> None: ...
 
     @overload
     def __init__(
         self: 'Attribute[FrozenAngle]', name: str, val_type: Literal[ValueType.ANGLE],
-        value: Union[FrozenAngle, list[FrozenAngle]],
+        value: FrozenAngle | list[FrozenAngle],
     ) -> None: ...
 
     @overload
     def __init__(
         self: 'Attribute[Quaternion]', name: str, val_type: Literal[ValueType.QUATERNION],
-        value: Union[Quaternion, list[Quaternion]],
+        value: Quaternion | list[Quaternion],
     ) -> None: ...
 
     @overload
     def __init__(
         self: 'Attribute[FrozenMatrix]', name: str, val_type: Literal[ValueType.MATRIX],
-        value: Union[FrozenMatrix, list[FrozenMatrix]],
+        value: FrozenMatrix | list[FrozenMatrix],
     ) -> None: ...
 
     @overload
-    def __init__(self, name: str, val_type: ValueType, value: Union[ValueT, list[ValueT]]) -> None: ...
+    def __init__(self, name: str, val_type: ValueType, value: ValueT | list[ValueT]) -> None: ...
 
-    def __init__(self, name: str, val_type: ValueType, value: Union[ValueT, list[ValueT]]) -> None:  # type: ignore[misc]
+    def __init__(self, name: str, val_type: ValueType, value: ValueT | list[ValueT]) -> None:  # type: ignore[misc]
         """For internal use only."""
         self.name = name
         self._typ = val_type
@@ -697,7 +694,7 @@ class Attribute(_ValProps, Generic[ValueT]):
     def array(
         cls, name: str,
         val_type: Literal[ValueType.VEC3],
-        values: Iterable[Union[FrozenVec, Vec, Iterable[float]]] = (),
+        values: Iterable[FrozenVec | Vec | Iterable[float]] = (),
     ) -> 'Attribute[FrozenVec]': ...
 
     @classmethod
@@ -713,7 +710,7 @@ class Attribute(_ValProps, Generic[ValueT]):
     def array(
         cls, name: str,
         val_type: Literal[ValueType.ANGLE],
-        values: Iterable[Union[Angle, FrozenAngle, Matrix, FrozenMatrix, Iterable[float]]] = (),
+        values: Iterable[Angle | FrozenAngle | Matrix | FrozenMatrix | Iterable[float]] = (),
     ) -> 'Attribute[FrozenAngle]': ...
 
     @classmethod
@@ -729,7 +726,7 @@ class Attribute(_ValProps, Generic[ValueT]):
     def array(
         cls, name: str,
         val_type: Literal[ValueType.MATRIX],
-        values: Iterable[Union[FrozenAngle, Angle, FrozenMatrix, Matrix]] = (),
+        values: Iterable[FrozenAngle | Angle | FrozenMatrix | Matrix] = (),
     ) -> 'Attribute[FrozenMatrix]': ...
 
     @classmethod
@@ -743,34 +740,34 @@ class Attribute(_ValProps, Generic[ValueT]):
         return Attribute(name, val_type, list(map(conv_func, values)))
 
     @classmethod
-    def int(cls, name: str, value: Union[builtins.int, list[builtins.int]]) -> 'Attribute[builtins.int]':
+    def int(cls, name: str, value: builtins.int | list[builtins.int]) -> 'Attribute[builtins.int]':
         """Create an attribute with an integer value."""
         return Attribute(name, ValueType.INTEGER, value)
 
     @classmethod
-    def float(cls, name: str, value: Union[builtins.float, list[builtins.float]]) -> 'Attribute[builtins.float]':
+    def float(cls, name: str, value: builtins.float | list[builtins.float]) -> 'Attribute[builtins.float]':
         """Create an attribute with a float value."""
         return Attribute(name, ValueType.FLOAT, value)
 
     @classmethod
-    def time(cls, name: str, value: Union[Time, builtins.float]) -> 'Attribute[Time]':
+    def time(cls, name: str, value: Time | builtins.float) -> 'Attribute[Time]':
         """Create an attribute with a 'time' value.
 
         This is effectively a float, and only available in binary v3+."""
         return Attribute(name, ValueType.TIME, CONVERSIONS[ValueType.TIME](value))
 
     @classmethod
-    def bool(cls, name: str, value: Union[builtins.bool, list[builtins.bool]]) -> 'Attribute[builtins.bool]':
+    def bool(cls, name: str, value: builtins.bool | list[builtins.bool]) -> 'Attribute[builtins.bool]':
         """Create an attribute with a boolean value."""
         return Attribute(name, ValueType.BOOL, value)
 
     @classmethod
-    def string(cls, name: str, value: Union[builtins.str, list[builtins.str]]) -> 'Attribute[builtins.str]':
+    def string(cls, name: str, value: builtins.str | list[builtins.str]) -> 'Attribute[builtins.str]':
         """Create an attribute with a string value."""
         return Attribute(name, ValueType.STRING, value)
 
     @classmethod
-    def binary(cls, name: str, value: Union[builtins.bytes, list[builtins.bytes]]) -> 'Attribute[builtins.bytes]':
+    def binary(cls, name: str, value: builtins.bytes | list[builtins.bytes]) -> 'Attribute[builtins.bytes]':
         """Create an attribute with binary data."""
         return Attribute(name, ValueType.BINARY, value)
 
@@ -785,7 +782,7 @@ class Attribute(_ValProps, Generic[ValueT]):
     @classmethod
     def vec2(
         cls, name: str, /,
-        x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
+        x: builtins.float | Iterable[builtins.float] = 0.0,
         y: builtins.float = 0.0,
     ) -> 'Attribute[Vec2]':
         """Create an attribute with a 2D vector."""
@@ -813,7 +810,7 @@ class Attribute(_ValProps, Generic[ValueT]):
     @classmethod
     def vec3(
         cls, name: str, /,
-        x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
+        x: builtins.float | Iterable[builtins.float] = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
     ) -> 'Attribute[FrozenVec]':
@@ -835,7 +832,7 @@ class Attribute(_ValProps, Generic[ValueT]):
     @overload
     def vec4(
         cls, name: str, /,
-        x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
+        x: builtins.float | Iterable[builtins.float] = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
         w: builtins.float = 0.0,
@@ -844,7 +841,7 @@ class Attribute(_ValProps, Generic[ValueT]):
     @classmethod
     def vec4(
         cls, name: str, /,
-        x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
+        x: builtins.float | Iterable[builtins.float] = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
         w: builtins.float = 0.0,
@@ -862,25 +859,25 @@ class Attribute(_ValProps, Generic[ValueT]):
 
     @classmethod
     @overload
-    def color(cls, name: str, it: Iterable[Union[builtins.float, builtins.int]], /) -> 'Attribute[Color]': ...
+    def color(cls, name: str, it: Iterable[builtins.float | builtins.int], /) -> 'Attribute[Color]': ...
 
     @classmethod
     @overload
     def color(
         cls, name: str, /,
-        r: Union[builtins.float, builtins.int] = 0,
-        g: Union[builtins.float, builtins.int] = 0,
-        b: Union[builtins.float, builtins.int] = 0,
-        a: Union[builtins.float, builtins.int] = 255,
+        r: builtins.float | builtins.int = 0,
+        g: builtins.float | builtins.int = 0,
+        b: builtins.float | builtins.int = 0,
+        a: builtins.float | builtins.int = 255,
     ) -> 'Attribute[Color]': ...
 
     @classmethod
     def color(
         cls, name: str, /,
-        r: Union[builtins.float, builtins.int, Iterable[Union[builtins.float, builtins.int]]] = 0,
-        g: Union[builtins.float, builtins.int] = 0,
-        b: Union[builtins.float, builtins.int] = 0,
-        a: Union[builtins.float, builtins.int] = 255,
+        r: builtins.float | builtins.int | Iterable[builtins.float | builtins.int] = 0,
+        g: builtins.float | builtins.int = 0,
+        b: builtins.float | builtins.int = 0,
+        a: builtins.float | builtins.int = 255,
     ) -> 'Attribute[Color]':
         """Create an attribute with a color."""
         if isinstance(r, (int, float)):
@@ -909,7 +906,7 @@ class Attribute(_ValProps, Generic[ValueT]):
     @classmethod
     def angle(
         cls, name: str, /,
-        pitch: Union[builtins.float, Iterable[builtins.float]] = 0.0,
+        pitch: builtins.float | Iterable[builtins.float] = 0.0,
         yaw: builtins.float = 0.0, roll: builtins.float = 0.0,
     ) -> 'Attribute[FrozenAngle]':
         """Create an attribute with an Euler angle."""
@@ -939,7 +936,7 @@ class Attribute(_ValProps, Generic[ValueT]):
     @classmethod
     def quaternion(
         cls, name: str, /,
-        x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
+        x: builtins.float | Iterable[builtins.float] = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
         w: builtins.float = 0.0,
@@ -1143,7 +1140,7 @@ class Attribute(_ValProps, Generic[ValueT]):
         else:
             arr[item] = result
 
-    def __delitem__(self, item: Union[builtins.int, slice]) -> None:
+    def __delitem__(self, item: builtins.int | slice) -> None:
         """Remove the specified array index(s)."""
         if not isinstance(self._value, list):
             raise ValueError('Cannot index singular elements.')
@@ -1233,7 +1230,7 @@ class Element(Mapping[str, Attribute]):
     """
     _members: MutableMapping[str, Attribute]
 
-    def __init__(self, name: str, type: str, uuid: Optional[UUID] = None) -> None:
+    def __init__(self, name: str, type: str, uuid: UUID | None = None) -> None:
         self._members = {'name': Attribute('name', ValueType.STRING, name)}
         self.type = type
         if uuid is None:
@@ -1404,7 +1401,7 @@ class Element(Mapping[str, Attribute]):
                 else:
                     name = binformat.read_nullstr(file, encoding=encoding)
                 [attr_type_data] = binformat.struct_read('<B', file)
-                array_size: Optional[int]
+                array_size: int | None
                 if attr_type_data >= ARRAY_OFFSET:
                     attr_type_data -= ARRAY_OFFSET
                     [array_size] = binformat.struct_read('<i', file)
@@ -1486,7 +1483,7 @@ class Element(Mapping[str, Attribute]):
             raise ValueError("No elements in DMX file!") from None
 
     @classmethod
-    def parse_kv2(cls, file: Union[str, Iterable[str]], version: int, unicode: bool = False) -> 'Element':
+    def parse_kv2(cls, file: str | Iterable[str], version: int, unicode: bool = False) -> 'Element':
         """Parse a DMX file encoded in KeyValues2.
 
         The ``<!-- -->`` format comment line should have already been read.
@@ -1496,7 +1493,7 @@ class Element(Mapping[str, Attribute]):
 
         # Locations in arrays which are UUIDs (and need setting).
         # This is a (attr, index, uuid, line_num) tuple.
-        fixups: list[tuple[Attribute, Optional[int], UUID, int]] = []
+        fixups: list[tuple[Attribute, int | None, UUID, int]] = []
         # Ensure these reuse the same objects.
         stubs: dict[UUID, StubElement] = collections.defaultdict(StubElement.stub)
 
@@ -1531,7 +1528,7 @@ class Element(Mapping[str, Attribute]):
     def _parse_kv2_element(
         cls, tok: Tokenizer,
         id_to_elem: dict[UUID, 'Element'],
-        fixups: list[tuple[Attribute, Optional[int], UUID, int]],
+        fixups: list[tuple[Attribute, int | None, UUID, int]],
         stubs: dict[UUID, 'StubElement'],
         name: str,
         typ_name: str,
@@ -1694,8 +1691,8 @@ class Element(Mapping[str, Attribute]):
                 fmt_name.encode('ascii'),
                 fmt_ver,
             ))
-        stringdb_size: Optional[str]
-        stringdb_ind: Optional[str]
+        stringdb_size: str | None
+        stringdb_ind: str | None
         if version >= 5:
             stringdb_size = stringdb_ind = '<i'
         elif version >= 4:
@@ -1988,7 +1985,7 @@ class Element(Mapping[str, Attribute]):
         if has_block and has_leaf:
             no_inline = True
 
-        subkeys: Optional[Attribute[Element]] = None
+        subkeys: Attribute[Element] | None = None
         if no_inline or has_block:
             elem['subkeys'] = subkeys = Attribute.array('subkeys', ValueType.ELEMENT)
 
@@ -2015,7 +2012,7 @@ class Element(Mapping[str, Attribute]):
             kv = Keyvalues.root()
         else:
             raise ValueError(f'{self.type}({self.name!r}) is not a KeyValues1 tree!')
-        subkeys: Optional[Attribute[Element]] = None
+        subkeys: Attribute[Element] | None = None
         for attr in self.values():
             if attr.name == 'subkeys':
                 if attr.type != ValueType.ELEMENT or not attr.is_array:
@@ -2059,7 +2056,7 @@ class Element(Mapping[str, Attribute]):
         """Remove the specified attribute."""
         del self._members[name.casefold()]
 
-    def __setitem__(self, name: str, value: Union[Attribute, ConvValue, Sequence[ConvValue]]) -> None:
+    def __setitem__(self, name: str, value: Attribute | ConvValue | Sequence[ConvValue]) -> None:
         """Set a specific value, by deducing the type.
 
         This means this cannot produce certain types like Time. Use an
@@ -2077,7 +2074,7 @@ class Element(Mapping[str, Attribute]):
         """Remove all attributes from the element."""
         self._members.clear()
 
-    def get_wrap(self, name: str, default: Union[Attribute, ConvValue, Sequence[ConvValue]] = '', /) -> Attribute:
+    def get_wrap(self, name: str, default: Attribute | ConvValue | Sequence[ConvValue] = '', /) -> Attribute:
         """Retrieve the specified attribute, or return a default.
 
         If the defalt is an Attribute it is returned unchanged, otherwise it is wrapped in
@@ -2092,7 +2089,7 @@ class Element(Mapping[str, Attribute]):
                 typ, val = deduce_type(default)
                 return Attribute(name, typ, val)
 
-    def pop(self, name: str, default: Union[Attribute, ConvValue, Sequence[ConvValue]] = _UNSET) -> Attribute:
+    def pop(self, name: str, default: Attribute | ConvValue | Sequence[ConvValue] = _UNSET) -> Attribute:
         """Remove the specified attribute and return it.
 
         If not found, an attribute is created from the default if specified,
@@ -2117,7 +2114,7 @@ class Element(Mapping[str, Attribute]):
         key, attr = self._members.popitem()
         return (attr.name, attr)
 
-    def setdefault(self, name: str, default: Union[Attribute, ConvValue, Sequence[ConvValue]]) -> Attribute:
+    def setdefault(self, name: str, default: Attribute | ConvValue | Sequence[ConvValue]) -> Attribute:
         """Return the specified attribute name.
 
         If it does not exist, set it using the default and return that.
@@ -2129,7 +2126,7 @@ class Element(Mapping[str, Attribute]):
             if not isinstance(default, Attribute):
                 typ, val = deduce_type(default)
                 conv = CONVERSIONS[typ]
-                new_def: Union[Value, ValueList]
+                new_def: Value | ValueList
                 if isinstance(val, list):
                     new_def = list(map(conv, val))
                 else:
@@ -2147,7 +2144,7 @@ class StubElement(Element):
     """
     __slots__ = ['_type']
 
-    def __init__(self, typ: _StubType, uuid: Optional[UUID]) -> None:
+    def __init__(self, typ: _StubType, uuid: UUID | None) -> None:
         """Internal use only."""
         super().__init__('', typ, uuid)
         # This acts always empty, and can be fake-written to.
@@ -2155,7 +2152,7 @@ class StubElement(Element):
         self._type = typ  # Store redundantly so users trying to change this are ignored.
 
     @classmethod
-    def stub(cls, uuid: Optional[UUID] = None) -> 'StubElement':
+    def stub(cls, uuid: UUID | None = None) -> 'StubElement':
         """Create a stubbed element reference with the specified UUID."""
         return cls(_StubType.STUB, uuid)
 
@@ -2200,7 +2197,7 @@ TYPE_TO_VALTYPE: dict[type, ValueType] = {
 }
 
 
-def deduce_type(value: Union[ConvValue, Sequence[ConvValue]]) -> tuple[ValueType, Union[Value, ValueList]]:
+def deduce_type(value: ConvValue | Sequence[ConvValue]) -> tuple[ValueType, Value | ValueList]:
     """Convert Python objects to an appropriate ValueType."""
     if isinstance(value, list):
         return deduce_type_array(value)
@@ -2514,7 +2511,7 @@ _conv_float = float
 _conv_bool = bool
 
 
-def _conv_time(value: Union[Time, float]) -> Time:
+def _conv_time(value: Time | float) -> Time:
     """We accept integers, floats and actual Time values."""
     if isinstance(value, Time):
         return value
@@ -2526,14 +2523,14 @@ def _conv_time(value: Union[Time, float]) -> Time:
         raise TypeError('Time requires a Time instance, float or integer.')
 
 
-def _conv_binary(value: Union[bytes, bytearray, memoryview]) -> bytes:
+def _conv_binary(value: bytes | bytearray | memoryview) -> bytes:
     """We accept any buffer, but not raw integer lengths."""
     return bytes(memoryview(value))
 
 
-def _converter_ntup(typ: type[ValueT]) -> Callable[[Union[ValueT, Iterable[float]]], ValueT]:
+def _converter_ntup(typ: type[ValueT]) -> Callable[[ValueT | Iterable[float]], ValueT]:
     """Common logic for named-tuple members."""
-    def _convert(value: Union[ValueT, Iterable[float]]) -> ValueT:
+    def _convert(value: ValueT | Iterable[float]) -> ValueT:
         if isinstance(value, typ):
             return value
         else:
@@ -2547,7 +2544,7 @@ _conv_quaternion = _converter_ntup(Quaternion)
 del _converter_ntup
 
 
-def _conv_color(value: Union[Color, Iterable[int]]) -> Color:
+def _conv_color(value: Color | Iterable[int]) -> Color:
     if isinstance(value, Color):
         return value
     try:
@@ -2561,7 +2558,7 @@ def _conv_color(value: Union[Color, Iterable[int]]) -> Color:
     return Color(r, g, b, a)
 
 
-def _conv_vec3(value: Union[Vec, FrozenVec, Iterable[float]]) -> FrozenVec:
+def _conv_vec3(value: Vec | FrozenVec | Iterable[float]) -> FrozenVec:
     """Convert to a 3-vector."""
     if isinstance(value, FrozenVec):
         return value
@@ -2569,7 +2566,7 @@ def _conv_vec3(value: Union[Vec, FrozenVec, Iterable[float]]) -> FrozenVec:
         return FrozenVec(*value)
 
 
-def _conv_angle(value: Union[FrozenAngle, Angle, FrozenMatrix, Matrix, Iterable[float]]) -> FrozenAngle:
+def _conv_angle(value: FrozenAngle | Angle | FrozenMatrix | Matrix | Iterable[float]) -> FrozenAngle:
     if isinstance(value, FrozenAngle):
         return value
     elif isinstance(value, Angle):
@@ -2580,7 +2577,7 @@ def _conv_angle(value: Union[FrozenAngle, Angle, FrozenMatrix, Matrix, Iterable[
         return FrozenAngle(*value)
 
 
-def _conv_matrix(value: Union[FrozenAngle, Angle, FrozenMatrix, Matrix]) -> FrozenMatrix:
+def _conv_matrix(value: FrozenAngle | Angle | FrozenMatrix | Matrix) -> FrozenMatrix:
     if isinstance(value, FrozenMatrix):
         return value
     elif isinstance(value, Matrix):

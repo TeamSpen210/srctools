@@ -1,5 +1,4 @@
 """Compute diffs between files that srctools handles."""
-from typing import Optional
 from pathlib import Path
 import sys
 
@@ -61,7 +60,7 @@ def diff_vpk(path1: Path, path2: Path) -> None:
         ))
 
 
-def main(args: Optional[list[str]] = None) -> None:
+def main(args: list[str] | None = None) -> None:
     """Implement diffs for a few types understood by srctools."""
     if args is None:
         args = sys.argv[1:]

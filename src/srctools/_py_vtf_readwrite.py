@@ -6,8 +6,9 @@ This is an implementation detail of the VTF module - access functionality throug
 # Wherever possible, use memoryview slicing to copy channels all in one go. This is much faster
 # than a loop.
 
-from typing import TYPE_CHECKING, NewType, Optional, Union
-from typing_extensions import Buffer, TypeAlias
+from typing import TYPE_CHECKING, NewType
+from typing_extensions import Buffer
+from typing import TypeAlias
 from collections.abc import Callable, Iterable
 import array
 
@@ -27,7 +28,7 @@ _SAVE: dict[ImageFormats, SaveFunc] = {}
 _LOAD: dict[ImageFormats, LoadFunc] = {}
 
 
-def check_strided_copy() -> Union[Exception, bytearray, bool]:
+def check_strided_copy() -> Exception | bytearray | bool:
     """For some reason PyPy can't copy non-contiguous arrays via memoryview. In that case,
     we have to copy the source when slicing. Check to see if such slicing is possible.
 
@@ -50,7 +51,7 @@ CAN_STRIDE_COPY = STRIDE_COPY is True
 del check_strided_copy
 
 
-def ppm_convert(pixels: Array, width: int, height: int, bg: Optional[tuple[int, int, int]]) -> bytes:
+def ppm_convert(pixels: Array, width: int, height: int, bg: tuple[int, int, int] | None) -> bytes:
     """Convert a frame into a PPM-format bytestring, for passing to tkinter.
 
     If bg is set, this is the background we composite into. Otherwise, we just strip the alpha.
@@ -87,7 +88,7 @@ def ppm_convert(pixels: Array, width: int, height: int, bg: Optional[tuple[int, 
     return bytes(buffer)
 
 
-def alpha_flatten(pixels: Array, buffer: bytearray, width: int, height: int, bg: Optional[tuple[int, int, int]]) -> bytes:
+def alpha_flatten(pixels: Array, buffer: bytearray, width: int, height: int, bg: tuple[int, int, int] | None) -> bytes:
     """Flatten the image down to RGB, by removing the alpha channel.
 
     If bg is set, this is the background we composite into. Otherwise we

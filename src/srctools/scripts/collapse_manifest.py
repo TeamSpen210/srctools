@@ -1,5 +1,4 @@
 """Collapses the submaps of a manifest map into a single VMF."""
-from typing import Optional, Union
 from pathlib import Path
 import argparse
 
@@ -10,7 +9,7 @@ from srctools.keyvalues import Keyvalues
 from srctools.vmf import VMF, VisGroup
 
 
-def main(args: Optional[list[str]] = None) -> None:
+def main(args: list[str] | None = None) -> None:
     """Main script."""
     parser = argparse.ArgumentParser(description=__doc__)
 
@@ -45,7 +44,7 @@ def main(args: Optional[list[str]] = None) -> None:
         with fsys[submap.filename].open_str() as f:
             sub_file = InstanceFile(VMF.parse(Keyvalues.parse(f)))
 
-        visgroup: Union[bool, VisGroup]
+        visgroup: bool | VisGroup
         if submap.is_toplevel:
             vmf.spawn.update(sub_file.vmf.spawn)
             visgroup = False

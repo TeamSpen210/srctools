@@ -1,6 +1,6 @@
 """Implements support for collapsing instances."""
-from typing import Optional, Union
-from typing_extensions import deprecated, overload
+from typing_extensions import deprecated
+from typing import overload
 from collections.abc import Container, Iterable, MutableMapping
 from enum import Enum
 from pathlib import Path
@@ -316,7 +316,7 @@ def collapse_one(
     inst: Instance,
     file: InstanceFile,
     *,
-    visgroup: Union[bool, VisGroup] = False,
+    visgroup: bool | VisGroup = False,
     engine_cache: MutableMapping[str, EntityDef] = srctools.EmptyMapping,
 ) -> None: ...
 @overload
@@ -326,7 +326,7 @@ def collapse_one(
     inst: Instance,
     file: InstanceFile,
     *,
-    visgroup: Union[bool, VisGroup] = False,
+    visgroup: bool | VisGroup = False,
     fgd: FGD,  # <<<
 ) -> None: ...
 
@@ -336,9 +336,9 @@ def collapse_one(
     inst: Instance,
     file: InstanceFile,
     *,
-    visgroup: Union[bool, VisGroup] = False,
+    visgroup: bool | VisGroup = False,
     engine_cache: MutableMapping[str, EntityDef] = srctools.EmptyMapping,
-    fgd: Optional[FGD] = None,
+    fgd: FGD | None = None,
 ) -> None:
     """Collapse a single instance into the map.
 

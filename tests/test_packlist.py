@@ -1,5 +1,4 @@
 """Test packlist logic."""
-from typing import Union
 
 from collections.abc import Mapping
 
@@ -26,7 +25,7 @@ def test_strip_extensions() -> None:
 
 def packing_test(
     vmf: VMF,
-    files: Mapping[str, Union[str, bytes]] = EmptyMapping,
+    files: Mapping[str, str | bytes] = EmptyMapping,
 ) -> tuple[PackList, list[tuple[FileType, str]]]:
     """Pack ents in a VMF, then return the files for checking packing logic."""
     fsys = FileSystemChain()

@@ -1,14 +1,14 @@
 [build-system]
 requires = [
 	"meson >= 1.8.0",
-	"meson-python == 0.18.0",
+	"meson-python == 0.19.0",
 	"cython >= 3.2.0",
 	]
 build-backend = "mesonpy"
 
 [project]
 name = "srctools"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dynamic = ["version"]
 urls = {source="https://github.com/TeamSpen210/srctools"}
 description = "Modules for working with Valve's Source Engine file formats."
@@ -24,11 +24,11 @@ classifiers = [
 	"Framework :: tox",
 	"License :: OSI Approved :: MIT License",
 	"Programming Language :: Cython",
-	"Programming Language :: Python :: 3.9",
-	"Programming Language :: Python :: 3.10",
 	"Programming Language :: Python :: 3.11",
 	"Programming Language :: Python :: 3.12",
 	"Programming Language :: Python :: 3.13",
+	"Programming Language :: Python :: 3.14",
+	"Programming Language :: Python :: 3.15",
 	"Programming Language :: Python :: 3 :: Only",
 	"Programming Language :: Python :: Implementation :: CPython",
 	"Programming Language :: Python :: Implementation :: PyPy",

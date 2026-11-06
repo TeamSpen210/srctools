@@ -3,8 +3,7 @@ Wrapper around logging to provide our own functionality.
 
 This adds the ability to log using str.format() instead of %.
 """
-from typing import Literal, TYPE_CHECKING, Any, ClassVar, Optional, TextIO, Union, cast, overload
-from typing_extensions import Self
+from typing import Literal, Any, ClassVar, TextIO, Self, cast, overload
 
 from collections.abc import Callable, Generator, Iterable, Mapping
 from io import StringIO
@@ -12,6 +11,7 @@ from pathlib import Path
 from types import TracebackType
 import contextlib
 import contextvars
+import itertools
 import logging
 import os
 import sys
@@ -81,23 +81,19 @@ class LogMessage:
         return '\n | '.join(lines[:]) + '\n |___\n'
 
 
-_SysExcInfoType = Union[
-    tuple[type[BaseException], BaseException, Optional[TracebackType]],
+_SysExcInfoType = (
+    tuple[type[BaseException], BaseException, TracebackType | None] |
     tuple[None, None, None]
-]
-if TYPE_CHECKING:  # Only generic in stubs.
-    _AdapterBase = logging.LoggerAdapter[logging.Logger]
-else:
-    _AdapterBase = logging.LoggerAdapter
+)
 
 
-class LoggerAdapter(_AdapterBase):
+class LoggerAdapter(logging.LoggerAdapter[logging.Logger]):
     """Fix loggers to use str.format().
 
     """
     logger: logging.Logger  #: The logger this wraps.
-    alias: Optional[str]  #: If set, this is a replacement module name for log messages.
-    def __init__(self, logger: logging.Logger, alias: Optional[str] = None) -> None:
+    alias: str | None  #: If set, this is a replacement module name for log messages.
+    def __init__(self, logger: logging.Logger, alias: str | None = None) -> None:
         self.alias = alias
         self.logger = logger
         logging.LoggerAdapter.__init__(self, logger, extra={})
@@ -107,9 +103,9 @@ class LoggerAdapter(_AdapterBase):
         level: int,
         msg: Any,
         *args: Any,
-        exc_info: Union[bool, _SysExcInfoType, BaseException, None] = None,
+        exc_info: bool | _SysExcInfoType | BaseException | None = None,
         stack_info: bool = False,
-        extra: Optional[Mapping[str, object]] = None,
+        extra: Mapping[str, object] | None = None,
         stacklevel: int = 0,
         **kwargs: Any,
     ) -> None:
@@ -167,7 +163,7 @@ class Formatter(logging.Formatter):
         exc_type, exc_value, exc_tb = ei
         buffer = StringIO()
 
-        trace: Optional[TracebackType] = exc_tb
+        trace: TracebackType | None = exc_tb
 
         try:
             while trace is not None:
@@ -205,7 +201,7 @@ class Formatter(logging.Formatter):
         return super().format(record)
 
 
-def get_handler(filename: Union[str, os.PathLike[str]]) -> logging.FileHandler:
+def get_handler(filename: str | os.PathLike[str]) -> logging.FileHandler:
     """Cycle log files, then give the required file handler."""
     path = Path(filename)
     ext = ''.join(path.suffixes)
@@ -252,9 +248,9 @@ class NullStream(TextIO):
 
     def __exit__(
         self,
-        typ: Optional[type[BaseException]],
-        value: Optional[BaseException],
-        tback: Optional[TracebackType],
+        typ: type[BaseException] | None,
+        value: BaseException | None,
+        tback: TracebackType | None,
     ) -> None:
         return None
 
@@ -290,7 +286,7 @@ class NullStream(TextIO):
     def flush(self) -> None:
         """Flushing does nothing."""
 
-    def read(self, size: Optional[int] = None) -> str:
+    def read(self, size: int | None = None) -> str:
         """We never have data."""
         return ''
 
@@ -318,14 +314,14 @@ class NullStream(TextIO):
         """We are always at the start position."""
         return 0
 
-    def truncate(self, size: Optional[int] = None) -> int:
+    def truncate(self, size: int | None = None) -> int:
         """Truncation does nothing."""
         return 0
 
 
 class NewLogRecord(logging.LogRecord):
     """Allow passing an alias and context for log modules."""
-    _srctools_alias: Optional[str] = None
+    _srctools_alias: str | None = None
     # Can be used by formatters.
     srctools_context: str = ''
     module: str
@@ -343,18 +339,15 @@ class NewLogRecord(logging.LogRecord):
 
 @overload
 def init_logging(
-    filename: Optional[StringPath] = None,
+    filename: StringPath | None = None,
     main_logger: str = '',
-    on_error: Optional[Callable[
-        [type[BaseException], BaseException, Optional[TracebackType]],
-        None,
-    ]] = None,
+    on_error: Callable[[type[BaseException], BaseException, TracebackType | None], None] | None = None,
 ) -> logging.Logger: ...
 
 
 @overload
 def init_logging(
-    filename: Optional[StringPath] = None,
+    filename: StringPath | None = None,
     main_logger: str = '',
     *,
     error: Callable[[BaseException], object],
@@ -362,14 +355,11 @@ def init_logging(
 
 
 def init_logging(
-    filename: Optional[StringPath] = None,
+    filename: StringPath | None = None,
     main_logger: str = '',
-    on_error: Optional[Callable[
-        [type[BaseException], BaseException, Optional[TracebackType]],
-        None,
-    ]] = None,
+    on_error: Callable[[type[BaseException], BaseException, TracebackType | None], None] | None = None,
     *,
-    error: Optional[Callable[[BaseException], object]] = None,
+    error: Callable[[BaseException], object] | None = None,
 ) -> logging.Logger:
     """Set up the logger and logging handlers.
 
@@ -459,7 +449,7 @@ def init_logging(
     def except_handler(
         exc_type: type[BaseException],
         exc_value: BaseException,
-        exc_tb: Optional[TracebackType],
+        exc_tb: TracebackType | None,
     ) -> None:
         """Log uncaught exceptions."""
         if isinstance(exc_value, SystemExit):
@@ -485,7 +475,7 @@ def init_logging(
         return cast(logging.Logger, LoggerAdapter(logger))
 
 
-def get_logger(name: str = '', alias: Optional[str] = None) -> logging.Logger:
+def get_logger(name: str = '', alias: str | None = None) -> logging.Logger:
     """Get the named logger object.
 
     This puts the logger into the ``srctools`` namespace, and wraps it to

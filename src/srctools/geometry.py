@@ -2,8 +2,6 @@
 
 See :sdk-2013:`utils/common/polylib.cpp` for some of the algorithms.
 """
-from typing import Optional
-
 from collections.abc import Iterable, Iterator, Generator
 from collections import defaultdict
 import itertools
@@ -138,7 +136,7 @@ class Geometry:
     def raw_clip(
         self,
         plane: Plane,
-    ) -> tuple[Optional['Geometry'], Optional['Geometry']]:
+    ) -> tuple['Geometry | None', 'Geometry | None']:
         """Clip this geometry by the specified plane, without modifying faces.
 
         New polygons will have their face set to `None`, and duplicated polygons will share faces.
@@ -210,7 +208,7 @@ class Geometry:
         # Any brushes that were 'back' for all planes are inside = should be removed.
         return result
 
-    def clip(self, plane: Plane) -> tuple[Optional['Geometry'], Optional['Geometry']]:
+    def clip(self, plane: Plane) -> tuple['Geometry | None', 'Geometry | None']:
         """Clip this geometry by the specified plane, creating a valid brush.
 
         If polygons are used in both brushes, they will be copied.
@@ -244,7 +242,7 @@ class Geometry:
                     return False
         return True
 
-    def merge(self, other: 'Geometry') -> Optional['Geometry']:
+    def merge(self, other: 'Geometry') -> 'Geometry | None':
         """Merge two brushes together, undoing a clip operation.
 
         This locates faces which fully overlap each other, then removes them, checking the result
@@ -304,7 +302,7 @@ class Geometry:
 class Polygon:
     """A face, including the associated vertices."""
     #: The brush side this was constructed from, or None if this was created fresh.
-    original: Optional[vmf_mod.Side]
+    original: vmf_mod.Side | None
     #: Vertex loop around this polygon. The start point is not specified.
     vertices: list[FrozenVec]
     #: The plane this face is pointing along.

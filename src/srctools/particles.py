@@ -1,5 +1,5 @@
 """Parse particle system files."""
-from typing import IO, Union, overload
+from typing import IO, overload
 from collections.abc import Iterable
 import copy
 
@@ -63,7 +63,7 @@ class Particle:
     @classmethod
     def parse(
         cls,
-        file: Union[IO[bytes], Element],
+        file: IO[bytes] | Element,
         version: int = FORMAT_VERSION,
     ) -> dict[str, 'Particle']:
         """Parse a PCF file.

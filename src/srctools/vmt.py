@@ -1,6 +1,6 @@
 """Parses material files."""
-from typing import Callable, Optional, TypeVar, Union, overload
-from collections.abc import Iterable, Iterator, Mapping, MutableMapping
+from typing import TypeVar, overload
+from collections.abc import Callable, Iterable, Iterator, Mapping, MutableMapping
 from enum import Enum
 import sys
 
@@ -66,12 +66,12 @@ _SHADER_PARAM_TYPES: dict[str, VarType] = {}
 
 
 @overload
-def get_parm_type(name: str) -> Optional[VarType]: ...
+def get_parm_type(name: str) -> VarType | None: ...
 @overload
-def get_parm_type(name: str, default: ArgT) -> Union[VarType, ArgT]: ...
+def get_parm_type(name: str, default: ArgT) -> VarType | ArgT: ...
 
 
-def get_parm_type(name: str, default: Optional[ArgT] = None) -> Union[VarType, ArgT, None]:
+def get_parm_type(name: str, default: ArgT | None = None) -> VarType | ArgT | None:
     """Retrieve the type a parameter has, or return the default."""
     # Import and load the parameters.
     # noinspection PyProtectedMember
@@ -88,7 +88,7 @@ def get_parm_type(name: str, default: Optional[ArgT] = None) -> Union[VarType, A
     return _get_parm_type_real(name, default)
 
 
-def _get_parm_type_real(name: str, default: Optional[ArgT] = None) -> Union[VarType, ArgT, None]:
+def _get_parm_type_real(name: str, default: ArgT | None = None) -> VarType | ArgT | None:
     """Retrieve the type a parameter has, or return the default."""
     if '?' in name:
         flag, name = name.split('?', 1)
@@ -307,7 +307,7 @@ class Material(MutableMapping[str, str]):
         fsys: FileSystem,
         *,
         limit: int = 100,
-        parent_func: Optional[Callable[[str], None]] = None,
+        parent_func: Callable[[str], None] | None = None,
     ) -> 'Material':
         """If the material is a :vdc:`Patch` shader expand to the full material.
 
@@ -323,7 +323,7 @@ class Material(MutableMapping[str, str]):
         fsys: FileSystem,
         count: int,
         limit: int,
-        parent_func: Optional[Callable[[str], None]],
+        parent_func: Callable[[str], None] | None,
     ) -> 'Material':
         """Do apply_patches()."""
         if count > limit:

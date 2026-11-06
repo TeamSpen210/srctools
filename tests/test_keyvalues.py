@@ -1,5 +1,4 @@
 """Test the keyvalues module."""
-from typing import Union
 from collections.abc import Generator
 from unittest.mock import Mock
 import itertools
@@ -748,7 +747,7 @@ def test_edit() -> None:
     """Check functionality of Keyvalues.edit()"""
     test_prop = Keyvalues('Name', 'Value')
 
-    def check(prop: Keyvalues, name: str, value: Union[str, list[str]]) -> None:
+    def check(prop: Keyvalues, name: str, value: str | list[str]) -> None:
         """Check the property was edited, and has the given value."""
         nonlocal test_prop
         assert prop is test_prop

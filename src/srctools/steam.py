@@ -1,5 +1,4 @@
 """Parse Steam configuration files to locate apps by their ID."""
-from typing import Optional
 from collections.abc import Collection, Mapping
 from pathlib import Path
 import os
@@ -54,7 +53,7 @@ class AppInfo:
         )
 
 # Locations of Steam folders.
-_library_folders: Optional[list[Path]] = None
+_library_folders: list[Path] | None = None
 # Already parsed games.
 _parsed_games: dict[int, AppInfo] = {}
 _parsed_all: bool = False

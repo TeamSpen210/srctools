@@ -1,7 +1,7 @@
 """Common types and concrete classes shared by different modules."""
 import types
 
-from typing import Protocol, TypeVar, Literal, Union, Optional
+from typing import Protocol, TypeVar, Literal
 
 
 AnyStr_co = TypeVar("AnyStr_co", str, bytes, covariant=True)
@@ -14,11 +14,11 @@ class FileR(Protocol[AnyStr_co]):
     def __enter__(self, /) -> 'FileR[AnyStr_co]': ...
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[types.TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: types.TracebackType | None,
         /,
-    ) -> Optional[bool]: ...
+    ) -> bool | None: ...
 
 
 class FileWText(Protocol):
@@ -28,7 +28,7 @@ class FileWText(Protocol):
 
 class FileWBinary(Protocol):
     """A writable binary file."""
-    def write(self, data: Union[bytes, bytearray], /) -> object: ...
+    def write(self, data: bytes | bytearray, /) -> object: ...
 
 
 class FileSeek(Protocol):

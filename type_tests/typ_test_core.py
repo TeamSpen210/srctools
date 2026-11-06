@@ -1,6 +1,5 @@
 """Test tricky type definitions in the package root."""
-from typing import Union
-from typing_extensions import assert_type
+from typing import assert_type
 from io import BufferedWriter, TextIOWrapper
 
 import srctools
@@ -11,14 +10,14 @@ def test_conversions() -> None:
     data: list[str] = ['a', 'b', 'c']
     assert_type(srctools.conv_int('45'), int)
     assert_type(srctools.conv_int('45', 32), int)
-    assert_type(srctools.conv_int('45', data), Union[int, list[str]])
+    assert_type(srctools.conv_int('45', data), int | list[str])
 
     assert_type(srctools.conv_float('45.25'), float)
     assert_type(srctools.conv_float('45.25', 32.25), float)
-    assert_type(srctools.conv_float('45.25', data), Union[float, list[str]])
+    assert_type(srctools.conv_float('45.25', data), float | list[str])
 
     assert_type(srctools.conv_bool('0'), bool)
-    assert_type(srctools.conv_bool('true', data), Union[bool, list[str]])
+    assert_type(srctools.conv_bool('true', data), bool | list[str])
 
 
 def test_atomicwriter() -> None:

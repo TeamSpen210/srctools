@@ -3,7 +3,6 @@
 Run with a list of paths pointing to the materialsystem/ folders in the SDK.
 This produces _shaderdb.py
 """
-from typing import Optional, Union
 from collections import defaultdict
 import ast
 import collections
@@ -23,7 +22,7 @@ class Var:
     default: object
     help: object
     flags: str
-    filename: Union[str, frozenset[str]]
+    filename: str | frozenset[str]
 
 
 VARS: dict[str, Var] = {}
@@ -87,7 +86,7 @@ def process(filename: str, args: str) -> None:
     ast_tuple: ast.Tuple = ast_expr.body
     elements = ast_tuple.elts
 
-    ast_help: Optional[ast.expr]
+    ast_help: ast.expr | None
     if len(elements) == 5:
         ast_name, ast_type, ast_default, ast_help, ast_flags = ast_tuple.elts
         flags = parse_ast_value(ast_flags)
@@ -203,7 +202,7 @@ def dump(folder: str) -> None:
                     CONFLICTS[var_name] |= {var, other_var}
 
 
-def main(args: Optional[list[str]] = None) -> None:
+def main(args: list[str] | None = None) -> None:
     """Run this script."""
     if args is None:
         args = sys.argv[1:]

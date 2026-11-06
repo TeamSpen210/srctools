@@ -9,7 +9,8 @@ not supported, only metdata can be read.
 .. _`Python Imaging Library`: https://pillow.readthedocs.io/en/stable/
 .. _`libsquish`: https://sourceforge.net/projects/libsquish/
 """
-from typing import TYPE_CHECKING, Any, Optional, Union, overload, ClassVar, final
+from typing import TYPE_CHECKING, Any, overload, ClassVar, final
+
 from array import array
 from collections.abc import Iterator, Mapping, Sequence
 from enum import Enum, Flag
@@ -326,7 +327,7 @@ class Resource:
     binary data.
     """
     flags: int
-    data: Union[bytes, int]
+    data: bytes | int
 
 
 # Used as a placeholder definition during saving for non-inline resources we generate directly.
@@ -374,8 +375,8 @@ class Frame:
     __slots__ = ['width', 'height', '_data', '_fileinfo']
     width: int
     height: int
-    _data: Optional['array[int]']  # Only generic in stubs!
-    _fileinfo: Optional[tuple[FileRSeek[bytes], int, ImageFormats]]
+    _data: 'array[int] | None'  # Runtime generic as of Python 3.12
+    _fileinfo: tuple[FileRSeek[bytes], int, ImageFormats] | None
 
     def __init__(
         self,
@@ -431,13 +432,13 @@ class Frame:
     @overload
     def copy_from(
         self,
-        source: Union[bytes, bytearray, 'array[int]', memoryview],
+        source: 'bytes | bytearray | array[int] | memoryview',  # Swap to Buffer in Python 3.12+
         format: ImageFormats = ImageFormats.RGBA8888,
     ) -> None: ...
 
     def copy_from(
         self,
-        source: Union['Frame', bytes, bytearray, 'array[int]', memoryview],
+        source: 'Frame | bytes | bytearray | array[int] | memoryview',
         format: ImageFormats = ImageFormats.RGBA8888,
     ) -> None:
         """Overwrite this frame with other data.
@@ -507,7 +508,7 @@ class Frame:
     def __setitem__(
         self,
         item: tuple[int, int],
-        data: Union[Pixel, tuple[int, int, int, int]],
+        data: Pixel | tuple[int, int, int, int],
     ) -> None:
         """Set an individual pixel at (x, y)."""
         self.load()
@@ -556,7 +557,7 @@ class Frame:
         self,
         tk: 'tkinter.Misc | None' = None,
         *,
-        bg: Optional[tuple[int, int, int]] = None,
+        bg: tuple[int, int, int] | None = None,
     ) -> 'tkinter.PhotoImage':
         """Convert the given frame into a Tkinter PhotoImage.
 
@@ -581,7 +582,7 @@ class Frame:
         )
 
     # TODO: wx has no type hints, so we can't import.
-    def to_wx_image(self, bg: Optional[tuple[int, int, int]] = None) -> Any:
+    def to_wx_image(self, bg: tuple[int, int, int] | None = None) -> Any:
         """Convert the given frame into a wxPython wx.Image.
 
         This requires wxPython to be installed.
@@ -596,7 +597,7 @@ class Frame:
         _format_funcs.alpha_flatten(self._data, img.GetDataBuffer(), self.width, self.height, bg)
         return img
 
-    def to_wx_bitmap(self, bg: Optional[tuple[int, int, int]] = None) -> Any:
+    def to_wx_bitmap(self, bg: tuple[int, int, int] | None = None) -> Any:
         """Convert the given frame into a wxPython wx.Bitmap.
 
         This requires wxPython to be installed.
@@ -643,17 +644,17 @@ class VTF:
     #: In version 7.3+, arbitrary resources may be stored in a VTF. :py:class:`ResourceID` specify
     #: known resources, but any 4-byte ID may be used. If you do use a custom resource, keep in
     #: mind this could break if future srctools versions parse this normally.
-    resources: dict[Union[ResourceID, bytes], Resource]
+    resources: dict[ResourceID | bytes, Resource]
     #: Textures used for particle system sprites may have this resource, defining subareas to
     #: randomly pick from when rendering.
     sheet_info: dict[int, 'SheetSequence']
     #: Strata Source adds the hotspot resource, defining regions used to automatically texture
     #: brushes.
-    hotspot_info: Optional[list['HotspotRect']]
+    hotspot_info: list['HotspotRect'] | None
     #: Implementation-specific flags byte
     hotspot_flags: int
 
-    _frames: dict[tuple[int, Union[CubeSide, int], int], Frame]
+    _frames: dict[tuple[int, CubeSide | int, int], Frame]
     _low_res: Frame
 
     def __init__(
@@ -666,7 +667,7 @@ class VTF:
         frames: int = 1,
         bump_scale: float = 1.0,
         sheet_info: Mapping[int, 'SheetSequence'] = EmptyMapping,
-        hotspot_info: Optional[list['HotspotRect']] = None,
+        hotspot_info: list['HotspotRect'] | None = None,
         hotspot_flags: int = 0,
         flags: VTFFlags = VTFFlags.EMPTY,
         fmt: ImageFormats = ImageFormats.RGBA8888,
@@ -878,7 +879,7 @@ class VTF:
     def save(
         self,
         file: FileWBinarySeek,
-        version: Optional[tuple[int, int]] = None,
+        version: tuple[int, int] | None = None,
         sheet_seq_version: int = 1,
         asw_or_later: bool = True,
         mip_filter: FilterMode = FilterMode.BILINEAR,
@@ -926,7 +927,7 @@ class VTF:
 
         # Write the resource list. This is slightly complicated by the requirement to keep IDs in
         # ascending order.
-        res_list: Optional[list[tuple[Union[ResourceID, bytes], Resource]]]
+        res_list: list[tuple[ResourceID | bytes, Resource]] | None
         if version_minor >= 3:
             # Add dummy definitions for the resources we handle, so they're sorted correctly.
             res_list = [
@@ -940,7 +941,7 @@ class VTF:
                 res_list.append((ResourceID.STRATA_HOTSPOT, _DUMMY_RESOURCE))
             file.write(struct.pack('<3xI8x', len(res_list)))
 
-            def res_key(tup: tuple[Union[ResourceID, bytes], Resource]) -> bytes:
+            def res_key(tup: tuple[ResourceID | bytes, Resource]) -> bytes:
                 """Resources should be ordered in ascending order."""
                 res_id = tup[0]
                 if isinstance(res_id, ResourceID):
@@ -1031,16 +1032,16 @@ class VTF:
 
     def __exit__(
         self,
-        exc_type: Optional[type[BaseException]],
-        exc_val: Optional[BaseException],
-        exc_tb: Optional[types.TracebackType],
+        exc_type: type[BaseException] | None,
+        exc_val: BaseException | None,
+        exc_tb: types.TracebackType | None,
     ) -> None:
         """Close the streams if any frames still have them open."""
         self._low_res._fileinfo = None
         for frame in self._frames.values():
             frame._fileinfo = None
 
-    def _depth_range(self) -> Sequence[Union[int, CubeSide]]:
+    def _depth_range(self) -> Sequence[int | CubeSide]:
         """Return the appropriate sequence for iterating over the _frames dict.
 
         Depending on the type of VTF, frames may either be per cubemap side, or per depth.
@@ -1108,7 +1109,7 @@ class VTF:
         self, *,
         frame: int = 0,
         depth: int = 0,
-        side: Optional[CubeSide] = None,
+        side: CubeSide | None = None,
         mipmap: int = 0,
     ) -> Frame:
         """Get a specific image frame.
@@ -1117,7 +1118,7 @@ class VTF:
         """
         if side is not None and depth != 0:
             raise TypeError('Side and depth are mutually exclusive!')
-        depth_side: Union[int, CubeSide]
+        depth_side: int | CubeSide
         if VTFFlags.ENVMAP in self.flags:
             if side is None:
                 raise ValueError('Side must be provided for cubemaps!')

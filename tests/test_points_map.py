@@ -1,5 +1,4 @@
 """Test the PointsMap mapping."""
-from typing import Union
 
 from collections.abc import KeysView, ValuesView, ItemsView, Mapping
 import copy
@@ -55,7 +54,7 @@ def test_init() -> None:
     assert points[1, 2, 3] == 'a'
     assert points[4, 5, 6] == 'b'
 
-    mapping: Mapping[Union[VecBase, tuple[float, float, float]], str] = {
+    mapping: Mapping[VecBase | tuple[float, float, float], str] = {
         FrozenVec(1, 2, 3): 'a',
         (4.0, 5.0, 6.0): 'b',
     }

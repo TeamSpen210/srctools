@@ -24,8 +24,7 @@ Specifically, the following characters are escaped:
     variable in a parsing function, then to be discarded once complete.
 
 """
-from typing import TYPE_CHECKING, Final, NoReturn, Optional, Union
-from typing_extensions import Self, TypeAlias, overload
+from typing import TYPE_CHECKING, Final, NoReturn, Self, TypeAlias, overload
 from collections.abc import Iterable, Iterator, Callable
 from enum import Enum
 from os import fspath as _conv_path
@@ -42,7 +41,7 @@ __all__ = [
 ]
 
 
-def format_exc_fileinfo(msg: str, file: Optional[StringPath], line_num: Optional[int]) -> str:
+def format_exc_fileinfo(msg: str, file: StringPath | None, line_num: int | None) -> str:
     """If a line number or file is provided, include those in the error message.
 
     This is the logic for the `str() <str>` form of :class:`TokenSyntaxError`.
@@ -74,16 +73,16 @@ class TokenSyntaxError(Exception):
     """
     mess: str
     """The error message that occurred."""
-    file: Optional[StringPath]
+    file: StringPath | None
     """The filename of the file being parsed, or `None` if not known."""
-    line_num: Optional[int]
+    line_num: int | None
     """The line where the error occurred, or `None` if not applicable (EOF, for instance)."""
 
     def __init__(
         self,
         message: str,
-        file: Optional[StringPath] = None,
-        line: Optional[int] = None,
+        file: StringPath | None = None,
+        line: int | None = None,
     ) -> None:
         super().__init__()
         self.mess = message
@@ -173,7 +172,7 @@ _OPERATORS = {
 
 # See https://github.com/ValveSoftware/source-sdk-2013/blob/0d8dceea4310fde5706b3ce1c70609d72a38efdf/sp/src/tier1/utlbuffer.cpp#L57-L69
 # Key is str | None so we can pass None/EOF to skip a check.
-ESCAPES: dict[Optional[str], str] = {
+ESCAPES: dict[str | None, str] = {
     'n': '\n',
     't': '\t',
     'v': '\v',
@@ -216,7 +215,7 @@ class BaseTokenizer(abc.ABC):
     the error message. The :py:meth:`error()` method can be used to intelligently construct an
     instance to raise.
     """
-    filename: Optional[str]
+    filename: str | None
     """The filename that is being parsed. This is passed along to the error class, 
     to produce relevant errors.
     """
@@ -230,8 +229,8 @@ class BaseTokenizer(abc.ABC):
 
     def __init__(
         self,
-        filename: Union[StringPath, str, bytes, None],
-        error: Optional[type[TokenSyntaxError]],
+        filename: StringPath | str | bytes | None,
+        error: type[TokenSyntaxError] | None,
     ) -> None:
         if filename is not None:
             conv_filename = _conv_path(filename)
@@ -262,7 +261,7 @@ class BaseTokenizer(abc.ABC):
     @overload
     def error(self, message: str, /, *args: object) -> TokenSyntaxError: ...
 
-    def error(self, message: Union[str, Token], /, *args: object) -> TokenSyntaxError:
+    def error(self, message: str | Token, /, *args: object) -> TokenSyntaxError:
         """Raise a syntax error exception.
 
         This returns the :py:class:`TokenSyntaxError` instance, with
@@ -333,7 +332,7 @@ class BaseTokenizer(abc.ABC):
             raise StopIteration
         return tok_and_val
 
-    def push_back(self, tok: Token, value: Optional[str] = None) -> None:
+    def push_back(self, tok: Token, value: str | None = None) -> None:
         """Return a token, so it will be reproduced when called again.
 
         The value is required for :py:const:`Token.STRING`, :py:const:`~Token.PAREN_ARGS` and \
@@ -437,7 +436,7 @@ class Tokenizer(BaseTokenizer):
     _cur_chunk: str
     _char_index: int
 
-    periodic_callback: Optional[Callable[[], object]]
+    periodic_callback: Callable[[], object] | None
     """If set, is called periodically after a few lines are parsed. 
     Useful to abort parsing operations from external factors.
     """
@@ -468,11 +467,11 @@ class Tokenizer(BaseTokenizer):
 
     def __init__(
         self,
-        data: Union[str, Iterable[str]],
-        filename: Union[StringPath, str, bytes, None] = None,
+        data: str | Iterable[str],
+        filename: StringPath | str | bytes | None = None,
         error: type[TokenSyntaxError] = TokenSyntaxError,
         *,
-        periodic_callback: Optional[Callable[[], object]] = None,
+        periodic_callback: Callable[[], object] | None = None,
         string_bracket: bool = False,
         string_parens: bool = True,
         allow_escapes: bool = True,
@@ -515,7 +514,7 @@ class Tokenizer(BaseTokenizer):
         self.preserve_comments = bool(preserve_comments)
         self._last_was_cr = False
 
-    def _next_char(self) -> Optional[str]:
+    def _next_char(self) -> str | None:
         """Return the next character, or None if no more characters are there."""
         self._char_index += 1
         try:
@@ -694,11 +693,11 @@ class Tokenizer(BaseTokenizer):
                 raise self.error('Unexpected character "{}"!', next_char)
         raise AssertionError("Infinite loop")
 
-    def _handle_comment(self) -> Optional[tuple[Token, str]]:
+    def _handle_comment(self) -> tuple[Token, str] | None:
         """Handle a comment. The last character read was the initial slash."""
         # The next must be either a slash (//) or star (/*)
         comment_next = self._next_char()
-        comment_buf: Optional[list[str]] = [] if self.preserve_comments else None
+        comment_buf: list[str] | None = [] if self.preserve_comments else None
         if comment_next == '*':
             # /* comment.
             if self.allow_star_comments:
@@ -817,7 +816,7 @@ class IterTokenizer(BaseTokenizer):
     def __init__(
         self,
         source: Iterable[tuple[Token, str]],
-        filename: Union[StringPath, str, bytes, None] = None,
+        filename: StringPath | str | bytes | None = None,
         error: type[TokenSyntaxError] = TokenSyntaxError,
     ) -> None:
         super().__init__(filename, error)

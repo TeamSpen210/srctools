@@ -1,5 +1,4 @@
 """Test the resource functions implemented for specific entities."""
-from typing import Union
 from collections.abc import Iterable, Mapping
 from operator import itemgetter
 
@@ -36,7 +35,7 @@ def check_entity(
     classname: str,
     mapname__: str = '',
     tags__: Iterable[str] = (),
-    filesys__: Mapping[str, Union[str, bytes]] = EmptyMapping,
+    filesys__: Mapping[str, str | bytes] = EmptyMapping,
     **keyvalues: ValidKVs,
 ) -> None:
     """Check this entity produces the specified resources."""

@@ -1,5 +1,4 @@
 """Test the filesystem module"""
-from pathlib import Path
 
 from pytest_datadir.plugin import LazyDataDir
 

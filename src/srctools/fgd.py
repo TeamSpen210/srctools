@@ -1,7 +1,7 @@
 """Parse FGD files, used to describe Hammer entities."""
 from __future__ import annotations
-from typing import TYPE_CHECKING, Any, ClassVar, Generic, Optional, TypeVar, Union
-from typing_extensions import Protocol, TypeAlias, overload, Self, deprecated
+from typing import TYPE_CHECKING, Any, ClassVar, Generic, TypeVar, Self, TypeAlias, overload
+from typing_extensions import Protocol, deprecated
 from collections import ChainMap, defaultdict
 from collections.abc import (
     Callable, Collection, Container, Iterable, Iterator, Mapping, Sequence, Set as AbstractSet,
@@ -61,7 +61,7 @@ SpawnFlags: TypeAlias = tuple[int, str, bool, TagsSet]
 Choices: TypeAlias = tuple[str, str, TagsSet]
 
 # Cached engine DB parsing functions.
-_ENGINE_DB: Optional[list[_EngineDBProto]] = None
+_ENGINE_DB: list[_EngineDBProto] | None = None
 
 
 def ignore_errors(_: str, /) -> None:
@@ -951,7 +951,7 @@ class Resource:
     tags: TagsSet = frozenset()
 
     @classmethod
-    def mdl(cls, filename: str, tags: TagsSet = frozenset(), skinset: Union[Sequence[int], int]=()) -> Resource:
+    def mdl(cls, filename: str, tags: TagsSet = frozenset(), skinset: Sequence[int] | int=()) -> Resource:
         """Create a resource definition for a model.
 
         Models have an optional ``filename.mdl#1,2,3`` suffix to specify which skins are used.
@@ -996,7 +996,7 @@ class Helper:
     `UnknownHelper`.
     """
     # The HelperType which this implements.
-    TYPE: ClassVar[Optional[HelperTypes]] = None
+    TYPE: ClassVar[HelperTypes | None] = None
     IS_EXTENSION: ClassVar[bool] = False  # true for our extensions to the format.
 
     tags: TagsSet = attrs.field(kw_only=True, default=frozenset())
@@ -1043,7 +1043,7 @@ class UnknownHelper(Helper):
     If you need to interact with an unknown helper, please file an issue/PR to get it implemented
     properly.
     """
-    TYPE: ClassVar[Optional[HelperTypes]] = None
+    TYPE: ClassVar[HelperTypes | None] = None
     name: str  #: The name of the helper.
     args: list[str]  #: The raw parameters passed to this helper. This is not stable.
 
@@ -1133,7 +1133,7 @@ class ColorVar:
 class EntAttribute:
     """Common base class for IODef and KVDef."""
     name: str
-    _type: Union[ValueTypes, str] = attrs.field(alias='type')
+    _type: ValueTypes | str = attrs.field(alias='type')
     desc: str
 
     def __init__(self) -> None:
@@ -1152,11 +1152,11 @@ class EntAttribute:
             return self._type
 
     @type.setter
-    def type(self, value: Union[ValueTypes, str]) -> None:
+    def type(self, value: ValueTypes | str) -> None:
         self._type = value
 
     @property
-    def custom_type(self) -> Optional[str]:
+    def custom_type(self) -> str | None:
         """If a custom type is specified, return the type name."""
         if isinstance(self._type, str):
             return self._type
@@ -1212,7 +1212,7 @@ class _MapList(MutableSequence[T]):
     @overload
     def __getitem__(self, index: slice) -> MutableSequence[T]: ...
 
-    def __getitem__(self, index: Union[int, slice]) -> Union[T, MutableSequence[T]]:
+    def __getitem__(self, index: int | slice) -> T | MutableSequence[T]:
         if self._parent.options is None:
             raise KeyError(index)
         elif isinstance(index, slice):
@@ -1225,7 +1225,7 @@ class _MapList(MutableSequence[T]):
     @overload
     def __setitem__(self, index: slice, value: Iterable[T]) -> None: ...
 
-    def __setitem__(self, index: Union[int, slice], value: Union[T, Iterable[T]]) -> None:
+    def __setitem__(self, index: int | slice, value: T | Iterable[T]) -> None:
         if self._parent.options is None:
             raise KeyError(index)
         elif isinstance(index, slice):  # Ignore, checker doesn't narrow value
@@ -1233,7 +1233,7 @@ class _MapList(MutableSequence[T]):
         else:
             self._parent.options[index] = self._import(value)  # type: ignore
 
-    def __delitem__(self, index: Union[int, slice]) -> None:
+    def __delitem__(self, index: int | slice) -> None:
         if self._parent.options is None:
             raise KeyError(index)
         del self._parent.options[index]
@@ -1243,11 +1243,11 @@ class _MapList(MutableSequence[T]):
 class KVDef(EntAttribute):
     """Represents a keyvalue that may be set on entities."""
     name: str
-    _type: Union[ValueTypes, str] = attrs.field(alias='type')
+    _type: ValueTypes | str = attrs.field(alias='type')
     disp_name: str
     default: str = ''
     desc: str = ''
-    options: Optional[list[KVOption]] = None  #: Only valid for CHOICES or SPAWNFLAGS types, holds the options.
+    options: list[KVOption] | None = None  #: Only valid for CHOICES or SPAWNFLAGS types, holds the options.
     #: Causes Hammer to prevent this keyvalue from being changed.
     #: Doesn't force the value to the default though.
     readonly: bool = False
@@ -1311,7 +1311,7 @@ class KVDef(EntAttribute):
 
     @property
     @deprecated("Use KVDef.options instead.")
-    def val_list(self) -> Union[MutableSequence[SpawnFlags], MutableSequence[Choices], None]:
+    def val_list(self) -> MutableSequence[SpawnFlags] | MutableSequence[Choices] | None:
         """Sequence of `tuple`s holding the valid spawnflag or choices options.
 
         :deprecated: Use options instead, which stores `KVOption` instances.
@@ -1328,7 +1328,7 @@ class KVDef(EntAttribute):
     # noinspection PyDeprecation
     @val_list.setter
     @deprecated("Use KVDef.options instead.")
-    def val_list(self, value: Union[MutableSequence[SpawnFlags], MutableSequence[Choices], None]) -> None:
+    def val_list(self, value: MutableSequence[SpawnFlags] | MutableSequence[Choices] | None) -> None:
         if value is None:
             self.options = None
         elif self._type is ValueTypes.CHOICES:
@@ -1400,7 +1400,7 @@ class KVDef(EntAttribute):
             legacy_report = True
             raw_value_type = raw_value_type[1:]
 
-        val_typ: Union[ValueTypes, str]
+        val_typ: ValueTypes | str
         try:
             val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
         except KeyError:
@@ -1433,8 +1433,8 @@ class KVDef(EntAttribute):
             next_token, key_flag = tok()
         show_in_report |= legacy_report
 
-        has_equal: Optional[Token] = None
-        kv_vals: Optional[list[str]] = None
+        has_equal: Token | None = None
+        kv_vals: list[str] | None = None
         if next_token is Token.COLON:
             had_colon = True
         elif next_token is Token.EQUALS:
@@ -1480,7 +1480,7 @@ class KVDef(EntAttribute):
             elif default.casefold() == 'no':
                 default = '0'
         # Read the choices in the [].
-        options: Optional[list[KVOption]]
+        options: list[KVOption] | None
         if isinstance(val_typ, ValueTypes) and val_typ.has_list:
             if has_equal is not Token.EQUALS:
                 raise tok.error('No list provided for "{}" value type!', val_typ.name)
@@ -1622,7 +1622,7 @@ class KVDef(EntAttribute):
 class IODef(EntAttribute):
     """Represents an input or output for an entity."""
     name: str
-    _type: Union[ValueTypes, str] = attrs.field(alias='type', default=ValueTypes.VOID)  # Most IO has no parameter.
+    _type: ValueTypes | str = attrs.field(alias='type', default=ValueTypes.VOID)  # Most IO has no parameter.
     desc: str = ''
 
     def copy(self) -> IODef:
@@ -1654,7 +1654,7 @@ class IODef(EntAttribute):
         raw_value_type = tok.expect(Token.STRING)
         tok.expect(Token.PAREN_CLOSE)
 
-        val_typ: Union[ValueTypes, str]
+        val_typ: ValueTypes | str
         if raw_value_type == 'ehandle':
             # This is a duplicate (deprecated) name, but only for I/O.
             val_typ = ValueTypes.EHANDLE
@@ -1736,7 +1736,7 @@ class _EntityView(Generic[T]):
 
     def _maps(
         self,
-        ent: Optional[EntityDef] = None,
+        ent: EntityDef | None = None,
     ) -> Iterator[Mapping[str, Mapping[TagsSet, T]]]:
         """Yield all the mappings which we need to look through."""
         if ent is None:
@@ -1747,7 +1747,7 @@ class _EntityView(Generic[T]):
             if isinstance(base, EntityDef):
                 yield from self._maps(base)
 
-    def __getitem__(self, name: Union[str, tuple[str, Collection[str]]]) -> T:
+    def __getitem__(self, name: str | tuple[str, Collection[str]]) -> T:
         """Lookup the value in the entity.
 
         Either obj['name'], or obj['name', {tags}] is accepted.
@@ -1782,7 +1782,7 @@ class _EntityView(Generic[T]):
                     return value
         raise KeyError((name, search_tags))
 
-    def __setitem__(self, name: Union[str, tuple[str, Collection[str]]], value: T) -> None:
+    def __setitem__(self, name: str | tuple[str, Collection[str]], value: T) -> None:
         """Set the value in the entity. This never affects bases.
 
         This only overwrites values with the exact same tag."""
@@ -1805,7 +1805,7 @@ class _EntityView(Generic[T]):
         else:
             tag_map[tags] = value
 
-    def __delitem__(self, name: Union[str, tuple[str, Collection[str]]]) -> None:
+    def __delitem__(self, name: str | tuple[str, Collection[str]]) -> None:
         """Remove the value from the entity. This never affects bases.
 
         If a single string is provided, all tag versions are removed."""
@@ -1864,7 +1864,7 @@ class EntityDef:
     kv_order: list[str] = attrs.field(kw_only=True, factory=list)
 
     #: The parent entity classes defined using ``base()`` helpers.
-    bases: list[Union[EntityDef, str]] = attrs.field(kw_only=True, factory=list)
+    bases: list[EntityDef | str] = attrs.field(kw_only=True, factory=list)
     #: All other helpers defined on the entity.
     helpers: list[Helper] = attrs.field(kw_only=True, factory=list)
     desc: str = attrs.field(default='', kw_only=True)
@@ -1909,9 +1909,9 @@ class EntityDef:
 
         # First parse the bases part - lots of name(args) sections until an '='.
         ext_autovisgroups: list[list[str]] = []
-        help_type: Optional[HelperTypes] = None
-        help_type_cust: Optional[str] = None
-        help_tags: Optional[TagsSet] = None
+        help_type: HelperTypes | None = None
+        help_type_cust: str | None = None
+        help_tags: TagsSet | None = None
         for token, token_value in tok:
             if token is Token.NEWLINE:
                 continue
@@ -2008,7 +2008,7 @@ class EntityDef:
                     raise tok.error('help_type not set?')
                 elif help_type is HelperTypes.INHERIT:
                     for base_s in args:
-                        base: Union[str, EntityDef] = fgd[base_s] if eval_bases else base_s
+                        base: str | EntityDef = fgd[base_s] if eval_bases else base_s
                         if base not in entity.bases:
                             entity.bases.append(base)
                 elif help_type is HelperTypes.EXT_AUTO_VISGROUP:
@@ -2059,7 +2059,7 @@ class EntityDef:
 
         # We next might have a ':' then docstring before the [,
         # or directly to [.
-        desc: Optional[list[str]] = None
+        desc: list[str] | None = None
         for doc_token, token_value in tok:
             if doc_token is Token.NEWLINE:
                 continue
@@ -2261,9 +2261,9 @@ class EntityDef:
 
         # Avoid copy for these, we know the tags-map is immutable.
         for val_key in ['keyvalues', 'inputs', 'outputs']:
-            coll: dict[str, dict[TagsSet, Union[KVDef, IODef]]] = {}
+            coll: dict[str, dict[TagsSet, KVDef | IODef]] = {}
             setattr(copy, val_key, coll)
-            tags_map: dict[TagsSet, Union[KVDef, IODef]]
+            tags_map: dict[TagsSet, KVDef | IODef]
             for key, tags_map in getattr(self, val_key).items():
                 coll[key] = {
                     key: value.copy()
@@ -2315,7 +2315,7 @@ class EntityDef:
     @overload
     def get_helpers(self, typ: str, tags: TagsSet = ...) -> Iterator[UnknownHelper]: ...
 
-    def get_helpers(self, typ: Union[builtins.type[HelperT], str], tags: TagsSet = frozenset()) -> Iterator[Helper]:
+    def get_helpers(self, typ: builtins.type[HelperT] | str, tags: TagsSet = frozenset()) -> Iterator[Helper]:
         """Find all helpers with this specific type and tags."""
         if isinstance(typ, str):
             for helper in self.helpers:
@@ -2330,9 +2330,9 @@ class EntityDef:
         self,
         ctx: ResourceCtx,
         *,
-        ent: Optional[Entity],
+        ent: Entity | None,
         # Note, this default arg is checked in Sphinx conf.py
-        on_error: Callable[[str], Optional[BaseException]] = ignore_errors,
+        on_error: Callable[[str], BaseException | None] = ignore_errors,
     ) -> Iterator[tuple[FileType, str]]:
         """Recursively fetch all the resources this entity may use, simulating ``Precache()``.
 
@@ -2353,7 +2353,7 @@ class EntityDef:
         # Also track the checked classes, so we don't repeat ourselves.
         classes_checked = {self.classname}
         entities_checked: set[frozenset[tuple[str, str]]] = set()
-        todo_ents: list[tuple[EntityDef, Optional[Entity]]] = [(self, ent)]
+        todo_ents: list[tuple[EntityDef, Entity | None]] = [(self, ent)]
         todo_res: list[Resource] = []
         while todo_ents:
             (ent_def, ent) = todo_ents.pop()
@@ -2653,8 +2653,8 @@ class FGD:
     @classmethod
     def parse(
         cls,
-        file: Union[File[Any], str],
-        filesystem: Optional[FileSystem[Any]] = None,
+        file: File[Any] | str,
+        filesystem: FileSystem[Any] | None = None,
     ) -> FGD:
         """Parse an FGD file.
 
@@ -2812,12 +2812,12 @@ class FGD:
         old_report: bool = False, escape_quotes: bool = False,
     ) -> str: ...
     def export(
-        self, file: Optional[FileWText] = None, *,
+        self, file: FileWText | None = None, *,
         label_spawnflags: bool = True,
         custom_syntax: bool = True,
         old_report: bool = False,
         escape_quotes: bool = False,
-    ) -> Optional[str]:
+    ) -> str | None:
         """Write out the FGD file.
 
         :param file: The file to write to. If `None`, the contents will be returned instead.
@@ -2987,7 +2987,7 @@ class FGD:
                     # Material exclusion directories.
 
                     # Custom syntax: (tag1, tag2) after the header, then [.
-                    tags: Optional[TagsSet] = None
+                    tags: TagsSet | None = None
                     for tok, tok_value in tokeniser.skipping_newlines():
                         if tok is Token.BRACK_OPEN:
                             break
@@ -3146,18 +3146,18 @@ class ResourceCtx:
     # For use of get_resources() only.
     _functions: Mapping[str, Callable[
         [ResourceCtx, Entity],
-        Iterator[Union[Resource, Entity]]
+        Iterator[Resource | Entity]
     ]]
 
     def __init__(
         self,
         tags: Iterable[str] = (),
         fsys: FileSystem = _EMPTY_FILESYS,
-        fgd: Union[FGD, Mapping[str, EntityDef], _GetFGDFunc] = EntityDef.engine_def,
+        fgd: FGD | Mapping[str, EntityDef] | _GetFGDFunc = EntityDef.engine_def,
         mapname: str = '',
         funcs: Mapping[str, Callable[
             [ResourceCtx, Entity],
-            Iterator[Union[Resource, Entity]]
+            Iterator[Resource | Entity]
         ]] = srctools.EmptyMapping,
     ) -> None:
         """

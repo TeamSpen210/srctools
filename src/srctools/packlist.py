@@ -1,5 +1,5 @@
 """Handles the list of files which are desired to be packed into the BSP."""
-from typing import Generic, Optional, Union
+from typing import Generic
 from typing_extensions import TypeVar, deprecated
 from collections import OrderedDict
 from collections.abc import Callable, Collection, Iterable, Iterator
@@ -191,7 +191,7 @@ class PackFile:
     """
     type: FileType
     filename: str
-    data: Optional[bytes] = None
+    data: bytes | None = None
     optional: bool = False
     # Human-readable indication as to the immediate cause of packing. Only the first is remembered.
     source: str = ''
@@ -234,7 +234,7 @@ class ManifestedFiles(Generic[ParsedT]):
     parse_func: Callable[[File], dict[str, ParsedT]]
     # For each identifier, the filename it's in and whatever data this was parsed into.
     # Do not display in the repr, there's thousands of these.
-    name_to_parsed: dict[str, tuple[str, Optional[ParsedT]]] = attrs.field(factory=dict, repr=False)
+    name_to_parsed: dict[str, tuple[str, ParsedT | None]] = attrs.field(factory=dict, repr=False)
     # Identifiers which have been packed
     packed_ids: set[str] = attrs.field(factory=set, repr=False)
     # All the filenames we know about, in order. The value is then
@@ -254,7 +254,7 @@ class ManifestedFiles(Generic[ParsedT]):
         """Return the number of items we know about."""
         return len(self.name_to_parsed)
 
-    def load_cache(self, filename: Union[str, 'os.PathLike[str]']) -> None:
+    def load_cache(self, filename: str | os.PathLike[str]) -> None:
         """Load the cache data. If the file is invalid, this does nothing."""
         path = Path(filename)
         path.parent.mkdir(parents=True, exist_ok=True)
@@ -279,7 +279,7 @@ class ManifestedFiles(Generic[ParsedT]):
             )
         self._cache_changed = False
 
-    def save_cache(self, filename: Union[str, 'os.PathLike[str]'], force: bool = False) -> None:
+    def save_cache(self, filename: str | os.PathLike[str], force: bool = False) -> None:
         """Write back new cache data."""
         if not force and not self._cache_changed:
             LOGGER.debug('Skipping resaving {}', filename)
@@ -445,11 +445,11 @@ class PackList:
     # folder, ext, data -> filename used
     _inject_files: dict[tuple[str, str, bytes], str]
     # Cache of the models used for breakable chunks.
-    _break_chunks: Optional[dict[str, list[str]]]
+    _break_chunks: dict[str, list[str]] | None
     choreo: dict[choreo_scenes.CRC, choreo_scenes.Entry]
     # For each model, defines the skins the model uses. None means at least
     # one use is unknown, so all skins could potentially be used.
-    skinsets: dict[str, Optional[set[int]]]
+    skinsets: dict[str, set[int] | None]
 
     def __init__(self, fsys: FileSystemChain) -> None:
         self.fsys = fsys
@@ -485,9 +485,9 @@ class PackList:
         self,
         filename: 'str | os.PathLike[str]',
         data_type: FileType = FileType.GENERIC,
-        data: Optional[bytes] = None,
+        data: bytes | None = None,
         *,
-        skinset: Optional[set[int]] = None,
+        skinset: set[int] | None = None,
         optional: bool = False,
         source: str = '',
     ) -> None:
@@ -854,7 +854,7 @@ class PackList:
         self.particles.add_file(filename, particles.items(), mode)
         return particles.values()
 
-    def load_manifests(self, cache_folder: Union[Path, str, None] = None) -> None:
+    def load_manifests(self, cache_folder: Path | str | None = None) -> None:
         """Parse the manifests and script files for things like soundscripts or particles.
 
         This is necessary to perform lookups by name.
@@ -874,7 +874,7 @@ class PackList:
 
         self.load_choreo_scenes()  # Image is already a compact cache.
 
-    def load_soundscript_manifest(self, cache_file: Union[Path, str, None] = None) -> None:
+    def load_soundscript_manifest(self, cache_file: Path | str | None = None) -> None:
         """Read the soundscript manifest, and read all mentioned scripts.
 
         If cache_file is provided, it should be a path to a file used to
@@ -907,7 +907,7 @@ class PackList:
         if cache_file is not None:
             self.soundscript.save_cache(cache_file)
 
-    def load_soundscape_manifest(self, cache_file: Union[Path, str, None] = None) -> None:
+    def load_soundscape_manifest(self, cache_file: Path | str | None = None) -> None:
         """Read the soundscape manifest, and read all mentioned scripts.
 
         If cache_file is provided, it should be a path to a file used to
@@ -937,7 +937,7 @@ class PackList:
         if cache_file is not None:
             self.soundscapes.save_cache(cache_file)
 
-    def load_particle_manifest(self, cache_file: Union[Path, str, None] = None) -> None:
+    def load_particle_manifest(self, cache_file: Path | str | None = None) -> None:
         """Read the particle manifest, and read all mentioned scripts.
 
         If cache_file is provided, it should be a path to a file used to
@@ -1129,7 +1129,7 @@ class PackList:
                     if name.casefold() == 'model' or ent_class.kv[name].type in _USEFUL_KV_TYPES
                 }
 
-            skinset: Optional[set[int]]
+            skinset: set[int] | None
             if 'skinset' in ent:
                 # Special key for us - if set this is a list of skins this
                 # entity is pledging it will restrict itself to.
@@ -1242,8 +1242,8 @@ class PackList:
         *,
         whitelist: Iterable[FileSystem] = (),
         blacklist: Iterable[FileSystem] = (),
-        callback: Callable[[str], Optional[bool]] = lambda f: None,
-        dump_loc: Optional[Path] = None,
+        callback: Callable[[str], bool | None] = lambda f: None,
+        dump_loc: Path | None = None,
         only_dump: bool = False,
         ignore_vpk: bool = True,
     ) -> None:

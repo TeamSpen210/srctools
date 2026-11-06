@@ -4,8 +4,9 @@ Each function here should be registered via @cls_func, with its name used as the
 Use the context and entity to determine values, keeping in mind the ent could be missing keys.
 As a convenience yielding a blank resource is ignored.
 """
-from typing import Callable, Final, TypeVar, Union
-from typing_extensions import TypeAlias
+from typing import Final, TypeVar
+from collections.abc import Callable
+from typing import TypeAlias
 from collections.abc import Iterator, Mapping, Sequence
 from enum import IntEnum
 import itertools
@@ -17,7 +18,7 @@ from .packlist import FileType
 from .vmf import VMF, Entity
 
 
-ResGen: TypeAlias = Iterator[Union[Resource, Entity]]
+ResGen: TypeAlias = Iterator[Resource | Entity]
 ClassFunc: TypeAlias = Callable[[ResourceCtx, Entity], ResGen]
 ClassFuncT = TypeVar('ClassFuncT', bound=ClassFunc)
 CLASS_FUNCS: dict[str, ClassFunc] = {}
@@ -38,7 +39,7 @@ def cls_func(func: ClassFuncT) -> ClassFuncT:
     return func
 
 
-def button_sound(index: Union[int, str]) -> Iterator[Resource]:
+def button_sound(index: int | str) -> Iterator[Resource]:
     """Return the resource matching the hardcoded set of sounds in button ents."""
     index = conv_int(index)
     if index:

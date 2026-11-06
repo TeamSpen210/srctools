@@ -1,5 +1,4 @@
 """Parse out all material proxies used in the given game."""
-from typing import Optional
 from collections import Counter, defaultdict
 import argparse
 import traceback
@@ -9,7 +8,7 @@ from srctools.game import Game
 from srctools.vmt import Material
 
 
-def main(args: Optional[list[str]] = None) -> None:
+def main(args: list[str] | None = None) -> None:
     """Parse out all material proxies used in the given game."""
     parser = argparse.ArgumentParser(
         description=__doc__,
