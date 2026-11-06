@@ -2498,7 +2498,7 @@ class BSP:
         # Some extra ambient light data.
         has_ambient = not is_vitamin and self.version <= 19
 
-        for leaf_data, water_dist in zip(leaf_fmt.iter_unpack(data), dist_to_water):
+        for leaf_data, water_dist in zip(leaf_fmt.iter_unpack(data), dist_to_water, strict=True):
             if is_vitamin:
                 # VitaminSource moves the flags into its own block.
                 (
@@ -2686,7 +2686,7 @@ class BSP:
         for ind in range(cluster_count):
             writes.defer(ind, 'ii', True)
 
-        for ind, (pvs, pas) in enumerate(zip(vis.potentially_visible, vis.potentially_audible)):
+        for ind, (pvs, pas) in enumerate(zip(vis.potentially_visible, vis.potentially_audible, strict=True)):
             pvs_off = data.tell()
             data.write(runlength_encode(pvs))
             pas_off = data.tell()
@@ -3232,7 +3232,7 @@ class BSP:
         # If exception, abort, so we don't need try: or with:.
         # Because this is purely in memory, there are no actual resources here
         # and we don't actually care about not closing the zip file or BytesIO.
-        yield zip_file
+        yield zip_file  # ruff: ignore[fallible-context-manager]
         # Explicitly close to finalise the footer.
         zip_file.close()
         # Note: because data is bytes, CPython won't end up doing any copying
@@ -3630,7 +3630,7 @@ class BSP:
         prop_lump.write(write_array(self.lump_layout['STATICPROPLEAF'], leaf_array))
 
         prop_lump.write(struct.pack('<i', len(props)))
-        for (leaf_off, model_ind), prop in zip(indexes, props):
+        for (leaf_off, model_ind), prop in zip(indexes, props, strict=True):
             start = prop_lump.tell()
             prop_lump.write(struct.pack(
                 '<3f3fH',

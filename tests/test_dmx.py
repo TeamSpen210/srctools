@@ -504,7 +504,7 @@ def test_attr_array_constructor(typ: ValueType, iterable: list[Any], expected: l
     attr = Attribute.array('some_array', typ, iterable)  # type: ignore  # Non-literal type.
     assert attr.is_array
     assert len(attr) == len(expected)
-    for i, (actual, expect) in enumerate(zip(attr._value, expected)):
+    for i, (actual, expect) in enumerate(zip(attr._value, expected, strict=True)):
         assert type(actual) is expected_type, repr(actual)
         if expected_type is FrozenMatrix:  # Matrix comparisons are difficult.
             actual = actual.to_angle()
@@ -589,7 +589,7 @@ def test_deduce_type_array(input_val: list[Any], val_type: ValueType, output: li
     assert test_type is val_type
     assert isinstance(test_arr, list)
     assert len(input_val) == len(test_arr), repr(test_arr)
-    for i, (test, out) in enumerate(zip(test_arr, output)):
+    for i, (test, out) in enumerate(zip(test_arr, output, strict=True)):
         assert type(test) is type(out), f'{i}: {test!r} != {out!r}'
         assert test == out, f'{i}: {test!r} != {out!r}'
 

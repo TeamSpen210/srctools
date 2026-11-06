@@ -125,8 +125,7 @@ class LoggerAdapter(logging.LoggerAdapter[logging.Logger]):
             new_extra['srctools_context'] = f' ({ctx})' if ctx else ''
 
             # Handle some extra indirection in 3.10+
-            if sys.version_info >= (3, 10):
-                stacklevel += 2
+            stacklevel += 2
 
             # noinspection PyProtectedMember
             self.logger._log(
@@ -212,7 +211,7 @@ def get_handler(filename: str | os.PathLike[str]) -> logging.FileHandler:
         path.with_suffix(suffixes[0] + ext).unlink(missing_ok=True)
 
         # Go in reverse, moving each file over to give us space.
-        for frm, to in zip(suffixes[1:], suffixes):
+        for to, frm in itertools.pairwise(suffixes):
             try:
                 path.with_suffix(frm + ext).rename(path.with_suffix(to + ext))
             except FileNotFoundError:

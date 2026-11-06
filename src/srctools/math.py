@@ -1601,7 +1601,8 @@ class Vec(VecBase):
         the angle.
         """
         mat = Py_Matrix()
-        yield mat
+        yield mat  # ruff: ignore[fallible-context-manager]
+        # In case of exception, just abandon the matrix.
         # noinspection PyProtectedMember
         mat._vec_rot(self)
 
@@ -2913,7 +2914,8 @@ class Angle(AngleBase):
         the angle.
         """
         mat = Py_Matrix.from_angle(self)
-        yield mat
+        yield mat  # ruff: ignore[fallible-context-manager]
+        # In case of exception, just abandon the matrix.
         new_ang = mat.to_angle()
         self._pitch = new_ang._pitch
         self._yaw = new_ang._yaw

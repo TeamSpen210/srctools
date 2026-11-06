@@ -164,7 +164,7 @@ def test_entkey_basic() -> None:
         check_order=False,
     )
     # Keys/values/items should have the same order.
-    assert list(ent.fixup.items()) == list(zip(ent.fixup.keys(), ent.fixup.values()))
+    assert list(ent.fixup.items()) == list(zip(ent.fixup.keys(), ent.fixup.values(), strict=True))
 
     with pytest.raises(KeyError):
         del ent['classname']
@@ -317,7 +317,7 @@ def test_fixup_basic() -> None:
         ('false', '0')
     }
     # Keys/values/items should have the same order.
-    assert list(ent.fixup.items()) == list(zip(ent.fixup.keys(), ent.fixup.values()))
+    assert list(ent.fixup.items()) == list(zip(ent.fixup.keys(), ent.fixup.values(), strict=True))
 
 
 def test_fixup_containment() -> None:

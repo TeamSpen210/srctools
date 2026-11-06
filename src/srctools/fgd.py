@@ -2107,7 +2107,7 @@ class EntityDef:
 
         # Now apply EXT_AUTO_VISGROUP, since we have the classname.
         for auto_visgroup in ext_autovisgroups:
-            for vis_parent, vis_name in zip(auto_visgroup, auto_visgroup[1:]):
+            for vis_parent, vis_name in itertools.pairwise(auto_visgroup):
                 try:
                     visgroup = fgd.auto_visgroups[vis_name.casefold()]
                 except KeyError:

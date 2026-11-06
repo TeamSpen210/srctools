@@ -2,7 +2,6 @@
 from collections.abc import Generator
 from unittest.mock import Mock
 import itertools
-import sys
 
 import pytest
 
@@ -12,10 +11,6 @@ from srctools.keyvalues import KeyValError, Keyvalues, LeafKeyvalueError, NoKeyE
 from srctools.tokenizer import (
     Cy_BaseTokenizer, Cy_Tokenizer, Py_BaseTokenizer, Py_Tokenizer, Token, Tokenizer,
 )
-
-if sys.version_info < (3, 11):
-    from exceptiongroup import ExceptionGroup
-
 
 if Cy_Tokenizer is not Py_Tokenizer:
     parms = [(Cy_Tokenizer, Cy_BaseTokenizer), (Py_Tokenizer, Py_BaseTokenizer)]

@@ -1199,11 +1199,11 @@ def test_hash(py_c_vec: PyCVec) -> None:
 def test_iter_line(frozen_thawed_vec: VecClass) -> None:
     """Test Vec.iter_line()"""
     Vec = frozen_thawed_vec
-    for pos, x in zip(Vec(4, 5.82, -6.35).iter_line(Vec(10, 5.82, -6.35), 1), range(4, 11)):
+    for pos, x in zip(Vec(4, 5.82, -6.35).iter_line(Vec(10, 5.82, -6.35), 1), range(4, 11), strict=True):
         assert_vec(pos, x, 5.82, -6.35, type=Vec)
-    for pos, y in zip(Vec(-4.36, 10.82, -6.35).iter_line(Vec(-4.36, 5.82, -6.35), 1), range(10, 4, -1)):
+    for pos, y in zip(Vec(-4.36, 10.82, -6.35).iter_line(Vec(-4.36, 5.82, -6.35), 1), range(10, 4, -1), strict=True):
         assert_vec(pos, -4.36, y + 0.82, -6.35, type=Vec)
-    for pos, z in zip(Vec(3.78, 12.98, -5.65).iter_line(Vec(3.78, 12.98, 6.35), 1), range(-6, 7)):
+    for pos, z in zip(Vec(3.78, 12.98, -5.65).iter_line(Vec(3.78, 12.98, 6.35), 1), range(-6, 7), strict=True):
         assert_vec(pos, 3.78, 12.98, z + 0.35, type=Vec)
 
 

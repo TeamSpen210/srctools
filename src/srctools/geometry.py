@@ -397,6 +397,5 @@ class Polygon:
             )
             for vert in self.vertices
         ]
-        yield smd.Triangle(face.mat, points[0], points[1], points[2])
-        for a, b in zip(points[2:], points[3:]):
+        for a, b in itertools.pairwise(points[1:]):
             yield smd.Triangle(face.mat, points[0], a, b)

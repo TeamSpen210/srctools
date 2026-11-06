@@ -22,7 +22,7 @@ from typing_extensions import TypeVar, deprecated
 from collections.abc import (
     Callable, Iterable, Iterator, KeysView, Mapping, MutableMapping, Sequence, ValuesView,
 )
-from enum import Enum
+from enum import Enum, StrEnum
 from struct import Struct, error as StructError, pack
 from uuid import UUID, uuid4 as get_uuid
 import builtins
@@ -120,7 +120,7 @@ class ValueType(Enum):
     """
 
 
-class _StubType(str, Enum):
+class _StubType(StrEnum):
     """Kind of StubElement."""
     STUB = 'DMEStubElement'
     NULL = 'DMENullElement'
@@ -239,20 +239,20 @@ Vec3 = FrozenVec  #: :deprecated: Use :py:class:`srctools.math.FrozenVec`.
 
 
 _Element: TypeAlias = 'Element'  # Forward ref.
-Value: TypeAlias = (
+Value: TypeAlias = '''(
     int | float | bool | str | bytes
     | Color | Time |
     Vec2 | FrozenVec | Vec4 |
     FrozenAngle | Quaternion | FrozenMatrix | _Element
-)
-ValueList = (
-    list[int] | list[float] | list[bool] | list[str] | list[bytes],
-    list[Color] | list[Time],
-    list[Vec2] | list[FrozenVec] | list[Vec4],
-    list[FrozenAngle] | list[Quaternion] | list[FrozenMatrix] | list[_Element]
+)'''
+ValueList: TypeAlias = (
+    list[int] | list[float] | list[bool] | list[str] | list[bytes] |
+    list[Color] | list[Time] |
+    list[Vec2] | list[FrozenVec] | list[Vec4] |
+    list[FrozenAngle] | list[Quaternion] | list[FrozenMatrix] | list['Element']
 )
 # Additional values we convert to valid types.
-ConvValue: TypeAlias = Value | Vec | Matrix | Angle
+ConvValue: TypeAlias = 'Value | Vec | Matrix | Angle'
 
 ValueT = TypeVar('ValueT', bound=Value, default=Any)
 
@@ -445,9 +445,9 @@ class _ValProps:
         val_bin: bytes
         val_binary: bytes
 
-        val_compound: _Element
-        val_elem: _Element
-        val: _Element
+        val_compound: 'Element'
+        val_elem: 'Element'
+        val: 'Element'
     else:
         val_int = _make_val_prop(ValueType.INT, int)
         val_str = val_string = _make_val_prop(ValueType.STRING, str)
@@ -2056,7 +2056,7 @@ class Element(Mapping[str, Attribute]):
         """Remove the specified attribute."""
         del self._members[name.casefold()]
 
-    def __setitem__(self, name: str, value: Attribute | ConvValue | Sequence[ConvValue]) -> None:
+    def __setitem__(self, name: str, value: 'Attribute | ConvValue | Sequence[ConvValue]') -> None:
         """Set a specific value, by deducing the type.
 
         This means this cannot produce certain types like Time. Use an
@@ -2074,7 +2074,7 @@ class Element(Mapping[str, Attribute]):
         """Remove all attributes from the element."""
         self._members.clear()
 
-    def get_wrap(self, name: str, default: Attribute | ConvValue | Sequence[ConvValue] = '', /) -> Attribute:
+    def get_wrap(self, name: str, default: 'Attribute | ConvValue | Sequence[ConvValue]' = '', /) -> Attribute:
         """Retrieve the specified attribute, or return a default.
 
         If the defalt is an Attribute it is returned unchanged, otherwise it is wrapped in
@@ -2089,7 +2089,7 @@ class Element(Mapping[str, Attribute]):
                 typ, val = deduce_type(default)
                 return Attribute(name, typ, val)
 
-    def pop(self, name: str, default: Attribute | ConvValue | Sequence[ConvValue] = _UNSET) -> Attribute:
+    def pop(self, name: str, default: 'Attribute | ConvValue | Sequence[ConvValue]' = _UNSET) -> Attribute:
         """Remove the specified attribute and return it.
 
         If not found, an attribute is created from the default if specified,
@@ -2114,7 +2114,7 @@ class Element(Mapping[str, Attribute]):
         key, attr = self._members.popitem()
         return (attr.name, attr)
 
-    def setdefault(self, name: str, default: Attribute | ConvValue | Sequence[ConvValue]) -> Attribute:
+    def setdefault(self, name: str, default: 'Attribute | ConvValue | Sequence[ConvValue]') -> Attribute:
         """Return the specified attribute name.
 
         If it does not exist, set it using the default and return that.
@@ -2197,7 +2197,7 @@ TYPE_TO_VALTYPE: dict[type, ValueType] = {
 }
 
 
-def deduce_type(value: ConvValue | Sequence[ConvValue]) -> tuple[ValueType, Value | ValueList]:
+def deduce_type(value: 'ConvValue | Sequence[ConvValue]') -> tuple[ValueType, 'Value | ValueList']:
     """Convert Python objects to an appropriate ValueType."""
     if isinstance(value, list):
         return deduce_type_array(value)
@@ -2209,7 +2209,7 @@ def deduce_type(value: ConvValue | Sequence[ConvValue]) -> tuple[ValueType, Valu
     return deduce_type_array(value)
 
 
-def deduce_type_array(value: Sequence[ConvValue]) -> tuple[ValueType, ValueList]:
+def deduce_type_array(value: Sequence[ConvValue]) -> tuple[ValueType, 'ValueList']:
     """Convert a Python list to an appropriate ValueType."""
     if len(value) == 0:
         raise TypeError('Cannot deduce type for empty list!')

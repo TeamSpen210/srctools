@@ -69,7 +69,8 @@ class Game:
         roots = [self.root]
         for root_name, app_id in zip(
             ('app', 'tools', 'additional content'),
-            [self.app_id, self.tools_id, self.additional_content]
+            [self.app_id, self.tools_id, self.additional_content],
+            strict=True,
         ):
             if app_id is not None:
                 try:

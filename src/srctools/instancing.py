@@ -435,7 +435,7 @@ def collapse_one(
                 for old in old_ent.visgroup_ids
             } or ungrouped_group.copy()
 
-        for old_brush, new_brush in zip(old_ent.solids, new_ent.solids):
+        for old_brush, new_brush in zip(old_ent.solids, new_ent.solids, strict=True):
             inst.brush_ids[old_brush.id] = new_brush.id
             new_brush.localise(origin, orient)
 

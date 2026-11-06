@@ -75,9 +75,6 @@ from srctools.tokenizer import (
     BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text, format_exc_fileinfo,
 )
 
-if sys.version_info < (3, 11):
-    from exceptiongroup import BaseExceptionGroup
-
 
 __all__ = ['KeyValError', 'NoKeyError', 'LeafKeyvalueError', 'Keyvalues', 'escape_text']
 

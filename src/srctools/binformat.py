@@ -258,10 +258,10 @@ def find_or_extend(item_list: list[T], key_func: Callable[[T], Hashable] = id) -
             pass
         else:
             for i in indices:
-                if all(
+                if len(item_list) >= i + len(items) and all(
                     key_func(a) == key_func(b)
                     for a, b in
-                    zip(items, itertools.islice(item_list, i, i + len(items)))
+                    zip(items, itertools.islice(item_list, i, i + len(items)), strict=True)
                 ):
                     return i
         # Not found, append to the end.
@@ -269,7 +269,7 @@ def find_or_extend(item_list: list[T], key_func: Callable[[T], Hashable] = id) -
         item_list.extend(items)
         assert all(
             a is b for a, b in
-            zip(item_list[i: i + len(items)], items)
+            zip(item_list[i: i + len(items)], items, strict=True)
         )
         # Update the index.
         for j, item2 in enumerate(items):
