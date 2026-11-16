@@ -223,7 +223,7 @@ def py_c_vec(request: pytest.FixtureRequest) -> Generator[None, None, None]:
             setattr(vec_mod, name, getattr(vec_mod, prefix + name))
         yield None
     finally:
-        for name, orig in zip(ATTRIBUTES, originals):
+        for name, orig in zip(ATTRIBUTES, originals, strict=True):
             setattr(vec_mod, name, orig)
 
 

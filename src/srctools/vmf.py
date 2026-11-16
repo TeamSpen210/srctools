@@ -785,7 +785,7 @@ class VMF:
         finally:
             # Since zip ends early, if this is somehow exited halfway through
             # the first loop, we'll just revert what we changed.
-            for man, val in zip(managers, existing):
+            for man, val in zip(managers, existing, strict=False):
                 man.allow_duplicates = val
 
     @staticmethod
@@ -940,7 +940,7 @@ class VMF:
                 dest_file.write(f'\t"nInstanceVisibility" "{self.strata_instance_vis.value}"\n')
             if self.strata_viewports is not None:
                 dest_file.write('\tviews\n\t{\n')
-                for name, view in zip(('v0', 'v1', 'v2', 'v3'), self.strata_viewports):
+                for name, view in zip(('v0', 'v1', 'v2', 'v3'), self.strata_viewports, strict=True):
                     view.export(dest_file, name)
                 dest_file.write('\t}\n')
             dest_file.write('}\n')
@@ -2734,7 +2734,7 @@ class Entity(MutableMapping[str, str]):
         editor_color = Vec()
         for item in tree_list:
             name = item.name
-            assert name is not None, repr(item)  # type: ignore[comparison-overlap]  # TODO Remove when root props change.
+            assert name is not None, repr(item)  # TODO Remove when root props change.
             if item.has_children():
                 if name == "solid":
                     solids.append(Solid.parse(vmf_file, item))
