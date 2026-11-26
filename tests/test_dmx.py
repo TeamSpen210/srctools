@@ -15,7 +15,7 @@ from helpers import *
 from srctools.math import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Matrix, Vec
 from srctools.keyvalues import Keyvalues
 from srctools.dmx import (
-    TYPE_CONVERT, Attribute, Color, Element, Quaternion, Time, ValueType, Vec2, Vec4,
+    TYPE_CONVERT, Attribute, Color, Element, Quaternion, StubElement, Time, ValueType, Vec2, Vec4,
     deduce_type,
 )
 from srctools.tokenizer import TokenSyntaxError
@@ -889,6 +889,26 @@ def test_export_bin_roundtrip(lazy_datadir: LazyDataDir, version: int) -> None:
     assert rnd_ver == fmt_version
     # Check when parsed it matches the assertions above.
     verify_sample(rnd_root)
+
+
+def test_export_bin_stub_roundtrip() -> None:
+    """Stub element UUIDs are included in the binary stream."""
+    stub_uuid = UUID('dc78ab78-12a4-4f2c-bf8d-a14b03b6e175')
+    root = Element('root', 'DmeChannelsClip')
+    root['toElement'] = Attribute(
+        'toElement', ValueType.ELEMENT, StubElement.stub(stub_uuid),
+    )
+
+    buf = BytesIO()
+    root.export_binary(buf, version=5, fmt_name='model', fmt_ver=18)
+    buf.seek(0)
+    parsed, fmt_name, fmt_version = Element.parse(buf)
+
+    assert fmt_name == 'model'
+    assert fmt_version == 18
+    parsed_stub = parsed['toElement'].val_elem
+    assert parsed_stub.is_stub
+    assert parsed_stub.uuid == stub_uuid
 
 
 @pytest.mark.parametrize('flat', [False, True], ids=['indented', 'flat'])
